@@ -30,7 +30,7 @@ Layers, by zoom (`scale` = screen px per grid px, 0.029 … 48):
 | Hit-testing, collisions | the same JSON tiles | client-side convenience only; the database decides |
 | Overlays | selection, preview of the buyer's creation, highlight | |
 
-Frame cost (headless Chromium, software rendering): ≤ 1.5 ms average at every zoom after tile warm-up.
+Frame cost measured in headless Chromium with *software* rendering (no GPU): ≈ 0.4–2 ms per frame at world and deep zoom, ≈ 9 ms at mid zoom (many large tile blits); real GPU-accelerated browsers are considerably faster. `tests/e2e/ui.spec.ts` guards against regressions.
 
 **Cache invalidation:** `map_state.version` is bumped (once per statement) whenever the visible map changes. Clients learn it
 from `/api/stats` (15 s cache) and put it in every tile URL, so tiles are `immutable` and never stale.

@@ -495,7 +495,7 @@ export class MapEngine {
     if (sr && (sr.w < 28 || sr.h < 28)) { this.pulse = (t % 1400) / 1400; again = true; }
 
     if (this.dirty || again) { this.dirty = false; this.draw(); }
-    if (this.geoPending) again = true; // geography tiles are still being rasterised: keep drawing
+    if (this.geoPending) { this.dirty = true; again = true; } // geography tiles are still being rasterised: draw the next batch next frame
     if (again) this.raf = requestAnimationFrame((n) => this.frame(n));
   }
 

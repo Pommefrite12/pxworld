@@ -57,11 +57,15 @@ function addPolygon(path: Path2D, pts: ArrayLike<number>) {
   path.closePath();
 }
 
-/** Liang–Barsky: adds the portions of the polyline that lie inside `c` (no artificial edges along the border). */
-function addPolylineClipped(path: Path2D, pts: ArrayLike<number>, c: Rect4, closed: boolean) {
+/**
+ * Liang–Barsky: the portions of a polyline (or closed ring) that lie inside `c`, as separate polylines.
+ * No artificial edges are created along the clip border, so clipped coastlines never gain false lines.
+ */
+export function clipPolylineToRect(pts: ArrayLike<number>, c: Rect4, closed: boolean): number[][] {
   const n = pts.length >> 1;
+  const out: number[][] = [];
+  let cur: number[] | null = null;
   const segs = closed ? n : n - 1;
-  let penDown = false, lx = 0, ly = 0;
   for (let i = 0; i < segs; i++) {
     const ax = pts[2 * i]!, ay = pts[2 * i + 1]!, j = (i + 1) % n, bx = pts[2 * j]!, by = pts[2 * j + 1]!;
     const dx = bx - ax, dy = by - ay;
@@ -73,11 +77,31 @@ function addPolylineClipped(path: Path2D, pts: ArrayLike<number>, c: Rect4, clos
       const r = q[k]! / p[k]!;
       if (p[k]! < 0) { if (r > t1) ok = false; else if (r > t0) t0 = r; } else if (r < t0) ok = false; else if (r < t1) t1 = r;
     }
-    if (!ok) { penDown = false; continue; }
+    if (!ok) { cur = null; continue; }
     const sx = ax + t0 * dx, sy = ay + t0 * dy, ex = ax + t1 * dx, ey = ay + t1 * dy;
-    if (!penDown || Math.abs(sx - lx) > 1e-9 || Math.abs(sy - ly) > 1e-9) path.moveTo(sx, sy);
-    path.lineTo(ex, ey);
-    penDown = t1 === 1; lx = ex; ly = ey;
+    if (!cur || Math.abs(cur[cur.length - 2]! - sx) > 1e-9 || Math.abs(cur[cur.length - 1]! - sy) > 1e-9) {
+      cur = [sx, sy];
+      out.push(cur);
+    }
+    cur.push(ex, ey);
+    if (t1 < 1) cur = null; // the segment leaves the rectangle: the next piece starts a new polyline
+  }
+  return out;
+}
+
+/** Sutherland–Hodgman polygon clip against an axis-aligned rectangle (flat [x0,y0,x1,y1…] in and out). */
+export function clipPolygonToRect(pts: ArrayLike<number>, c: Rect4): number[] {
+  let poly = Array.from(pts);
+  poly = clipEdge(poly, 0, c.x0, true);
+  poly = clipEdge(poly, 0, c.x1, false);
+  poly = clipEdge(poly, 1, c.y0, true);
+  return clipEdge(poly, 1, c.y1, false);
+}
+
+function addPolylines(path: Path2D, lines: number[][]) {
+  for (const l of lines) {
+    path.moveTo(l[0]!, l[1]!);
+    for (let i = 2; i + 1 < l.length; i += 2) path.lineTo(l[i]!, l[i + 1]!);
   }
 }
 
@@ -94,14 +118,11 @@ export class Geo {
     const wide: Rect4 = { x0: c.x0 - m, y0: c.y0 - m, x1: c.x1 + m, y1: c.y1 + m };
     for (const r of lod === "low" ? this.low : this.high) {
       if (!intersects(r, wide)) continue;
-      if (inside(r, wide)) { addPolygon(fill, r.pts); addPolylineClipped(coast, r.pts, wide, true); continue; }
-      let poly = Array.from(r.pts);
-      poly = clipEdge(poly, 0, wide.x0, true); poly = clipEdge(poly, 0, wide.x1, false);
-      poly = clipEdge(poly, 1, wide.y0, true); poly = clipEdge(poly, 1, wide.y1, false);
-      addPolygon(fill, poly);
-      addPolylineClipped(coast, r.pts, wide, true);
+      if (inside(r, wide)) { addPolygon(fill, r.pts); addPolylines(coast, clipPolylineToRect(r.pts, wide, true)); continue; }
+      addPolygon(fill, clipPolygonToRect(r.pts, wide));
+      addPolylines(coast, clipPolylineToRect(r.pts, wide, true));
     }
-    for (const r of this.borders) if (intersects(r, wide)) addPolylineClipped(borders, r.pts, wide, false);
+    for (const r of this.borders) if (intersects(r, wide)) addPolylines(borders, clipPolylineToRect(r.pts, wide, false));
     return { fill, coast, borders };
   }
 }

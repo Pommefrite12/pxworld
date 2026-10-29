@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 /** Interface-level checks: accessibility, keyboard, search, touch/mobile. Independent of the other specs' data. */
 
 declare global {
-  interface Window { __pxEngine?: { cam: { x: number; y: number; scale: number }; fitScale: number } }
+  interface Window { __pxEngine?: { cam: { x: number; y: number; scale: number }; fitScale: number; geoPending: boolean } }
 }
 
 const camera = async (page: import("@playwright/test").Page) => {
@@ -25,6 +25,20 @@ test.describe("accessibility (axe, WCAG 2.1 A/AA)", () => {
 });
 
 test.describe("map interaction", () => {
+  test("geography is fully drawn at every zoom (no missing tiles) and a frame is cheap", async ({ page }) => {
+    for (const [x, y, z] of [[24200, 7400, 2.5], [25326, 4882, 12], [10000, 6000, 0.4], [25000, 10000, 40]] as const) {
+      await page.goto(`/?x=${x}&y=${y}&z=${z}`);
+      await page.waitForFunction(() => window.__pxEngine && !window.__pxEngine.geoPending, undefined, { timeout: 20_000 });
+      const ms = await page.evaluate(async () => {
+        const e = window.__pxEngine as unknown as { cam: { x: number; scale: number }; invalidate(): void; draw(): void };
+        const t0 = performance.now();
+        for (let i = 0; i < 20; i++) { e.cam.x += 2 / e.cam.scale; e.draw(); }
+        return (performance.now() - t0) / 20;
+      });
+      expect(ms, `avg draw ms at scale ${z}`).toBeLessThan(40); // generous: CI runners use software rendering
+    }
+  });
+
   test("keyboard: arrows pan, plus/minus zoom, 0 recentres", async ({ page }) => {
     await page.goto("/?x=20000&y=8000&z=1");
     const canvas = page.getByRole("application");
