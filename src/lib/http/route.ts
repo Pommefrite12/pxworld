@@ -25,7 +25,9 @@ export function assertSameOrigin(req: Request): void {
   const origin = req.headers.get("origin");
   if (!origin) return; // non-browser clients / same-origin GET-like navigations
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
-  if (!host || new URL(origin).host !== host) {
-    throw new HttpError(403, "bad_origin");
-  }
+  let originHost: string | null = null;
+  try {
+    originHost = new URL(origin).host; // "null" (sandboxed/opaque origins) and garbage throw → rejected below
+  } catch { /* rejected below */ }
+  if (!host || originHost !== host) throw new HttpError(403, "bad_origin");
 }

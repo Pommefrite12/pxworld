@@ -5,8 +5,10 @@ import { queryOne } from "@/lib/db/pool";
 import { HttpError } from "@/lib/http/errors";
 
 export function clientIp(req: Request): string {
+  // Vercel sets x-vercel-forwarded-for / x-real-ip itself; a client-supplied x-forwarded-for is the last resort
+  const platform = req.headers.get("x-vercel-forwarded-for") ?? req.headers.get("x-real-ip");
   const fwd = req.headers.get("x-forwarded-for");
-  return (fwd?.split(",")[0] ?? req.headers.get("x-real-ip") ?? "unknown").trim();
+  return (platform ?? fwd?.split(",")[0] ?? "unknown").trim();
 }
 
 /** Salted hash: lets us rate-limit and keep report evidence without storing raw IP addresses. */

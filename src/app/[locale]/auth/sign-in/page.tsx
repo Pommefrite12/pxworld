@@ -13,9 +13,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const { locale } = await params;
   setRequestLocale(locale);
   const sp = await searchParams;
+  const t = await getTranslations({ locale, namespace: "auth" });
   return (
     <PageShell width="max-w-lg">
-      {sp.error && <p role="alert" className="mx-auto mb-4 max-w-md rounded-xl bg-danger/10 px-3 py-2 text-sm font-semibold text-danger">Authentication failed. Please try again.</p>}
+      {sp.error && <p role="alert" className="mx-auto mb-4 max-w-md rounded-xl bg-danger/10 px-3 py-2 text-sm font-semibold text-danger">{t("callbackError")}</p>}
       <AuthForm mode="sign-in" next={sp.next} />
     </PageShell>
   );

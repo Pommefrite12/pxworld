@@ -10,6 +10,7 @@ const STATUSES = ["all", "pending", "paid", "refund_required", "refunded", "disp
 export default async function AdminOrders({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ status?: string; page?: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const tc = await getTranslations("common");
   const sp = await searchParams;
   const status = STATUSES.includes(sp.status ?? "") ? sp.status! : "all", page = Math.max(0, Number(sp.page ?? 0) || 0);
   const [t, f, rows, staff] = await Promise.all([getTranslations("admin.orders"), getFormatter(), ordersList(status, page * PAGE_SIZE), requirePageStaff(locale)]);
@@ -37,7 +38,7 @@ export default async function AdminOrders({ params, searchParams }: { params: Pr
           </tbody>
         </table>
       </div>
-      <nav className="mt-4 flex gap-2" aria-label="Pagination">
+      <nav className="mt-4 flex gap-2" aria-label={tc("pagination")}>
         {page > 0 && <Link className="btn btn-ghost btn-sm" href={`/admin/orders?status=${status}&page=${page - 1}`}>←</Link>}
         {rows.length === PAGE_SIZE && <Link className="btn btn-ghost btn-sm" href={`/admin/orders?status=${status}&page=${page + 1}`}>→</Link>}
       </nav>

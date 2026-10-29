@@ -5,6 +5,7 @@ import { PAGE_SIZE, auditList } from "@/lib/data/admin";
 export default async function Audit({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ page?: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const tc = await getTranslations("common");
   const page = Math.max(0, Number((await searchParams).page ?? 0) || 0);
   const [t, f, rows] = await Promise.all([getTranslations("admin.audit"), getFormatter(), auditList(page * PAGE_SIZE * 2)]);
   return (
@@ -27,7 +28,7 @@ export default async function Audit({ params, searchParams }: { params: Promise<
           </tbody>
         </table>
       </div>
-      <nav className="mt-4 flex gap-2" aria-label="Pagination">
+      <nav className="mt-4 flex gap-2" aria-label={tc("pagination")}>
         {page > 0 && <Link className="btn btn-ghost btn-sm" href={`/admin/audit?page=${page - 1}`}>←</Link>}
         {rows.length === PAGE_SIZE * 2 && <Link className="btn btn-ghost btn-sm" href={`/admin/audit?page=${page + 1}`}>→</Link>}
       </nav>

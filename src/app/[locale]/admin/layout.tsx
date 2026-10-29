@@ -19,7 +19,7 @@ export default async function AdminLayout({ children, params }: { children: Reac
   return (
     <PageShell width="max-w-7xl">
       <div className="grid gap-8 lg:grid-cols-[13rem_minmax(0,1fr)]">
-        <nav aria-label="Admin" className="lg:sticky lg:top-6 lg:self-start">
+        <nav aria-label={t("role", { role: staff.staffRole })} className="lg:sticky lg:top-6 lg:self-start">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-faint">{t("role", { role: staff.staffRole })}</p>
           <ul className="flex flex-wrap gap-1 lg:block lg:space-y-1">
             {items.map(([href, label]) => <li key={href}><Link href={href} className="block rounded-lg px-3 py-2 text-sm font-semibold hover:bg-paper-2">{label}</Link></li>)}

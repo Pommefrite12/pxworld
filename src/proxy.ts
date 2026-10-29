@@ -16,7 +16,9 @@ export default async function proxy(request: NextRequest) {
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (url && anon && !pathname.startsWith("/api/stripe/") && !pathname.startsWith("/api/cron/")) {
+  const hasSession = request.cookies.getAll().some((c) => c.name.startsWith("sb-"));
+  const publicApi = /^\/api\/(stripe|cron|map|assets|avatar|og|stats|availability|parcels\/[0-9a-f]{10}$)/.test(pathname);
+  if (url && anon && hasSession && !publicApi) {
     const supabase = createServerClient(url, anon, {
       cookies: {
         getAll: () => request.cookies.getAll(),

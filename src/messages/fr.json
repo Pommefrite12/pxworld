@@ -219,7 +219,11 @@
     "loading": "Chargement…",
     "save": "Enregistrer",
     "cancel": "Annuler",
-    "back": "Retour"
+    "back": "Retour",
+    "pagination": "Pagination",
+    "ok": "OK",
+    "skip": "Aller au contenu",
+    "adminNav": "Administration"
   },
   "footer": {
     "tagline": "Une carte collaborative de la Terre en un milliard de pixels.",
@@ -274,7 +278,8 @@
       "weakPassword": "Votre mot de passe doit contenir au moins 10 caractères.",
       "exists": "Un compte existe déjà pour cet e-mail.",
       "notConfigured": "L'authentification n'est pas configurée sur ce serveur."
-    }
+    },
+    "callbackError": "L'authentification a échoué. Veuillez réessayer."
   },
   "account": {
     "title": "Votre compte",

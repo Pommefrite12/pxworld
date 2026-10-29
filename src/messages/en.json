@@ -219,7 +219,11 @@
     "loading": "Loading…",
     "save": "Save",
     "cancel": "Cancel",
-    "back": "Back"
+    "back": "Back",
+    "pagination": "Pagination",
+    "ok": "OK",
+    "skip": "Skip to content",
+    "adminNav": "Administration"
   },
   "footer": {
     "tagline": "A collaborative map of the Earth in one billion pixels.",
@@ -274,7 +278,8 @@
       "weakPassword": "Your password must have at least 10 characters.",
       "exists": "An account already exists for this email.",
       "notConfigured": "Authentication is not configured on this server."
-    }
+    },
+    "callbackError": "Authentication failed. Please try again."
   },
   "account": {
     "title": "Your account",

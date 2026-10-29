@@ -29,10 +29,11 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
+  const skip = (await getTranslations({ locale, namespace: "common" }))("skip");
   return (
     <html lang={locale}>
       <body>
-        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-white">Skip to content</a>
+        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-white">{skip}</a>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>

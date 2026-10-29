@@ -26,6 +26,7 @@ const DEFAULT_SIZE = { w: 20, h: 20 };
 
 export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapShellProps) {
   const t = useTranslations("map");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const mapRef = useRef<MapViewHandle>(null);
   const [engineReady, setEngineReady] = useState(false);
@@ -212,7 +213,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
         {toast && (
           <div role="status" className="pointer-events-auto absolute left-1/2 top-4 z-50 -translate-x-1/2 rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-white shadow-float">
             {toast}
-            <button className="ml-3 underline" onClick={() => setToast(null)}>OK</button>
+            <button className="ml-3 underline" onClick={() => setToast(null)}>{tc("ok")}</button>
           </div>
         )}
       </div>
