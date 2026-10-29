@@ -8,7 +8,8 @@ const dbName = `pxtest_${process.pid}_${Math.random().toString(36).slice(2, 8)}`
   await admin.query(`create database ${dbName} template ${process.env.TEST_TEMPLATE_DB}`);
   await admin.end();
 }
-export const pool = new pg.Pool({ connectionString: adminUrl.replace(/\/[^/]*$/, `/${dbName}`), max: 60 });
+export const databaseUrl = adminUrl.replace(/\/[^/]*$/, `/${dbName}`);
+export const pool = new pg.Pool({ connectionString: databaseUrl, max: 60 });
 pool.on("error", () => undefined); // idle clients may be terminated when the database is dropped
 
 /** Call from afterAll: closes the pool and drops this file's private database. */

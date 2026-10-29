@@ -72,7 +72,8 @@ begin
      or p_w < 1 or p_h < 1 or p_x < 0 or p_y < 0
      or p_x + p_w > public.px_grid_width() or p_y + p_h > public.px_grid_height()
      or p_w > 1000 or p_h > 1000
-     or p_w::bigint * p_h < v_min or p_w::bigint * p_h > v_max then
+     or p_w::bigint * p_h < v_min or p_w::bigint * p_h > v_max
+     or (p_w::bigint * p_h) * v_unit > 99999999 then   -- Stripe's per-line maximum (999 999,99 in minor units)
     raise exception 'px_invalid_rect';
   end if;
 
@@ -135,6 +136,15 @@ begin
          resolved_at = now() where order_id = o.id and status = 'held';
   update public.parcels set status = 'released', released_at = now() where id = o.parcel_id and status = 'reserved';
   return p_final_status;
+end $$;
+
+-- Checkout completed but the payment is still processing (asynchronous method): keep the pixels held while Stripe finishes.
+create or replace function public.px_extend_reservation(p_order uuid, p_hours integer default 120) returns void
+language plpgsql as $$
+declare v_until timestamptz := now() + make_interval(hours => p_hours);
+begin
+  update public.parcel_reservations set expires_at = greatest(expires_at, v_until) where order_id = p_order and status = 'held';
+  update public.orders set expires_at = greatest(expires_at, v_until) where id = p_order and status = 'pending';
 end $$;
 
 -- Hygiene job (cron): expires lapsed holds. Returns the Stripe sessions that may still be open.
@@ -452,7 +462,7 @@ begin
        or (p_value #>> '{}')::numeric < 1 then raise exception 'px_bad_setting'; end if;
     if p_key = 'min_area' and (p_value #>> '{}')::numeric < 100 then raise exception 'px_bad_setting'; end if;
     if p_key = 'max_area' and (p_value #>> '{}')::numeric > 1000000 then raise exception 'px_bad_setting'; end if;
-    if p_key = 'reservation_ttl_minutes' and (p_value #>> '{}')::numeric < 30 then raise exception 'px_bad_setting'; end if;
+    if p_key = 'reservation_ttl_minutes' and (p_value #>> '{}')::numeric < 32 then raise exception 'px_bad_setting'; end if;
   end if;
   update public.app_settings set value = p_value, updated_by = p_actor, updated_at = now() where key = p_key;
   insert into public.audit_logs (actor_id, actor_role, action, target_type, target_id, metadata)
