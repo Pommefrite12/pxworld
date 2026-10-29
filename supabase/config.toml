@@ -1,0 +1,34 @@
+# Supabase CLI configuration (local development with `supabase start`, and `supabase db push` to a hosted project).
+project_id = "pixel-world"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+# The browser only needs PostgREST for Auth-adjacent reads; every sensitive write goes through server-side code.
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 17
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+enable_signup = true
+minimum_password_length = 10
+password_requirements = "lower_upper_letters_digits"
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+
+# Google sign-in: create OAuth credentials in Google Cloud, then export GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET.
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_CLIENT_SECRET)"
+skip_nonce_check = false

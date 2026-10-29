@@ -1,0 +1,34 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_USER: pixel, POSTGRES_PASSWORD: pixel, POSTGRES_DB: postgres }
+        ports: ["54329:5432"]
+        options: >-
+          --health-cmd "pg_isready -U pixel" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_PG_ADMIN_URL: postgres://pixel:pixel@127.0.0.1:54329/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - name: Unit + database tests (overlap protection, concurrency, RLS, Stripe webhooks)
+        run: npm test
+      - name: Production build
+        run: npm run build
+        env: { NEXT_PUBLIC_SITE_URL: "https://example.com" }
+      - name: End-to-end tests
+        run: |
+          npx playwright install --with-deps chromium
+          PW_CHROMIUM="$(node -e "console.log(require('@playwright/test').chromium.executablePath())")" npx playwright test

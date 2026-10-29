@@ -2,7 +2,7 @@
   "name": "pixel-world",
   "version": "0.1.0",
   "private": true,
-  "description": "Pixel World — one planet, one billion pixels, your mark.",
+  "description": "Pixel World \u2014 one planet, one billion pixels, your mark.",
   "engines": {
     "node": ">=20.9.0"
   },
@@ -19,7 +19,9 @@
     "db:local": "bash scripts/local-db.sh start",
     "db:local:stop": "bash scripts/local-db.sh stop",
     "db:migrate": "node scripts/migrate.mjs",
-    "data:world": "node scripts/build-world-data.mjs"
+    "data:world": "node scripts/build-world-data.mjs",
+    "db:setup": "bash scripts/local-db.sh start && node scripts/migrate.mjs --shim",
+    "db:reset": "bash scripts/local-db.sh reset && node scripts/migrate.mjs --shim"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",

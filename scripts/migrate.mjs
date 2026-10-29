@@ -8,9 +8,10 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const url = process.env.DATABASE_URL;
-if (!url) throw new Error("DATABASE_URL is required");
 const useShim = process.argv.includes("--shim");
+// --shim is for plain PostgreSQL only, so it can safely default to the local development database
+const url = process.env.DATABASE_URL ?? (useShim ? "postgres://pixel:pixel@127.0.0.1:54329/pixelworld" : undefined);
+if (!url) throw new Error("DATABASE_URL is required");
 
 const client = new pg.Client({ connectionString: url });
 await client.connect();
