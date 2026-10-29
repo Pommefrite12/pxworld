@@ -39,7 +39,9 @@ export type ServerEnv = z.infer<typeof schema>;
 let cached: ServerEnv | undefined;
 export function env(): ServerEnv {
   if (!cached) {
-    const parsed = schema.safeParse(process.env);
+    // `KEY=` in a .env file yields "": treat empty values as unset
+    const raw = Object.fromEntries(Object.entries(process.env).filter(([, v]) => v !== undefined && v !== ""));
+    const parsed = schema.safeParse(raw);
     if (!parsed.success) {
       throw new Error(`Invalid environment configuration:\n${z.prettifyError(parsed.error)}`);
     }

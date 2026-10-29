@@ -107,3 +107,16 @@ export async function requireStaff(min: "moderator" | "admin" = "moderator"): Pr
   if (!v.staffRole || (min === "admin" && v.staffRole !== "admin")) throw new HttpError(403, "forbidden");
   return v as Viewer & { staffRole: "moderator" | "admin" };
 }
+
+export interface HeaderViewerData { username: string; avatarId: string | null; staffRole: "moderator" | "admin" | null }
+
+/** Viewer data for the site header. Never throws: a broken database must not take the public pages down. */
+export async function getHeaderViewer(): Promise<HeaderViewerData | null> {
+  try {
+    const v = await getViewer();
+    return v ? { username: v.profile.username, avatarId: v.profile.avatar_path ? v.profile.id : null, staffRole: v.staffRole } : null;
+  } catch (e) {
+    console.error("header viewer failed", (e as Error).message);
+    return null;
+  }
+}

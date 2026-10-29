@@ -1,0 +1,766 @@
+{
+  "meta": {
+    "siteName": "Pixel World",
+    "tagline": "Une planète. Un milliard de pixels. Votre empreinte.",
+    "description": "Pixel World est un planisphère collaboratif d'un milliard de pixels. Réservez un morceau de la planète, laissez-y votre empreinte et partagez-la avec le monde."
+  },
+  "nav": {
+    "home": "Pixel World — accueil",
+    "main": "Navigation principale",
+    "discover": "Découvrir",
+    "signIn": "Connexion",
+    "signOut": "Se déconnecter",
+    "myParcels": "Mes parcelles",
+    "orders": "Commandes",
+    "profile": "Profil",
+    "admin": "Administration",
+    "language": "Langue"
+  },
+  "map": {
+    "canvasLabel": "Planisphère interactif d'un milliard de pixels. Glissez pour déplacer, molette ou pincement pour zoomer, flèches pour se déplacer, plus et moins pour zoomer.",
+    "sloganA": "Une planète.",
+    "sloganB": "Un milliard de pixels.",
+    "sloganC": "Votre empreinte.",
+    "pitch": "Une carte collaborative de la Terre, faite d'un milliard de pixels. Réservez-en un morceau et posez votre création sur le monde.",
+    "findYourSpot": "Trouvez votre place",
+    "zoomIn": "Zoom avant",
+    "zoomOut": "Zoom arrière",
+    "recenter": "Afficher le monde entier",
+    "zoomLevel": "Niveau de zoom",
+    "credits": "Crédits",
+    "statsUnavailable": "Les chiffres en direct sont momentanément indisponibles.",
+    "spotTaken": "Désolé, quelqu'un vient de prendre cet emplacement. Choisissez-en un autre."
+  },
+  "stats": {
+    "label": "Statistiques en direct",
+    "sold": "Pixels vendus",
+    "filled": "Part de la carte vendue",
+    "available": "Disponibles",
+    "owners": "Propriétaires",
+    "creations": "Créations",
+    "filledPct": "{pct} % de la planète est réservée"
+  },
+  "search": {
+    "label": "Rechercher un lieu",
+    "placeholder": "Un pays, une ville, x,y ou 48.85, 2.35",
+    "none": "Aucun résultat",
+    "loading": "Chargement…",
+    "country": "Pays",
+    "city": "Ville",
+    "coordinates": "Coordonnées",
+    "pixelPosition": "Position en pixels",
+    "parcelCode": "Code de parcelle"
+  },
+  "parcel": {
+    "label": "Détails de la parcelle",
+    "close": "Fermer",
+    "notFound": "Cette parcelle est introuvable.",
+    "untitled": "Création sans titre",
+    "pending": "Cette parcelle est vendue. Sa création attend la modération.",
+    "hidden": "Le contenu de cette parcelle est actuellement masqué.",
+    "ad": "Publicité",
+    "size": "Taille",
+    "area": "Surface",
+    "published": "Publiée le",
+    "share": "Partager",
+    "copied": "Lien copié",
+    "openPage": "Ouvrir la page",
+    "report": "Signaler",
+    "reportReason": "Pourquoi signalez-vous cette création ?",
+    "reported": "Merci. Nos modérateurs vont examiner ce signalement.",
+    "reportFailed": "Le signalement n'a pas pu être envoyé. Veuillez réessayer.",
+    "signInToReport": "Connectez-vous pour signaler une création.",
+    "reasons": {
+      "copyright": "Atteinte au droit d'auteur",
+      "hate": "Contenu haineux ou harcelant",
+      "sexual": "Contenu sexuel",
+      "scam": "Escroquerie ou fraude",
+      "illegal_ad": "Publicité illégale ou trompeuse",
+      "violence": "Violence ou contenu dangereux",
+      "other": "Autre"
+    },
+    "shareDescription": "Une création de {w}×{h} pixels ({area} pixels) par {owner} sur Pixel World, le planisphère collaboratif d'un milliard de pixels."
+  },
+  "buy": {
+    "title": "Réservez vos pixels",
+    "unitPrice": "{price} le pixel · paiement unique",
+    "close": "Fermer",
+    "presets": "Tailles courantes",
+    "width": "Largeur (px)",
+    "height": "Hauteur (px)",
+    "area": "Surface",
+    "price": "Prix",
+    "taxNote": "Les taxes éventuelles sont calculées au paiement.",
+    "position": "Position (x, y du pixel en haut à gauche)",
+    "nudge": "Déplacer la parcelle d'un pixel",
+    "up": "Haut",
+    "down": "Bas",
+    "left": "Gauche",
+    "right": "Droite",
+    "status": {
+      "place": "Cliquez ou touchez la carte pour poser votre parcelle, puis faites-la glisser pour l'ajuster.",
+      "free": "Cet emplacement est libre.",
+      "blocked": "Cette zone chevauche une parcelle existante.",
+      "reserved": "Quelqu'un réserve actuellement une partie de cette zone. Réessayez dans quelques minutes ou choisissez un autre emplacement.",
+      "out": "La parcelle doit rester dans la carte.",
+      "checking": "Vérification de la disponibilité…",
+      "closed": "Les ventes sont momentanément fermées."
+    },
+    "sizeError": {
+      "not_integer": "Les dimensions doivent être des nombres entiers.",
+      "non_positive": "La largeur et la hauteur doivent valoir au moins 1.",
+      "out_of_bounds": "La parcelle doit rester dans la carte.",
+      "side_too_large": "Un côté ne peut pas dépasser {side} pixels.",
+      "area_too_small": "La surface minimale est de {min} pixels.",
+      "area_too_large": "La surface maximale est de {max} pixels."
+    },
+    "continue": "Créer ma parcelle",
+    "signInToContinue": "Connectez-vous pour continuer",
+    "legal": "Emplacement virtuel sur la carte — aucun droit de propriété immobilière, géographique ou intellectuelle.",
+    "terms": "Conditions",
+    "rules": "Règles de la communauté",
+    "designTitle": "Créez votre parcelle",
+    "reviewTitle": "Vérifier et payer",
+    "steps": "Étapes",
+    "stepDesign": "Création",
+    "stepPay": "Vérifier et payer",
+    "designReady": "C'est bien parti. Vérifiez le résultat, ou prévisualisez-le d'abord sur la carte.",
+    "designEmpty": "Importez une image ou dessinez quelque chose pour continuer.",
+    "previewOnMap": "Prévisualiser sur la carte",
+    "previewing": "Aperçu sur la carte",
+    "toReview": "Vérifier",
+    "backToEditor": "Retour à l'éditeur",
+    "discardConfirm": "Abandonner votre création ?",
+    "finalRender": "Rendu final, pixel pour pixel",
+    "moderationNote": "Votre création est publiée une fois la modération passée. Nous ne pouvons pas garantir que toute image sera acceptée ; si elle est refusée, vous pourrez en soumettre une autre pour la même parcelle.",
+    "fields": {
+      "title": "Titre (facultatif)",
+      "description": "Courte description (facultatif)",
+      "link": "Lien (facultatif)",
+      "linkHint": "https uniquement. Les liens externes affichent leur domaine et sont marqués nofollow.",
+      "commercial": "Cette création est une publicité (elle sera signalée comme telle)."
+    },
+    "summary": {
+      "parcel": "Parcelle",
+      "total": "Total"
+    },
+    "accept": "J'accepte les <terms>conditions</terms> et les <rules>règles de la communauté</rules>, et je comprends que ma création est publiée après modération.",
+    "pay": "Payer {price}",
+    "redirecting": "Redirection vers le paiement sécurisé…",
+    "securePayment": "Paiement sécurisé par Stripe. Votre parcelle est réservée pour vous pendant 35 minutes.",
+    "errors": {
+      "generic": "Une erreur est survenue. Veuillez réessayer.",
+      "network": "Erreur réseau. Vérifiez votre connexion et réessayez.",
+      "px_parcel_unavailable": "Désolé, quelqu'un vient de prendre cet emplacement. Choisissez-en un autre.",
+      "px_invalid_rect": "La taille ou la position de cette parcelle n'est pas valide.",
+      "px_sales_closed": "Les ventes sont momentanément fermées.",
+      "px_account_suspended": "Votre compte est suspendu.",
+      "px_too_many_reservations": "Vous avez déjà plusieurs réservations non payées. Terminez-en ou annulez-en une d'abord.",
+      "image_required": "Ajoutez une image ou un dessin.",
+      "image_too_large": "L'image est trop lourde.",
+      "image_unsupported_type": "Seules les images PNG, JPEG et WebP sont acceptées.",
+      "image_svg_forbidden": "Les fichiers SVG ne sont pas acceptés.",
+      "image_executable_forbidden": "Ce type de fichier n'est pas autorisé.",
+      "image_corrupt": "L'image n'a pas pu être lue.",
+      "image_animated": "Les images animées ne sont pas acceptées.",
+      "image_bad_dimensions": "L'image ne correspond pas à la taille de la parcelle.",
+      "image_too_many_pixels": "L'image est trop grande.",
+      "invalid_link": "Le lien doit être une adresse https valide.",
+      "rate_limited": "Trop de tentatives. Patientez un peu.",
+      "payments_not_configured": "Les paiements ne sont pas encore disponibles."
+    }
+  },
+  "editor": {
+    "canvasLabel": "Éditeur de parcelle, {w} sur {h} pixels",
+    "exactRes": "résolution exacte de votre parcelle",
+    "image": "Image",
+    "upload": "Importer une image",
+    "uploadHint": "PNG, JPEG ou WebP, jusqu'à 10 Mo. Elle est adaptée à votre parcelle.",
+    "fit": {
+      "label": "Ajustement",
+      "cover": "Remplir",
+      "contain": "Contenir",
+      "stretch": "Étirer"
+    },
+    "zoom": "Zoom",
+    "smooth": "Lissage",
+    "removeImage": "Retirer l'image",
+    "tools": {
+      "label": "Outils",
+      "pencil": "Crayon",
+      "eraser": "Gomme",
+      "fill": "Remplir",
+      "move": "Déplacer l'image",
+      "text": "Déplacer le texte"
+    },
+    "palette": "Couleurs",
+    "customColor": "Couleur personnalisée",
+    "brush": "Taille du pinceau",
+    "text": {
+      "label": "Texte",
+      "add": "Ajouter du texte",
+      "placeholder": "Votre message",
+      "size": "Taille",
+      "hint": "Glissez sur le canevas pour positionner le texte.",
+      "remove": "Retirer le texte"
+    },
+    "background": "Arrière-plan",
+    "transparent": "Transparent",
+    "undo": "Annuler",
+    "clear": "Tout effacer",
+    "errors": {
+      "type": "Seules les images PNG, JPEG et WebP sont acceptées.",
+      "size": "Cette image dépasse 10 Mo.",
+      "read": "Cette image n'a pas pu être lue."
+    }
+  },
+  "common": {
+    "loading": "Chargement…",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "back": "Retour"
+  },
+  "footer": {
+    "tagline": "Une carte collaborative de la Terre en un milliard de pixels.",
+    "legal": "Mentions",
+    "discover": "Découvrir",
+    "rules": "Règles de la communauté",
+    "terms": "Conditions",
+    "privacy": "Confidentialité",
+    "credits": "Crédits",
+    "contact": "Contact",
+    "virtual": "Pixel World vend un emplacement virtuel sur une carte numérique. Ce n'est ni un bien immobilier, ni un droit géographique ou de propriété intellectuelle."
+  },
+  "auth": {
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "newPassword": "Nouveau mot de passe",
+    "username": "Pseudonyme (facultatif)",
+    "usernameHint": "3 à 24 caractères : lettres, chiffres, point, tiret, tiret bas.",
+    "passwordHint": "Au moins 10 caractères.",
+    "or": "ou",
+    "google": "Continuer avec Google",
+    "noAccount": "Créer un compte",
+    "haveAccount": "J'ai déjà un compte",
+    "forgotLink": "Mot de passe oublié ?",
+    "backToSignIn": "Retour à la connexion",
+    "checkEmail": "Consultez votre boîte mail : nous vous avons envoyé un lien de confirmation.",
+    "resetSent": "Si un compte existe pour cette adresse, un lien de réinitialisation est en route.",
+    "devBanner": "Mode développement : aucun mot de passe requis. Ce formulaire n'existe pas en production.",
+    "sign-in": {
+      "title": "Connexion",
+      "lead": "Bon retour. Connectez-vous pour acheter et gérer vos parcelles.",
+      "submit": "Se connecter"
+    },
+    "sign-up": {
+      "title": "Créez votre compte",
+      "lead": "Une minute suffit. Ensuite, réservez votre morceau de planète.",
+      "submit": "Créer mon compte"
+    },
+    "forgot": {
+      "title": "Réinitialiser le mot de passe",
+      "lead": "Saisissez votre e-mail, nous vous enverrons un lien.",
+      "submit": "Envoyer le lien"
+    },
+    "reset": {
+      "title": "Choisissez un nouveau mot de passe",
+      "lead": "Choisissez un mot de passe solide que vous n'utilisez nulle part ailleurs.",
+      "submit": "Mettre à jour mon mot de passe"
+    },
+    "errors": {
+      "generic": "Une erreur est survenue. Veuillez réessayer.",
+      "invalidCredentials": "E-mail ou mot de passe incorrect.",
+      "weakPassword": "Votre mot de passe doit contenir au moins 10 caractères.",
+      "exists": "Un compte existe déjà pour cet e-mail.",
+      "notConfigured": "L'authentification n'est pas configurée sur ce serveur."
+    }
+  },
+  "account": {
+    "title": "Votre compte",
+    "memberSince": "Membre depuis le {date}",
+    "parcels": {
+      "title": "Mes parcelles",
+      "summary": "{parcels} parcelles · {pixels} pixels",
+      "buyMore": "Acheter une autre parcelle",
+      "empty": "Vous ne possédez encore aucune parcelle.",
+      "findSpot": "Trouvez votre place",
+      "noImage": "Pas encore d'image",
+      "untitled": "Création sans titre",
+      "status": {
+        "live": "Publiée",
+        "pending": "En attente de modération",
+        "hidden": "Masquée par la modération",
+        "rejected": "Création refusée",
+        "awaiting": "Ajoutez votre création"
+      },
+      "rejectedBecause": "Motif : {reason}",
+      "view": "Page publique",
+      "onMap": "Voir sur la carte",
+      "edit": "Modifier la création"
+    },
+    "pixels": "Pixels possédés",
+    "myParcels": "Mes parcelles",
+    "orders": {
+      "title": "Historique des commandes",
+      "lead": "Chaque achat, avec l'état de son paiement.",
+      "empty": "Aucune commande pour le moment.",
+      "date": "Date",
+      "parcel": "Parcelle",
+      "amount": "Montant",
+      "status": "Statut",
+      "actions": "Actions",
+      "incTax": "dont taxes {tax}",
+      "viewParcel": "Voir la parcelle",
+      "statuses": {
+        "pending": "En attente de paiement",
+        "paid": "Payée",
+        "failed": "Échouée",
+        "expired": "Expirée",
+        "canceled": "Annulée",
+        "refund_required": "Remboursement en cours",
+        "refunded": "Remboursée",
+        "disputed": "Litige en cours",
+        "dispute_lost": "Litige perdu"
+      }
+    },
+    "publicProfile": "Votre profil public :",
+    "form": {
+      "avatar": "Changer l'avatar",
+      "username": "Pseudonyme",
+      "usernameHint": "3 à 24 caractères : lettres, chiffres, point, tiret, tiret bas. Affiché sur vos créations.",
+      "country": "Pays (facultatif)",
+      "bio": "Courte biographie (facultatif)",
+      "save": "Enregistrer",
+      "saved": "Enregistré.",
+      "errors": {
+        "generic": "Impossible d'enregistrer votre profil.",
+        "username_taken": "Ce pseudonyme est déjà pris.",
+        "invalid_username": "Ce pseudonyme n'est pas valide.",
+        "invalid_country": "Ce pays n'est pas valide.",
+        "avatar": "Cette image ne peut pas servir d'avatar.",
+        "rate_limited": "Trop de modifications. Patientez un peu."
+      }
+    },
+    "edit": {
+      "title": "Modifier votre création",
+      "back": "Mes parcelles",
+      "submit": "Soumettre à la modération",
+      "submitted": "Envoyée. Votre nouvelle version remplacera l'actuelle une fois approuvée.",
+      "moderationNote": "Les modifications sont examinées par nos modérateurs. La version actuellement affichée reste visible jusqu'à l'approbation de la nouvelle.",
+      "history": "Versions",
+      "status": {
+        "pending": "En attente de modération",
+        "approved": "Publiée",
+        "rejected": "Refusée",
+        "superseded": "Remplacée",
+        "removed": "Retirée"
+      }
+    }
+  },
+  "checkout": {
+    "confirming": "Confirmation de votre paiement…",
+    "confirmingLead": "Nous attendons la confirmation du prestataire de paiement. Cela prend en général quelques secondes.",
+    "paidTitle": "Elle est à vous !",
+    "paidLead": "Votre parcelle vous est attribuée. Votre création apparaîtra sur la carte dès qu'elle aura été modérée.",
+    "viewParcel": "Voir ma parcelle",
+    "myParcels": "Mes parcelles",
+    "slowTitle": "Confirmation toujours en attente",
+    "slowLead": "Votre paiement peut mettre un peu plus de temps à être confirmé. Vous retrouverez votre parcelle dans votre compte dès que ce sera fait. Si vous avez été débité et que rien ne se passe, contactez-nous avec votre numéro de commande.",
+    "orders": "Mes commandes",
+    "failedTitle": "Le paiement n'a pas abouti",
+    "failedLead": "Votre parcelle a été libérée et vous n'avez pas été débité, ou vous serez remboursé automatiquement.",
+    "backToMap": "Retour à la carte",
+    "cancelTitle": "Paiement annulé",
+    "cancelLead": "Pas de problème : vos pixels ont été libérés. Revenez quand vous voulez."
+  },
+  "discover": {
+    "title": "Découvrir",
+    "lead": "Les créations les plus récentes, les plus grandes parcelles, les favorites de la communauté et celles et ceux qui façonnent la carte.",
+    "latest": "Dernières créations",
+    "large": "Plus grandes parcelles",
+    "largeHint": "Classées par surface en pixels.",
+    "popular": "Les plus aimées ce mois-ci",
+    "popularHint": "Classées par nombre de « j'aime » reçus ces 30 derniers jours.",
+    "editorial": "Sélection éditoriale",
+    "editorialHint": "Choisies à la main par l'équipe Pixel World.",
+    "contributors": "Contributeurs remarquables",
+    "contributorsHint": "Classés par nombre total de pixels possédés.",
+    "empty": "Rien ici pour le moment — soyez le premier à laisser votre empreinte.",
+    "emptyPopular": "Aucune création n'a encore reçu de « j'aime » ce mois-ci.",
+    "emptyEditorial": "Nos premières sélections apparaîtront ici.",
+    "contribution": "{parcels} parcelles · {pixels} px"
+  },
+  "profile": {
+    "since": "membre depuis le {date}",
+    "parcels": "Parcelles",
+    "pixels": "Pixels",
+    "creations": "Créations",
+    "none": "Aucune création publiée pour le moment."
+  },
+  "pages": {
+    "updated": "Dernière mise à jour : {date}",
+    "rules": {
+      "title": "Règles de la communauté",
+      "intro": "Pixel World est un canevas partagé que tout le monde peut voir. Ces règles en font un lieu agréable à visiter. Elles s'appliquent à toute image, tout texte et tout lien publiés sur la carte.",
+      "sections": [
+        {
+          "h": "Ce que vous pouvez publier",
+          "p": [
+            "Dessins, pixel art, photographies, logos, messages, symboles et créations collectives sont les bienvenus, à condition que vous ayez le droit de les utiliser et qu'ils respectent les règles ci-dessous."
+          ]
+        },
+        {
+          "h": "Ce qui est interdit",
+          "ul": [
+            "Les contenus haineux, discriminatoires ou harcelants, y compris les symboles de groupes haineux.",
+            "Les contenus sexuels ou pornographiques, et tout contenu sexuel impliquant des mineurs (signalé aux autorités).",
+            "La violence explicite, les contenus choquants, ou qui encouragent l'automutilation ou des actes dangereux.",
+            "Les escroqueries, l'hameçonnage, les faux jeux-concours, les logiciels malveillants ou les liens vers de tels contenus.",
+            "La publicité illégale ou trompeuse, et la promotion de biens ou services illégaux.",
+            "Les contenus qui portent atteinte au droit d'auteur, aux marques ou à d'autres droits : ne publiez que ce que vous avez créé ou avez le droit d'utiliser.",
+            "Les données personnelles d'autrui, la divulgation d'informations privées, l'usurpation d'identité d'une personne ou d'une organisation.",
+            "Tout ce qui est illégal dans le pays de l'exploitant ou de la personne qui publie."
+          ]
+        },
+        {
+          "h": "Publicité",
+          "p": [
+            "Les annonces commerciales sont autorisées si elles sont légales et véridiques, et elles doivent être identifiables : cochez « Cette création est une publicité » lors de la publication. Les publicités sont signalées comme telles et leurs liens sont marqués comme sponsorisés."
+          ]
+        },
+        {
+          "h": "Liens",
+          "p": [
+            "Les liens doivent commencer par https et mener à un site que vous avez le droit de promouvoir. Ils sont affichés avec leur domaine, s'ouvrent dans un nouvel onglet et sont marqués nofollow. Nous pouvons retirer tout lien menant à une destination nuisible ou trompeuse."
+          ]
+        },
+        {
+          "h": "Modération",
+          "p": [
+            "Chaque nouvelle création, et chaque modification, est examinée avant d'être affichée. Nous ne pouvons pas promettre qu'une image sera acceptée. Si une création est refusée, vous pouvez en soumettre une autre pour la même parcelle.",
+            "Toute personne connectée peut signaler une création avec le bouton « Signaler ». Les signalements sont examinés par des modérateurs, et nous conservons les informations nécessaires à leur traitement (ce qui était affiché, quand, et qui l'a publié) aussi longtemps que la loi l'exige ou le permet."
+          ]
+        },
+        {
+          "h": "Conséquences",
+          "p": [
+            "Selon la gravité, nous pouvons refuser ou masquer une création, retirer une parcelle ou suspendre un compte. Les décisions de modération sont consignées dans un journal interne. Vous pouvez nous contacter pour contester une décision."
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "title": "Conditions d'utilisation",
+      "intro": "Ces conditions régissent votre usage de Pixel World et l'achat de parcelles. Il s'agit d'un projet de travail que le conseil juridique de l'exploitant doit relire et compléter avant le lancement public.",
+      "sections": [
+        {
+          "h": "Qui sommes-nous",
+          "p": [
+            "Pixel World est exploité par {operatorName}, {operatorAddress}. Immatriculation : {operatorRegistration}. N° de TVA : {operatorVat}. Contact : {operatorEmail}."
+          ]
+        },
+        {
+          "h": "Ce que vous achetez",
+          "p": [
+            "La carte est une grille virtuelle de 1 000 000 000 de pixels (50 000 × 20 000). Une parcelle est un rectangle d'au moins 100 pixels. L'achat d'une parcelle vous donne le droit exclusif d'y afficher une création sur ce rectangle de la carte, selon les présentes conditions.",
+            "Une parcelle est un emplacement virtuel. Ce n'est ni un bien immobilier, ni un droit géographique, territorial ou de propriété intellectuelle, et elle ne vous donne aucun droit sur les lieux représentés par la carte."
+          ]
+        },
+        {
+          "h": "Prix et paiement",
+          "p": [
+            "Le prix initial est de 1 € par pixel, calculé automatiquement à partir de la surface et toujours recalculé par nos serveurs. Nous pouvons modifier le prix des ventes futures ; les parcelles déjà achetées ne sont pas concernées. Les paiements sont traités par Stripe ; nous ne voyons ni ne conservons votre numéro de carte.",
+            "Lorsque vous démarrez un achat, les pixels sont réservés pour vous pour une durée limitée. Si vous ne payez pas dans ce délai, la réservation est libérée. Votre parcelle ne vous est attribuée que lorsque le prestataire de paiement nous a confirmé le paiement."
+          ]
+        },
+        {
+          "h": "Taxes et factures",
+          "p": [
+            "Les taxes, le cas échéant, sont calculées et affichées au paiement. [Traitement fiscal, facturation, droit de rétractation et règles de remboursement : à définir par l'exploitant avec son conseil juridique.]"
+          ]
+        },
+        {
+          "h": "Votre création",
+          "p": [
+            "Vous conservez vos droits sur ce que vous publiez et vous garantissez avoir le droit de le publier. Vous accordez à Pixel World une licence mondiale, non exclusive, pour afficher, reproduire et promouvoir votre création sur le site, dans les aperçus de partage et dans les supports présentant le projet.",
+            "Les créations sont publiées après modération et peuvent être refusées, masquées ou retirées si elles enfreignent les règles de la communauté ou la loi."
+          ]
+        },
+        {
+          "h": "Durée d'une parcelle",
+          "p": [
+            "Une parcelle reste attribuée à votre compte tant que le service est exploité et que ces conditions sont respectées. [Durée minimale, préavis en cas d'arrêt du service et règles de cession : à définir par l'exploitant.]"
+          ]
+        },
+        {
+          "h": "Comptes",
+          "p": [
+            "Vous êtes responsable de votre compte. Nous pouvons suspendre un compte qui enfreint ces conditions ou les règles de la communauté."
+          ]
+        },
+        {
+          "h": "Responsabilité",
+          "p": [
+            "Le service est fourni en l'état. [Limitation de responsabilité et droit applicable : à définir par l'exploitant avec son conseil juridique.]"
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Politique de confidentialité",
+      "intro": "Nous collectons le strict minimum. Il s'agit d'un projet de travail que le conseil juridique de l'exploitant doit relire avant le lancement.",
+      "sections": [
+        {
+          "h": "Responsable du traitement",
+          "p": [
+            "{operatorName}, {operatorAddress} — contact : {operatorEmail}."
+          ]
+        },
+        {
+          "h": "Ce que nous collectons",
+          "ul": [
+            "Compte : adresse e-mail, pseudonyme, pays, biographie et avatar facultatifs.",
+            "Achats : détails de commande, montants, pays de facturation et, s'ils sont fournis, identifiants fiscaux, tels que transmis par Stripe. Nous ne recevons jamais votre numéro de carte.",
+            "Les créations que vous publiez, avec leur titre, leur description et leur lien.",
+            "Signalements : lorsque vous signalez une création, nous conservons le signalement et une copie de ce qui était affiché. Une empreinte salée de votre adresse IP sert à prévenir les abus ; nous ne conservons pas l'adresse elle-même.",
+            "Technique : le minimum nécessaire pour exploiter et sécuriser le service (journaux d'erreurs, compteurs de limitation de débit)."
+          ]
+        },
+        {
+          "h": "Pourquoi",
+          "p": [
+            "Pour fournir le service demandé (compte, achat, publication), prévenir les abus et la fraude, modérer les contenus et respecter nos obligations légales (comptabilité, traitement des signalements)."
+          ]
+        },
+        {
+          "h": "Qui traite vos données",
+          "p": [
+            "{operatorHosts}. Chacun agit comme sous-traitant ou responsable de traitement indépendant dans le cadre de son service."
+          ]
+        },
+        {
+          "h": "Cookies",
+          "p": [
+            "Nous n'utilisons que des cookies strictement nécessaires : le cookie de session qui vous garde connecté et votre choix de langue. Nous n'utilisons aucun cookie publicitaire ou de suivi."
+          ]
+        },
+        {
+          "h": "Vos droits",
+          "p": [
+            "Vous pouvez demander l'accès, la rectification, l'export ou la suppression de vos données, et vous opposer à certains traitements, en écrivant à {operatorEmail}. Les pièces comptables et les preuves de modération peuvent devoir être conservées pendant la durée exigée par la loi. [Durées de conservation : à définir par l'exploitant.]"
+          ]
+        }
+      ]
+    },
+    "credits": {
+      "title": "Crédits et licences",
+      "intro": "Pixel World repose sur des données ouvertes et des logiciels libres. Merci à toutes celles et ceux qui les ont rendus possibles.",
+      "sections": [
+        {
+          "h": "Données cartographiques",
+          "ul": [
+            "Contours des terres et des pays : Natural Earth (domaine public), distribués via le paquet world-atlas (ISC).",
+            "Noms et positions des villes : GeoNames (geonames.org), sous licence Creative Commons Attribution 4.0, distribués via le paquet all-the-cities (MIT).",
+            "Noms des pays : i18n-iso-countries (MIT)."
+          ]
+        },
+        {
+          "h": "Projection",
+          "p": [
+            "La carte utilise une projection équirectangulaire de 180° O à 180° E et de 84° N à 60° S, sur une grille de 50 000 × 20 000 pixels carrés de 0,0072° (environ 800 m à l'équateur)."
+          ]
+        },
+        {
+          "h": "Polices",
+          "p": [
+            "Bricolage Grotesque, Instrument Sans et Pixelify Sans, toutes sous licence SIL Open Font License 1.1."
+          ]
+        },
+        {
+          "h": "Logiciels",
+          "p": [
+            "Construit avec Next.js, React, Tailwind CSS, PostgreSQL, Supabase, Stripe, sharp et de nombreux autres projets libres."
+          ]
+        }
+      ]
+    },
+    "contact": {
+      "title": "Contact",
+      "intro": "Une question, une demande d'ayant droit, un signalement qui nécessite un humain, une décision que vous souhaitez contester ? Écrivez-nous.",
+      "email": "E-mail",
+      "reportHint": "Pour signaler une création, utilisez le bouton « Signaler » sur sa fiche : il enregistre exactement ce qui était affiché."
+    }
+  },
+  "admin": {
+    "nav": {
+      "dashboard": "Tableau de bord",
+      "moderation": "File de modération",
+      "reports": "Signalements",
+      "parcels": "Parcelles",
+      "users": "Utilisateurs",
+      "orders": "Commandes et paiements",
+      "settings": "Paramètres",
+      "audit": "Journal d'audit",
+      "role": "Connecté en tant que {role}"
+    },
+    "common": {
+      "reason": "Motif",
+      "cancel": "Annuler"
+    },
+    "dashboard": {
+      "title": "Tableau de bord",
+      "queues": "Files d'attente",
+      "toModerate": "Créations à modérer",
+      "openReports": "Signalements ouverts",
+      "refundsDue": "Remboursements à traiter",
+      "heldReservations": "Réservations en cours",
+      "figures": "Chiffres clés",
+      "pixelsSold": "Pixels vendus",
+      "fill": "Carte remplie",
+      "parcels": "Parcelles",
+      "owners": "Propriétaires",
+      "creations": "Créations publiées",
+      "users": "Utilisateurs",
+      "suspended": "Comptes suspendus",
+      "refunded": "Remboursé",
+      "revenue": "Chiffre d'affaires",
+      "revenueHint": "Hors taxes, pour les commandes payées (litiges en cours inclus tant qu'ils ne sont pas perdus).",
+      "revAll": "Depuis le début",
+      "rev30": "30 derniers jours",
+      "rev7": "7 derniers jours",
+      "tax": "Taxes collectées",
+      "daily": "Pixels vendus par jour (30 jours)",
+      "ordersByStatus": "Commandes par statut"
+    },
+    "moderation": {
+      "title": "File de modération",
+      "lead": "Nouvelles créations et modifications en attente de relecture. Approuver publie la création sur la carte.",
+      "empty": "La file est vide. Rien à examiner.",
+      "untitled": "Sans titre",
+      "ad": "Publicité",
+      "edit": "Modification d'une parcelle publiée",
+      "by": "par",
+      "approve": "Approuver",
+      "reject": "Refuser"
+    },
+    "reports": {
+      "title": "Signalements",
+      "lead": "Signalements envoyés par les utilisateurs. Les preuves sont figées au moment du signalement.",
+      "filter": "Filtrer par statut",
+      "status": {
+        "open": "Ouverts",
+        "actioned": "Traités",
+        "dismissed": "Classés",
+        "all": "Tous"
+      },
+      "empty": "Aucun signalement ici.",
+      "reasons": {
+        "copyright": "Droit d'auteur",
+        "hate": "Haine / harcèlement",
+        "sexual": "Contenu sexuel",
+        "scam": "Escroquerie",
+        "illegal_ad": "Publicité illégale",
+        "violence": "Violence",
+        "other": "Autre"
+      },
+      "hidden": "Contenu masqué",
+      "reportsOnParcel": "{n} signalements ouverts sur cette parcelle",
+      "parcelOf": "Parcelle",
+      "owner": "propriétaire",
+      "reporter": "auteur du signalement",
+      "evidence": "Preuves au moment du signalement",
+      "capturedAt": "Capturé",
+      "evTitle": "Titre",
+      "link": "Lien",
+      "note": "Note de résolution",
+      "hide": "Masquer le contenu",
+      "markActioned": "Marquer comme traité",
+      "dismiss": "Classer sans suite",
+      "suspendOwner": "Suspendre le propriétaire",
+      "confirmSuspend": "Suspendre ce compte ?"
+    },
+    "parcels": {
+      "title": "Parcelles",
+      "search": "Code, propriétaire ou titre",
+      "searchBtn": "Rechercher",
+      "code": "Code",
+      "owner": "Propriétaire",
+      "size": "Taille",
+      "titleCol": "Titre",
+      "status": "Statut",
+      "actions": "Actions",
+      "hidden": "masquée",
+      "hide": "Masquer",
+      "unhide": "Réafficher",
+      "feature": "Mettre en avant",
+      "unfeature": "Retirer de la sélection",
+      "revoke": "Révoquer",
+      "confirmRevoke": "Révoquer cette parcelle ? Les pixels redeviennent disponibles. Remboursez la commande séparément si nécessaire.",
+      "empty": "Aucune parcelle."
+    },
+    "users": {
+      "title": "Utilisateurs",
+      "rolesNote": "Les rôles du personnel sont attribués en base de données (table admin_roles) et ne peuvent jamais être modifiés depuis le navigateur.",
+      "search": "Pseudonyme ou e-mail",
+      "searchBtn": "Rechercher",
+      "user": "Utilisateur",
+      "email": "E-mail",
+      "holdings": "Possessions",
+      "joined": "Inscrit le",
+      "status": "Statut",
+      "actions": "Actions",
+      "suspended": "suspendu",
+      "active": "actif",
+      "suspend": "Suspendre",
+      "unsuspend": "Réactiver",
+      "confirmSuspend": "Suspendre ce compte ? L'utilisateur ne pourra plus acheter ni modifier."
+    },
+    "orders": {
+      "title": "Commandes et paiements",
+      "lead": "Les commandes à rembourser sont mises en évidence. Les remboursements sont exécutés chez Stripe ; le webhook vérifié met ensuite la commande à jour.",
+      "filter": "Filtrer par statut",
+      "order": "Commande",
+      "buyer": "Acheteur",
+      "parcel": "Parcelle",
+      "amount": "Montant",
+      "status": "Statut",
+      "payment": "Paiement",
+      "actions": "Actions",
+      "refund": "Rembourser",
+      "confirmRefund": "Rembourser intégralement cette commande ? La parcelle sera révoquée.",
+      "empty": "Aucune commande."
+    },
+    "settings": {
+      "title": "Paramètres",
+      "lead": "Les modifications s'appliquent aux commandes futures uniquement. Les commandes existantes conservent leur prix.",
+      "price": "Prix par pixel (en centimes)",
+      "priceHint": "Actuellement {price} le pixel.",
+      "minArea": "Surface minimale (pixels)",
+      "maxArea": "Surface maximale (pixels)",
+      "ttl": "Durée de réservation (minutes)",
+      "ttlHint": "Au moins 32 : une session Stripe Checkout ne peut pas expirer avant 30 minutes.",
+      "maxHolds": "Réservations impayées par utilisateur",
+      "salesOpen": "Les ventes sont ouvertes",
+      "save": "Enregistrer",
+      "saved": "Paramètres enregistrés et journalisés.",
+      "adminOnly": "Seuls les administrateurs peuvent modifier les paramètres."
+    },
+    "audit": {
+      "title": "Journal d'audit",
+      "lead": "Historique en ajout seul des événements d'administration et de paiement.",
+      "when": "Quand",
+      "who": "Qui",
+      "action": "Action",
+      "target": "Cible",
+      "details": "Détails"
+    }
+  },
+  "errors": {
+    "notFoundTitle": "Cet endroit n'est pas sur la carte",
+    "notFoundLead": "La page recherchée n'existe pas, ou la parcelle n'est plus sur la carte.",
+    "backToMap": "Retour à la carte",
+    "title": "Une erreur est survenue",
+    "lead": "Une erreur inattendue s'est produite. Veuillez réessayer.",
+    "retry": "Réessayer"
+  }
+}

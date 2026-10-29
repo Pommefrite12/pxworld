@@ -25,6 +25,30 @@ const Q = 4; // quarter-pixel precision
 
 const readTopo = (n) => JSON.parse(fs.readFileSync(require.resolve(`world-atlas/${n}.json`), "utf8"));
 
+/**
+ * Planar maps must not draw the 360° jump of a ring that crosses the antimeridian (Russia/Chukotka, Fiji, Antarctica…).
+ * We "unwrap" the longitudes so the ring is continuous, then emit a copy shifted by ±360° so the part that spilled past
+ * the map edge also appears on the opposite side. The renderer clips to the world rectangle.
+ */
+function unwrap(coords) {
+  const out = [];
+  let prev = null;
+  for (const [lon, lat] of coords) {
+    let l = lon;
+    if (prev !== null) {
+      while (l - prev > 180) l -= 360;
+      while (l - prev < -180) l += 360;
+    }
+    out.push([l, lat]);
+    prev = l;
+  }
+  const lons = out.map((c) => c[0]);
+  const copies = [out];
+  if (Math.max(...lons) > LON_MAX) copies.push(out.map(([l, la]) => [l - 360, la]));
+  if (Math.min(...lons) < LON_MIN) copies.push(out.map(([l, la]) => [l + 360, la]));
+  return copies;
+}
+
 /** ring → delta-encoded integers [x0*Q, y0*Q, dx, dy, …]; drops points that collapse onto each other. */
 function encodeRing(coords) {
   const flat = [];
@@ -47,7 +71,16 @@ function landFile(name) {
   for (const f of fc.features ?? [fc]) {
     const g = f.geometry;
     const list = g.type === "Polygon" ? [g.coordinates] : g.coordinates;
-    for (const poly of list) polys.push(poly.map(encodeRing).filter((r) => r.length >= 8));
+    for (const poly of list) {
+      // all rings of a polygon (outer + holes) are unwrapped consistently, copy by copy
+      const ringCopies = poly.map(unwrap);
+      const copies = Math.max(...ringCopies.map((c) => c.length));
+      for (let k = 0; k < copies; k++) {
+        const rings = ringCopies.map((c) => c[k] ?? null).filter(Boolean);
+        const enc = rings.map(encodeRing).filter((r) => r.length >= 8);
+        if (enc.length) polys.push(enc);
+      }
+    }
   }
   return { q: Q, polygons: polys };
 }
@@ -55,7 +88,7 @@ function landFile(name) {
 function linesFile(name) {
   const topo = readTopo(name);
   const m = mesh(topo, topo.objects.countries, (a, b) => a !== b); // interior borders only
-  return { q: Q, lines: m.coordinates.map(encodeRing).filter((r) => r.length >= 4) };
+  return { q: Q, lines: m.coordinates.flatMap((l) => unwrap(l).map(encodeRing)).filter((r) => r.length >= 4) };
 }
 
 const ringArea = (ring) => {

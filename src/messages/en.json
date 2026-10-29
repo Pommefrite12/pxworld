@@ -1,0 +1,766 @@
+{
+  "meta": {
+    "siteName": "Pixel World",
+    "tagline": "One planet. One billion pixels. Your mark.",
+    "description": "Pixel World is a collaborative world map of one billion pixels. Claim a piece of the planet, draw your mark on it and share it with the world."
+  },
+  "nav": {
+    "home": "Pixel World — home",
+    "main": "Main navigation",
+    "discover": "Discover",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "myParcels": "My parcels",
+    "orders": "Orders",
+    "profile": "Profile",
+    "admin": "Admin",
+    "language": "Language"
+  },
+  "map": {
+    "canvasLabel": "Interactive world map of one billion pixels. Drag to move, scroll or pinch to zoom, arrow keys to pan, plus and minus to zoom.",
+    "sloganA": "One planet.",
+    "sloganB": "One billion pixels.",
+    "sloganC": "Your mark.",
+    "pitch": "A collaborative map of the Earth, made of one billion pixels. Claim a piece of it and put your creation on the world.",
+    "findYourSpot": "Find your spot",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "recenter": "Show the whole world",
+    "zoomLevel": "Zoom level",
+    "credits": "Credits",
+    "statsUnavailable": "Live figures are temporarily unavailable.",
+    "spotTaken": "Sorry, someone just took this spot. Pick another one."
+  },
+  "stats": {
+    "label": "Live statistics",
+    "sold": "Pixels sold",
+    "filled": "Share of the map sold",
+    "available": "Available",
+    "owners": "Owners",
+    "creations": "Creations",
+    "filledPct": "{pct}% of the planet is claimed"
+  },
+  "search": {
+    "label": "Search a place",
+    "placeholder": "Search a country, a city, x,y or 48.85, 2.35",
+    "none": "No result",
+    "loading": "Loading…",
+    "country": "Country",
+    "city": "City",
+    "coordinates": "Coordinates",
+    "pixelPosition": "Pixel position",
+    "parcelCode": "Parcel code"
+  },
+  "parcel": {
+    "label": "Parcel details",
+    "close": "Close",
+    "notFound": "This parcel could not be found.",
+    "untitled": "Untitled creation",
+    "pending": "This parcel is sold. Its creation is waiting for moderation.",
+    "hidden": "The content of this parcel is currently hidden.",
+    "ad": "Advertisement",
+    "size": "Size",
+    "area": "Area",
+    "published": "Published",
+    "share": "Share",
+    "copied": "Link copied",
+    "openPage": "Open page",
+    "report": "Report",
+    "reportReason": "Why are you reporting this creation?",
+    "reported": "Thank you. Our moderators will review this report.",
+    "reportFailed": "The report could not be sent. Please try again.",
+    "signInToReport": "Please sign in to report a creation.",
+    "reasons": {
+      "copyright": "Copyright infringement",
+      "hate": "Hateful or harassing content",
+      "sexual": "Sexual content",
+      "scam": "Scam or fraud",
+      "illegal_ad": "Illegal or misleading advertising",
+      "violence": "Violence or dangerous content",
+      "other": "Something else"
+    },
+    "shareDescription": "A {w}×{h} pixel creation ({area} pixels) by {owner} on Pixel World, the collaborative world map of one billion pixels."
+  },
+  "buy": {
+    "title": "Claim your pixels",
+    "unitPrice": "{price} per pixel · one-time payment",
+    "close": "Close",
+    "presets": "Popular sizes",
+    "width": "Width (px)",
+    "height": "Height (px)",
+    "area": "Surface",
+    "price": "Price",
+    "taxNote": "Taxes, if any, are calculated at checkout.",
+    "position": "Position (x, y of top-left pixel)",
+    "nudge": "Move the parcel by one pixel",
+    "up": "Up",
+    "down": "Down",
+    "left": "Left",
+    "right": "Right",
+    "status": {
+      "place": "Click or tap the map to place your parcel, then drag it to adjust.",
+      "free": "This spot is free.",
+      "blocked": "This area overlaps an existing parcel.",
+      "reserved": "Someone is currently reserving part of this area. Try again in a few minutes or pick another spot.",
+      "out": "The parcel must stay inside the map.",
+      "checking": "Checking availability…",
+      "closed": "Sales are temporarily closed."
+    },
+    "sizeError": {
+      "not_integer": "Sizes must be whole numbers.",
+      "non_positive": "Width and height must be at least 1.",
+      "out_of_bounds": "The parcel must stay inside the map.",
+      "side_too_large": "A side cannot exceed {side} pixels.",
+      "area_too_small": "The minimum surface is {min} pixels.",
+      "area_too_large": "The maximum surface is {max} pixels."
+    },
+    "continue": "Design my parcel",
+    "signInToContinue": "Sign in to continue",
+    "legal": "Virtual placement on the map — not real-estate, geographic or intellectual property.",
+    "terms": "Terms",
+    "rules": "Community rules",
+    "designTitle": "Design your parcel",
+    "reviewTitle": "Review and pay",
+    "steps": "Steps",
+    "stepDesign": "Design",
+    "stepPay": "Review & pay",
+    "designReady": "Looking good. Review it, or preview it on the map first.",
+    "designEmpty": "Upload an image or draw something to continue.",
+    "previewOnMap": "Preview on the map",
+    "previewing": "Previewing on the map",
+    "toReview": "Review",
+    "backToEditor": "Back to the editor",
+    "discardConfirm": "Discard your design?",
+    "finalRender": "Final render, pixel for pixel",
+    "moderationNote": "Your creation is published once it passes moderation. We cannot promise that every image is accepted; if it is refused you can submit another one for the same parcel.",
+    "fields": {
+      "title": "Title (optional)",
+      "description": "Short description (optional)",
+      "link": "Link (optional)",
+      "linkHint": "https only. External links are shown with their domain and marked nofollow.",
+      "commercial": "This creation is an advertisement (it will be labelled as such)."
+    },
+    "summary": {
+      "parcel": "Parcel",
+      "total": "Total"
+    },
+    "accept": "I accept the <terms>terms</terms> and the <rules>community rules</rules>, and I understand that my creation is published after moderation.",
+    "pay": "Pay {price}",
+    "redirecting": "Redirecting to secure payment…",
+    "securePayment": "Secure payment by Stripe. Your parcel is held for you for 35 minutes.",
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "network": "Network error. Please check your connection and try again.",
+      "px_parcel_unavailable": "Sorry, someone just took this spot. Pick another one.",
+      "px_invalid_rect": "This parcel size or position is not valid.",
+      "px_sales_closed": "Sales are temporarily closed.",
+      "px_account_suspended": "Your account is suspended.",
+      "px_too_many_reservations": "You already have several unpaid reservations. Finish or cancel one first.",
+      "image_required": "Please add an image or a drawing.",
+      "image_too_large": "The image is too heavy.",
+      "image_unsupported_type": "Only PNG, JPEG and WebP images are accepted.",
+      "image_svg_forbidden": "SVG files are not accepted.",
+      "image_executable_forbidden": "This file type is not allowed.",
+      "image_corrupt": "The image could not be read.",
+      "image_animated": "Animated images are not accepted.",
+      "image_bad_dimensions": "The image does not match the parcel size.",
+      "image_too_many_pixels": "The image is too large.",
+      "invalid_link": "The link must be a valid https address.",
+      "rate_limited": "Too many attempts. Please wait a little.",
+      "payments_not_configured": "Payments are not available yet."
+    }
+  },
+  "editor": {
+    "canvasLabel": "Parcel editor, {w} by {h} pixels",
+    "exactRes": "exact resolution of your parcel",
+    "image": "Image",
+    "upload": "Upload an image",
+    "uploadHint": "PNG, JPEG or WebP, up to 10 MB. It is resized to your parcel.",
+    "fit": {
+      "label": "Fit",
+      "cover": "Fill",
+      "contain": "Fit",
+      "stretch": "Stretch"
+    },
+    "zoom": "Zoom",
+    "smooth": "Smooth scaling",
+    "removeImage": "Remove the image",
+    "tools": {
+      "label": "Tools",
+      "pencil": "Pencil",
+      "eraser": "Eraser",
+      "fill": "Fill",
+      "move": "Move image",
+      "text": "Move text"
+    },
+    "palette": "Colours",
+    "customColor": "Custom colour",
+    "brush": "Brush size",
+    "text": {
+      "label": "Text",
+      "add": "Add text",
+      "placeholder": "Your message",
+      "size": "Size",
+      "hint": "Drag on the canvas to position the text.",
+      "remove": "Remove the text"
+    },
+    "background": "Background",
+    "transparent": "Transparent",
+    "undo": "Undo",
+    "clear": "Clear all",
+    "errors": {
+      "type": "Only PNG, JPEG and WebP images are accepted.",
+      "size": "This image is larger than 10 MB.",
+      "read": "This image could not be read."
+    }
+  },
+  "common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back"
+  },
+  "footer": {
+    "tagline": "A collaborative map of the Earth in one billion pixels.",
+    "legal": "Legal",
+    "discover": "Discover",
+    "rules": "Community rules",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "credits": "Credits",
+    "contact": "Contact",
+    "virtual": "Pixel World sells virtual placement on a digital map. It is not real-estate, geographic or intellectual property."
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "newPassword": "New password",
+    "username": "Username (optional)",
+    "usernameHint": "3–24 characters: letters, numbers, dot, dash, underscore.",
+    "passwordHint": "At least 10 characters.",
+    "or": "or",
+    "google": "Continue with Google",
+    "noAccount": "Create an account",
+    "haveAccount": "I already have an account",
+    "forgotLink": "Forgot your password?",
+    "backToSignIn": "Back to sign in",
+    "checkEmail": "Check your inbox: we sent you a confirmation link.",
+    "resetSent": "If an account exists for this address, a reset link is on its way.",
+    "devBanner": "Development mode: no password needed. This form does not exist in production.",
+    "sign-in": {
+      "title": "Sign in",
+      "lead": "Welcome back. Sign in to buy and manage your parcels.",
+      "submit": "Sign in"
+    },
+    "sign-up": {
+      "title": "Create your account",
+      "lead": "It takes a minute. Then claim your piece of the planet.",
+      "submit": "Create my account"
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "lead": "Enter your email and we will send you a link.",
+      "submit": "Send the link"
+    },
+    "reset": {
+      "title": "Choose a new password",
+      "lead": "Pick a strong password you do not use anywhere else.",
+      "submit": "Update my password"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "invalidCredentials": "Incorrect email or password.",
+      "weakPassword": "Your password must have at least 10 characters.",
+      "exists": "An account already exists for this email.",
+      "notConfigured": "Authentication is not configured on this server."
+    }
+  },
+  "account": {
+    "title": "Your account",
+    "memberSince": "Member since {date}",
+    "parcels": {
+      "title": "My parcels",
+      "summary": "{parcels} parcels · {pixels} pixels",
+      "buyMore": "Buy another parcel",
+      "empty": "You do not own any parcel yet.",
+      "findSpot": "Find your spot",
+      "noImage": "No image yet",
+      "untitled": "Untitled creation",
+      "status": {
+        "live": "Published",
+        "pending": "Awaiting moderation",
+        "hidden": "Hidden by moderation",
+        "rejected": "Creation refused",
+        "awaiting": "Add your creation"
+      },
+      "rejectedBecause": "Reason: {reason}",
+      "view": "Public page",
+      "onMap": "Show on map",
+      "edit": "Edit creation"
+    },
+    "pixels": "Pixels owned",
+    "myParcels": "My parcels",
+    "orders": {
+      "title": "Order history",
+      "lead": "Every purchase, with its payment status.",
+      "empty": "No order yet.",
+      "date": "Date",
+      "parcel": "Parcel",
+      "amount": "Amount",
+      "status": "Status",
+      "actions": "Actions",
+      "incTax": "of which tax {tax}",
+      "viewParcel": "View parcel",
+      "statuses": {
+        "pending": "Awaiting payment",
+        "paid": "Paid",
+        "failed": "Failed",
+        "expired": "Expired",
+        "canceled": "Canceled",
+        "refund_required": "Refund in progress",
+        "refunded": "Refunded",
+        "disputed": "Disputed",
+        "dispute_lost": "Dispute lost"
+      }
+    },
+    "publicProfile": "Your public profile:",
+    "form": {
+      "avatar": "Change avatar",
+      "username": "Username",
+      "usernameHint": "3–24 characters: letters, numbers, dot, dash, underscore. Shown on your creations.",
+      "country": "Country (optional)",
+      "bio": "Short bio (optional)",
+      "save": "Save",
+      "saved": "Saved.",
+      "errors": {
+        "generic": "Could not save your profile.",
+        "username_taken": "This username is already taken.",
+        "invalid_username": "This username is not valid.",
+        "invalid_country": "This country is not valid.",
+        "avatar": "This image could not be used as an avatar.",
+        "rate_limited": "Too many changes. Please wait a little."
+      }
+    },
+    "edit": {
+      "title": "Edit your creation",
+      "back": "My parcels",
+      "submit": "Submit for moderation",
+      "submitted": "Submitted. Your new version will replace the current one once approved.",
+      "moderationNote": "Changes are reviewed by our moderators. The version currently displayed stays visible until the new one is approved.",
+      "history": "Versions",
+      "status": {
+        "pending": "Awaiting moderation",
+        "approved": "Published",
+        "rejected": "Refused",
+        "superseded": "Replaced",
+        "removed": "Removed"
+      }
+    }
+  },
+  "checkout": {
+    "confirming": "Confirming your payment…",
+    "confirmingLead": "We are waiting for the payment provider to confirm. This usually takes a few seconds.",
+    "paidTitle": "It's yours!",
+    "paidLead": "Your parcel is attributed. Your creation will appear on the map as soon as it has been moderated.",
+    "viewParcel": "View my parcel",
+    "myParcels": "My parcels",
+    "slowTitle": "Still waiting for confirmation",
+    "slowLead": "Your payment may take a little longer to be confirmed. You will find your parcel in your account once it is. If you were charged and nothing happens, contact us with your order number.",
+    "orders": "My orders",
+    "failedTitle": "The payment did not go through",
+    "failedLead": "Your parcel was released and you have not been charged, or you will be refunded automatically.",
+    "backToMap": "Back to the map",
+    "cancelTitle": "Payment canceled",
+    "cancelLead": "No problem — we released your pixels. You can come back whenever you are ready."
+  },
+  "discover": {
+    "title": "Discover",
+    "lead": "The newest creations, the biggest parcels, the community favourites and the people shaping the map.",
+    "latest": "Latest creations",
+    "large": "Biggest parcels",
+    "largeHint": "Ranked by surface in pixels.",
+    "popular": "Most liked this month",
+    "popularHint": "Ranked by the number of likes received in the last 30 days.",
+    "editorial": "Editorial selection",
+    "editorialHint": "Hand-picked by the Pixel World team.",
+    "contributors": "Top contributors",
+    "contributorsHint": "Ranked by total pixels owned.",
+    "empty": "Nothing here yet — be the first to leave your mark.",
+    "emptyPopular": "No creation has been liked this month yet.",
+    "emptyEditorial": "Our first picks will appear here.",
+    "contribution": "{parcels} parcels · {pixels} px"
+  },
+  "profile": {
+    "since": "member since {date}",
+    "parcels": "Parcels",
+    "pixels": "Pixels",
+    "creations": "Creations",
+    "none": "No published creation yet."
+  },
+  "pages": {
+    "updated": "Last updated: {date}",
+    "rules": {
+      "title": "Community rules",
+      "intro": "Pixel World is a shared canvas that everybody can see. These rules keep it a place people enjoy visiting. They apply to every image, text and link published on the map.",
+      "sections": [
+        {
+          "h": "What you can publish",
+          "p": [
+            "Drawings, pixel art, photographs, logos, messages, symbols and collective creations are welcome, as long as you have the right to use them and they respect the rules below."
+          ]
+        },
+        {
+          "h": "What is not allowed",
+          "ul": [
+            "Hateful, discriminatory or harassing content, including symbols of hate groups.",
+            "Sexual or pornographic content, and any sexual content involving minors (reported to the authorities).",
+            "Graphic violence, gore, or content that encourages self-harm or dangerous acts.",
+            "Scams, phishing, fake giveaways, malware or links to such content.",
+            "Illegal or misleading advertising, and promotion of illegal goods or services.",
+            "Content that infringes copyright, trademarks or other rights: only publish what you created or are allowed to use.",
+            "Personal data about other people, doxxing, or impersonation of a person or organisation.",
+            "Anything that is illegal in the country of the operator or of the person who published it."
+          ]
+        },
+        {
+          "h": "Advertising",
+          "p": [
+            "Commercial announcements are allowed when they are legal and truthful, and they must be identifiable: tick “This creation is an advertisement” when you publish. Advertisements are labelled as such, and their links are marked as sponsored."
+          ]
+        },
+        {
+          "h": "Links",
+          "p": [
+            "Links must start with https and lead to a site you are allowed to promote. They are shown with their domain, open in a new tab and are marked nofollow. We may remove any link that leads to a harmful or deceptive destination."
+          ]
+        },
+        {
+          "h": "Moderation",
+          "p": [
+            "Every new creation, and every modification, is reviewed before it is displayed. We cannot promise that an image will be accepted. If a creation is refused you can submit another one for the same parcel.",
+            "Anyone signed in can report a creation with the “Report” button. Reports are reviewed by moderators, and we keep the information needed to handle a report (what was displayed, when, and who published it) for as long as the law requires or permits."
+          ]
+        },
+        {
+          "h": "Consequences",
+          "p": [
+            "Depending on the seriousness, we may refuse or hide a creation, remove a parcel, or suspend an account. Moderation decisions are recorded in an internal log. You can contact us to contest a decision."
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms of service",
+      "intro": "These terms govern your use of Pixel World and the purchase of parcels. They are a working draft that must be reviewed and completed by the operator's legal counsel before the public launch.",
+      "sections": [
+        {
+          "h": "Who we are",
+          "p": [
+            "Pixel World is operated by {operatorName}, {operatorAddress}. Registration: {operatorRegistration}. VAT number: {operatorVat}. Contact: {operatorEmail}."
+          ]
+        },
+        {
+          "h": "What you buy",
+          "p": [
+            "The map is a virtual grid of 1,000,000,000 pixels (50,000 × 20,000). A parcel is a rectangle of at least 100 pixels. Buying a parcel gives you the exclusive right to display one creation on that rectangle of the map, according to these terms.",
+            "A parcel is a virtual placement. It is not real-estate, nor a geographic, territorial or intellectual property right, and it gives you no right over the places the map depicts."
+          ]
+        },
+        {
+          "h": "Price and payment",
+          "p": [
+            "The initial price is €1 per pixel, calculated automatically from the surface and always recomputed on our servers. We may change the price for future sales; parcels already bought are not affected. Payments are processed by Stripe; we never see or store your card number.",
+            "When you start a purchase the pixels are reserved for you for a limited time. If you do not pay within that time the reservation is released. Your parcel is attributed only when the payment provider has confirmed the payment to us."
+          ]
+        },
+        {
+          "h": "Taxes and invoices",
+          "p": [
+            "Taxes, where applicable, are calculated and shown at checkout. [Tax treatment, invoicing details and consumer withdrawal or refund rules: to be defined by the operator with legal counsel.]"
+          ]
+        },
+        {
+          "h": "Your creation",
+          "p": [
+            "You keep your rights on what you publish and you guarantee that you are allowed to publish it. You grant Pixel World a worldwide, non-exclusive licence to display, reproduce and promote your creation on the site, in share previews and in material that presents the project.",
+            "Creations are published after moderation and may be refused, hidden or removed if they break the community rules or the law."
+          ]
+        },
+        {
+          "h": "How long a parcel lasts",
+          "p": [
+            "A parcel stays attributed to you for as long as the service operates and these terms are respected. [Minimum duration, notice period if the service ends, and transfer rules: to be defined by the operator.]"
+          ]
+        },
+        {
+          "h": "Accounts",
+          "p": [
+            "You are responsible for your account. We may suspend an account that breaks these terms or the community rules."
+          ]
+        },
+        {
+          "h": "Liability",
+          "p": [
+            "The service is provided as is. [Limitation of liability and governing law: to be defined by the operator with legal counsel.]"
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "intro": "We collect as little as possible. This is a working draft that must be reviewed by the operator's legal counsel before launch.",
+      "sections": [
+        {
+          "h": "Who is responsible",
+          "p": [
+            "{operatorName}, {operatorAddress} — contact: {operatorEmail}."
+          ]
+        },
+        {
+          "h": "What we collect",
+          "ul": [
+            "Account: email address, username, optional country, bio and avatar.",
+            "Purchases: order details, amounts, billing country and, where provided, tax identifiers, as reported by Stripe. We never receive your card number.",
+            "Creations you publish, with their title, description and link.",
+            "Reports: when you report a creation we keep the report and a snapshot of what was displayed. A salted hash of your IP address is used for abuse prevention; we do not store the address itself.",
+            "Technical: the minimum needed to run and secure the service (error logs, rate-limit counters)."
+          ]
+        },
+        {
+          "h": "Why",
+          "p": [
+            "To provide the service you asked for (account, purchase, publication), to prevent abuse and fraud, to moderate content, and to meet our legal obligations (accounting, handling of reports)."
+          ]
+        },
+        {
+          "h": "Who processes your data",
+          "p": [
+            "{operatorHosts}. Each acts as a processor or independent controller within the scope of its service."
+          ]
+        },
+        {
+          "h": "Cookies",
+          "p": [
+            "We only use cookies that are strictly necessary: the session cookie that keeps you signed in and your language choice. We do not use advertising or tracking cookies."
+          ]
+        },
+        {
+          "h": "Your rights",
+          "p": [
+            "You can ask for access, correction, export or deletion of your data, and object to some processing, by writing to {operatorEmail}. Accounting records and moderation evidence may need to be kept for the period the law requires. [Retention periods: to be defined by the operator.]"
+          ]
+        }
+      ]
+    },
+    "credits": {
+      "title": "Credits & licences",
+      "intro": "Pixel World stands on open data and open-source software. Thank you to everyone who made them.",
+      "sections": [
+        {
+          "h": "Map data",
+          "ul": [
+            "Land and country outlines: Natural Earth (public domain), distributed through the world-atlas package (ISC).",
+            "City names and positions: GeoNames (geonames.org), licensed under Creative Commons Attribution 4.0, distributed through the all-the-cities package (MIT).",
+            "Country names: i18n-iso-countries (MIT)."
+          ]
+        },
+        {
+          "h": "Projection",
+          "p": [
+            "The map uses an equirectangular projection from 180°W to 180°E and from 84°N to 60°S, on a grid of 50,000 × 20,000 square pixels of 0.0072° (about 800 m at the equator)."
+          ]
+        },
+        {
+          "h": "Typefaces",
+          "p": [
+            "Bricolage Grotesque, Instrument Sans and Pixelify Sans, all under the SIL Open Font License 1.1."
+          ]
+        },
+        {
+          "h": "Software",
+          "p": [
+            "Built with Next.js, React, Tailwind CSS, PostgreSQL, Supabase, Stripe, sharp and many other open-source projects."
+          ]
+        }
+      ]
+    },
+    "contact": {
+      "title": "Contact",
+      "intro": "Questions, a rights holder request, a report that needs a human, or a decision you want to contest? Write to us.",
+      "email": "Email",
+      "reportHint": "To report a creation, use the “Report” button on its card: it records exactly what was displayed."
+    }
+  },
+  "admin": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "moderation": "Moderation queue",
+      "reports": "Reports",
+      "parcels": "Parcels",
+      "users": "Users",
+      "orders": "Orders & payments",
+      "settings": "Settings",
+      "audit": "Audit log",
+      "role": "Signed in as {role}"
+    },
+    "common": {
+      "reason": "Reason",
+      "cancel": "Cancel"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "queues": "Queues",
+      "toModerate": "Creations to moderate",
+      "openReports": "Open reports",
+      "refundsDue": "Refunds to process",
+      "heldReservations": "Active reservations",
+      "figures": "Key figures",
+      "pixelsSold": "Pixels sold",
+      "fill": "Map filled",
+      "parcels": "Parcels",
+      "owners": "Owners",
+      "creations": "Published creations",
+      "users": "Users",
+      "suspended": "Suspended accounts",
+      "refunded": "Refunded",
+      "revenue": "Revenue",
+      "revenueHint": "Excluding tax, for paid orders (disputed orders included until the dispute is lost).",
+      "revAll": "All time",
+      "rev30": "Last 30 days",
+      "rev7": "Last 7 days",
+      "tax": "Tax collected",
+      "daily": "Pixels sold per day (30 days)",
+      "ordersByStatus": "Orders by status"
+    },
+    "moderation": {
+      "title": "Moderation queue",
+      "lead": "New creations and modifications waiting for review. Approving publishes the creation on the map.",
+      "empty": "The queue is empty. Nothing to review.",
+      "untitled": "Untitled",
+      "ad": "Advertisement",
+      "edit": "Edit of a published parcel",
+      "by": "by",
+      "approve": "Approve",
+      "reject": "Reject"
+    },
+    "reports": {
+      "title": "Reports",
+      "lead": "Reports sent by users. Evidence is snapshotted at report time.",
+      "filter": "Filter by status",
+      "status": {
+        "open": "Open",
+        "actioned": "Actioned",
+        "dismissed": "Dismissed",
+        "all": "All"
+      },
+      "empty": "No report here.",
+      "reasons": {
+        "copyright": "Copyright",
+        "hate": "Hate / harassment",
+        "sexual": "Sexual content",
+        "scam": "Scam",
+        "illegal_ad": "Illegal ad",
+        "violence": "Violence",
+        "other": "Other"
+      },
+      "hidden": "Content hidden",
+      "reportsOnParcel": "{n} open reports on this parcel",
+      "parcelOf": "Parcel",
+      "owner": "owner",
+      "reporter": "reporter",
+      "evidence": "Evidence at report time",
+      "capturedAt": "Captured",
+      "evTitle": "Title",
+      "link": "Link",
+      "note": "Resolution note",
+      "hide": "Hide content",
+      "markActioned": "Mark as actioned",
+      "dismiss": "Dismiss",
+      "suspendOwner": "Suspend owner",
+      "confirmSuspend": "Suspend this account?"
+    },
+    "parcels": {
+      "title": "Parcels",
+      "search": "Code, owner or title",
+      "searchBtn": "Search",
+      "code": "Code",
+      "owner": "Owner",
+      "size": "Size",
+      "titleCol": "Title",
+      "status": "Status",
+      "actions": "Actions",
+      "hidden": "hidden",
+      "hide": "Hide",
+      "unhide": "Unhide",
+      "feature": "Feature",
+      "unfeature": "Unfeature",
+      "revoke": "Revoke",
+      "confirmRevoke": "Revoke this parcel? The pixels become available again. Refund the order separately if needed.",
+      "empty": "No parcel."
+    },
+    "users": {
+      "title": "Users",
+      "rolesNote": "Staff roles are granted in the database (admin_roles table) and can never be changed from the browser.",
+      "search": "Username or email",
+      "searchBtn": "Search",
+      "user": "User",
+      "email": "Email",
+      "holdings": "Holdings",
+      "joined": "Joined",
+      "status": "Status",
+      "actions": "Actions",
+      "suspended": "suspended",
+      "active": "active",
+      "suspend": "Suspend",
+      "unsuspend": "Reactivate",
+      "confirmSuspend": "Suspend this account? The user will not be able to buy or edit."
+    },
+    "orders": {
+      "title": "Orders & payments",
+      "lead": "Orders requiring a refund are highlighted. Refunds are executed at Stripe; the verified webhook then updates the order.",
+      "filter": "Filter by status",
+      "order": "Order",
+      "buyer": "Buyer",
+      "parcel": "Parcel",
+      "amount": "Amount",
+      "status": "Status",
+      "payment": "Payment",
+      "actions": "Actions",
+      "refund": "Refund",
+      "confirmRefund": "Refund this order in full? The parcel will be revoked.",
+      "empty": "No order."
+    },
+    "settings": {
+      "title": "Settings",
+      "lead": "Changes apply to future orders only. Existing orders keep the price they were created with.",
+      "price": "Price per pixel (in cents)",
+      "priceHint": "Currently {price} per pixel.",
+      "minArea": "Minimum surface (pixels)",
+      "maxArea": "Maximum surface (pixels)",
+      "ttl": "Reservation duration (minutes)",
+      "ttlHint": "At least 32: Stripe Checkout sessions cannot expire sooner than 30 minutes.",
+      "maxHolds": "Unpaid reservations per user",
+      "salesOpen": "Sales are open",
+      "save": "Save",
+      "saved": "Settings saved and journalised.",
+      "adminOnly": "Only administrators can change settings."
+    },
+    "audit": {
+      "title": "Audit log",
+      "lead": "Append-only record of administrative and payment events.",
+      "when": "When",
+      "who": "Who",
+      "action": "Action",
+      "target": "Target",
+      "details": "Details"
+    }
+  },
+  "errors": {
+    "notFoundTitle": "This spot is off the map",
+    "notFoundLead": "The page you are looking for does not exist, or the parcel is no longer on the map.",
+    "backToMap": "Back to the map",
+    "title": "Something went wrong",
+    "lead": "An unexpected error happened. Please try again.",
+    "retry": "Try again"
+  }
+}

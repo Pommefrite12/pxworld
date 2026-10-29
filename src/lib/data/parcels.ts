@@ -114,14 +114,14 @@ export async function getPublicProfile(username: string) {
   );
   if (!p) return null;
   const stats = await getUserStats(p.id);
-  const parcels = await query<{ code: string; x: number; y: number; w: number; h: number; asset_id: string | null; title: string | null }>(
+  const creations = await query<{ code: string; x: number; y: number; w: number; h: number; asset_id: string | null; title: string | null }>(
     `select p.code, p.x, p.y, p.w, p.h, a.id as asset_id, a.title from public.parcels p
        left join public.parcel_assets a on a.id = p.published_asset_id
       where p.owner_id = $1 and p.status = 'active' and p.hidden_at is null and p.published_asset_id is not null
       order by p.activated_at desc limit 60`,
     [p.id],
   );
-  return { ...p, ...stats, parcels };
+  return { ...p, ...stats, creations };
 }
 
 /* ------------------------------------------------------------------ discovery */
