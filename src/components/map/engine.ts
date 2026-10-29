@@ -50,7 +50,7 @@ const COLORS = {
   land: "#fbf5e6",
   ink: "23,21,31",
   free: "18,184,134",
-  accent: "255,77,46",
+  accent: "232,64,31",
   danger: "217,45,32",
 };
 

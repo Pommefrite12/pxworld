@@ -38,7 +38,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ code: string }
         </div>
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", flex: 1, marginLeft: 52 }}>
           <div style={{ display: "flex", fontSize: 40, fontWeight: 800, letterSpacing: -1 }}>
-            pixel<span style={{ color: "#ff4d2e" }}>world</span>
+            pixel<span style={{ color: "#e8401f" }}>world</span>
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", fontSize: title.length > 26 ? 52 : 68, fontWeight: 800, lineHeight: 1.05, letterSpacing: -2 }}>{title.slice(0, 60)}</div>
@@ -46,7 +46,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ code: string }
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", fontSize: 28, color: "#8d8a98" }}>{p.w}×{p.h} px · {p.area.toLocaleString("en")} pixels</div>
-            <div style={{ display: "flex", fontSize: 30, fontWeight: 700, marginTop: 10, color: "#ff4d2e" }}>One planet. One billion pixels. Your mark.</div>
+            <div style={{ display: "flex", fontSize: 30, fontWeight: 700, marginTop: 10, color: "#e8401f" }}>One planet. One billion pixels. Your mark.</div>
           </div>
         </div>
       </div>

@@ -16,7 +16,10 @@ export default defineConfig({
     screenshot: "only-on-failure",
     launchOptions: { executablePath: process.env.PW_CHROMIUM ?? "/opt/pw-browsers/chromium" },
   },
-  projects: [{ name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1360, height: 860 } } }],
+  projects: [
+    { name: "desktop", testIgnore: /mobile\.spec\.ts/, use: { ...devices["Desktop Chrome"], viewport: { width: 1360, height: 860 } } },
+    { name: "mobile", testMatch: /mobile\.spec\.ts/, use: { ...devices["Pixel 7"] } },
+  ],
   webServer: {
     command: "node scripts/e2e-server.mjs",
     url: `http://localhost:${Number(PORT) + 1}`, // the e2e script answers here once the dev server is warmed up

@@ -19,7 +19,7 @@ export function PixelGlobe({ size = 28 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 12 12" shapeRendering="crispEdges" aria-hidden="true">
       {ROWS.flatMap((row, y) =>
         [...row].map((c, x) =>
-          c === "." ? null : <rect key={`${x}-${y}`} x={x} y={y} width="1.02" height="1.02" fill={c === "L" ? "#ff4d2e" : "#2b35e0"} />,
+          c === "." ? null : <rect key={`${x}-${y}`} x={x} y={y} width="1.02" height="1.02" fill={c === "L" ? "#e8401f" : "#2b35e0"} />,
         ),
       )}
     </svg>

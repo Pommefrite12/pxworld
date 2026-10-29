@@ -9,16 +9,17 @@
   --color-paper-2: #f3eee3;
   --color-ink: #17151f;
   --color-ink-soft: #5a5766;
-  --color-ink-faint: #8d8a98;
+  --color-ink-faint: #68657a; /* ≥ 4.8:1 on every surface */
   --color-line: #e4ddcf;
   --color-ocean: #c9dfe8;
   --color-land: #fbf5e6;
-  --color-signal: #ff4d2e;
-  --color-signal-dark: #e03a1c;
+  --color-signal: #e8401f;        /* brand accent: large text / fills (≥ 3.5:1) */
+  --color-signal-strong: #d13414; /* buttons & small text (white on it: 5:1) */
+  --color-signal-dark: #b82c0f;
   --color-cobalt: #2b35e0;
   --color-mint: #12b886;
   --color-danger: #d92d20;
-  --color-warn: #b7791f;
+  --color-warn: #8a5a10;
 
   --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
@@ -55,7 +56,7 @@
   }
   .btn:active { transform: translateY(1px) scale(0.985); }
   .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; transform: none; }
-  .btn-primary { background: var(--color-signal); color: white; box-shadow: 0 2px 0 var(--color-signal-dark), 0 10px 24px -10px rgb(255 77 46 / 0.7); }
+  .btn-primary { background: var(--color-signal-strong); color: white; box-shadow: 0 2px 0 var(--color-signal-dark), 0 10px 24px -10px rgb(209 52 20 / 0.7); }
   .btn-primary:hover:not(:disabled) { background: var(--color-signal-dark); }
   .btn-ink { background: var(--color-ink); color: white; }
   .btn-ink:hover:not(:disabled) { background: #2d2a3a; }
