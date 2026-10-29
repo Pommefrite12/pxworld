@@ -1,5 +1,5 @@
 import "server-only";
-import { unstable_cache } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { query, queryOne } from "@/lib/db/pool";
 import { TOTAL_PIXELS } from "@/lib/grid/constants";
 
@@ -54,6 +54,15 @@ async function computeStats(): Promise<PublicStats> {
 
 /** Real figures from the database, cached for a few seconds so traffic never turns into aggregate queries. */
 export const getPublicStats = unstable_cache(computeStats, ["public-stats"], { revalidate: 15, tags: ["stats"] });
+
+/** Called after anything that changes sold pixels or published creations, so the counters are never stale for long. */
+export function invalidatePublicStats(): void {
+  try {
+    revalidateTag("stats", { expire: 0 });
+  } catch {
+    /* not inside a Next.js request (tests, scripts): nothing to invalidate */
+  }
+}
 
 export async function getPricing(): Promise<{ unitPriceCents: number; currency: string; minArea: number; maxArea: number; salesOpen: boolean }> {
   const rows = await query<{ key: string; value: unknown }>(

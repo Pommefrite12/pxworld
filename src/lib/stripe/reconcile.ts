@@ -1,6 +1,7 @@
 import "server-only";
 import { query } from "@/lib/db/pool";
 import { env } from "@/lib/env";
+import { invalidatePublicStats } from "@/lib/data/map";
 import { stripe } from "./client";
 import { expireCheckoutSession } from "./checkout";
 import { fulfillSession, refundOrder } from "./events";
@@ -25,6 +26,7 @@ export async function reconcileOrder(orderId: string): Promise<"paid" | "expired
   const session = await stripe().checkout.sessions.retrieve(o.stripe_checkout_session_id);
   if (session.status === "complete" && session.payment_status === "paid") {
     await fulfillSession(session);
+    invalidatePublicStats();
     return "paid";
   }
   if (session.status === "expired") {
@@ -71,5 +73,6 @@ export async function runMaintenance(): Promise<MaintenanceReport> {
       } catch { /* logged in audit_logs; retried on next run */ }
     }
   }
+  if (report.recoveredPayments) invalidatePublicStats();
   return report;
 }

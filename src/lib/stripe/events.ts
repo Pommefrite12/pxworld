@@ -2,6 +2,7 @@ import "server-only";
 import type Stripe from "stripe";
 import { query, queryOne } from "@/lib/db/pool";
 import { env } from "@/lib/env";
+import { invalidatePublicStats } from "@/lib/data/map";
 import { stripe } from "./client";
 
 export type EventOutcome = "processed" | "duplicate" | "ignored";
@@ -25,6 +26,7 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<EventOutco
 
   try {
     const outcome = await dispatch(event);
+    if (outcome === "processed") invalidatePublicStats();
     await query("update public.stripe_events set status = $2, processed_at = now(), error = null where id = $1", [
       event.id,
       outcome === "ignored" ? "ignored" : "processed",

@@ -6,6 +6,7 @@ import { assertSameOrigin, route } from "@/lib/http/route";
 import { cleanText } from "@/lib/security/text";
 import { stripe } from "@/lib/stripe/client";
 import { env } from "@/lib/env";
+import { invalidatePublicStats } from "@/lib/data/map";
 
 const uuid = z.string().uuid();
 const reason = z.string().max(500).optional();
@@ -67,5 +68,6 @@ export const POST = route(async (req) => {
       break;
     }
   }
+  invalidatePublicStats();
   return json({ ok: true }, { cache: "no-store" });
 });
