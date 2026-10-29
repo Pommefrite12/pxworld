@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import sharp from "sharp";
 
 /** Interface-level checks: accessibility, keyboard, search, touch/mobile. Independent of the other specs' data. */
 
@@ -117,5 +118,56 @@ test.describe("map interaction", () => {
     await page.getByLabel("Height (px)").fill("40");
     await expect(page.getByTestId("buy-price")).toHaveText("€1,200");
     await expect(page.getByTestId("buy-area")).toContainText("1,200");
+  });
+});
+
+test.describe("editor", () => {
+  test("preview on the map shows the creation pixel-exact inside the selection, and returning keeps the work", async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 } });
+    expect((await ctx.request.post("/api/dev/login", { data: { email: "preview@example.test" } })).ok()).toBeTruthy();
+    const page = await ctx.newPage();
+    await page.goto("/?bx=40000&by=3000&bw=20&bh=20");
+    await expect(page.getByTestId("buy-status")).toContainText(/free/i);
+    await page.getByTestId("buy-continue").click();
+    const dialog = page.getByRole("dialog");
+    const canvas = dialog.locator("canvas").first();
+    const box = (await canvas.boundingBox())!;
+    // the canvas is the exact parcel resolution, scaled up for editing
+    expect(await canvas.evaluate((c: HTMLCanvasElement) => [c.width, c.height])).toEqual([20, 20]);
+    await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.5);
+    await dialog.getByRole("button", { name: "Preview on the map" }).click();
+    await expect(page.getByText("Previewing on the map")).toBeVisible();
+    await expect.poll(() => page.evaluate(() => Boolean((window.__pxEngine as unknown as { previewImage: unknown }).previewImage))).toBe(true);
+    await page.getByRole("button", { name: "Back to the editor" }).click();
+    await expect(dialog.getByTestId("to-review")).toBeEnabled(); // the drawing survived the round trip
+    // the exported image has exactly the parcel's dimensions
+    await dialog.getByTestId("to-review").click();
+    const img = dialog.getByRole("img", { name: "Final render, pixel for pixel" });
+    await expect(img).toBeVisible();
+    expect(await img.evaluate((i: HTMLImageElement) => [i.naturalWidth, i.naturalHeight])).toEqual([20, 20]);
+    await ctx.close();
+  });
+
+  test("an uploaded photo is cropped to the parcel; unsupported files are refused client-side", async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 } });
+    await ctx.request.post("/api/dev/login", { data: { email: "uploader@example.test" } });
+    const page = await ctx.newPage();
+    await page.goto("/?bx=41000&by=3000&bw=30&bh=30");
+    await expect(page.getByTestId("buy-status")).toContainText(/free/i);
+    await page.getByTestId("buy-continue").click();
+    const dialog = page.getByRole("dialog");
+    const photo = await sharp({ create: { width: 400, height: 200, channels: 3, background: "#12b886" } }).png().toBuffer();
+    await dialog.locator('input[type="file"]').setInputFiles({ name: "wide.png", mimeType: "image/png", buffer: photo });
+    await expect(dialog.getByTestId("to-review")).toBeEnabled();
+    await expect(dialog.getByRole("radiogroup", { name: "Fit" }).getByRole("radio", { name: "Fill" })).toBeVisible();
+    // the editing canvas keeps the exact parcel resolution whatever the photo size
+    expect(await dialog.locator("canvas").first().evaluate((c: HTMLCanvasElement) => [c.width, c.height])).toEqual([30, 30]);
+    // the pixels of the composed result come from the photo (cover fit → fully green)
+    const centre = await dialog.locator("canvas").first().evaluate((c: HTMLCanvasElement) => Array.from(c.getContext("2d")!.getImageData(15, 15, 1, 1).data));
+    expect(centre).toEqual([18, 184, 134, 255]);
+    // a disguised SVG is refused before any upload happens
+    await dialog.locator('input[type="file"]').setInputFiles({ name: "evil.png", mimeType: "image/svg+xml", buffer: Buffer.from("<svg xmlns='http://www.w3.org/2000/svg'/>") });
+    await expect(dialog.getByRole("alert")).toContainText(/PNG, JPEG and WebP/);
+    await ctx.close();
   });
 });
