@@ -168,7 +168,8 @@
       "invalid_link": "The link must be a valid https address.",
       "rate_limited": "Too many attempts. Please wait a little.",
       "payments_not_configured": "Payments are not available yet."
-    }
+    },
+    "fineTune": "Fine-tune position"
   },
   "editor": {
     "canvasLabel": "Parcel editor, {w} by {h} pixels",
@@ -573,7 +574,7 @@
         {
           "h": "Typefaces",
           "p": [
-            "Bricolage Grotesque, Instrument Sans and Pixelify Sans, all under the SIL Open Font License 1.1."
+            "Bricolage Grotesque, Instrument Sans and Jersey 10, all under the SIL Open Font License 1.1."
           ]
         },
         {

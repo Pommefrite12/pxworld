@@ -168,7 +168,8 @@
       "invalid_link": "Le lien doit être une adresse https valide.",
       "rate_limited": "Trop de tentatives. Patientez un peu.",
       "payments_not_configured": "Les paiements ne sont pas encore disponibles."
-    }
+    },
+    "fineTune": "Ajuster la position"
   },
   "editor": {
     "canvasLabel": "Éditeur de parcelle, {w} sur {h} pixels",
@@ -573,7 +574,7 @@
         {
           "h": "Polices",
           "p": [
-            "Bricolage Grotesque, Instrument Sans et Pixelify Sans, toutes sous licence SIL Open Font License 1.1."
+            "Bricolage Grotesque, Instrument Sans et Jersey 10, toutes sous licence SIL Open Font License 1.1."
           ]
         },
         {

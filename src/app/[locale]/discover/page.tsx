@@ -12,6 +12,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return { title: t("title"), description: t("lead") };
 }
 
+function Section({ id, title, hint, children }: { id: string; title: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <section aria-labelledby={id} className="mt-12">
+      <h2 id={id} className="text-2xl font-extrabold">{title}</h2>
+      {hint && <p className="mt-1 text-sm text-ink-soft">{hint}</p>}
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
 async function safe<T>(p: Promise<T[]>): Promise<T[]> {
   try { return await p; } catch (e) { console.error("discover query failed", (e as Error).message); return []; }
 }
@@ -21,13 +31,6 @@ export default async function Discover({ params }: { params: Promise<{ locale: s
   setRequestLocale(locale);
   const [t, f] = await Promise.all([getTranslations("discover"), getFormatter()]);
   const [latest, large, popular, picks, people] = await Promise.all([safe(latestCreations(12)), safe(largestParcels(8)), safe(popularCreations(8)), safe(editorialPicks(8)), safe(topContributors(10))]);
-  const Section = ({ id, title, hint, children }: { id: string; title: string; hint?: string; children: React.ReactNode }) => (
-    <section aria-labelledby={id} className="mt-12">
-      <h2 id={id} className="text-2xl font-extrabold">{title}</h2>
-      {hint && <p className="mt-1 text-sm text-ink-soft">{hint}</p>}
-      <div className="mt-4">{children}</div>
-    </section>
-  );
   return (
     <PageShell>
       <h1 className="text-4xl font-extrabold">{t("title")}</h1>
@@ -41,7 +44,7 @@ export default async function Discover({ params }: { params: Promise<{ locale: s
           <ol className="card divide-y divide-line">
             {people.map((p, i) => (
               <li key={p.username} className="flex items-center gap-4 px-5 py-3">
-                <span className="pixel-display w-6 text-ink-faint">{i + 1}</span>
+                <span className="pixel-display w-8 text-2xl text-ink-faint">{i + 1}</span>
                 <Link href={`/u/${p.username}`} className="flex-1 font-semibold hover:underline">{p.username}</Link>
                 <span className="pixel-num text-sm text-ink-soft">{t("contribution", { parcels: f.number(p.parcels), pixels: f.number(p.pixels) })}</span>
               </li>

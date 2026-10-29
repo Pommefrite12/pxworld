@@ -47,6 +47,9 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
   const hasContent = Boolean(photo || painted || text?.value);
   useEffect(() => onChange?.(hasContent), [hasContent, onChange]);
 
+  // the canvas needs the pixel font loaded before it can draw text with it
+  useEffect(() => { void document.fonts?.load('16px "Jersey 10"').then(() => setUndoCount((n) => n)); }, []);
+
   const ensurePaint = useCallback(() => {
     if (!paint.current) { const c = document.createElement("canvas"); c.width = w; c.height = h; paint.current = c; }
     return paint.current;
@@ -70,7 +73,7 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
       ctx.imageSmoothingEnabled = false;
       ctx.fillStyle = text.color;
       ctx.textBaseline = "top";
-      ctx.font = `${text.bold ? 600 : 500} ${text.size}px "Pixelify Sans", ui-monospace, monospace`;
+      ctx.font = `${text.bold ? 600 : 500} ${text.size}px "Jersey 10", ui-monospace, monospace`;
       ctx.fillText(text.value, text.x, text.y);
     }
   }, [w, h, bg, photo, text]);

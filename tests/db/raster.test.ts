@@ -55,7 +55,7 @@ describe("metadata tiles", () => {
     await publishedParcel({ x: 5000, y: 5000, w: 10, h: 10 });
     const tile = await getTile(1, 2);
     expect(tile).toHaveLength(1);
-    expect(tile[0]!.slice(0, 5)).toEqual([expect.stringMatching(/^[0-9a-f]{8}$/), 1100, 2200, 20, 20]);
+    expect(tile[0]!.slice(0, 5)).toEqual([expect.stringMatching(/^[0-9a-f]{10}$/), 1100, 2200, 20, 20]);
     expect(tile[0]![5]).toBe(p.asset);
     expect(await getTile(0, 0)).toEqual([]);
   });

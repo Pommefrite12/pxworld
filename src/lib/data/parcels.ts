@@ -1,3 +1,4 @@
+import { isParcelCode } from "@/lib/grid/code";
 import "server-only";
 import { query, queryOne } from "@/lib/db/pool";
 
@@ -50,7 +51,7 @@ function toView(r: Row): ParcelView {
 
 /** Public view of an ACTIVE parcel. Hidden parcels keep their place but expose no content. */
 export async function getPublicParcel(code: string): Promise<ParcelView | null> {
-  if (!/^[0-9a-f]{8}$/.test(code)) return null;
+  if (!isParcelCode(code)) return null;
   const r = await queryOne<Row>(`${SELECT} where p.code = $1 and p.status = 'active'`, [code]);
   return r ? toView(r) : null;
 }

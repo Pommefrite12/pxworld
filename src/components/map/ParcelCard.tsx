@@ -18,7 +18,12 @@ export interface ParcelInfo {
 }
 
 /** Small public "card" of a parcel: shown on the map and reused by the permalink page. */
-export function ParcelCard({ code, onClose, signedIn, className = "" }: { code: string; onClose: () => void; signedIn: boolean; className?: string }) {
+export function ParcelCard(props: { code: string; onClose: () => void; signedIn: boolean; className?: string }) {
+  // keyed by code: switching parcels remounts the card, so its state never leaks from one parcel to the next
+  return <ParcelCardInner key={props.code} {...props} />;
+}
+
+function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: string; onClose: () => void; signedIn: boolean; className?: string }) {
   const t = useTranslations("parcel");
   const f = useFormatter();
   const locale = useLocale();
@@ -30,7 +35,6 @@ export function ParcelCard({ code, onClose, signedIn, className = "" }: { code: 
 
   useEffect(() => {
     let alive = true;
-    setInfo(null); setMsg(null); setReporting(false);
     fetch(`/api/parcels/${code}`).then((r) => (r.ok ? r.json() : Promise.reject())).then((p: ParcelInfo) => { if (alive) { setInfo(p); setLikes(p.likes); } }).catch(() => alive && setInfo("error"));
     return () => { alive = false; };
   }, [code]);
@@ -62,7 +66,6 @@ export function ParcelCard({ code, onClose, signedIn, className = "" }: { code: 
         <>
           <div className="checker grid place-items-center border-b border-line p-3" style={{ minHeight: 120 }}>
             {info.creation ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img src={`/api/assets/${info.creation.assetId}`} alt={info.creation.title ?? t("untitled")}
                 className="pixelated max-w-full" style={{ imageRendering: "pixelated", ...fitSize(info.w, info.h, 208) }} loading="lazy" />
             ) : (

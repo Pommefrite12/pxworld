@@ -101,6 +101,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
 
   // authoritative availability (includes live reservations of other buyers) once the local check says "ok"
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronises UI state with the (async) server availability check
     if (!selection || selState !== "ok") { setServerFree(null); return; }
     setServerFree("checking");
     const ctl = new AbortController();
@@ -132,6 +133,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
   useEffect(() => {
     if (!engineReady || started.current) return;
     started.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-off initialisation from the deep link, once the engine exists
     if (initial.buy) startBuy(initial.buy);
     if (initial.parcelCode) engine()?.setHighlight(initial.parcelCode);
   }, [engineReady, initial, startBuy]);
@@ -189,7 +191,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
         </div>
         <MapControls
           cam={cam}
-          className={`absolute z-10 ${mode === "buy" ? "bottom-[calc(62vh+1rem)] right-3 md:bottom-5 md:right-[25rem]" : "bottom-3 right-3 sm:bottom-5 sm:right-5"}`}
+          className={`absolute z-10 ${mode === "buy" ? "bottom-[calc(60vh+1rem)] right-3 md:bottom-5 md:right-[25rem]" : "bottom-3 right-3 sm:bottom-5 sm:right-5"}`}
           onZoomIn={() => engine()?.zoomBy(1.8)} onZoomOut={() => engine()?.zoomBy(1 / 1.8)} onFit={() => engine()?.fitWorld()}
         />
 

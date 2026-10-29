@@ -4,15 +4,16 @@ import { dashboard } from "@/lib/data/admin";
 import { TOTAL_PIXELS } from "@/lib/grid/constants";
 import { formatMoney } from "@/lib/grid/pricing";
 
+function Tile({ label, value, href, alert }: { label: string; value: string; href?: string; alert?: boolean }) {
+  const body = <div className={`card p-4 ${alert ? "ring-2 ring-signal" : ""}`}><p className="text-xs text-ink-faint">{label}</p><p className="pixel-display mt-1 text-4xl">{value}</p></div>;
+  return href ? <Link href={href}>{body}</Link> : body;
+}
+
 export default async function AdminHome({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const [t, f, d] = await Promise.all([getTranslations("admin.dashboard"), getFormatter(), dashboard()]);
   const max = Math.max(1, ...d.daily.map((x) => x.pixels));
-  const Tile = ({ label, value, href, alert }: { label: string; value: string; href?: string; alert?: boolean }) => {
-    const body = <div className={`card p-4 ${alert ? "ring-2 ring-signal" : ""}`}><p className="text-xs text-ink-faint">{label}</p><p className="pixel-display mt-1 text-2xl">{value}</p></div>;
-    return href ? <Link href={href}>{body}</Link> : body;
-  };
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-extrabold">{t("title")}</h1>
@@ -46,7 +47,7 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
         <h2 className="text-xl font-bold">{t("daily")}</h2>
         <div className="card mt-3 flex h-40 items-end gap-1 p-4" role="img" aria-label={t("daily")}>
           {d.daily.map((x) => (
-            <div key={x.day} className="group relative flex-1" title={`${x.day}: ${f.number(x.pixels)} px · ${x.orders}`}>
+            <div key={x.day} className="group relative flex h-full flex-1 items-end" title={`${x.day}: ${f.number(x.pixels)} px · ${x.orders}`}>
               <div className="w-full rounded-t bg-signal/80" style={{ height: `${Math.max(x.pixels ? 4 : 1, (x.pixels / max) * 100)}%`, minHeight: 2 }} />
             </div>
           ))}

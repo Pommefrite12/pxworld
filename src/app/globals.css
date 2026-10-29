@@ -1,7 +1,6 @@
 @import "@fontsource-variable/bricolage-grotesque/index.css";
 @import "@fontsource-variable/instrument-sans/index.css";
-@import "@fontsource/pixelify-sans/500.css";
-@import "@fontsource/pixelify-sans/600.css";
+@import "@fontsource/jersey-10/400.css";
 @import "tailwindcss";
 
 /* Pixel World design tokens. Light only, by design: paper, ink, one hot accent. */
@@ -23,7 +22,7 @@
 
   --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-pixel: "Pixelify Sans", ui-monospace, monospace;
+  --font-pixel: "Jersey 10", ui-monospace, monospace;
 
   --radius-card: 18px;
   --shadow-float: 0 1px 0 rgb(23 21 31 / 0.04), 0 8px 30px -8px rgb(23 21 31 / 0.18);
@@ -74,7 +73,7 @@
   .label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--color-ink-soft); margin-bottom: 0.35rem; }
   /* Readable tabular numbers for data (coordinates, sizes). The pixel font is reserved for headline figures: .pixel-display */
   .pixel-num { font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: 0; }
-  .pixel-display { font-family: var(--font-pixel); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
+  .pixel-display { font-family: var(--font-pixel); font-weight: 400; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; line-height: 1; }
   .chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: var(--color-paper-2); color: var(--color-ink-soft); }
   .prose-pw { max-width: 42rem; line-height: 1.7; }
   .prose-pw h2 { font-size: 1.4rem; font-weight: 700; margin: 2rem 0 0.6rem; }

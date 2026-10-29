@@ -31,7 +31,6 @@ export async function GET(_req: Request, ctx: { params: Promise<{ code: string }
       <div style={{ display: "flex", width: "100%", height: "100%", background: "#fbf8f2", padding: 52, fontFamily: "sans-serif", color: "#17151f" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 526, height: 526, background: "#ffffff", borderRadius: 28, border: "3px solid #e4ddcf" }}>
           {dataUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img src={dataUrl} width={shown.w} height={shown.h} alt="" />
           ) : (
             <div style={{ display: "flex", width: 300, height: 300, background: "#c9dfe8", borderRadius: 20, alignItems: "center", justifyContent: "center", fontSize: 40, color: "#5a5766" }}>Pixel World</div>

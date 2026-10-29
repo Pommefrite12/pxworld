@@ -1,3 +1,4 @@
+import { isParcelCode } from "@/lib/grid/code";
 import { setRequestLocale } from "next-intl/server";
 import { MapShell } from "@/components/map/MapShell";
 import { getHeaderViewer } from "@/lib/auth/session";
@@ -36,7 +37,7 @@ export default async function HomePage({ params, searchParams }: { params: Promi
         stats={stats}
         viewer={viewer}
         pricing={pricing ?? { unitPriceCents: 100, currency: "eur", minArea: 100, maxArea: 250_000, salesOpen: false }}
-        initial={{ camera, parcelCode: typeof sp.p === "string" && /^[0-9a-f]{8}$/.test(sp.p) ? sp.p : null, buy }}
+        initial={{ camera, parcelCode: isParcelCode(sp.p) ? sp.p : null, buy }}
       />
     </main>
   );

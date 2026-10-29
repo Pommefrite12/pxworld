@@ -92,9 +92,9 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await page.waitForURL(/checkout\/success/);
     await expect(page.getByTestId("checkout-result")).toHaveAttribute("data-state", "paid", { timeout: 30_000 });
     await page.getByTestId("view-parcel").click();
-    await page.waitForURL(/\/p\/[0-9a-f]{8}/);
+    await page.waitForURL(/\/p\/[0-9a-f]{10}/);
     parcelCode = page.url().split("/").pop()!.split("?")[0]!;
-    expect(parcelCode).toMatch(/^[0-9a-f]{8}$/);
+    expect(parcelCode).toMatch(/^[0-9a-f]{10}$/);
     await expect(page.getByText(/waiting for moderation/i)).toBeVisible();
 
     // my parcels + orders

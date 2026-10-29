@@ -34,7 +34,6 @@ export default async function MyParcels({ params }: { params: Promise<{ locale: 
               <li key={p.id} className="card flex gap-4 p-4" data-testid="my-parcel">
                 <div className="checker grid h-28 w-28 shrink-0 place-items-center rounded-xl">
                   {p.published_asset_id
-                    // eslint-disable-next-line @next/next/no-img-element
                     ? <img src={`/api/assets/${p.published_asset_id}`} alt={p.title ?? ""} className="pixelated h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
                     : <span className="px-2 text-center text-xs text-ink-faint">{t("noImage")}</span>}
                 </div>

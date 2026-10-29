@@ -24,7 +24,7 @@ async function buy(ctx: APIRequestContext, x: number, y: number, w: number, h: n
   const pay = await ctx.post("/api/dev/pay", { data: { orderId, outcome: "paid" } });
   expect((await pay.json()).outcome).toBe("processed");
   const order = await (await ctx.get(`/api/orders/${orderId}`)).json();
-  expect(order.parcelCode).toMatch(/^[0-9a-f]{8}$/);
+  expect(order.parcelCode).toMatch(/^[0-9a-f]{10}$/);
   return { orderId, code: order.parcelCode as string };
 }
 

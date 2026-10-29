@@ -16,7 +16,7 @@ export function StatsCard({ stats, compact }: { stats: PublicStats; compact: boo
     <section aria-label={t("label")} className={`card pointer-events-auto w-full max-w-[22rem] ${compact ? "p-3" : "p-4"}`}>
       <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">{t("sold")}</p>
       <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2 leading-none">
-        <span className="pixel-display text-[1.9rem] text-signal" data-testid="sold-pixels">{f.number(stats.soldPixels)}</span>
+        <span className="pixel-display text-[2.7rem] text-signal" data-testid="sold-pixels">{f.number(stats.soldPixels)}</span>
         <span className="pixel-num text-sm text-ink-faint">/ {f.number(TOTAL_PIXELS)}</span>
       </p>
       <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-paper-2" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct * 10000) / 10000} aria-label={t("filled")}>

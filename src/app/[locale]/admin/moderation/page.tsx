@@ -17,7 +17,6 @@ export default async function Moderation({ params }: { params: Promise<{ locale:
           {items.map((a) => (
             <li key={a.id} className="card flex flex-col gap-4 p-4 sm:flex-row" data-testid="queue-item">
               <div className="checker grid h-44 w-44 shrink-0 place-items-center rounded-xl">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={`/api/assets/${a.id}`} alt="" width={a.width} height={a.height} className="pixelated h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
               </div>
               <div className="min-w-0 flex-1 space-y-1.5">

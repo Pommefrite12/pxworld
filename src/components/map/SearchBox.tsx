@@ -1,5 +1,6 @@
 "use client";
 
+import { PARCEL_CODE_RE } from "@/lib/grid/code";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
@@ -37,7 +38,7 @@ export function SearchBox({ onGo, className = "" }: { onGo: (t: SearchTarget) =>
   const results = useMemo<Result[]>(() => {
     const raw = q.trim();
     if (!raw) return [];
-    if (/^[0-9a-f]{8}$/i.test(raw)) return [{ key: "code", label: raw.toLowerCase(), sub: t("parcelCode"), target: { kind: "parcel", code: raw.toLowerCase() } }];
+    if (PARCEL_CODE_RE.test(raw.toLowerCase())) return [{ key: "code", label: raw.toLowerCase(), sub: t("parcelCode"), target: { kind: "parcel", code: raw.toLowerCase() } }];
     let m = raw.match(/^(-?\d+\.\d+)\s*[,; ]\s*(-?\d+\.\d+)$/);
     if (m) {
       const lat = Number(m[1]), lon = Number(m[2]);

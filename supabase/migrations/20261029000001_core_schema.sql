@@ -95,8 +95,10 @@ create trigger on_auth_user_created after insert on auth.users
 
 /* ------------------------------------------------------------------ parcels */
 
+-- 10 hex characters = 40 bits: collisions are rare even with millions of parcels, and px_start_order retries on the
+-- (unique) code constraint, so a collision can never fail a purchase.
 create or replace function public.px_short_code() returns text language sql volatile as
-$$ select substr(md5(random()::text || clock_timestamp()::text || txid_current()::text), 1, 8) $$;
+$$ select substr(md5(random()::text || clock_timestamp()::text || txid_current()::text), 1, 10) $$;
 
 create table public.parcels (
   id          uuid primary key default gen_random_uuid(),
@@ -369,19 +371,32 @@ create table public.map_state (
 );
 insert into public.map_state default values;
 
-create or replace function public.px_bump_map_version() returns trigger language plpgsql as $$
+-- Statement-level with transition tables: a statement that touches 100 000 parcels bumps the version ONCE (a row-level
+-- trigger would rewrite the single map_state row 100 000 times in one transaction), and plain reservations
+-- (status 'reserved') never touch map_state at all, so they cannot contend on it.
+create or replace function public.px_bump_map_version_ins() returns trigger language plpgsql as $$
 begin
-  update public.map_state set version = version + 1, updated_at = now() where id = 1;
+  if exists (select 1 from new_rows where status = 'active') then
+    update public.map_state set version = version + 1, updated_at = now() where id = 1;
+  end if;
   return null;
 end $$;
 
--- Row-level with WHEN: reservations (insert of a 'reserved' row) must not contend on the map_state row.
+create or replace function public.px_bump_map_version_upd() returns trigger language plpgsql as $$
+begin
+  if exists (
+    select 1 from old_rows o join new_rows n on n.id = o.id
+     where (o.status = 'active' or n.status = 'active')
+       and (o.status, o.hidden_at, o.published_asset_id) is distinct from (n.status, n.hidden_at, n.published_asset_id)) then
+    update public.map_state set version = version + 1, updated_at = now() where id = 1;
+  end if;
+  return null;
+end $$;
+
 create trigger parcels_map_version_ins after insert on public.parcels
-  for each row when (new.status = 'active') execute function public.px_bump_map_version();
-create trigger parcels_map_version_upd after update of status, hidden_at, published_asset_id on public.parcels
-  for each row when ((old.status = 'active' or new.status = 'active')
-                     and (old.status, old.hidden_at, old.published_asset_id) is distinct from (new.status, new.hidden_at, new.published_asset_id))
-  execute function public.px_bump_map_version();
+  referencing new table as new_rows for each statement execute function public.px_bump_map_version_ins();
+create trigger parcels_map_version_upd after update on public.parcels
+  referencing old table as old_rows new table as new_rows for each statement execute function public.px_bump_map_version_upd();
 
 create or replace function public.px_touch_updated_at() returns trigger language plpgsql as
 $$ begin new.updated_at := now(); return new; end $$;

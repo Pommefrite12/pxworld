@@ -111,7 +111,6 @@ export function CheckoutDialog({ rect, pricing, onClose, onPreviewOnMap, onUnava
               <div>
                 <p className="label">{t("finalRender")}</p>
                 <div className="checker grid place-items-center rounded-xl p-3 shadow-[0_0_0_1.5px_var(--color-line)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   {finalUrl && <img src={finalUrl} alt={t("finalRender")} width={rect.w} height={rect.h} className="pixelated max-w-full" style={{ imageRendering: "pixelated", ...fitSize(rect.w, rect.h, 384) }} />}
                 </div>
                 <div className="mt-3 flex gap-2">
@@ -129,7 +128,7 @@ export function CheckoutDialog({ rect, pricing, onClose, onPreviewOnMap, onUnava
                   <dl className="space-y-1 text-sm">
                     <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.parcel")}</dt><dd className="pixel-num">{rect.w}×{rect.h} @ {rect.x},{rect.y}</dd></div>
                     <div className="flex justify-between"><dt className="text-ink-soft">{t("area")}</dt><dd className="pixel-num">{f.number(q.area)} px</dd></div>
-                    <div className="flex justify-between border-t border-line pt-2"><dt className="font-semibold">{t("summary.total")}</dt><dd className="pixel-display text-2xl text-signal" data-testid="co-total">{formatMoney(q.totalCents, locale, pricing.currency)}</dd></div>
+                    <div className="flex justify-between border-t border-line pt-2"><dt className="font-semibold">{t("summary.total")}</dt><dd className="pixel-display text-4xl text-signal" data-testid="co-total">{formatMoney(q.totalCents, locale, pricing.currency)}</dd></div>
                   </dl>
                   <p className="mt-1 text-xs text-ink-faint">{t("taxNote")}</p>
                 </div>

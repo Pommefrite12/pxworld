@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { COUNTRY_CODES } from "@/lib/countries";
 
-export function ProfileForm({ initial }: { initial: { username: string; country: string | null; bio: string | null; avatarId: string | null } }) {
+export function ProfileForm({ initial }: { initial: { username: string; country: string | null; bio: string | null; avatarId: string | null; avatarV: string } }) {
   const t = useTranslations("account.form");
   const locale = useLocale();
   const [username, setUsername] = useState(initial.username);
@@ -34,8 +34,7 @@ export function ProfileForm({ initial }: { initial: { username: string; country:
     <form onSubmit={save} className="card space-y-4 p-6">
       <div className="flex items-center gap-4">
         {initial.avatarId
-          // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={`/api/avatar/${initial.avatarId}?t=${Date.now()}`} alt="" className="h-16 w-16 rounded-full" />
+          ? <img src={`/api/avatar/${initial.avatarId}?v=${initial.avatarV}`} alt="" className="h-16 w-16 rounded-full" />
           : <span className="grid h-16 w-16 place-items-center rounded-full bg-cobalt text-2xl font-bold text-white">{initial.username.slice(0, 1).toUpperCase()}</span>}
         <label className="btn btn-ghost btn-sm cursor-pointer">{t("avatar")}<input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(e) => void upload(e.target.files?.[0])} /></label>
       </div>

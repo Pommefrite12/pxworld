@@ -42,7 +42,6 @@ function AccountMenu({ viewer }: { viewer: HeaderViewer }) {
     <div ref={ref} className="relative">
       <button className="flex h-9 items-center gap-2 rounded-full bg-paper-2 py-0 pl-1 pr-3 text-sm font-semibold hover:bg-line" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)} data-testid="account-menu">
         {viewer.avatarId
-          // eslint-disable-next-line @next/next/no-img-element
           ? <img src={`/api/avatar/${viewer.avatarId}`} alt="" className="h-7 w-7 rounded-full" />
           : <span className="grid h-7 w-7 place-items-center rounded-full bg-cobalt text-xs font-bold text-white">{viewer.username.slice(0, 1).toUpperCase()}</span>}
         <span className="hidden max-w-28 truncate sm:inline">{viewer.username}</span>

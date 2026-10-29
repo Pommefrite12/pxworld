@@ -88,12 +88,18 @@ begin
     raise exception 'px_too_many_reservations';
   end if;
 
-  begin
-    insert into public.parcels (owner_id, x, y, w, h, status)
-    values (p_user, p_x, p_y, p_w, p_h, 'reserved') returning id into v_parcel;
-  exception when exclusion_violation then
-    raise exception 'px_parcel_unavailable';
-  end;
+  for i in 1 .. 5 loop
+    begin
+      insert into public.parcels (owner_id, x, y, w, h, status)
+      values (p_user, p_x, p_y, p_w, p_h, 'reserved') returning id into v_parcel;
+      exit;
+    exception
+      when exclusion_violation then
+        raise exception 'px_parcel_unavailable';
+      when unique_violation then
+        if i = 5 then raise; end if;  -- public code collision (astronomically rare): draw another code
+    end;
+  end loop;
 
   insert into public.orders (id, user_id, parcel_id, x, y, w, h, area, unit_price_cents, amount_cents, currency, expires_at)
   values (v_order, p_user, v_parcel, p_x, p_y, p_w, p_h, p_w * p_h, v_unit, (p_w * p_h)::bigint * v_unit, v_cur, v_expires);
