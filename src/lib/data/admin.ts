@@ -77,3 +77,9 @@ export const auditList = (offset = 0) =>
   query<{ id: number; created_at: Date; actor: string | null; actor_role: string | null; action: string; target_type: string | null; target_id: string | null; metadata: Record<string, unknown> }>(
     `select l.id, l.created_at, u.username as actor, l.actor_role, l.action, l.target_type, l.target_id, l.metadata
        from public.audit_logs l left join public.profiles u on u.id = l.actor_id order by l.id desc limit ${PAGE_SIZE * 2} offset $1`, [offset]);
+
+export const reservationsList = (status: string, offset = 0) =>
+  query<{ id: string; status: string; expires_at: Date; created_at: Date; username: string; x: number; y: number; w: number; h: number; order_status: string | null; amount_cents: number | null; currency: string | null; expired: boolean }>(
+    `select r.id, r.status, r.expires_at, r.created_at, u.username, p.x, p.y, p.w, p.h, o.status as order_status, o.amount_cents, o.currency, (r.expires_at <= now()) as expired
+       from public.parcel_reservations r join public.profiles u on u.id = r.user_id join public.parcels p on p.id = r.parcel_id left join public.orders o on o.id = r.order_id
+      where ($1 = 'all' or r.status = $1) order by r.created_at desc limit ${PAGE_SIZE} offset $2`, [status, offset]);

@@ -72,6 +72,18 @@ tests/{unit,db,e2e}       test suites
 docs/                     architecture, database, payments, security, deployment, backup, launch checklist
 ```
 
+## What is verified, and what needs your credentials
+
+Verified automatically here (see the test suites): the grid and pricing maths; overlap protection and reservation
+concurrency on a real PostgreSQL; expiry and recovery; payment attribution, idempotency, refunds and disputes through the
+real webhook route with correctly signed events; RLS permissions; image/URL validation; raster and metadata tiles; the full
+browser journey (buy → pay → moderate → publish → share), admin actions, accessibility (axe), keyboard and touch use.
+
+**Not verifiable without your accounts** (written against the official SDKs and typechecked, but never run against the live
+services in this environment): Supabase Auth flows (email confirmation, Google OAuth, password reset), the Supabase Storage
+driver, the Stripe-hosted Checkout page and real Stripe event delivery, Vercel deployment and cron. The first test-mode
+smoke test in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) covers them in about ten minutes.
+
 ## Licence & data
 
 Map data: Natural Earth (public domain), GeoNames (CC BY 4.0 — attribution shown in the app and at `/credits`).

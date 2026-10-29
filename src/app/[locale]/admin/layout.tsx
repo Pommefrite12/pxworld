@@ -14,7 +14,7 @@ export default async function AdminLayout({ children, params }: { children: Reac
   const t = await getTranslations("admin.nav");
   const items = [
     ["/admin", t("dashboard")], ["/admin/moderation", t("moderation")], ["/admin/reports", t("reports")], ["/admin/parcels", t("parcels")],
-    ["/admin/users", t("users")], ["/admin/orders", t("orders")], ["/admin/settings", t("settings")], ["/admin/audit", t("audit")],
+    ["/admin/users", t("users")], ["/admin/orders", t("orders")], ["/admin/reservations", t("reservations")], ["/admin/settings", t("settings")], ["/admin/audit", t("audit")],
   ] as const;
   return (
     <PageShell width="max-w-7xl">

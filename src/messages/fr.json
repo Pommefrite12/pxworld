@@ -607,7 +607,8 @@
       "orders": "Commandes et paiements",
       "settings": "Paramètres",
       "audit": "Journal d'audit",
-      "role": "Connecté en tant que {role}"
+      "role": "Connecté en tant que {role}",
+      "reservations": "Réservations"
     },
     "common": {
       "reason": "Motif",
@@ -759,6 +760,19 @@
       "action": "Action",
       "target": "Cible",
       "details": "Détails"
+    },
+    "reservations": {
+      "title": "Réservations",
+      "lead": "Pixels bloqués pendant qu'un acheteur paie. Une réservation périmée est libérée automatiquement (au prochain achat, et par la tâche de maintenance).",
+      "filter": "Filtrer par statut",
+      "user": "Acheteur",
+      "parcel": "Parcelle",
+      "amount": "Montant",
+      "created": "Créée",
+      "expires": "Expire",
+      "status": "Statut",
+      "lapsed": "périmée",
+      "empty": "Aucune réservation."
     }
   },
   "errors": {

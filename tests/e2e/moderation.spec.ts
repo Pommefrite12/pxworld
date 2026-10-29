@@ -164,6 +164,10 @@ test.describe.serial("moderation & protection", () => {
     expect((await admin.post("/api/admin/action", { data: { action: "set_setting", key: "price_unit_cents", value: -5 } })).status()).toBe(400);
     const audit = await (await admin.get("/admin/audit")).text();
     for (const a of ["asset.approve", "asset.reject", "parcel.hide", "report.actioned"]) expect(audit).toContain(a);
+    // the back office lists reservations, orders/payments and users too
+    expect(await (await admin.get("/admin/reservations?status=all")).text()).toContain("reservation-row");
+    expect(await (await admin.get("/admin/orders")).text()).toContain("admin-order");
+    expect(await (await admin.get("/admin/users")).text()).toContain("carol");
   });
 
   test("a suspended account can neither buy nor edit; reactivation restores it", async () => {

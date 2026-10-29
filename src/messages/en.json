@@ -607,7 +607,8 @@
       "orders": "Orders & payments",
       "settings": "Settings",
       "audit": "Audit log",
-      "role": "Signed in as {role}"
+      "role": "Signed in as {role}",
+      "reservations": "Reservations"
     },
     "common": {
       "reason": "Reason",
@@ -759,6 +760,19 @@
       "action": "Action",
       "target": "Target",
       "details": "Details"
+    },
+    "reservations": {
+      "title": "Reservations",
+      "lead": "Pixels held while a buyer pays. A lapsed hold is released automatically (lazily at the next purchase, and by the maintenance job).",
+      "filter": "Filter by status",
+      "user": "Buyer",
+      "parcel": "Parcel",
+      "amount": "Amount",
+      "created": "Created",
+      "expires": "Expires",
+      "status": "Status",
+      "lapsed": "lapsed",
+      "empty": "No reservation."
     }
   },
   "errors": {
