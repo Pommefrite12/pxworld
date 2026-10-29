@@ -19,8 +19,9 @@ export default defineConfig({
   projects: [{ name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1360, height: 860 } } }],
   webServer: {
     command: "node scripts/e2e-server.mjs",
-    url: `http://localhost:${PORT}/api/stats`,
+    url: `http://localhost:${Number(PORT) + 1}`, // the e2e script answers here once the dev server is warmed up
     timeout: 180_000,
     reuseExistingServer: false,
+    gracefulShutdown: { signal: "SIGTERM", timeout: 15_000 }, // lets scripts/e2e-server.mjs stop the whole Next.js process group
   },
 });

@@ -36,6 +36,8 @@ interface Tile { state: "loading" | "ready" | "error"; parcels: MapParcel[] }
 interface Img { el: HTMLImageElement; state: "loading" | "ready" | "error"; used: number }
 
 const TILE = 1000;
+const GEO_TILE_PX = 512;
+const GEO_CACHE_MAX = 48;
 const RASTER_PX = 256;
 const MAX_Z = 8;
 const MAX_SCALE = 48;
@@ -312,6 +314,7 @@ export class MapEngine {
         this.drag = "pinch";
         this.pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, scale: this.cam.scale, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
       }
+      c.dataset.pointerFocus = "1"; // no focus ring for mouse/touch; keyboard users still get one
       c.focus({ preventScroll: true });
     });
 
@@ -373,6 +376,7 @@ export class MapEngine {
     }, { passive: false });
 
     on(c, "keydown", (e) => {
+      delete c.dataset.pointerFocus;
       const step = 90 / this.cam.scale;
       const k = e.key;
       if (k === "ArrowLeft") this.flyTo({ ...this.cam, x: this.cam.x - step }, 120);
@@ -461,8 +465,10 @@ export class MapEngine {
   }
 
   private lastFrame = 0;
+  private frameNo = 0;
   private frame(t: number) {
     this.raf = 0;
+    this.frameNo++;
     if (this.destroyed) return;
     const dt = this.lastFrame ? Math.min(48, t - this.lastFrame) : 16;
     this.lastFrame = t;
@@ -489,6 +495,7 @@ export class MapEngine {
     if (sr && (sr.w < 28 || sr.h < 28)) { this.pulse = (t % 1400) / 1400; again = true; }
 
     if (this.dirty || again) { this.dirty = false; this.draw(); }
+    if (this.geoPending) again = true; // geography tiles are still being rasterised: keep drawing
     if (again) this.raf = requestAnimationFrame((n) => this.frame(n));
   }
 
@@ -531,26 +538,75 @@ export class MapEngine {
     return { x0: cam.x - w / 2 / cam.scale, y0: cam.y - h / 2 / cam.scale, x1: cam.x + w / 2 / cam.scale, y1: cam.y + h / 2 / cam.scale };
   }
 
+  /**
+   * Geography is static, so it is rasterised ONCE per (zoom level, tile) into small offscreen canvases and then only
+   * blitted: a pan/zoom frame costs a handful of drawImage calls instead of re-filling ~100 000 path segments.
+   * Level k renders 512-px tiles at 2^k device pixels per grid pixel, so edges stay vector-sharp at every zoom.
+   */
+  private geoTiles = new Map<string, { c: HTMLCanvasElement; used: number }>();
+  private geoPending = false;
+
+  private renderGeoTile(k: number, tx: number, ty: number): HTMLCanvasElement | null {
+    if (!this.geo) return null;
+    const c = document.createElement("canvas");
+    c.width = c.height = GEO_TILE_PX;
+    const g = c.getContext("2d");
+    if (!g) return null;
+    const scale = 2 ** k, size = GEO_TILE_PX / scale;
+    const paths = this.geo.tilePaths(k <= -2 ? "low" : "high", { x0: tx * size, y0: ty * size, x1: (tx + 1) * size, y1: (ty + 1) * size });
+    g.setTransform(scale, 0, 0, scale, -tx * GEO_TILE_PX, -ty * GEO_TILE_PX);
+    g.fillStyle = COLORS.land;
+    g.fill(paths.fill, "evenodd");
+    if (k >= -4) {
+      g.strokeStyle = `rgba(${COLORS.ink},${clamp(0.1 + (k + 4) * 0.025, 0.1, 0.22)})`;
+      g.lineWidth = 1.8 / scale;
+      g.setLineDash([6 / scale, 5 / scale]);
+      g.stroke(paths.borders);
+      g.setLineDash([]);
+    }
+    g.strokeStyle = `rgba(${COLORS.ink},0.62)`;
+    g.lineWidth = (clamp(1.6 + k * 0.12, 1.4, 2.6) * (this.dpr > 1.5 ? 1.15 : 1)) / scale;
+    g.lineJoin = "round";
+    g.stroke(paths.coast);
+    return c;
+  }
+
   private drawGeography(s: number) {
     if (!this.geo) return;
-    const { ctx, cam, w, h, dpr } = this;
-    ctx.save();
-    ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * (w / 2 - cam.x * s), dpr * (h / 2 - cam.y * s));
-    const land = s < 0.2 ? this.geo.landLow : this.geo.landHigh;
-    ctx.fillStyle = COLORS.land;
-    ctx.fill(land, "evenodd");
-    if (s >= 0.045) {
-      ctx.strokeStyle = `rgba(${COLORS.ink},${clamp((s - 0.045) / 0.25, 0.1, 0.22)})`;
-      ctx.lineWidth = 0.9 / s;
-      ctx.setLineDash([3 / s, 2.5 / s]);
-      ctx.stroke(this.geo.borders);
-      ctx.setLineDash([]);
+    const { ctx } = this;
+    const k = Math.ceil(Math.log2(s * this.dpr));
+    const size = GEO_TILE_PX / 2 ** k; // grid pixels covered by one tile edge
+    const v = this.visibleWorld();
+    const tx0 = Math.max(0, Math.floor(v.x0 / size)), tx1 = Math.min(Math.floor(W / size), Math.floor(v.x1 / size));
+    const ty0 = Math.max(0, Math.floor(v.y0 / size)), ty1 = Math.min(Math.floor(H / size), Math.floor(v.y1 / size));
+    let budget = 4;
+    this.geoPending = false;
+    ctx.imageSmoothingEnabled = true;
+    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+      const key = `${k}/${tx}/${ty}`;
+      let tile = this.geoTiles.get(key);
+      if (!tile && budget > 0) {
+        const c = this.renderGeoTile(k, tx, ty);
+        if (c) { tile = { c, used: 0 }; this.geoTiles.set(key, tile); budget--; }
+      }
+      const a = this.worldToScreen(tx * size, ty * size);
+      const px = size * s;
+      if (tile) { tile.used = this.frameNo; ctx.drawImage(tile.c, a.x, a.y, px + 0.6, px + 0.6); continue; }
+      this.geoPending = true;
+      // not rendered yet: reuse a coarser level we already have rather than showing a hole
+      for (let kk = k - 1; kk >= k - 6; kk--) {
+        const sz = GEO_TILE_PX / 2 ** kk, ax = Math.floor((tx * size) / sz), ay = Math.floor((ty * size) / sz);
+        const anc = this.geoTiles.get(`${kk}/${ax}/${ay}`);
+        if (!anc) continue;
+        const f = size / sz * GEO_TILE_PX;
+        ctx.drawImage(anc.c, ((tx * size) - ax * sz) / sz * GEO_TILE_PX, ((ty * size) - ay * sz) / sz * GEO_TILE_PX, f, f, a.x, a.y, px + 0.6, px + 0.6);
+        break;
+      }
     }
-    ctx.strokeStyle = `rgba(${COLORS.ink},0.62)`;
-    ctx.lineWidth = Math.max(1.1, Math.min(1.8, s * 0.9 + 0.7)) / s;
-    ctx.lineJoin = "round";
-    ctx.stroke(land);
-    ctx.restore();
+    if (this.geoTiles.size > GEO_CACHE_MAX) {
+      const old = [...this.geoTiles.entries()].sort((x, y) => x[1].used - y[1].used).slice(0, this.geoTiles.size - GEO_CACHE_MAX + 8);
+      for (const [key] of old) this.geoTiles.delete(key);
+    }
   }
 
   /** The "pixel field": a dot matrix over the whole planet at far zoom, which melts into the pixel grid as you zoom in. */

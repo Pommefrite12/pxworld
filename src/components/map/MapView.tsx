@@ -36,6 +36,7 @@ export const MapView = forwardRef<MapViewHandle, Props>(function MapView({ label
       onSelectionState: (s) => cbRef.current.onSelectionState?.(s),
     });
     engineRef.current = engine;
+    if (process.env.NODE_ENV !== "production") (window as unknown as { __pxEngine?: MapEngine }).__pxEngine = engine; // debugging / e2e hook (dev only)
     const fit = () => {
       const r = wrap.getBoundingClientRect();
       engine.resize(r.width, r.height, Math.min(window.devicePixelRatio || 1, 2.5));

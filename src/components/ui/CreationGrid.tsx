@@ -14,7 +14,7 @@ export async function CreationGrid({ items, empty }: { items: Card[]; empty: str
           <Link href={`/p/${c.code}`} className="card group block overflow-hidden transition hover:-translate-y-0.5">
             <div className="checker grid aspect-square place-items-center p-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/api/assets/${c.asset_id}`} alt={c.title ?? ""} width={c.w} height={c.h} loading="lazy" className="pixelated max-h-full max-w-full object-contain" style={{ imageRendering: "pixelated" }} />
+              <img src={`/api/assets/${c.asset_id}`} alt={c.title ?? ""} width={c.w} height={c.h} loading="lazy" className="pixelated h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
             </div>
             <div className="p-3">
               <p className="truncate text-sm font-bold">{c.title ?? "—"}</p>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { ParcelEditor, type ParcelEditorHandle } from "@/components/editor/ParcelEditor";
 import { Link } from "@/i18n/navigation";
+import { fitSize } from "@/components/map/ParcelCard";
 import { formatMoney, quote } from "@/lib/grid/pricing";
 import type { Rect } from "@/lib/grid/geometry";
 import type { Pricing } from "./BuyPanel";
@@ -111,7 +112,7 @@ export function CheckoutDialog({ rect, pricing, onClose, onPreviewOnMap, onUnava
                 <p className="label">{t("finalRender")}</p>
                 <div className="checker grid place-items-center rounded-xl p-3 shadow-[0_0_0_1.5px_var(--color-line)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {finalUrl && <img src={finalUrl} alt={t("finalRender")} width={rect.w} height={rect.h} className="pixelated max-h-[24rem] w-auto max-w-full" style={{ imageRendering: "pixelated", aspectRatio: `${rect.w} / ${rect.h}` }} />}
+                  {finalUrl && <img src={finalUrl} alt={t("finalRender")} width={rect.w} height={rect.h} className="pixelated max-w-full" style={{ imageRendering: "pixelated", ...fitSize(rect.w, rect.h, 384) }} />}
                 </div>
                 <div className="mt-3 flex gap-2">
                   <button className="btn btn-ghost btn-sm" onClick={() => setStep("design")}>← {t("backToEditor")}</button>

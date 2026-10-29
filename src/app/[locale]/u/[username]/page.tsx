@@ -44,7 +44,7 @@ export default async function PublicProfile({ params }: { params: Promise<{ loca
           {p.creations.map((c) => (
             <li key={c.code}><Link href={`/p/${c.code}`} className="card checker grid aspect-square place-items-center overflow-hidden p-1.5" aria-label={c.title ?? c.code}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/api/assets/${c.asset_id}`} alt={c.title ?? ""} loading="lazy" className="pixelated max-h-full max-w-full" style={{ imageRendering: "pixelated" }} />
+              <img src={`/api/assets/${c.asset_id}`} alt={c.title ?? ""} loading="lazy" className="pixelated h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
             </Link></li>
           ))}
         </ul>

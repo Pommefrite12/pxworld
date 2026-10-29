@@ -5,6 +5,12 @@ import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { hostOf } from "@/lib/security/url";
 
+/** Integer upscale (crisp pixels) up to `box` px; downscale smoothly beyond. */
+export function fitSize(w: number, h: number, box: number) {
+  const k = Math.floor(box / Math.max(w, h));
+  return k >= 1 ? { width: w * k, height: h * k } : { width: Math.round((w * box) / Math.max(w, h)), height: Math.round((h * box) / Math.max(w, h)) };
+}
+
 export interface ParcelInfo {
   code: string; x: number; y: number; w: number; h: number; area: number; hidden: boolean; likes: number; activatedAt: string | null;
   owner: { username: string; country: string | null; avatarId: string | null };
@@ -57,8 +63,8 @@ export function ParcelCard({ code, onClose, signedIn, className = "" }: { code: 
           <div className="checker grid place-items-center border-b border-line p-3" style={{ minHeight: 120 }}>
             {info.creation ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={`/api/assets/${info.creation.assetId}`} alt={info.creation.title ?? t("untitled")} width={info.w} height={info.h}
-                className="pixelated max-h-52 w-auto max-w-full object-contain" style={{ imageRendering: "pixelated", aspectRatio: `${info.w} / ${info.h}` }} loading="lazy" />
+              <img src={`/api/assets/${info.creation.assetId}`} alt={info.creation.title ?? t("untitled")}
+                className="pixelated max-w-full" style={{ imageRendering: "pixelated", ...fitSize(info.w, info.h, 208) }} loading="lazy" />
             ) : (
               <p className="px-4 py-6 text-center text-sm text-ink-soft">{info.hidden ? t("hidden") : t("pending")}</p>
             )}
