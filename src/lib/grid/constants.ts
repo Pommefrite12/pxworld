@@ -1,39 +1,41 @@
 /**
  * The Pixel World grid.
  *
- * 50 000 × 20 000 = 1 000 000 000 virtual pixels, exactly.
+ * 40 000 × 25 000 = 1 000 000 000 virtual pixels, exactly.
  *
  * Why this shape: 10^9 = 2^9 · 5^9, so a rectangle of exactly one billion
  * integer cells can only have a width/height ratio of the form 2^a·5^b with a
  * and b odd (a ratio of exactly 2:1 is impossible). The two candidates closest
  * to a world map are 8:5 (40 000 × 25 000) and 5:2 (50 000 × 20 000).
  *
- * 5:2 maps onto an equirectangular (plate carrée) projection with SQUARE pixels:
- * 360° of longitude over 50 000 columns and 144° of latitude (84°N → 60°S) over
- * 20 000 rows are both 0.0072° per pixel (≈ 800 m at the equator). That crop
- * keeps every inhabited land mass (northern tip of Greenland: 83.6°N, Cape Horn:
- * 56°S) and drops only Antarctica's interior and the polar ocean.
+ * The map uses the Web-Mercator projection every online map uses (see
+ * ./projection.ts): it is conformal, so countries keep their familiar shape at
+ * every latitude instead of looking stretched near the poles like they do on a
+ * plate carrée. With 360° of longitude over 40 000 columns a pixel is ≈ 1 km
+ * wide at the equator, and the 8:5 frame holds the world from 57°S (Cape Horn is
+ * 56°S) up to ≈ 82.4°N (the northern tip of Greenland is 83.6°N).
  *
  * The grid is VIRTUAL: nothing in the app ever materialises one object per pixel.
  * Only purchased rectangles (parcels) exist, as rows in PostgreSQL.
  */
-export const GRID_WIDTH = 50_000;
-export const GRID_HEIGHT = 20_000;
+export const GRID_WIDTH = 40_000;
+export const GRID_HEIGHT = 25_000;
 export const TOTAL_PIXELS = GRID_WIDTH * GRID_HEIGHT;
 
 if (TOTAL_PIXELS !== 1_000_000_000) {
   throw new Error("Invariant broken: the grid must contain exactly 1 000 000 000 pixels");
 }
 
-/** Geographic extent covered by the grid (equirectangular, square pixels). */
+/**
+ * Geographic extent: the whole planet in longitude, and from `latMin` northwards in latitude. The northern limit is
+ * not a free parameter: it follows from the width, the height and `latMin` (square pixels in Mercator), see
+ * ./projection.ts `LAT_MAX`.
+ */
 export const GEO = {
   lonMin: -180,
   lonMax: 180,
-  latMax: 84,
-  latMin: -60,
+  latMin: -57,
 } as const;
-
-export const DEGREES_PER_PIXEL = (GEO.lonMax - GEO.lonMin) / GRID_WIDTH; // 0.0072
 
 /** Parcel limits. The database enforces the hard ones with CHECK constraints. */
 export const MIN_AREA = 100;

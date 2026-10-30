@@ -34,7 +34,7 @@ describe("px_start_order", () => {
   it("validates the rectangle against grid and business limits", async () => {
     const u = await createUser();
     await expectPgError(startOrder(u, { x: 0, y: 0, w: 9, h: 10 }), "px_invalid_rect");
-    await expectPgError(startOrder(u, { x: 49_995, y: 0, w: 10, h: 10 }), "px_invalid_rect");
+    await expectPgError(startOrder(u, { x: 39_995, y: 0, w: 10, h: 10 }), "px_invalid_rect");
     await expectPgError(startOrder(u, { x: 0, y: 0, w: 600, h: 600 }), "px_invalid_rect"); // above max_area
     await expectPgError(startOrder(u, { x: -5, y: 0, w: 10, h: 10 }), "px_invalid_rect");
   });

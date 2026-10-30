@@ -42,14 +42,16 @@
   },
   "search": {
     "label": "Search a place",
-    "placeholder": "Search a country, a city, x,y or 48.85, 2.35",
+    "placeholder": "Search a country, a département, a city, x,y or 48.85, 2.35",
     "none": "No result",
     "loading": "Loading…",
     "country": "Country",
     "city": "City",
     "coordinates": "Coordinates",
     "pixelPosition": "Pixel position",
-    "parcelCode": "Parcel code"
+    "parcelCode": "Parcel code",
+    "department": "Département",
+    "region": "Region"
   },
   "parcel": {
     "label": "Parcel details",
@@ -468,7 +470,7 @@
         {
           "h": "What you buy",
           "p": [
-            "The map is a virtual grid of 1,000,000,000 pixels (50,000 × 20,000). A parcel is a rectangle of at least 100 pixels. Buying a parcel gives you the exclusive right to display one creation on that rectangle of the map, according to these terms.",
+            "The map is a virtual grid of 1,000,000,000 pixels (40,000 × 25,000). A parcel is a rectangle of at least 100 pixels. Buying a parcel gives you the exclusive right to display one creation on that rectangle of the map, according to these terms.",
             "A parcel is a virtual placement. It is not real-estate, nor a geographic, territorial or intellectual property right, and it gives you no right over the places the map depicts."
           ]
         },
@@ -565,15 +567,15 @@
         {
           "h": "Map data",
           "ul": [
-            "Land and country outlines: Natural Earth (public domain), distributed through the world-atlas package (ISC).",
-            "City names and positions: GeoNames (geonames.org), licensed under Creative Commons Attribution 4.0, distributed through the all-the-cities package (MIT).",
+            "Land, country and administrative (département, state, province) outlines: Natural Earth (public domain), 1:110m, 1:50m and 1:10m scales; land and countries are distributed through the world-atlas package (ISC).",
+            "City names and positions: GeoNames (geonames.org), licensed under Creative Commons Attribution 4.0, distributed through the all-the-cities package (MIT). Cities of 1,000 inhabitants and more are shown as you zoom in.",
             "Country names: i18n-iso-countries (MIT)."
           ]
         },
         {
           "h": "Projection",
           "p": [
-            "The map uses an equirectangular projection from 180°W to 180°E and from 84°N to 60°S, on a grid of 50,000 × 20,000 square pixels of 0.0072° (about 800 m at the equator)."
+            "The map uses the Web Mercator projection (the one of every online map) from 180°W to 180°E and from 57°S to about 82.4°N, on a grid of 40,000 × 25,000 square pixels: one pixel is about 1 km wide at the equator and gets smaller towards the poles, like on any Mercator map. The level of detail (borders, départements, cities) increases as you zoom."
           ]
         },
         {

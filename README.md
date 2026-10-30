@@ -1,6 +1,6 @@
 # Pixel World — *One planet. One billion pixels. Your mark.*
 
-A collaborative world map made of **exactly 1 000 000 000 virtual pixels** (50 000 × 20 000). Anyone can claim a
+A collaborative world map made of **exactly 1 000 000 000 virtual pixels** (40 000 × 25 000). Anyone can claim a
 rectangle of the planet (from 100 pixels, €1 per pixel to start), draw or upload a creation on it, and share a permanent
 link to its place on the map. Inspired by The Million Dollar Homepage, built for the web of 2026: a real world map,
 fluid zoom down to the single pixel, accounts, moderation, secure Stripe payments, and a back office.
@@ -47,12 +47,14 @@ Supabase (Auth + Storage), Stripe **test** keys, and `CRON_SECRET`. Step-by-step
 | `npm run test:e2e` | Playwright: full buy → pay → moderate → publish journey, moderation, uploads, permissions |
 | `npm run lint` / `typecheck` | ESLint, `tsc --noEmit` |
 | `npm run db:setup` / `db:reset` | local PostgreSQL + migrations |
-| `npm run data:world` | rebuild the projected map data in `public/data` from Natural Earth / GeoNames |
+| `npm run data:world` | rebuild the projected map data (land, borders, départements, cities) in `public/data` from Natural Earth / GeoNames |
+| `npm run data:clear -- --yes` | wipe parcels/orders/payments of a **local** development database (refuses anything else) |
 
 ## The key decisions (details in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md))
 
-* **Grid:** 50 000 × 20 000 = 10⁹ exactly. 10⁹ = 2⁹·5⁹, so a 2:1 grid is impossible; 5:2 is the closest to a world map and
-  maps onto an equirectangular projection (84°N → 60°S) with **square pixels of 0.0072° ≈ 800 m**.
+* **Grid:** 40 000 × 25 000 = 10⁹ exactly. 10⁹ = 2⁹·5⁹, so a 2:1 grid is impossible; 8:5 is the closest to a world map. It is
+  drawn with the **Web Mercator** projection (57°S → 82°N, square pixels of ≈ 1 km at the equator), so countries keep their
+  familiar shape. Zoom reveals more detail: borders, départements/states, then cities and towns.
 * **Nothing scales with a billion.** Only purchased rectangles exist (rows in PostgreSQL). The map renders from a static
   vector layer + server-composited raster tiles when zoomed out + per-viewport JSON tiles and the parcels' own PNGs when
   zoomed in. A custom Canvas 2D engine (≈ 700 lines) gives pixel-exact zoom, touch support and 60 fps.
@@ -93,5 +95,5 @@ smoke test in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) covers them in about te
 
 ## Licence & data
 
-Map data: Natural Earth (public domain), GeoNames (CC BY 4.0 — attribution shown in the app and at `/credits`).
+Map data: Natural Earth (public domain; land, countries, départements/states/provinces), GeoNames (CC BY 4.0 — attribution shown in the app and at `/credits`).
 Fonts: SIL OFL. Add your own project licence before publishing.

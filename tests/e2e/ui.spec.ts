@@ -27,9 +27,9 @@ test.describe("accessibility (axe, WCAG 2.1 A/AA)", () => {
 
 test.describe("map interaction", () => {
   test("geography is fully drawn at every zoom (no missing tiles) and a frame is cheap", async ({ page }) => {
-    for (const [x, y, z] of [[24200, 7400, 2.5], [25326, 4882, 12], [10000, 6000, 0.4], [25000, 10000, 40]] as const) {
+    for (const [x, y, z] of [[20300, 11000, 2.5], [20261, 11015, 12], [10000, 8000, 0.4], [20000, 12000, 40], [20122, 10916, 5], [20261, 11015, 0.7], [11778, 12296, 1.5]] as const) {
       await page.goto(`/?x=${x}&y=${y}&z=${z}`);
-      await page.waitForFunction(() => window.__pxEngine && !window.__pxEngine.geoPending, undefined, { timeout: 20_000 });
+      await page.waitForFunction(() => window.__pxEngine && (window.__pxEngine as unknown as { geo: unknown }).geo && !window.__pxEngine.geoPending, undefined, { timeout: 20_000 });
       const ms = await page.evaluate(async () => {
         const e = window.__pxEngine as unknown as { cam: { x: number; scale: number }; invalidate(): void; draw(): void };
         const t0 = performance.now();
@@ -38,6 +38,23 @@ test.describe("map interaction", () => {
       });
       expect(ms, `avg draw ms at scale ${z}`).toBeLessThan(40); // generous: CI runners use software rendering
     }
+  });
+
+  test("zooming in reveals more detail: départements, cities of 15 000+, then towns of 1 000+", async ({ page }) => {
+    type View = { x0: number; y0: number; x1: number; y1: number };
+    type GeoApi = { adminLabels(): { en: string; dep: boolean }[] | null; townsIn(tier: 1 | 2, v: View): { name: string }[] };
+    await page.goto("/?x=20261&y=11015&z=2");
+    await page.waitForFunction(() => window.__pxEngine && (window.__pxEngine as unknown as { geo: unknown }).geo && !window.__pxEngine.geoPending, undefined, { timeout: 20_000 });
+    const names = (tier: 1 | 2, v: View) => page.evaluate(([t, view]) => ((window.__pxEngine as unknown as { geo: GeoApi }).geo.townsIn(t, view)).map((x) => x.name), [tier, v] as const);
+    // départements (admin-1 names, loaded on demand)
+    await expect.poll(() => page.evaluate(() => (window.__pxEngine as unknown as { geo: GeoApi }).geo.adminLabels()?.some((l) => l.en === "Seine-Maritime" && l.dep) ?? false), { timeout: 15_000 }).toBe(true);
+    // cities of 15 000+ around Paris (cells fetched when asked for, then served from memory)
+    await expect.poll(async () => (await names(1, { x0: 19800, y0: 10700, x1: 20700, y1: 11300 })).includes("Rouen"), { timeout: 15_000 }).toBe(true);
+    // towns of 1 000+: dozens in a 100×100 px window around Paris, none of which belongs to the coarser tier
+    await expect.poll(async () => (await names(2, { x0: 20200, y0: 10950, x1: 20320, y1: 11080 })).length, { timeout: 15_000 }).toBeGreaterThan(25);
+    // the 1:10m land of this region is cached: the geography tiles drawn here are complete (not the 1:50m stand-in)
+    const incomplete = await page.evaluate(() => [...(window.__pxEngine as unknown as { geoTiles: Map<string, { complete: boolean }> }).geoTiles.values()].filter((t) => !t.complete).length);
+    expect(incomplete).toBe(0);
   });
 
   test("keyboard: arrows pan, plus/minus zoom, 0 recentres", async ({ page }) => {
@@ -91,8 +108,8 @@ test.describe("map interaction", () => {
     await page.getByRole("listbox").getByRole("option").first().click();
     await expect.poll(async () => (await camera(page)).scale, { timeout: 8000 }).toBeGreaterThan(1);
     const c = await camera(page);
-    expect(Math.abs(c.x - 25326)).toBeLessThan(40); // 2.35°E
-    expect(Math.abs(c.y - 4882)).toBeLessThan(40); // 48.85°N
+    expect(Math.abs(c.x - 20261)).toBeLessThan(40); // 2.35°E
+    expect(Math.abs(c.y - 11015)).toBeLessThan(40); // 48.85°N (Mercator)
     await search.fill("48.85, 2.35");
     await page.getByRole("listbox").getByRole("option").first().click();
     await expect.poll(async () => Math.round((await camera(page)).scale)).toBe(6);
@@ -126,7 +143,7 @@ test.describe("editor", () => {
     const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 } });
     expect((await ctx.request.post("/api/dev/login", { data: { email: "preview@example.test" } })).ok()).toBeTruthy();
     const page = await ctx.newPage();
-    await page.goto("/?bx=40000&by=3000&bw=20&bh=20");
+    await page.goto("/?bx=30000&by=3000&bw=20&bh=20");
     await expect(page.getByTestId("buy-status")).toContainText(/free/i);
     await page.getByTestId("buy-continue").click();
     const dialog = page.getByRole("dialog");
@@ -152,7 +169,7 @@ test.describe("editor", () => {
     const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 } });
     await ctx.request.post("/api/dev/login", { data: { email: "uploader@example.test" } });
     const page = await ctx.newPage();
-    await page.goto("/?bx=41000&by=3000&bw=30&bh=30");
+    await page.goto("/?bx=31000&by=3000&bw=30&bh=30");
     await expect(page.getByTestId("buy-status")).toContainText(/free/i);
     await page.getByTestId("buy-continue").click();
     const dialog = page.getByRole("dialog");

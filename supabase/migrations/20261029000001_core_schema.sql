@@ -1,5 +1,5 @@
 -- Pixel World — core schema.
--- Grid: 50 000 × 20 000 = 1 000 000 000 virtual pixels (see src/lib/grid/constants.ts).
+-- Grid: 40 000 × 25 000 = 1 000 000 000 virtual pixels (Web-Mercator, 57°S → ≈82.4°N) (see src/lib/grid/constants.ts).
 -- Only purchased rectangles (parcels) are stored; the grid itself is virtual.
 --
 -- Table relationships (see docs/DATABASE.md for the diagram):
@@ -9,8 +9,8 @@
 
 -- Grid constants, mirrored from the application. A CHECK against these values is the last
 -- line of defence if application code is ever wrong.
-create or replace function public.px_grid_width()  returns integer language sql immutable parallel safe as $$ select 50000 $$;
-create or replace function public.px_grid_height() returns integer language sql immutable parallel safe as $$ select 20000 $$;
+create or replace function public.px_grid_width()  returns integer language sql immutable parallel safe as $$ select 40000 $$;
+create or replace function public.px_grid_height() returns integer language sql immutable parallel safe as $$ select 25000 $$;
 
 /* ------------------------------------------------------------------ settings */
 

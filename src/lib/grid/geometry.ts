@@ -1,4 +1,4 @@
-import { GRID_HEIGHT, GRID_WIDTH, HARD_MAX_AREA, MAX_SIDE, MIN_AREA, GEO, DEGREES_PER_PIXEL } from "./constants";
+import { GRID_HEIGHT, GRID_WIDTH, HARD_MAX_AREA, MAX_SIDE, MIN_AREA } from "./constants";
 
 /** An axis-aligned rectangle of virtual pixels. x/y = top-left cell, w/h = size in cells. */
 export interface Rect {
@@ -73,22 +73,7 @@ export function findCollision<T extends Rect>(candidate: Rect, others: Iterable<
 
 /* ------------------------------ geography ------------------------------ */
 
-export interface LonLat {
-  lon: number;
-  lat: number;
-}
-
-/** Longitude/latitude (degrees) → fractional grid coordinates. */
-export function lonLatToPixel({ lon, lat }: LonLat): { x: number; y: number } {
-  return {
-    x: ((lon - GEO.lonMin) / (GEO.lonMax - GEO.lonMin)) * GRID_WIDTH,
-    y: ((GEO.latMax - lat) / (GEO.latMax - GEO.latMin)) * GRID_HEIGHT,
-  };
-}
-
-export function pixelToLonLat(x: number, y: number): LonLat {
-  return { lon: GEO.lonMin + x * DEGREES_PER_PIXEL, lat: GEO.latMax - y * DEGREES_PER_PIXEL };
-}
+export { lonLatToPixel, pixelToLonLat, metersPerPixel, type LonLat } from "./projection";
 
 /* ------------------------------ permalinks ------------------------------ */
 

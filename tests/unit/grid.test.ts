@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
-  DEGREES_PER_PIXEL, GRID_HEIGHT, GRID_WIDTH, MIN_AREA, PRESET_SIZES, TOTAL_PIXELS,
+  GRID_HEIGHT, GRID_WIDTH, MIN_AREA, PRESET_SIZES, TOTAL_PIXELS,
 } from "@/lib/grid/constants";
 import {
   area, centeredRect, clampToGrid, findCollision, formatRectCode, intersects, lonLatToPixel, pixelToLonLat, validateRect,
 } from "@/lib/grid/geometry";
+import { LAT_MAX } from "@/lib/grid/projection";
 import { formatMoney, quote } from "@/lib/grid/pricing";
 
 describe("grid", () => {
@@ -12,17 +13,18 @@ describe("grid", () => {
     expect(GRID_WIDTH * GRID_HEIGHT).toBe(1_000_000_000);
     expect(TOTAL_PIXELS).toBe(1_000_000_000);
   });
-  it("has square pixels in the equirectangular projection", () => {
-    expect(DEGREES_PER_PIXEL).toBeCloseTo(0.0072, 10);
-    expect(144 / GRID_HEIGHT).toBeCloseTo(DEGREES_PER_PIXEL, 10);
+  it("is an 8:5 frame (a 2:1 grid of exactly 10⁹ cells cannot exist)", () => {
+    expect(GRID_WIDTH / GRID_HEIGHT).toBeCloseTo(1.6, 12);
   });
   it("round-trips lon/lat ↔ pixel", () => {
     const p = lonLatToPixel({ lon: 2.35, lat: 48.85 });
     const back = pixelToLonLat(p.x, p.y);
     expect(back.lon).toBeCloseTo(2.35, 9);
     expect(back.lat).toBeCloseTo(48.85, 9);
-    expect(lonLatToPixel({ lon: -180, lat: 84 })).toEqual({ x: 0, y: 0 });
-    expect(lonLatToPixel({ lon: 180, lat: -60 })).toEqual({ x: GRID_WIDTH, y: GRID_HEIGHT });
+    expect(lonLatToPixel({ lon: -180, lat: LAT_MAX })).toEqual({ x: 0, y: expect.closeTo(0, 6) });
+    const br = lonLatToPixel({ lon: 180, lat: -57 });
+    expect(br.x).toBe(GRID_WIDTH);
+    expect(br.y).toBeCloseTo(GRID_HEIGHT, 6);
   });
 });
 

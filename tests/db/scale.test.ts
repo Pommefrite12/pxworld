@@ -16,7 +16,7 @@ beforeAll(async () => {
   owner = await createUser("whale");
   await pool.query(
     `insert into public.parcels (code, owner_id, x, y, w, h, status, activated_at)
-     select lpad(to_hex(i), 10, '0'), $1, (i % 4000) * 12, (i / 4000) * 12, 10, 10, 'active', now() from generate_series(0, $2::int - 1) i`,
+     select lpad(to_hex(i), 10, '0'), $1, (i % 3300) * 12, (i / 3300) * 12, 10, 10, 'active', now() from generate_series(0, $2::int - 1) i`,
     [owner, N],
   );
   await pool.query("analyze public.parcels");
@@ -49,9 +49,9 @@ describe(`with ${N.toLocaleString("en")} parcels`, () => {
     );
     expect(JSON.stringify(rows[0])).toContain("parcels_active_bbox_idx");
     const [tile, ms] = await time(() => getTile(0, 0));
-    expect(tile.length).toBe(84 * 50); // 84 columns × 50 rows of parcels fall in the first 1000×1000 tile
+    expect(tile.length).toBe(84 * 61); // 84 columns × 61 rows of parcels fall in the first 1000×1000 tile
     expect(ms).toBeLessThan(1000);
-    const [far, ms3] = await time(() => getTile(49, 19));
+    const [far, ms3] = await time(() => getTile(39, 24));
     expect(far).toEqual([]); // outside the populated block
     expect(ms3).toBeLessThan(200);
   });

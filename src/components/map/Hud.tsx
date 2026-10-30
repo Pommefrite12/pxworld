@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
-import { pixelToLonLat } from "@/lib/grid/geometry";
-import { DEGREES_PER_PIXEL, TOTAL_PIXELS } from "@/lib/grid/constants";
+import { metersPerPixel, pixelToLonLat } from "@/lib/grid/geometry";
+import { TOTAL_PIXELS } from "@/lib/grid/constants";
 import type { Camera } from "./engine";
 import type { PublicStats } from "@/lib/data/map";
 
@@ -47,7 +47,8 @@ export function MapControls({ cam, onZoomIn, onZoomOut, onFit, className = "" }:
   const t = useTranslations("map");
   const f = useFormatter();
   const bar = useMemo(() => scaleBar(cam.scale), [cam.scale]);
-  const km = bar.len * DEGREES_PER_PIXEL * 111.32; // km at the equator: 1° ≈ 111.32 km
+  // Mercator: the ground size of a pixel shrinks with cos(latitude), so the scale bar follows the latitude of the view centre
+  const km = (bar.len * metersPerPixel(pixelToLonLat(cam.x, cam.y).lat)) / 1000;
   const btn = "btn btn-ghost !bg-white !min-h-11 !w-11 !px-0 text-lg shadow-float";
   return (
     <div className={`pointer-events-none flex items-end gap-3 ${className}`}>

@@ -1,12 +1,12 @@
-import { getTile } from "@/lib/data/map";
+import { getTile, TILES_X, TILES_Y } from "@/lib/data/map";
 import { json } from "@/lib/http/errors";
 import { intParam, route } from "@/lib/http/route";
 
-// 50 × 20 metadata tiles of 1000 × 1000 virtual pixels. `?v=<mapVersion>` makes each URL immutable:
+// 40 × 25 metadata tiles of 1000 × 1000 virtual pixels. `?v=<mapVersion>` makes each URL immutable:
 // the version bumps whenever the visible map changes, so CDN/browser caches never serve stale content.
 export const GET = route(async (req, ctx: { params: Promise<{ tx: string; ty: string }> }) => {
   const { tx: a, ty: b } = await ctx.params;
-  const tx = intParam(a, 0, 49), ty = intParam(b, 0, 19);
+  const tx = intParam(a, 0, TILES_X - 1), ty = intParam(b, 0, TILES_Y - 1);
   if (tx === null || ty === null) return json({ error: "bad_tile" }, { status: 404 });
   const versioned = new URL(req.url).searchParams.has("v");
   return json(await getTile(tx, ty), {

@@ -1,17 +1,18 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { centeredRect, clampToGrid, intersects, type Rect } from "@/lib/grid/geometry";
-import { loadGeo, loadPlaces, type Geo, type Places } from "./geo";
+import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
 
 /**
  * Pixel World map engine — a purpose-built Canvas 2D renderer.
  *
- * Why not MapLibre/Leaflet/OpenSeadragon: the map is a flat 50 000 × 20 000 pixel plane (equirectangular, square
+ * Why not MapLibre/Leaflet/OpenSeadragon: the map is a flat 40 000 × 25 000 pixel plane (Web-Mercator, square
  * pixels), not a geodesic surface. A custom renderer gives us nearest-neighbour pixel-exact zoom of user images,
  * one coordinate system for geography + parcels + overlays, zero tile-server infrastructure, and a few hundred lines
  * of code we fully control.
  *
  * Data strategy (nothing ever scales with one billion):
- *   • geography      — static vector layer (Natural Earth), two levels of detail, drawn as Path2D
+ *   • geography      — static vector layer (Natural Earth 1:110m → 1:10m land, borders, départements/states; GeoNames cities),
+ *                      detail chosen by zoom and fetched per 2 500-px cell only where the camera looks
  *   • zoomed out     — 256 px raster tiles composited server-side from parcel images (z = 0…8, CDN-cached per map version)
  *   • zoomed in      — JSON metadata tiles of 1000×1000 px (parcels in view only) + each parcel's own PNG, lazily loaded
  *   • interaction    — hit-testing uses the metadata tiles; the server remains the only authority for purchases
@@ -104,7 +105,7 @@ export class MapEngine {
     if (!ctx) throw new Error("Canvas 2D unavailable");
     this.ctx = ctx;
     this.bindEvents();
-    void loadGeo().then((g) => { this.geo = g; this.invalidate(); });
+    void loadGeo().then((g) => { this.geo = g; g.onUpdate = () => this.invalidate(); this.invalidate(); });
     void loadPlaces().then((p) => { this.places = p; this.invalidate(); });
     void document.fonts?.ready.then(() => this.invalidate());
   }
@@ -504,6 +505,7 @@ export class MapEngine {
   private draw() {
     const { ctx, w, h, dpr, cam } = this;
     const s = cam.scale;
+    this.geo?.tick(this.frameNo);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
@@ -522,8 +524,10 @@ export class MapEngine {
     this.drawGeography(s);
     this.drawDots(s, x0, y0, ww, hh);
     if (this.mode === "buy") { ctx.fillStyle = `rgba(${COLORS.free},0.13)`; ctx.fillRect(x0, y0, ww, hh); }
+    // zoomed in, place names sit UNDER the parcels (owners cover the map); zoomed out, parcels are specks and names stay readable on top
+    if (s >= RASTER_BELOW) this.drawLabels(s);
     this.drawParcels(s);
-    this.drawLabels(s);
+    if (s < RASTER_BELOW) this.drawLabels(s);
     this.drawGrid(s);
     this.drawOverlays(s);
     ctx.restore();
@@ -543,32 +547,50 @@ export class MapEngine {
    * blitted: a pan/zoom frame costs a handful of drawImage calls instead of re-filling ~100 000 path segments.
    * Level k renders 512-px tiles at 2^k device pixels per grid pixel, so edges stay vector-sharp at every zoom.
    */
-  private geoTiles = new Map<string, { c: HTMLCanvasElement; used: number }>();
+  private geoTiles = new Map<string, { c: HTMLCanvasElement; used: number; complete: boolean; ver: number }>();
   private geoPending = false;
 
-  private renderGeoTile(k: number, tx: number, ty: number): HTMLCanvasElement | null {
+  /** Level of detail for a render level k (2^k device pixels per grid pixel). */
+  private lodFor(k: number): Lod { return k <= -2 ? "110" : k === -1 ? "50" : "10"; }
+
+  private renderGeoTile(k: number, tx: number, ty: number): { c: HTMLCanvasElement; complete: boolean } | null {
     if (!this.geo) return null;
     const c = document.createElement("canvas");
     c.width = c.height = GEO_TILE_PX;
     const g = c.getContext("2d");
     if (!g) return null;
     const scale = 2 ** k, size = GEO_TILE_PX / scale;
-    const paths = this.geo.tilePaths(k <= -2 ? "low" : "high", { x0: tx * size, y0: ty * size, x1: (tx + 1) * size, y1: (ty + 1) * size });
+    const rect = { x0: tx * size, y0: ty * size, x1: (tx + 1) * size, y1: (ty + 1) * size };
+    const admin = k >= -3; // départements / states / provinces appear once a country spans a few hundred screen pixels
+    let lod = this.lodFor(k);
+    let paths = this.geo.tilePaths(lod, rect, admin);
+    // the 1:10m cells this tile needs are still downloading: draw the 1:50m level meanwhile, redrawn when they arrive
+    if (!paths.complete && lod === "10") { lod = "50"; paths = this.geo.tilePaths(lod, rect, admin); }
+    const dprBoost = this.dpr > 1.5 ? 1.15 : 1;
     g.setTransform(scale, 0, 0, scale, -tx * GEO_TILE_PX, -ty * GEO_TILE_PX);
+    g.lineJoin = "round";
+    g.lineCap = "round"; // clipped outlines are separate pieces: round caps close the joints between them
     g.fillStyle = COLORS.land;
     g.fill(paths.fill, "evenodd");
+    if (admin) {
+      g.strokeStyle = `rgba(${COLORS.ink},${k >= 2 ? 0.34 : k >= 0 ? 0.28 : 0.18})`;
+      g.lineWidth = (k >= 1 ? 1.1 : 0.9) * dprBoost / scale;
+      g.setLineDash([2.2 / scale, 3.2 / scale]);
+      g.stroke(paths.admin);
+      g.setLineDash([]);
+    }
     if (k >= -4) {
-      g.strokeStyle = `rgba(${COLORS.ink},${clamp(0.1 + (k + 4) * 0.025, 0.1, 0.22)})`;
-      g.lineWidth = 1.8 / scale;
-      g.setLineDash([6 / scale, 5 / scale]);
+      const strong = k >= 0;
+      g.strokeStyle = `rgba(${COLORS.ink},${strong ? 0.42 : clamp(0.1 + (k + 4) * 0.025, 0.1, 0.22)})`;
+      g.lineWidth = (strong ? 1.5 : 1.8) * dprBoost / scale;
+      g.setLineDash(strong ? [9 / scale, 3 / scale, 2 / scale, 3 / scale] : [6 / scale, 5 / scale]);
       g.stroke(paths.borders);
       g.setLineDash([]);
     }
     g.strokeStyle = `rgba(${COLORS.ink},0.62)`;
-    g.lineWidth = (clamp(1.6 + k * 0.12, 1.4, 2.6) * (this.dpr > 1.5 ? 1.15 : 1)) / scale;
-    g.lineJoin = "round";
+    g.lineWidth = (clamp(1.6 + k * 0.12, 1.4, 2.6) * dprBoost) / scale;
     g.stroke(paths.coast);
-    return c;
+    return { c, complete: paths.complete };
   }
 
   private drawGeography(s: number) {
@@ -585,13 +607,15 @@ export class MapEngine {
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
       const key = `${k}/${tx}/${ty}`;
       let tile = this.geoTiles.get(key);
-      if (!tile && budget > 0) {
-        const c = this.renderGeoTile(k, tx, ty);
-        if (c) { tile = { c, used: 0 }; this.geoTiles.set(key, tile); budget--; }
+      // a tile drawn from a coarser level while data was missing is redrawn once new data has arrived
+      const stale = tile && !tile.complete && tile.ver !== this.geo.version;
+      if ((!tile || stale) && budget > 0) {
+        const r = this.renderGeoTile(k, tx, ty);
+        if (r) { tile = { c: r.c, used: 0, complete: r.complete, ver: this.geo.version }; this.geoTiles.set(key, tile); budget--; }
       }
       const a = this.worldToScreen(tx * size, ty * size);
       const px = size * s;
-      if (tile) { tile.used = this.frameNo; ctx.drawImage(tile.c, a.x, a.y, px + 0.6, px + 0.6); continue; }
+      if (tile) { tile.used = this.frameNo; ctx.drawImage(tile.c, a.x, a.y, px + 0.6, px + 0.6); if (!tile.complete && tile.ver !== this.geo.version) this.geoPending = true; continue; }
       this.geoPending = true;
       // not rendered yet: reuse a coarser level we already have rather than showing a hole
       for (let kk = k - 1; kk >= k - 6; kk--) {
@@ -603,8 +627,10 @@ export class MapEngine {
         break;
       }
     }
-    if (this.geoTiles.size > GEO_CACHE_MAX) {
-      const old = [...this.geoTiles.entries()].sort((x, y) => x[1].used - y[1].used).slice(0, this.geoTiles.size - GEO_CACHE_MAX + 8);
+    // never evict what is on screen: the cache must at least hold the visible tiles
+    const cacheMax = Math.max(GEO_CACHE_MAX, (tx1 - tx0 + 1) * (ty1 - ty0 + 1) + 16);
+    if (this.geoTiles.size > cacheMax) {
+      const old = [...this.geoTiles.entries()].sort((x, y) => x[1].used - y[1].used).slice(0, this.geoTiles.size - cacheMax + 8);
       for (const [key] of old) this.geoTiles.delete(key);
     }
   }
@@ -624,18 +650,22 @@ export class MapEngine {
     void ww; void hh;
   }
 
+  /**
+   * Place names, most important first so they win collisions: countries → big cities → départements/states →
+   * mid-size cities → towns. Each layer has its own zoom range; the smaller layers load their data on demand.
+   */
   private drawLabels(s: number) {
-    if (!this.places || s < 0.025 || s > 1.2) return;
+    if (!this.places || !this.geo || s < 0.025) return;
     const { ctx, w, h } = this;
-    const fade = clamp((1.2 - s) / 0.6, 0, 1);
+    const v = this.visibleWorld();
+    const lang = document.documentElement.lang === "fr" ? "fr" : "en";
+    const FONT = `"Instrument Sans Variable", system-ui, sans-serif`;
     ctx.save();
-    ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.font = `600 ${s > 0.12 ? 13 : 11}px "Instrument Sans Variable", system-ui, sans-serif`;
     ctx.lineJoin = "round";
     ctx.lineWidth = 3;
     const placed: { x0: number; y0: number; x1: number; y1: number }[] = [];
-    const label = (text: string, x: number, y: number, a: number, align: CanvasTextAlign = "center") => {
+    const label = (text: string, x: number, y: number, a: number, align: CanvasTextAlign = "center", ink = 0.55) => {
       const tw = ctx.measureText(text).width, th = 13;
       const x0 = align === "left" ? x : x - tw / 2;
       const box = { x0: x0 - 3, y0: y - th / 2 - 2, x1: x0 + tw + 3, y1: y + th / 2 + 2 };
@@ -644,33 +674,76 @@ export class MapEngine {
       ctx.textAlign = align;
       ctx.strokeStyle = `rgba(251,245,230,${0.85 * a})`;
       ctx.strokeText(text, x, y);
-      ctx.fillStyle = `rgba(${COLORS.ink},${0.55 * a})`;
+      ctx.fillStyle = `rgba(${COLORS.ink},${ink * a})`;
       ctx.fillText(text, x, y);
       return true;
     };
-    const lang = document.documentElement.lang === "fr" ? "fr" : "en";
-    // big countries first so they win collisions
-    const byArea = [...this.places.countries].sort((a, b) => (b.bbox[2] - b.bbox[0]) * (b.bbox[3] - b.bbox[1]) - (a.bbox[2] - a.bbox[0]) * (a.bbox[3] - a.bbox[1]));
-    for (const c of byArea) {
-      const [bx0, by0, bx1, by1] = c.bbox;
-      const name = (lang === "fr" ? c.fr : c.en).toUpperCase();
-      if ((bx1 - bx0) * s < ctx.measureText(name).width * 0.9 || (by1 - by0) * s < 14) continue;
-      const p = this.worldToScreen((bx0 + bx1) / 2, (by0 + by1) / 2);
-      if (p.x < -60 || p.y < -20 || p.x > w + 60 || p.y > h + 20) continue;
-      label(name, p.x, p.y, fade);
+    const onScreen = (p: { x: number; y: number }, m: number) => p.x > -m && p.y > -m && p.x < w + m && p.y < h + m;
+    const dot = (p: { x: number; y: number }, size: number, a: number) => {
+      ctx.fillStyle = `rgba(${COLORS.ink},${0.7 * a})`;
+      ctx.fillRect(Math.round(p.x - size / 2), Math.round(p.y - size / 2), size, size);
+    };
+
+    // 1. countries
+    if (s <= 1.2) {
+      const fade = clamp((1.2 - s) / 0.6, 0, 1);
+      ctx.font = `600 ${s > 0.12 ? 13 : 11}px ${FONT}`;
+      // big countries first so they win collisions
+      const byArea = [...this.places.countries].sort((a, b) => (b.bbox[2] - b.bbox[0]) * (b.bbox[3] - b.bbox[1]) - (a.bbox[2] - a.bbox[0]) * (a.bbox[3] - a.bbox[1]));
+      for (const c of byArea) {
+        const [bx0, by0, bx1, by1] = c.bbox;
+        const name = (lang === "fr" ? c.fr : c.en).toUpperCase();
+        if ((bx1 - bx0) * s < ctx.measureText(name).width * 0.9 || (by1 - by0) * s < 14) continue;
+        const p = this.worldToScreen((bx0 + bx1) / 2, (by0 + by1) / 2);
+        if (onScreen(p, 60)) label(name, p.x, p.y, fade);
+      }
     }
+
+    // 2. big cities (≥ 400 000), always known
     if (s >= 0.16) {
-      ctx.font = `500 12px "Instrument Sans Variable", system-ui, sans-serif`;
+      ctx.font = `600 ${s > 0.8 ? 13 : 12}px ${FONT}`;
       const minPop = s > 0.8 ? 400_000 : s > 0.4 ? 1_000_000 : s > 0.25 ? 2_500_000 : 5_000_000;
       for (const c of this.places.cities) {
         if (c.pop < minPop) break; // sorted by population
         const p = this.worldToScreen(c.x, c.y);
-        if (p.x < -40 || p.y < -20 || p.x > w + 40 || p.y > h + 20) continue;
-        if (!label(c.en, p.x + 7, p.y, fade, "left")) continue;
-        ctx.fillStyle = `rgba(${COLORS.ink},0.7)`;
-        ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+        if (!onScreen(p, 40)) continue;
+        if (label(c.en, p.x + 7, p.y, 1, "left", 0.7)) dot(p, 5, 1);
       }
     }
+
+    // 3. admin-1 units: départements, states, provinces
+    if (s >= 0.12) {
+      const labels = this.geo.adminLabels();
+      if (labels) {
+        const a = clamp((s - 0.12) / 0.2, 0, 1);
+        ctx.font = `italic 500 ${s > 3 ? 13 : 11.5}px ${FONT}`;
+        const pad = 80 / s;
+        for (const l of labels) {
+          if (l.x < v.x0 - pad || l.x > v.x1 + pad || l.y < v.y0 - pad || l.y > v.y1 + pad) continue;
+          const name = lang === "fr" && l.fr ? l.fr : l.en;
+          // a unit gets its name once it is wide enough on screen to hold it
+          if (l.s * s * 1.25 < name.length * 6.2) continue;
+          const p = this.worldToScreen(l.x, l.y);
+          label(name, p.x, p.y, a, "center", 0.5);
+        }
+      }
+    }
+
+    // 4. cities of 15 000+ and towns of 1 000+, fetched per cell as the zoom reaches them
+    const pad = 60 / s, view = { x0: v.x0 - pad, y0: v.y0 - pad, x1: v.x1 + pad, y1: v.y1 + pad };
+    const drawTowns = (rows: { x: number; y: number; pop: number; name: string }[], minPop: number, size: number, dotSize: number) => {
+      ctx.font = `500 ${size}px ${FONT}`;
+      let n = 0;
+      for (const t of rows) {
+        if (t.pop < minPop) break;
+        const p = this.worldToScreen(t.x, t.y);
+        if (!onScreen(p, 40)) continue;
+        if (label(t.name, p.x + 6, p.y, 1, "left", 0.66)) dot(p, dotSize, 1);
+        if (++n > 400) break;
+      }
+    };
+    if (s >= 1.1) drawTowns(this.geo.townsIn(1, view), s < 2.2 ? 100_000 : s < 4 ? 40_000 : 15_000, 12, 4);
+    if (s >= 6) drawTowns(this.geo.townsIn(2, view), s < 10 ? 5_000 : 1_000, 11, 3);
     ctx.restore();
   }
 

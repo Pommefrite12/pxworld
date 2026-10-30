@@ -47,11 +47,11 @@ describe("parcels table integrity (no application code involved)", () => {
   it("rejects out-of-grid, too small, and too large rectangles", async () => {
     const u = await createUser();
     await expectPgError(insertParcel(u, -1, 0, 10, 10), "parcels_integers_in_grid");
-    await expectPgError(insertParcel(u, 49_995, 0, 10, 10), "parcels_integers_in_grid");
-    await expectPgError(insertParcel(u, 0, 19_995, 10, 10), "parcels_integers_in_grid");
+    await expectPgError(insertParcel(u, 39_995, 0, 10, 10), "parcels_integers_in_grid");
+    await expectPgError(insertParcel(u, 0, 24_995, 10, 10), "parcels_integers_in_grid");
     await expectPgError(insertParcel(u, 0, 0, 9, 10), "parcels_min_area");
     await expectPgError(insertParcel(u, 0, 0, 0, 100), "parcels_integers_in_grid");
     await expectPgError(insertParcel(u, 0, 0, 1001, 1), "parcels_side_cap");
-    await insertParcel(u, 49_990, 19_990, 10, 10); // last cells of the grid are valid
+    await insertParcel(u, 39_990, 24_990, 10, 10); // last cells of the grid are valid
   });
 });

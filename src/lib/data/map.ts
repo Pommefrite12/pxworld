@@ -1,9 +1,11 @@
 import "server-only";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { query, queryOne } from "@/lib/db/pool";
-import { TOTAL_PIXELS } from "@/lib/grid/constants";
+import { GRID_HEIGHT, GRID_WIDTH, TOTAL_PIXELS } from "@/lib/grid/constants";
 
-export const TILE_SIZE = 1000; // virtual pixels per JSON metadata tile (50 × 20 tiles)
+export const TILE_SIZE = 1000; // virtual pixels per JSON metadata tile (40 × 25 tiles)
+export const TILES_X = GRID_WIDTH / TILE_SIZE;
+export const TILES_Y = GRID_HEIGHT / TILE_SIZE;
 
 /** [code, x, y, w, h, assetId | null, avgColor | null] — compact on purpose, a tile can hold thousands. */
 export type TileParcel = [string, number, number, number, number, string | null, string | null];

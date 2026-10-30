@@ -4,18 +4,18 @@
 
 | | |
 |---|---|
-| Grid | **50 000 × 20 000 = 1 000 000 000** cells (`src/lib/grid/constants.ts`, mirrored by CHECK constraints in SQL) |
-| Why not 2:1 | 10⁹ = 2⁹·5⁹, so width/height = 2ᵃ·5ᵇ with *a, b odd*: 8:5 (40 000 × 25 000) or 5:2 (50 000 × 20 000) are the closest to a world map |
-| Projection | equirectangular, lon −180…180, lat 84°N…60°S. 360°/50 000 = 144°/20 000 = **0.0072°** → square pixels of ≈ 800 m at the equator |
-| Coverage | all inhabited land (Greenland's tip 83.6°N, Cape Horn 56°S); only Antarctica's interior and polar ocean are cropped |
+| Grid | **40 000 × 25 000 = 1 000 000 000** cells (`src/lib/grid/constants.ts`, mirrored by CHECK constraints in SQL) |
+| Why not 2:1 | 10⁹ = 2⁹·5⁹, so width/height = 2ᵃ·5ᵇ with *a, b odd*: 8:5 (40 000 × 25 000) or 5:2 (50 000 × 20 000) are the closest to a world map; 8:5 is used |
+| Projection | **Web Mercator** (`src/lib/grid/projection.ts`): x linear in longitude, y = `(TOP − asinh(tan φ))·R`, `R = W/2π`. Conformal: countries keep their familiar shape at every latitude (an equirectangular map looks stretched near the poles). One pixel ≈ 1 002 m wide at the equator, ×cos(latitude) elsewhere |
+| Coverage | lon −180…180, lat **57°S → ≈ 82.4°N** (Cape Horn 56°S; only the very tip of Greenland, 83.6°N, and Antarctica are cropped) |
 | Parcel | integer rectangle `(x, y, w, h)`, area ≥ 100, sides ≤ 1000, area ≤ 250 000 by default (admin setting; hard cap 1 000 000) |
 
 The grid is **virtual**. Nothing ever materialises one object per pixel: only purchased rectangles are rows.
 
 ## 2. Rendering engine (why a custom Canvas 2D renderer)
 
-The map is a flat 50 000 × 20 000 pixel plane, not a geodesic surface. MapLibre/Leaflet are built around Web Mercator tiles
-and would need a custom CRS plus bolt-on code for pixel-exact images; OpenSeadragon needs a pre-rendered deep-zoom pyramid of
+The map is a flat 40 000 × 25 000 pixel plane (Mercator-projected geography on top of an integer grid). MapLibre/Leaflet are built
+around tile pyramids of that same projection but would need bolt-on code for pixel-exact images and a grid of exactly 10⁹ cells; OpenSeadragon needs a pre-rendered deep-zoom pyramid of
 the *whole* planet. A purpose-built engine (`src/components/map/engine.ts`) gives one coordinate system for geography, parcels
 and overlays, nearest-neighbour pixel-exact zoom, touch/pinch/inertia, and no tile infrastructure.
 
@@ -23,12 +23,16 @@ Layers, by zoom (`scale` = screen px per grid px, 0.029 … 48):
 
 | Layer | Source | Notes |
 |---|---|---|
-| Ocean, land, borders | static vector data (`public/data/*.json`, Natural Earth) | rasterised **once per tile** into 512-px offscreen canvases, clipped per tile (Sutherland–Hodgman / Liang–Barsky) so a frame is a few `drawImage` calls; 2 levels of detail |
+| Ocean, land, country borders | static vector data (`public/data`, Natural Earth) | rasterised **once per tile** into 512-px offscreen canvases, clipped per tile (Sutherland–Hodgman / Liang–Barsky) so a frame is a few `drawImage` calls. **Three levels of detail** picked from the zoom `k = ⌈log₂(scale·dpr)⌉`: 1:110m (k ≤ −2), 1:50m (k = −1), 1:10m (k ≥ 0) |
+| Départements / states / provinces | Natural Earth admin-1 | internal borders only (arcs shared by two units of one country; the country outline comes from the country layer). Coarse simplified file `admin-lo.json` for k = −3…−1, 1:10m cells beyond; dotted line style |
+| Place names | countries, big cities (≥ 400 000, always loaded), admin-1 names (`admin-labels.json`, shown once the unit is wide enough to hold its name), cities 15 000+ (zoom ≥ 1.1×) and towns 1 000+ (zoom ≥ 6×) | greedy collision avoidance, most important first; localised (en/fr) for countries and admin-1; zoomed in, names sit under the parcels |
 | Pixel field → grid | procedural | dot matrix at world scale, 10-px grid from 0.8×, 1-px grid fading in from 3× to 10× |
 | Parcels, scale < 1 | `/api/map/raster/{z}/{x}/{y}?v=` | 256-px PNG tiles composited by `sharp` from parcel images, z = 0…8, **immutable per map version** (CDN) |
 | Parcels, scale ≥ 1 | `/api/map/tiles/{x}/{y}?v=` (JSON, 1000×1000 px) + `/api/assets/{id}` | only tiles in view; images loaded lazily, drawn with smoothing **off** so pixels stay razor sharp |
 | Hit-testing, collisions | the same JSON tiles | client-side convenience only; the database decides |
 | Overlays | selection, preview of the buyer's creation, highlight | |
+
+The 1:10m layers are **not** loaded as a whole: `public/data/geo/` holds them cut into 2 500-px cells (`g-{cx}-{cy}.json`: land, country borders, admin-1 borders; `c1-…`: cities 15 000–400 000; `c2-…`: towns 1 000–15 000 in 625-px cells), plus `index.json` listing the non-empty cells. The engine fetches a cell when a tile or label layer needs it (6 requests at a time, newest first, LRU-evicted) and draws the 1:50m level meanwhile; tiles are redrawn when the cells arrive. A cell's polygons are cut exactly at its border and their coastline is derived on the client by skipping the edges that merely lie on the border, so there are no false lines and no seams. `scripts/build-world-data.mts` produces everything (`npm run data:world`, ~10 s; needs the 40 MB Natural Earth admin-1 file, downloaded once into `.data/`).
 
 Frame cost measured in headless Chromium with *software* rendering (no GPU): ≈ 0.4–2 ms per frame at world and deep zoom, ≈ 9 ms at mid zoom (many large tile blits); real GPU-accelerated browsers are considerably faster. `tests/e2e/ui.spec.ts` guards against regressions.
 

@@ -42,14 +42,16 @@
   },
   "search": {
     "label": "Rechercher un lieu",
-    "placeholder": "Un pays, une ville, x,y ou 48.85, 2.35",
+    "placeholder": "Rechercher un pays, un département, une ville, x,y ou 48,85, 2,35",
     "none": "Aucun résultat",
     "loading": "Chargement…",
     "country": "Pays",
     "city": "Ville",
     "coordinates": "Coordonnées",
     "pixelPosition": "Position en pixels",
-    "parcelCode": "Code de parcelle"
+    "parcelCode": "Code de parcelle",
+    "department": "Département",
+    "region": "Région"
   },
   "parcel": {
     "label": "Détails de la parcelle",
@@ -468,7 +470,7 @@
         {
           "h": "Ce que vous achetez",
           "p": [
-            "La carte est une grille virtuelle de 1 000 000 000 de pixels (50 000 × 20 000). Une parcelle est un rectangle d'au moins 100 pixels. L'achat d'une parcelle vous donne le droit exclusif d'y afficher une création sur ce rectangle de la carte, selon les présentes conditions.",
+            "La carte est une grille virtuelle de 1 000 000 000 de pixels (40 000 × 25 000). Une parcelle est un rectangle d'au moins 100 pixels. L'achat d'une parcelle vous donne le droit exclusif d'y afficher une création sur ce rectangle de la carte, selon les présentes conditions.",
             "Une parcelle est un emplacement virtuel. Ce n'est ni un bien immobilier, ni un droit géographique, territorial ou de propriété intellectuelle, et elle ne vous donne aucun droit sur les lieux représentés par la carte."
           ]
         },
@@ -565,15 +567,15 @@
         {
           "h": "Données cartographiques",
           "ul": [
-            "Contours des terres et des pays : Natural Earth (domaine public), distribués via le paquet world-atlas (ISC).",
-            "Noms et positions des villes : GeoNames (geonames.org), sous licence Creative Commons Attribution 4.0, distribués via le paquet all-the-cities (MIT).",
+            "Contours des terres, des pays et des divisions administratives (départements, États, provinces) : Natural Earth (domaine public), aux échelles 1:110m, 1:50m et 1:10m ; les terres et les pays sont distribués via le paquet world-atlas (ISC).",
+            "Noms et positions des villes : GeoNames (geonames.org), sous licence Creative Commons Attribution 4.0, distribués via le paquet all-the-cities (MIT). Les villes de 1 000 habitants et plus apparaissent au fil du zoom.",
             "Noms des pays : i18n-iso-countries (MIT)."
           ]
         },
         {
           "h": "Projection",
           "p": [
-            "La carte utilise une projection équirectangulaire de 180° O à 180° E et de 84° N à 60° S, sur une grille de 50 000 × 20 000 pixels carrés de 0,0072° (environ 800 m à l'équateur)."
+            "La carte utilise la projection Web Mercator (celle de toutes les cartes en ligne), de 180° O à 180° E et de 57° S à environ 82,4° N, sur une grille de 40 000 × 25 000 pixels carrés : un pixel mesure environ 1 km de large à l'équateur et rétrécit vers les pôles, comme sur toute carte Mercator. Le niveau de détail (frontières, départements, villes) augmente avec le zoom."
           ]
         },
         {

@@ -40,7 +40,7 @@ erDiagram
 
 ## Overlap protection (the critical invariant)
 
-1. **Integer coordinates + CHECKs**: `x,y ≥ 0`, `x+w ≤ 50 000`, `y+h ≤ 20 000`, `w,h ≥ 1`, sides ≤ 1000, area between 100 and 10⁶.
+1. **Integer coordinates + CHECKs**: `x,y ≥ 0`, `x+w ≤ 40 000`, `y+h ≤ 25 000`, `w,h ≥ 1`, sides ≤ 1000, area between 100 and 10⁶.
 2. **`bbox`** = generated `box(point(x,y), point(x+w-1, y+h-1))` — the closed integer cell rectangle, so adjacent parcels do **not** overlap.
 3. **`EXCLUDE USING gist (bbox WITH &&) WHERE (status IN ('reserved','active'))`** — PostgreSQL enforces, atomically and
    across concurrent connections, that no two live parcels intersect. A second overlapping insert blocks until the first

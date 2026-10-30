@@ -19,7 +19,11 @@ const config: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["sharp", "pg"],
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // map reference data (land, borders, départements, cities) only changes with `npm run data:world`
+      { source: "/data/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }] },
+    ];
   },
 };
 
