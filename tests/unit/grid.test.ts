@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  GRID_HEIGHT, GRID_WIDTH, MIN_AREA, PRESET_SIZES, TOTAL_PIXELS,
+  GEO, GRID_HEIGHT, GRID_WIDTH, MIN_AREA, PRESET_SIZES, TOTAL_PIXELS,
 } from "@/lib/grid/constants";
 import {
   area, centeredRect, clampToGrid, findCollision, formatRectCode, intersects, lonLatToPixel, pixelToLonLat, validateRect,
@@ -21,10 +21,11 @@ describe("grid", () => {
     const back = pixelToLonLat(p.x, p.y);
     expect(back.lon).toBeCloseTo(2.35, 9);
     expect(back.lat).toBeCloseTo(48.85, 9);
-    expect(lonLatToPixel({ lon: -180, lat: LAT_MAX })).toEqual({ x: 0, y: expect.closeTo(0, 6) });
-    const br = lonLatToPixel({ lon: 180, lat: -57 });
-    expect(br.x).toBe(GRID_WIDTH);
-    expect(br.y).toBeCloseTo(GRID_HEIGHT, 6);
+    const tl = lonLatToPixel({ lon: GEO.lonMin, lat: LAT_MAX });
+    expect(tl.x).toBe(0);
+    expect(tl.y).toBeCloseTo(0, 6);
+    const bottom = lonLatToPixel({ lon: 0, lat: GEO.latMin });
+    expect(bottom.y).toBeCloseTo(GRID_HEIGHT, 6);
   });
 });
 

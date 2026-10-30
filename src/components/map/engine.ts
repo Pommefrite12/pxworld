@@ -1,6 +1,8 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { centeredRect, clampToGrid, intersects, type Rect } from "@/lib/grid/geometry";
+import { webTileRange, webTileToGrid } from "@/lib/grid/projection";
 import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
+import { SATELLITE_ALPHA, SATELLITE_MAX_Z, SatelliteTiles } from "./satellite";
 
 /**
  * Pixel World map engine — a purpose-built Canvas 2D renderer.
@@ -13,6 +15,7 @@ import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
  * Data strategy (nothing ever scales with one billion):
  *   • geography      — static vector layer (Natural Earth 1:110m → 1:10m land, borders, départements/states; GeoNames cities),
  *                      detail chosen by zoom and fetched per 2 500-px cell only where the camera looks
+ *   • satellite      — optional NASA Blue Marble tiles (Web-Mercator pyramid), drawn faintly under the vector map
  *   • zoomed out     — 256 px raster tiles composited server-side from parcel images (z = 0…8, CDN-cached per map version)
  *   • zoomed in      — JSON metadata tiles of 1000×1000 px (parcels in view only) + each parcel's own PNG, lazily loaded
  *   • interaction    — hit-testing uses the metadata tiles; the server remains the only authority for purchases
@@ -74,6 +77,8 @@ export class MapEngine {
 
   private geo: Geo | null = null;
   private places: Places | null = null;
+  private sat = new SatelliteTiles();
+  private satelliteOn = true;
   private tiles = new Map<string, Tile>();
   private tileQueue: string[] = [];
   private inflight = 0;
@@ -105,6 +110,7 @@ export class MapEngine {
     if (!ctx) throw new Error("Canvas 2D unavailable");
     this.ctx = ctx;
     this.bindEvents();
+    this.sat.onLoad = () => this.invalidate();
     void loadGeo().then((g) => { this.geo = g; g.onUpdate = () => this.invalidate(); this.invalidate(); });
     void loadPlaces().then((p) => { this.places = p; this.invalidate(); });
     void document.fonts?.ready.then(() => this.invalidate());
@@ -122,6 +128,9 @@ export class MapEngine {
     this.cb.onCamera?.({ ...this.cam });
     this.invalidate();
   }
+
+  /** Switches the faint satellite background on or off. */
+  setSatellite(on: boolean) { this.satelliteOn = on; this.invalidate(); }
 
   setMode(mode: Mode) { this.mode = mode; if (mode === "explore") { this.ghost = null; this.brush = null; } this.invalidate(); }
   setBrush(b: { w: number; h: number } | null) { this.brush = b; this.ghost = null; this.invalidate(); }
@@ -522,6 +531,7 @@ export class MapEngine {
     ctx.rect(x0, y0, ww, hh);
     ctx.clip();
     this.drawGeography(s);
+    this.drawSatellite(s);
     this.drawDots(s, x0, y0, ww, hh);
     if (this.mode === "buy") { ctx.fillStyle = `rgba(${COLORS.free},0.13)`; ctx.fillRect(x0, y0, ww, hh); }
     // zoomed in, place names sit UNDER the parcels (owners cover the map); zoomed out, parcels are specks and names stay readable on top
@@ -633,6 +643,46 @@ export class MapEngine {
       const old = [...this.geoTiles.entries()].sort((x, y) => x[1].used - y[1].used).slice(0, this.geoTiles.size - cacheMax + 8);
       for (const [key] of old) this.geoTiles.delete(key);
     }
+  }
+
+  /**
+   * Satellite imagery under the vector map, at low opacity. The tiles are those of the standard Web-Mercator pyramid;
+   * `webTileToGrid` says where each one lands on the grid. Tile edges are rounded to whole screen pixels using one shared
+   * function per edge, so neighbours never overlap (which would show as lines at this opacity) nor leave gaps.
+   */
+  private drawSatellite(s: number) {
+    if (!this.satelliteOn) return;
+    const { ctx } = this;
+    const z = clamp(Math.ceil(Math.log2((W * s * this.dpr) / 320)), 0, SATELLITE_MAX_Z);
+    const n = 2 ** z;
+    const v = this.visibleWorld();
+    const r = webTileRange(z, { x0: Math.max(0, v.x0), y0: Math.max(0, v.y0), x1: Math.min(W, v.x1), y1: Math.min(H, v.y1) });
+    const edgeX = (tx: number) => Math.round(this.worldToScreen(webTileToGrid(z, tx, 0).x, 0).x);
+    const edgeY = (ty: number) => Math.round(this.worldToScreen(0, webTileToGrid(z, 0, ty).y).y);
+    ctx.save();
+    ctx.globalAlpha = SATELLITE_ALPHA;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    for (let ty = r.ty0; ty <= r.ty1; ty++) {
+      const y0 = edgeY(ty), y1 = edgeY(ty + 1);
+      for (let tx = r.tx0; tx <= r.tx1; tx++) {
+        const x0 = edgeX(tx), x1 = edgeX(tx + 1);
+        const col = ((tx % n) + n) % n; // the map starts at lonMin, so the pyramid wraps inside it
+        const img = this.sat.get(z, col, ty, this.frameNo);
+        if (img) { ctx.drawImage(img, x0, y0, x1 - x0, y1 - y0); continue; }
+        // not loaded yet: stand in with the part of a coarser tile we already have
+        for (let d = 1; d <= 5 && z - d >= 0; d++) {
+          const px = col >> d, py = ty >> d;
+          const anc = this.sat.peek(z - d, px, py, this.frameNo);
+          if (!anc) continue;
+          const sub = anc.naturalWidth / 2 ** d;
+          ctx.drawImage(anc, (col - (px << d)) * sub, (ty - (py << d)) * sub, sub, sub, x0, y0, x1 - x0, y1 - y0);
+          break;
+        }
+      }
+    }
+    ctx.restore();
+    this.sat.evict(this.frameNo);
   }
 
   /** The "pixel field": a dot matrix over the whole planet at far zoom, which melts into the pixel grid as you zoom in. */

@@ -53,8 +53,9 @@ Supabase (Auth + Storage), Stripe **test** keys, and `CRON_SECRET`. Step-by-step
 ## The key decisions (details in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md))
 
 * **Grid:** 40 000 × 25 000 = 10⁹ exactly. 10⁹ = 2⁹·5⁹, so a 2:1 grid is impossible; 8:5 is the closest to a world map. It is
-  drawn with the **Web Mercator** projection (57°S → 82°N, square pixels of ≈ 1 km at the equator), so countries keep their
-  familiar shape. Zoom reveals more detail: borders, départements/states, then cities and towns.
+  drawn with the **Web Mercator** projection (56.7°S → 83.8°N, ≈ 1 km per pixel at the equator), so countries keep their
+  familiar shape and none is cut (the map's edge is in the Bering Strait). Zoom reveals more detail: borders,
+  départements/states, then cities and towns. A faint NASA satellite background (Blue Marble) can be switched on and off.
 * **Nothing scales with a billion.** Only purchased rectangles exist (rows in PostgreSQL). The map renders from a static
   vector layer + server-composited raster tiles when zoomed out + per-viewport JSON tiles and the parcels' own PNGs when
   zoomed in. A custom Canvas 2D engine (≈ 700 lines) gives pixel-exact zoom, touch support and 60 fps.
@@ -95,5 +96,5 @@ smoke test in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) covers them in about te
 
 ## Licence & data
 
-Map data: Natural Earth (public domain; land, countries, départements/states/provinces), GeoNames (CC BY 4.0 — attribution shown in the app and at `/credits`).
+Map data: Natural Earth (public domain; land, countries, départements/states/provinces), NASA Blue Marble / GIBS (satellite background), GeoNames (CC BY 4.0 — attribution shown in the app and at `/credits`).
 Fonts: SIL OFL. Add your own project licence before publishing.

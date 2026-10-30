@@ -73,13 +73,16 @@ export function clipPolygonToRect(pts: ArrayLike<number>, c: Rect4): number[] {
  * clip rectangle (Sutherland–Hodgman closes a clipped polygon along the rectangle's border, and those artificial
  * edges must never be stroked). A genuine coast edge cannot lie exactly on the border with both ends on it, so the
  * test is exact when the clip rectangle's edges are representable (the build script cuts on multiples of 2 500 px).
+ *
+ * `seamX`: the source data is cut along the antimeridian, which runs through the middle of the map: the edges that lie
+ * on that vertical line are artificial too (two halves of one landmass meet there) and are skipped as well.
  */
-export function outlineWithoutClipEdges(pts: ArrayLike<number>, c: Rect4): number[][] {
+export function outlineWithoutClipEdges(pts: ArrayLike<number>, c: Rect4, seamX?: number): number[][] {
   const n = pts.length >> 1;
   const out: number[][] = [];
   if (n < 2) return out;
   const onBorder = (ax: number, ay: number, bx: number, by: number) =>
-    (ax === bx && (ax === c.x0 || ax === c.x1)) || (ay === by && (ay === c.y0 || ay === c.y1));
+    (ax === bx && (ax === c.x0 || ax === c.x1 || ax === seamX)) || (ay === by && (ay === c.y0 || ay === c.y1));
   let cur: number[] | null = null;
   for (let i = 0; i < n; i++) {
     const j = (i + 1) % n;

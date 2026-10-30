@@ -41,7 +41,23 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
   const [parcelCode, setParcelCode] = useState<string | null>(initial.parcelCode);
   const [dialog, setDialog] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [satellite, setSatellite] = useState(true);
   const engine = () => mapRef.current?.engine ?? null;
+
+  /* ---------- satellite background: on by default, the choice is remembered ---------- */
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reads a browser-only preference once, after hydration
+      if (localStorage.getItem("px-satellite") === "0") setSatellite(false);
+    } catch { /* storage unavailable: keep the default */ }
+  }, []);
+  useEffect(() => { if (engineReady) engine()?.setSatellite(satellite); }, [engineReady, satellite]);
+  const toggleSatellite = () => {
+    setSatellite((on) => {
+      try { localStorage.setItem("px-satellite", on ? "0" : "1"); } catch { /* ignore */ }
+      return !on;
+    });
+  };
 
   /* ---------- live stats (real numbers, refreshed; a purchase bumps mapVersion and the map reloads its tiles) ---------- */
   useEffect(() => {
@@ -186,7 +202,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
             {stats ? <StatsCard stats={stats} compact={!showHero} /> : <p className="card pointer-events-auto px-4 py-3 text-sm text-ink-soft">{t("statsUnavailable")}</p>}
             {cursor && <CursorReadout x={cursor.x} y={cursor.y} />}
             <p className="pointer-events-auto rounded-full bg-white/85 px-3 py-1 text-[0.65rem] text-ink-faint shadow-float">
-              © Natural Earth · GeoNames · <Link href="/credits" className="underline">{t("credits")}</Link>
+              © Natural Earth · GeoNames · NASA · <Link href="/credits" className="underline">{t("credits")}</Link>
             </p>
           </div>
         </div>
@@ -194,6 +210,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
           cam={cam}
           className={`absolute z-10 ${mode === "buy" ? "bottom-[calc(60vh+1rem)] right-3 md:bottom-5 md:right-[25rem]" : "bottom-3 right-3 sm:bottom-5 sm:right-5"}`}
           onZoomIn={() => engine()?.zoomBy(1.8)} onZoomOut={() => engine()?.zoomBy(1 / 1.8)} onFit={() => engine()?.fitWorld()}
+          satellite={satellite} onSatellite={toggleSatellite}
         />
 
         {mode === "buy" && (

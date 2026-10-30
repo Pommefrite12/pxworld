@@ -76,6 +76,15 @@ describe("outlines of clipped polygons (a clipped coast must not gain the clip r
     const length = lines.reduce((sum, l) => { let d = 0; for (let i = 2; i < l.length; i += 2) d += Math.hypot(l[i]! - l[i - 2]!, l[i + 1]! - l[i - 1]!); return sum + d; }, 0);
     expect(length).toBeCloseTo(10); // only the two 5-unit edges that lie inside the cell
   });
+  it("also skips edges along the antimeridian seam, where two halves of one landmass meet", () => {
+    // two squares that touch along x = 5 (the seam): the shared edge must not be stroked
+    const left = outlineWithoutClipEdges([1, 1, 5, 1, 5, 4, 1, 4], cell, 5);
+    const right = outlineWithoutClipEdges([5, 1, 9, 1, 9, 4, 5, 4], cell, 5);
+    const lengthOf = (ls: number[][]) => ls.reduce((sum, l) => { let d = 0; for (let i = 2; i < l.length; i += 2) d += Math.hypot(l[i]! - l[i - 2]!, l[i + 1]! - l[i - 1]!); return sum + d; }, 0);
+    expect(lengthOf(left)).toBeCloseTo(4 + 4 + 3, 9); // top, bottom and left sides; the right side (x = 5) is skipped
+    expect(lengthOf(right)).toBeCloseTo(4 + 4 + 3, 9);
+    expect(lengthOf(outlineWithoutClipEdges([1, 1, 5, 1, 5, 4, 1, 4], cell))).toBeCloseTo(4 + 3 + 4 + 3, 9); // without a seam all four sides count
+  });
   it("draws nothing for a polygon that covers the whole cell", () => {
     expect(outlineWithoutClipEdges(clipPolygonToRect([-50, -50, 50, -50, 50, 50, -50, 50], cell), cell)).toEqual([]);
   });

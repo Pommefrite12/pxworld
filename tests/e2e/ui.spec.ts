@@ -27,7 +27,7 @@ test.describe("accessibility (axe, WCAG 2.1 A/AA)", () => {
 
 test.describe("map interaction", () => {
   test("geography is fully drawn at every zoom (no missing tiles) and a frame is cheap", async ({ page }) => {
-    for (const [x, y, z] of [[20300, 11000, 2.5], [20261, 11015, 12], [10000, 8000, 0.4], [20000, 12000, 40], [20122, 10916, 5], [20261, 11015, 0.7], [11778, 12296, 1.5]] as const) {
+    for (const [x, y, z] of [[19000, 11700, 2.5], [18984, 11738, 12], [10000, 8000, 0.4], [18000, 12000, 40], [18844, 11643, 5], [18984, 11738, 0.7], [10500, 12957, 1.5], [15322, 300, 3], [39000, 8272, 6]] as const) {
       await page.goto(`/?x=${x}&y=${y}&z=${z}`);
       await page.waitForFunction(() => window.__pxEngine && (window.__pxEngine as unknown as { geo: unknown }).geo && !window.__pxEngine.geoPending, undefined, { timeout: 20_000 });
       const ms = await page.evaluate(async () => {
@@ -43,18 +43,42 @@ test.describe("map interaction", () => {
   test("zooming in reveals more detail: départements, cities of 15 000+, then towns of 1 000+", async ({ page }) => {
     type View = { x0: number; y0: number; x1: number; y1: number };
     type GeoApi = { adminLabels(): { en: string; dep: boolean }[] | null; townsIn(tier: 1 | 2, v: View): { name: string }[] };
-    await page.goto("/?x=20261&y=11015&z=2");
+    await page.goto("/?x=18984&y=11738&z=2");
     await page.waitForFunction(() => window.__pxEngine && (window.__pxEngine as unknown as { geo: unknown }).geo && !window.__pxEngine.geoPending, undefined, { timeout: 20_000 });
     const names = (tier: 1 | 2, v: View) => page.evaluate(([t, view]) => ((window.__pxEngine as unknown as { geo: GeoApi }).geo.townsIn(t, view)).map((x) => x.name), [tier, v] as const);
     // départements (admin-1 names, loaded on demand)
     await expect.poll(() => page.evaluate(() => (window.__pxEngine as unknown as { geo: GeoApi }).geo.adminLabels()?.some((l) => l.en === "Seine-Maritime" && l.dep) ?? false), { timeout: 15_000 }).toBe(true);
     // cities of 15 000+ around Paris (cells fetched when asked for, then served from memory)
-    await expect.poll(async () => (await names(1, { x0: 19800, y0: 10700, x1: 20700, y1: 11300 })).includes("Rouen"), { timeout: 15_000 }).toBe(true);
+    await expect.poll(async () => (await names(1, { x0: 18400, y0: 11400, x1: 19300, y1: 12000 })).includes("Rouen"), { timeout: 15_000 }).toBe(true);
     // towns of 1 000+: dozens in a 100×100 px window around Paris, none of which belongs to the coarser tier
-    await expect.poll(async () => (await names(2, { x0: 20200, y0: 10950, x1: 20320, y1: 11080 })).length, { timeout: 15_000 }).toBeGreaterThan(25);
+    await expect.poll(async () => (await names(2, { x0: 18920, y0: 11680, x1: 19040, y1: 11800 })).length, { timeout: 15_000 }).toBeGreaterThan(25);
     // the 1:10m land of this region is cached: the geography tiles drawn here are complete (not the 1:50m stand-in)
     const incomplete = await page.evaluate(() => [...(window.__pxEngine as unknown as { geoTiles: Map<string, { complete: boolean }> }).geoTiles.values()].filter((t) => !t.complete).length);
     expect(incomplete).toBe(0);
+  });
+
+  test("satellite background: faint NASA tiles under the map, switchable, and the choice is remembered", async ({ page }) => {
+    const urls: string[] = [];
+    const red = await sharp({ create: { width: 256, height: 256, channels: 3, background: "#ff0000" } }).jpeg().toBuffer();
+    await page.route("https://gibs.earthdata.nasa.gov/**", (route) => { urls.push(route.request().url()); return route.fulfill({ status: 200, contentType: "image/jpeg", body: red }); });
+    await page.goto("/?x=4000&y=15000&z=0.2"); // open Pacific (124°W, 25°N): plain ocean colour in the middle of the screen
+    const centre = async () => {
+      const vp = page.viewportSize()!;
+      const png = await page.screenshot({ clip: { x: vp.width / 2 - 40, y: vp.height / 2 - 40, width: 80, height: 80 } });
+      const { channels } = await sharp(png).stats();
+      return { r: channels[0]!.mean, g: channels[1]!.mean };
+    };
+    await expect.poll(() => urls.length, { timeout: 15_000 }).toBeGreaterThan(0);
+    // ocean is blue-green (g > r); a red satellite tile at low opacity tips it towards red
+    await expect.poll(async () => { const c = await centre(); return c.r > c.g; }, { timeout: 15_000 }).toBe(true);
+    expect(urls.some((u) => /BlueMarble_ShadedRelief_Bathymetry\/default\/GoogleMapsCompatible_Level8\/\d\/\d+\/\d+\.jpeg$/.test(u))).toBe(true);
+    const toggle = page.getByTestId("satellite-toggle");
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await expect.poll(async () => { const c = await centre(); return c.g > c.r; }, { timeout: 10_000 }).toBe(true);
+    await page.reload();
+    await expect(page.getByTestId("satellite-toggle")).toHaveAttribute("aria-pressed", "false"); // remembered
   });
 
   test("keyboard: arrows pan, plus/minus zoom, 0 recentres", async ({ page }) => {
@@ -108,8 +132,8 @@ test.describe("map interaction", () => {
     await page.getByRole("listbox").getByRole("option").first().click();
     await expect.poll(async () => (await camera(page)).scale, { timeout: 8000 }).toBeGreaterThan(1);
     const c = await camera(page);
-    expect(Math.abs(c.x - 20261)).toBeLessThan(40); // 2.35°E
-    expect(Math.abs(c.y - 11015)).toBeLessThan(40); // 48.85°N (Mercator)
+    expect(Math.abs(c.x - 18984)).toBeLessThan(40); // 2.35°E
+    expect(Math.abs(c.y - 11738)).toBeLessThan(40); // 48.85°N (Mercator)
     await search.fill("48.85, 2.35");
     await page.getByRole("listbox").getByRole("option").first().click();
     await expect.poll(async () => Math.round((await camera(page)).scale)).toBe(6);

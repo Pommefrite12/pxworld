@@ -24,7 +24,7 @@ import { fileURLToPath } from "node:url";
 import { feature, mesh } from "topojson-client";
 import { topology } from "topojson-server";
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "../src/lib/grid/constants";
-import { lonLatToPixel } from "../src/lib/grid/projection";
+import { latToY, lonLatToPixel, lonToX, LON_MAX, LON_MIN } from "../src/lib/grid/projection";
 import { clipPolygonToRect, clipPolylineToRect, type Rect4 } from "../src/lib/geo/clip";
 import { simplify } from "../src/lib/geo/simplify";
 
@@ -68,12 +68,13 @@ function densify(coords: LL[]): LL[] {
 }
 
 /**
- * Planar maps must not draw the 360° jump of a ring that crosses the antimeridian (Russia/Chukotka, Fiji, Antarctica…).
- * The longitudes are "unwrapped" so the ring is continuous, then a copy shifted by ±360° is emitted so the part that
- * spilled past the map edge also appears on the opposite side. Clipping to the world rectangle happens later.
+ * Planar maps must not draw the 360° jump of a ring that crosses the antimeridian (Russia/Chukotka, Fiji…). The
+ * longitudes are made continuous, then the ring is emitted shifted by whole turns for every position where it falls
+ * inside the map's longitude range [LON_MIN, LON_MAX] (usually one; two for the few rings that straddle the map's
+ * own edge). Clipping to the world rectangle happens later.
  */
 function unwrap(coords: LL[]): LL[][] {
-  const res: LL[] = [];
+  const cont: LL[] = [];
   let prev: number | null = null;
   for (const [lon, lat] of coords) {
     let l = lon;
@@ -81,22 +82,25 @@ function unwrap(coords: LL[]): LL[][] {
       while (l - prev > 180) l -= 360;
       while (l - prev < -180) l += 360;
     }
-    res.push([l, lat]);
+    cont.push([l, lat]);
     prev = l;
   }
-  const lons = res.map((c) => c[0]);
-  const copies = [res];
-  if (Math.max(...lons) > 180) copies.push(res.map(([l, la]) => [l - 360, la] as LL));
-  if (Math.min(...lons) < -180) copies.push(res.map(([l, la]) => [l + 360, la] as LL));
+  let lo = Infinity, hi = -Infinity;
+  for (const [l] of cont) { if (l < lo) lo = l; if (l > hi) hi = l; }
+  const copies: LL[][] = [];
+  for (let turn = -2; turn <= 2; turn++) {
+    const shift = turn * 360;
+    if (hi + shift >= LON_MIN && lo + shift <= LON_MAX) copies.push(turn === 0 ? cont : cont.map(([l, la]) => [l + shift, la] as LL));
+  }
   return copies;
 }
 
-/** lon/lat polyline → flat grid-pixel polyline (all antimeridian copies). */
+/** lon/lat polyline → flat grid-pixel polyline (all copies that fall on the map). */
 function projectLine(coords: LL[]): Flat[] {
   // unwrap first: densifying an edge that jumps across the antimeridian would sweep through the whole world
   return unwrap(coords).map((c) => {
     const f: Flat = [];
-    for (const [lon, lat] of densify(c)) { const p = lonLatToPixel({ lon, lat }); f.push(p.x, p.y); }
+    for (const [lon, lat] of densify(c)) f.push(lonToX(lon), latToY(lat));
     return f;
   });
 }

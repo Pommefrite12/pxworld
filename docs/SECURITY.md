@@ -21,7 +21,7 @@
 
 ## Recommended before launch
 
-* Add a `Content-Security-Policy` (report-only first) once your final third-party origins are known (Stripe redirects away; Google OAuth redirects away; the app itself loads nothing third-party).
+* Add a `Content-Security-Policy` (report-only first) once your final third-party origins are known (Stripe redirects away; Google OAuth redirects away). The one third-party request the app makes itself is the optional satellite background: the visitor's browser fetches imagery tiles from `gibs.earthdata.nasa.gov` (NASA, public-domain imagery, no key, no cookie) while the layer is on, so NASA sees the visitor's IP address and the area being viewed; allow that origin in `img-src`, or proxy the tiles through your own domain if you prefer.
 * Enable MFA for admin accounts in Supabase Auth and restrict the admin routes by IP if possible.
 * Put a WAF/bot protection (Vercel Firewall) in front of sign-up and `/api/checkout`.
 * Optional: automated image moderation (e.g. a vendor API) in front of the human queue.

@@ -1,4 +1,5 @@
 import { clipPolygonToRect, clipPolylineToRect, outlineWithoutClipEdges, type Rect4 } from "@/lib/geo/clip";
+import { SEAM_X } from "@/lib/grid/projection";
 
 /**
  * Static geographic reference layer, pre-projected into grid pixel space by scripts/build-world-data.mts.
@@ -69,19 +70,23 @@ function addPolylines(path: Path2D, lines: number[][]) {
 }
 
 /** Fills `fill` with the polygons of `rings` inside `wide` (clipped when they cross it) and `coast` with their outlines. */
-function addLand(fill: Path2D, coast: Path2D, rings: Ring[], coastRings: Ring[] | null, wide: Rect4) {
+function addLand(fill: Path2D, coast: Path2D, rings: Ring[], coastRings: Ring[], wide: Rect4) {
   for (const r of rings) {
     if (!intersects(r, wide)) continue;
-    if (inside(r, wide)) addPolygon(fill, r.pts); else addPolygon(fill, clipPolygonToRect(r.pts, wide));
-    if (!coastRings) addPolylines(coast, inside(r, wide) ? [Array.from(r.pts)] : clipPolylineToRect(r.pts, wide, true));
+    addPolygon(fill, inside(r, wide) ? r.pts : clipPolygonToRect(r.pts, wide));
   }
-  if (coastRings) {
-    for (const r of coastRings) {
-      if (!intersects(r, wide)) continue;
-      addPolylines(coast, inside(r, wide) ? [Array.from(r.pts)] : clipPolylineToRect(r.pts, wide, false));
-    }
+  for (const r of coastRings) {
+    if (!intersects(r, wide)) continue;
+    addPolylines(coast, inside(r, wide) ? [Array.from(r.pts)] : clipPolylineToRect(r.pts, wide, false));
   }
 }
+
+/** The real coastline of polygons: their outline minus the edges that only follow `clip` or the antimeridian seam. */
+function coastOf(rings: Ring[], clip: Rect4, seamX: number): Ring[] {
+  return rings.flatMap((r) => outlineWithoutClipEdges(r.pts, clip, seamX).map((p) => ringOf(Float64Array.from(p))));
+}
+
+const UNCLIPPED: Rect4 = { x0: -Infinity, y0: -Infinity, x1: Infinity, y1: Infinity };
 
 function addLines(path: Path2D, rings: Ring[], wide: Rect4) {
   for (const r of rings) if (intersects(r, wide)) addPolylines(path, inside(r, wide) ? [Array.from(r.pts)] : clipPolylineToRect(r.pts, wide, false));
@@ -113,8 +118,15 @@ export class Geo {
   private active = 0;
   private cells: { g: Set<string>; c1: Set<string>; c2: Set<string> };
 
+  private seamX: number;
+  private lowCoast: Ring[];
+  private midCoast: Ring[];
+
   constructor(private low: Ring[], private mid: Ring[], private borders50: Ring[], private index: IndexFile) {
     this.cells = { g: new Set(index.g), c1: new Set(index.c1), c2: new Set(index.c2) };
+    this.seamX = Math.round(SEAM_X * index.q) / index.q; // as stored in the quantised data
+    this.lowCoast = coastOf(low, UNCLIPPED, this.seamX);
+    this.midCoast = coastOf(mid, UNCLIPPED, this.seamX);
   }
 
   /** Called once per drawn frame: marks which chunks are "in use" so the LRU never evicts what is on screen. */
@@ -169,7 +181,7 @@ export class Geo {
     const rect: Rect4 = { x0: cx * size, y0: cy * size, x1: (cx + 1) * size, y1: (cy + 1) * size };
     return this.slot(this.chunks, `${cx}-${cy}`, `/data/geo/g-${cx}-${cy}.json`, (raw: ChunkFile): Chunk => {
       const fill = (raw.land ?? []).map((r) => decodeRing(r, q));
-      const coast = fill.flatMap((r) => outlineWithoutClipEdges(r.pts, rect).map((p) => ringOf(Float64Array.from(p))));
+      const coast = coastOf(fill, rect, this.seamX);
       return { fill, coast, borders: (raw.borders ?? []).map((r) => decodeRing(r, q)), admin: (raw.admin ?? []).map((r) => decodeRing(r, q)) };
     }, CHUNK_MAX);
   }
@@ -213,7 +225,7 @@ export class Geo {
       }
       return { fill, coast, borders, admin: adminPath, complete };
     }
-    addLand(fill, coast, lod === "110" ? this.low : this.mid, null, wide);
+    addLand(fill, coast, lod === "110" ? this.low : this.mid, lod === "110" ? this.lowCoast : this.midCoast, wide);
     addLines(borders, this.borders50, wide);
     if (admin) {
       this.loadAdminLo();

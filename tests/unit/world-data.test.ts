@@ -70,7 +70,7 @@ describe("generated world data", () => {
 
   it("known places sit where the projection says: land under Paris, Sydney and the Sahara, sea in the mid-Atlantic", () => {
     const at = (lon: number, lat: number) => lonLatToPixel({ lon, lat });
-    for (const [name, lon, lat] of [["Paris", 2.35, 48.85], ["Sydney", 151.2, -33.9], ["Tamanrasset", 5.5, 22.8], ["Brasília", -47.9, -15.8]] as const) {
+    for (const [name, lon, lat] of [["Paris", 2.35, 48.85], ["Sydney", 151.2, -33.9], ["Tamanrasset", 5.5, 22.8], ["Brasília", -47.9, -15.8], ["Chukotka", -175.5, 66.5], ["northern Greenland", -33, 82.2], ["Patagonia", -70, -50.5]] as const) {
       const p = at(lon, lat);
       expect(onLand(landChunk(p.x, p.y), p.x, p.y), name).toBe(true);
     }

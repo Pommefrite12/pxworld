@@ -12,8 +12,14 @@
  * ./projection.ts): it is conformal, so countries keep their familiar shape at
  * every latitude instead of looking stretched near the poles like they do on a
  * plate carrée. With 360° of longitude over 40 000 columns a pixel is ≈ 1 km
- * wide at the equator, and the 8:5 frame holds the world from 57°S (Cape Horn is
- * 56°S) up to ≈ 82.4°N (the northern tip of Greenland is 83.6°N).
+ * wide at the equator.
+ *
+ * The frame is chosen so that no country is cut: from 56.7°S (Chile's Diego
+ * Ramírez islands, 56.5°S, are the southernmost) to 83.8°N (the tip of Greenland
+ * is at 83.67°N), and its vertical scale is fitted to the 8:5 frame (≈ 5 % below
+ * a pure Mercator). Longitude runs from 168.5°W to 191.5°E: the left/right edge
+ * lies in the Bering Strait, which is the only place where the world can be cut
+ * without slicing Russia or Fiji in two or showing the same land twice (only the Aleutian island of Umnak straddles it).
  *
  * The grid is VIRTUAL: nothing in the app ever materialises one object per pixel.
  * Only purchased rectangles (parcels) exist, as rows in PostgreSQL.
@@ -26,15 +32,11 @@ if (TOTAL_PIXELS !== 1_000_000_000) {
   throw new Error("Invariant broken: the grid must contain exactly 1 000 000 000 pixels");
 }
 
-/**
- * Geographic extent: the whole planet in longitude, and from `latMin` northwards in latitude. The northern limit is
- * not a free parameter: it follows from the width, the height and `latMin` (square pixels in Mercator), see
- * ./projection.ts `LAT_MAX`.
- */
+/** Geographic extent of the frame (degrees). The map is 360° wide, starting at `lonMin` (the west edge). */
 export const GEO = {
-  lonMin: -180,
-  lonMax: 180,
-  latMin: -57,
+  lonMin: -168.5,
+  latMin: -56.7,
+  latMax: 83.8,
 } as const;
 
 /** Parcel limits. The database enforces the hard ones with CHECK constraints. */
