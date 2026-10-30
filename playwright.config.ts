@@ -1,6 +1,9 @@
+import fs from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = process.env.E2E_PORT ?? "3100";
+// Use the Chromium installed by `npx playwright install chromium`, unless a custom binary is provided (CI sandboxes).
+const chromiumPath = process.env.PW_CHROMIUM ?? (fs.existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined);
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -14,7 +17,7 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    launchOptions: { executablePath: process.env.PW_CHROMIUM ?? "/opt/pw-browsers/chromium" },
+    launchOptions: chromiumPath ? { executablePath: chromiumPath } : {},
   },
   projects: [
     { name: "desktop", testIgnore: /mobile\.spec\.ts/, use: { ...devices["Desktop Chrome"], viewport: { width: 1360, height: 860 } } },
