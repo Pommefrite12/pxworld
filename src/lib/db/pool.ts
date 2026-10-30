@@ -1,6 +1,7 @@
 import "server-only";
 import pg from "pg";
 import { env } from "@/lib/env";
+import { shouldUseSsl } from "./ssl";
 
 // Keep one pool per server instance (survives hot reload in dev).
 const g = globalThis as unknown as { __pxPool?: pg.Pool };
@@ -12,9 +13,7 @@ pg.types.setTypeParser(1700, (v) => Number(v));
 function create(): pg.Pool {
   const url = env().DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is not set (see .env.example)");
-  const host = new URL(url).hostname;
-  const local = host === "localhost" || host === "127.0.0.1" || host === "::1";
-  const useSsl = env().DATABASE_SSL ? env().DATABASE_SSL === "true" : !local;
+  const useSsl = shouldUseSsl(url, env().DATABASE_SSL);
   const pool = new pg.Pool({
     connectionString: url,
     ssl: useSsl ? { rejectUnauthorized: false } : false,

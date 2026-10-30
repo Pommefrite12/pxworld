@@ -8,6 +8,7 @@
   // Same settings as .env.example (development sign-in + simulated Stripe), pointed at the "db" container.
   "containerEnv": {
     "DATABASE_URL": "postgres://pixel:pixel@db:5432/pixelworld",
+    "DATABASE_SSL": "false",
     "TEST_PG_ADMIN_URL": "postgres://pixel:pixel@db:5432/postgres"
   },
 
