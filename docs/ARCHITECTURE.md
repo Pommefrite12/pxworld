@@ -41,7 +41,7 @@ drawn once from the same vector data as the flat map (1:50m land, coasts, border
 (`MERCATOR_TOP/BOTTOM`), with mip level chosen from the screen-space derivative of the sphere normal. Dot field ("pixel field"),
 rim glow, and a 2D overlay for country names (same collision logic) and big cities. Poles are outside the grid and drawn as sea/ice.
 Zooming past ×3 hands over to the flat map at the same place: `flatScaleForRadius` equates the screen size of one radian of
-longitude on the globe (`r·cos φ`) and on the flat map (`s·W/2π`). The flat map's controls have a globe button back.
+longitude on the globe (`r·cos φ`) and on the flat map (`s·W/2π`). The way back is automatic too: when a zoom-out gesture (wheel, pinch, `-`) on the flat map reaches the scale where a globe at zoom ×2.2 looks the same — or pushes against the whole-world floor — the page fades out and opens `/globe?lon&lat&zoom` (`shouldReturnToGlobe`, unit-tested; explore mode only; loading, panning and zooming in never switch). 2.2 < 3 (the globe→flat zoom) is deliberate hysteresis, and the arrival zoom is capped at 2.2, so the two switches cannot bounce into each other. The flat map's controls also have a globe button.
 Not in the prototype: parcels on the globe (they are specks at this scale), buying from the globe, sub-pixel antialiasing of the limb
 on weak GPUs. The flat map stays the only place where pixels are bought and drawn.
 

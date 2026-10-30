@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { GRID_WIDTH } from "@/lib/grid/constants";
 import { lonLatToPixel } from "@/lib/grid/projection";
-import { flatScaleForRadius, project, radiusForFlatScale, unproject } from "@/lib/globe/orthographic";
+import {
+  flatScaleForRadius, GLOBE_HANDOFF_ZOOM, GLOBE_RETURN_ZOOM, globeBaseRadius, globeZoomForFlatScale, project, radiusForFlatScale, shouldReturnToGlobe, unproject,
+} from "@/lib/globe/orthographic";
 
 describe("orthographic globe maths", () => {
   it("puts the centre of the view at the centre of the disc, facing the viewer", () => {
@@ -56,5 +58,39 @@ describe("orthographic globe maths", () => {
     expect(flatScaleForRadius(1200, 48)).toBeGreaterThan(0.036);
     expect(flatScaleForRadius(1200, 48)).toBeLessThan(0.5);
     expect(GRID_WIDTH).toBe(40000);
+  });
+});
+
+describe("flat map → globe hand-off", () => {
+  const view = { viewW: 1440, viewH: 843, minScale: 0.0337, latDeg: 48 };
+  const threshold = flatScaleForRadius(GLOBE_RETURN_ZOOM * globeBaseRadius(view.viewW, view.viewH), view.latDeg);
+
+  it("only a zoom-OUT gesture can switch: zooming in or standing still never does", () => {
+    expect(shouldReturnToGlobe({ ...view, prevScale: 0.05, requestedScale: 0.06 })).toBe(false); // in
+    expect(shouldReturnToGlobe({ ...view, prevScale: 0.05, requestedScale: 0.05 })).toBe(false); // nothing
+    expect(shouldReturnToGlobe({ ...view, prevScale: view.minScale, requestedScale: view.minScale })).toBe(false); // the world view just loaded
+  });
+
+  it("switches once the zoom-out reaches the scale where the globe looks the same", () => {
+    expect(shouldReturnToGlobe({ ...view, prevScale: threshold * 1.2, requestedScale: threshold * 1.1 })).toBe(false);
+    expect(shouldReturnToGlobe({ ...view, prevScale: threshold * 1.05, requestedScale: threshold * 0.99 })).toBe(true);
+  });
+
+  it("switches when pushing against the floor, even where the equivalent scale is below it (far north)", () => {
+    expect(flatScaleForRadius(GLOBE_RETURN_ZOOM * globeBaseRadius(view.viewW, view.viewH), 82)).toBeLessThan(view.minScale);
+    expect(shouldReturnToGlobe({ ...view, latDeg: 82, prevScale: view.minScale, requestedScale: view.minScale * 0.85 })).toBe(true);
+  });
+
+  it("arrives on the globe at a zoom that cannot bounce straight back", () => {
+    for (const lat of [0, 30, 48, 70, 82]) {
+      for (const s of [0.0337, 0.06, 0.0965, 0.2]) {
+        const z = globeZoomForFlatScale(s, lat, 1440, 843);
+        expect(z).toBeGreaterThanOrEqual(1);
+        expect(z).toBeLessThanOrEqual(GLOBE_RETURN_ZOOM);
+        expect(z).toBeLessThan(GLOBE_HANDOFF_ZOOM); // the globe only hands back to the flat map at GLOBE_HANDOFF_ZOOM
+      }
+    }
+    // a flat map exactly at the threshold arrives on a globe at the return zoom
+    expect(globeZoomForFlatScale(threshold, view.latDeg, view.viewW, view.viewH)).toBeCloseTo(GLOBE_RETURN_ZOOM, 6);
   });
 });

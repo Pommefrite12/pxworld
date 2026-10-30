@@ -56,4 +56,27 @@ test.describe("3D globe (prototype)", () => {
     expect(Math.abs(Number(url.searchParams.get("lat")) - 48.85)).toBeLessThan(0.5);
     await waitReady(page);
   });
+
+  test("zooming out of the flat map returns to the globe at the same place; loading and zooming in never do", async ({ page }) => {
+    await page.goto("/?x=18984&y=11738&z=0.25");
+    await page.waitForFunction(() => Boolean((window as unknown as Win).__pxEngine), undefined, { timeout: 20_000 });
+    const box = (await page.getByRole("application").boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.waitForTimeout(1200);
+    expect(new URL(page.url()).pathname).toBe("/"); // nothing happens on its own
+    await page.mouse.wheel(0, -300); // zoom in
+    await page.waitForTimeout(800);
+    expect(new URL(page.url()).pathname).toBe("/");
+    for (let i = 0; i < 12 && new URL(page.url()).pathname === "/"; i++) { await page.mouse.wheel(0, 400); await page.waitForTimeout(150); } // zoom out
+    await page.waitForURL(/\/globe\?lon=/, { timeout: 15_000 });
+    const url = new URL(page.url());
+    expect(Math.abs(Number(url.searchParams.get("lon")) - 2.35)).toBeLessThan(2);
+    expect(Math.abs(Number(url.searchParams.get("lat")) - 48.85)).toBeLessThan(2);
+    const zoom = Number(url.searchParams.get("zoom"));
+    expect(zoom).toBeGreaterThanOrEqual(1);
+    expect(zoom).toBeLessThanOrEqual(2.2);
+    await waitReady(page);
+    await page.waitForTimeout(1500);
+    expect(new URL(page.url()).pathname).toBe("/globe"); // no bounce back to the flat map
+  });
 });

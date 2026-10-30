@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { GEO, GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { lonLatToPixel, MERCATOR_BOTTOM, MERCATOR_TOP, LON_MIN, pixelToLonLat } from "@/lib/grid/projection";
-import { flatScaleForRadius, GLOBE_HANDOFF_ZOOM, GLOBE_MAX_LAT, GLOBE_MIN_ZOOM, project } from "@/lib/globe/orthographic";
+import { flatScaleForRadius, GLOBE_BASE_FRACTION, GLOBE_HANDOFF_ZOOM, GLOBE_MAX_LAT, GLOBE_MIN_ZOOM, project } from "@/lib/globe/orthographic";
 import { loadGeo, loadPlaces, type Geo, type Places } from "@/components/map/geo";
 
 /**
@@ -109,7 +109,7 @@ function worldTexture(geo: Geo, width: number): HTMLCanvasElement {
 interface State { lon: number; lat: number; zoom: number }
 declare global { interface Window { __pxGlobe?: { ready: boolean; state: State; set(lon: number, lat: number, zoom: number): void; handedOff: boolean } } }
 
-export function GlobeView({ initial }: { initial: { lon: number; lat: number; spin: boolean } }) {
+export function GlobeView({ initial }: { initial: { lon: number; lat: number; spin: boolean; zoom?: number } }) {
   const t = useTranslations("globe");
   const locale = useLocale();
   const router = useRouter();
@@ -119,7 +119,7 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
   const api = useRef<{ zoomBy(f: number): void; openFlat(): void } | null>(null);
   const [supported, setSupported] = useState(true);
   const [ready, setReady] = useState(false);
-  const [info, setInfo] = useState<State>({ lon: initial.lon, lat: initial.lat, zoom: 1 });
+  const [info, setInfo] = useState<State>({ lon: initial.lon, lat: initial.lat, zoom: initial.zoom ?? 1 });
   const [leaving, setLeaving] = useState(false);
 
   const flatHref = useCallback((s: State, r: number) => {
@@ -148,7 +148,7 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([201, 223, 232, 255]));
     gl.uniform1i(U("uTex"), 0);
 
-    const view: State = { lon: initial.lon, lat: initial.lat, zoom: GLOBE_MIN_ZOOM };
+    const view: State = { lon: initial.lon, lat: initial.lat, zoom: Math.max(GLOBE_MIN_ZOOM, Math.min(GLOBE_HANDOFF_ZOOM - 0.2, initial.zoom ?? GLOBE_MIN_ZOOM)) };
     let spin = initial.spin && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     let w = 1, h = 1, dpr = 1, glDpr = 1, r0 = 300;
     let dirty = true, raf = 0, last = 0, velocity = { x: 0, y: 0 }, destroyed = false, handed = false;
@@ -166,7 +166,7 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
       glDpr = Math.min(dpr, 1.5); // the shader runs once per pixel: cap it on very dense screens (the text stays sharp)
       canvas.width = Math.round(w * glDpr); canvas.height = Math.round(h * glDpr);
       labels.width = Math.round(w * dpr); labels.height = Math.round(h * dpr);
-      r0 = 0.46 * Math.min(w, h);
+      r0 = GLOBE_BASE_FRACTION * Math.min(w, h);
       dirty = true;
     };
 

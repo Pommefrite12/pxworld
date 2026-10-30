@@ -90,7 +90,7 @@ test.describe("map interaction", () => {
     await expect.poll(async () => (await camera(page)).scale, { timeout: 5000 }).toBeLessThan(0.05);
   });
 
-  test("wheel zoom is anchored under the cursor and stays inside the allowed range", async ({ page }) => {
+  test("wheel zoom is anchored under the cursor and is capped at the maximum zoom", async ({ page }) => {
     await page.goto("/");
     await page.waitForTimeout(800);
     const c = await camera(page);
@@ -102,9 +102,10 @@ test.describe("map interaction", () => {
     expect(z.scale).toBeLessThanOrEqual(48);
     expect(z.scale).toBeGreaterThan(c.scale * 20);
     expect(z.x).toBeGreaterThan(c.x); // zoomed towards the right half
-    for (let i = 0; i < 60; i++) await page.mouse.wheel(0, 600);
+    // zooming out is bounded by the whole-world view: one more step out turns the map into the globe (see globe.spec.ts)
+    for (let i = 0; i < 4; i++) await page.mouse.wheel(0, 200);
     await page.waitForTimeout(300);
-    expect((await camera(page)).scale).toBeGreaterThanOrEqual(c.scale * 0.99); // never smaller than "whole world"
+    expect((await camera(page)).scale).toBeGreaterThanOrEqual(c.scale * 0.99);
   });
 
   test("drag pans the map", async ({ page }) => {

@@ -1,5 +1,6 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
-import { centeredRect, clampToGrid, intersects, type Rect } from "@/lib/grid/geometry";
+import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
+import { shouldReturnToGlobe } from "@/lib/globe/orthographic";
 import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
 
 /**
@@ -30,6 +31,8 @@ export interface EngineCallbacks {
   onCursor?: (wx: number, wy: number) => void;
   onPlace?: (r: Rect) => void;
   onSelectionState?: (s: SelectionState) => void;
+  /** The user zoomed out far enough that the planet is better shown as a globe (explore mode only). */
+  onZoomOutToGlobe?: (c: Camera) => void;
 }
 
 type TileParcel = [string, number, number, number, number, string | null, string | null];
@@ -76,6 +79,7 @@ export class MapEngine {
   private dirty = true;
   /** World copy being drawn: copy c shows the world shifted by c·W, so the map is continuous across the Bering Strait. */
   private offX = 0;
+  private globeFired = false;
   private destroyed = false;
 
   private geo: Geo | null = null;
@@ -168,7 +172,18 @@ export class MapEngine {
     this.flyTo({ x: r.x + r.w / 2 + (opts.offsetX ?? 0) / scale, y: r.y + r.h / 2, scale }, opts.duration ?? 900);
   }
 
+  /** A zoom-out gesture reached the point where the globe takes over: tell the page (once). */
+  private checkGlobe(requestedScale: number, prevScale: number) {
+    if (this.globeFired || this.mode !== "explore" || !this.cb.onZoomOutToGlobe) return;
+    const latDeg = pixelToLonLat(this.cam.x, this.cam.y).lat;
+    if (!shouldReturnToGlobe({ prevScale, requestedScale, minScale: this.minScale, latDeg, viewW: this.w, viewH: this.h })) return;
+    this.globeFired = true;
+    setTimeout(() => { this.globeFired = false; }, 2500); // if the page did not navigate, allow another try
+    this.cb.onZoomOutToGlobe({ ...this.cam, scale: Math.max(requestedScale, this.minScale) });
+  }
+
   zoomBy(factor: number, ax = this.w / 2, ay = this.h / 2, animate = true) {
+    this.checkGlobe(this.cam.scale * factor, this.cam.scale);
     const scale = clamp(this.cam.scale * factor, this.minScale, MAX_SCALE);
     const wx = this.cam.x + (ax - this.w / 2) / this.cam.scale, wy = this.cam.y + (ay - this.h / 2) / this.cam.scale;
     this.flyTo({ scale, x: wx - (ax - this.w / 2) / scale, y: wy - (ay - this.h / 2) / scale }, animate ? 280 : 0);
@@ -340,6 +355,7 @@ export class MapEngine {
         const [a, b] = [...this.pointers.values()];
         if (!a || !b) return;
         const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1, cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+        this.checkGlobe(this.pinch.scale * (dist / this.pinch.dist), this.cam.scale);
         const scale = clamp(this.pinch.scale * (dist / this.pinch.dist), this.minScale, MAX_SCALE);
         const anchor = this.screenToWorldAt(this.pinch.cx, this.pinch.cy, this.pinch.scale, this.cam);
         this.cam = this.constrained({ scale, x: anchor.x - (cx - this.w / 2) / scale, y: anchor.y - (cy - this.h / 2) / scale });
@@ -379,6 +395,7 @@ export class MapEngine {
       const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1;
       const k = e.ctrlKey ? 0.012 : 0.0016; // trackpad pinch reports ctrlKey
       const factor = Math.exp(-e.deltaY * unit * k);
+      this.checkGlobe(this.cam.scale * factor, this.cam.scale);
       const scale = clamp(this.cam.scale * factor, this.minScale, MAX_SCALE);
       const a = this.screenToWorld(p.x, p.y);
       this.anim = null;

@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { SiteHeader, type HeaderViewer } from "@/components/layout/SiteHeader";
 import { BuyPanel, type Pricing, type ServerFree } from "@/components/buy/BuyPanel";
 import { CheckoutDialog } from "@/components/buy/CheckoutDialog";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
-import { centeredRect, clampToGrid, type Rect } from "@/lib/grid/geometry";
+import { centeredRect, clampToGrid, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
+import { globeZoomForFlatScale } from "@/lib/globe/orthographic";
 import type { PublicStats } from "@/lib/data/map";
 import { MapView, type MapViewHandle } from "./MapView";
 import type { Camera, MapParcel, Mode, SelectionState } from "./engine";
@@ -28,6 +29,8 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
   const t = useTranslations("map");
   const tc = useTranslations("common");
   const locale = useLocale();
+  const router = useRouter();
+  const [leaving, setLeaving] = useState(false);
   const mapRef = useRef<MapViewHandle>(null);
   const [engineReady, setEngineReady] = useState(false);
   const [stats, setStats] = useState(initialStats);
@@ -42,6 +45,15 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
   const [dialog, setDialog] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const engine = () => mapRef.current?.engine ?? null;
+
+  /* ---------- zooming out far enough turns the map into the 3D globe, at the same place ---------- */
+  const toGlobe = useCallback((c: Camera) => {
+    const ll = pixelToLonLat(c.x, c.y);
+    const vp = engine()?.viewport ?? { w: 1200, h: 800 };
+    const zoom = globeZoomForFlatScale(c.scale, ll.lat, vp.w, vp.h);
+    setLeaving(true);
+    setTimeout(() => router.push(`/globe?lon=${ll.lon.toFixed(2)}&lat=${ll.lat.toFixed(2)}&zoom=${zoom.toFixed(2)}`), 300);
+  }, [router]);
 
   /* ---------- live stats (real numbers, refreshed; a purchase bumps mapVersion and the map reloads its tiles) ---------- */
   useEffect(() => {
@@ -159,7 +171,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
           <button className="btn btn-primary btn-sm sm:!min-h-10 sm:!px-5" onClick={() => startBuy()} data-testid="find-your-spot">{t("findYourSpot")}</button>
         ) : null}
       />
-      <div className="relative min-h-0 flex-1">
+      <div className={`relative min-h-0 flex-1 transition-opacity duration-300 ${leaving ? "pointer-events-none opacity-0" : "opacity-100"}`}>
         <MapView
           ref={mapRef}
           label={t("canvasLabel")}
@@ -171,6 +183,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
           onSelectParcel={onSelectParcel}
           onPlace={(r) => setSelection(r)}
           onSelectionState={setSelState}
+          onZoomOutToGlobe={toGlobe}
         />
 
         {/* the page title stays for search engines and screen readers; the map itself is the hero */}

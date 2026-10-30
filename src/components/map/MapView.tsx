@@ -34,6 +34,7 @@ export const MapView = forwardRef<MapViewHandle, Props>(function MapView({ label
       onCursor: (x, y) => cbRef.current.onCursor?.(x, y),
       onPlace: (r) => cbRef.current.onPlace?.(r),
       onSelectionState: (s) => cbRef.current.onSelectionState?.(s),
+      onZoomOutToGlobe: (c) => cbRef.current.onZoomOutToGlobe?.(c),
     });
     engineRef.current = engine;
     if (process.env.NODE_ENV !== "production") (window as unknown as { __pxEngine?: MapEngine }).__pxEngine = engine; // debugging / e2e hook (dev only)

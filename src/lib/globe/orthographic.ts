@@ -48,3 +48,31 @@ export const radiusForFlatScale = (scale: number, latDeg: number): number =>
 export const GLOBE_MIN_ZOOM = 1;
 export const GLOBE_HANDOFF_ZOOM = 3;
 export const GLOBE_MAX_LAT = 85;
+
+/** The globe sphere fills this fraction of the smaller side of its viewport at zoom 1. */
+export const GLOBE_BASE_FRACTION = 0.46;
+export const globeBaseRadius = (viewW: number, viewH: number): number => GLOBE_BASE_FRACTION * Math.min(viewW, viewH);
+
+/**
+ * The flat map hands over to the globe when it is zoomed out to the point where the globe (at this zoom) would look
+ * the same. Smaller than GLOBE_HANDOFF_ZOOM on purpose: the way back is only taken after a clear zoom-out gesture,
+ * so the two switches can never bounce into each other.
+ */
+export const GLOBE_RETURN_ZOOM = 2.2;
+
+/**
+ * Should a zoom-out request on the flat map continue on the globe? Only a real zoom-OUT counts (loading the world
+ * view, zooming in or panning never switch), and only once the request reaches the equivalent scale — or pushes
+ * against the floor (the whole world is already in view, so there is nothing flat left to show).
+ */
+export function shouldReturnToGlobe(o: { prevScale: number; requestedScale: number; minScale: number; latDeg: number; viewW: number; viewH: number }): boolean {
+  if (!(o.requestedScale < o.prevScale * 0.9999)) return false;
+  if (o.requestedScale < o.minScale) return true;
+  return o.requestedScale <= flatScaleForRadius(GLOBE_RETURN_ZOOM * globeBaseRadius(o.viewW, o.viewH), o.latDeg);
+}
+
+/** Globe zoom that looks like the flat map at `scale`, never beyond the return zoom (so the way back cannot bounce). */
+export function globeZoomForFlatScale(scale: number, latDeg: number, viewW: number, viewH: number): number {
+  const zoom = radiusForFlatScale(scale, latDeg) / globeBaseRadius(viewW, viewH);
+  return Math.max(GLOBE_MIN_ZOOM, Math.min(GLOBE_RETURN_ZOOM, zoom));
+}

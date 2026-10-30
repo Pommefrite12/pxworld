@@ -19,7 +19,7 @@ export default async function GlobePage({ params, searchParams }: { params: Prom
   const sp = await searchParams;
   const t = await getTranslations({ locale, namespace: "globe" });
   const viewer = await getHeaderViewer().catch(() => null);
-  const lon = num(sp.lon), lat = num(sp.lat);
+  const lon = num(sp.lon), lat = num(sp.lat), zoom = num(sp.zoom);
   const given = lon !== null && lat !== null && Math.abs(lon) <= 180 && Math.abs(lat) <= 90;
 
   return (
@@ -28,7 +28,7 @@ export default async function GlobePage({ params, searchParams }: { params: Prom
       <h1 className="sr-only">{t("title")}</h1>
       <div className="relative min-h-0 flex-1">
         {/* with no place given the globe turns by itself, centred on Europe/Africa */}
-        <GlobeView initial={{ lon: given ? lon : 12, lat: given ? lat : 22, spin: !given }} />
+        <GlobeView initial={{ lon: given ? lon : 12, lat: given ? lat : 22, spin: !given, zoom: given && zoom !== null ? zoom : undefined }} />
       </div>
     </main>
   );
