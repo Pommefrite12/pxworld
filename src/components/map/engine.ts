@@ -44,6 +44,7 @@ const GEO_TILE_PX = 512;
 const GEO_CACHE_MAX = 48;
 const RASTER_PX = 256;
 const MAX_Z = 8;
+const MAX_IMAGES_IN_FLIGHT = 12;
 const MAX_SCALE = 48;
 const RASTER_BELOW = 1; // below this zoom the server-composited rasters are shown; above it, parcels are drawn individually
 const JSON_ABOVE = 0.1; // below this zoom parcels are sub-2px: no metadata needed
@@ -80,6 +81,9 @@ export class MapEngine {
   /** World copy being drawn: copy c shows the world shifted by c·W, so the map is continuous across the Bering Strait. */
   private offX = 0;
   private globeFired = false;
+  /** While the page is leaving for the globe, no new request may compete with its navigation. */
+  private suspended = false;
+  private aborter = new AbortController();
   private destroyed = false;
 
   private geo: Geo | null = null;
@@ -178,7 +182,8 @@ export class MapEngine {
     const latDeg = pixelToLonLat(this.cam.x, this.cam.y).lat;
     if (!shouldReturnToGlobe({ prevScale, requestedScale, minScale: this.minScale, latDeg, viewW: this.w, viewH: this.h })) return;
     this.globeFired = true;
-    setTimeout(() => { this.globeFired = false; }, 2500); // if the page did not navigate, allow another try
+    this.suspend();
+    setTimeout(() => { this.globeFired = false; this.suspended = false; this.aborter = new AbortController(); this.invalidate(); }, 2500); // if the page did not navigate, carry on
     this.cb.onZoomOutToGlobe({ ...this.cam, scale: Math.max(requestedScale, this.minScale) });
   }
 
@@ -235,7 +240,21 @@ export class MapEngine {
 
   /* ------------------------------------------------------------------ data */
 
+  /**
+   * Stops every pending map request: zooming out sweeps over the whole world, which queues hundreds of tile and
+   * image requests, and the browser only runs a few at a time — they would delay the globe's own page and scripts.
+   */
+  private suspend() {
+    this.suspended = true;
+    this.tileQueue = [];
+    this.aborter.abort();
+    for (const map of [this.rasters, this.images]) {
+      for (const [key, e] of [...map.entries()]) if (e.state === "loading") { e.el.onload = null; e.el.onerror = null; e.el.src = ""; map.delete(key); } // asked for again if we stay
+    }
+  }
+
   private ensureTile(tx: number, ty: number) {
+    if (this.suspended) return;
     if (tx < 0 || ty < 0 || tx >= W / TILE || ty >= H / TILE) return;
     const key = `${tx},${ty}`;
     if (this.tiles.has(key)) return;
@@ -250,7 +269,7 @@ export class MapEngine {
       const [tx, ty] = key.split(",").map(Number) as [number, number];
       const version = this.version;
       this.inflight++;
-      fetch(`/api/map/tiles/${tx}/${ty}?v=${version}`)
+      fetch(`/api/map/tiles/${tx}/${ty}?v=${version}`, { signal: this.aborter.signal })
         .then((r) => (r.ok ? (r.json() as Promise<TileParcel[]>) : Promise.reject(new Error(String(r.status)))))
         .then((rows) => {
           if (version !== this.version) return;
@@ -270,6 +289,9 @@ export class MapEngine {
   private loadImage(map: Map<string, Img>, key: string, url: string, limit: number): Img {
     let e = map.get(key);
     if (e) { e.used = performance.now(); return e; }
+    // at most a dozen images in flight per layer: the tiles still wanted next frame are asked for then, the ones the
+    // camera has already left are never requested at all
+    if (this.suspended || this.loadingCount(map) >= MAX_IMAGES_IN_FLIGHT) return { el: new Image(), state: "loading", used: performance.now() };
     const el = new Image();
     el.decoding = "async";
     e = { el, state: "loading", used: performance.now() };
@@ -282,6 +304,12 @@ export class MapEngine {
       for (const [k] of oldest) map.delete(k);
     }
     return e;
+  }
+
+  private loadingCount(map: Map<string, Img>) {
+    let n = 0;
+    for (const e of map.values()) if (e.state === "loading") n++;
+    return n;
   }
 
   /* ------------------------------------------------------------------ selection */

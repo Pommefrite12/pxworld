@@ -9,6 +9,7 @@ import { CheckoutDialog } from "@/components/buy/CheckoutDialog";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { centeredRect, clampToGrid, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
 import { globeZoomForFlatScale } from "@/lib/globe/orthographic";
+import { prebuildWorldTexture } from "@/components/globe/worldTexture";
 import type { PublicStats } from "@/lib/data/map";
 import { MapView, type MapViewHandle } from "./MapView";
 import type { Camera, MapParcel, Mode, SelectionState } from "./engine";
@@ -30,7 +31,6 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
   const tc = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
-  const [leaving, setLeaving] = useState(false);
   const mapRef = useRef<MapViewHandle>(null);
   const [engineReady, setEngineReady] = useState(false);
   const [stats, setStats] = useState(initialStats);
@@ -51,9 +51,21 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
     const ll = pixelToLonLat(c.x, c.y);
     const vp = engine()?.viewport ?? { w: 1200, h: 800 };
     const zoom = globeZoomForFlatScale(c.scale, ll.lat, vp.w, vp.h);
-    setLeaving(true);
-    setTimeout(() => router.push(`/globe?lon=${ll.lon.toFixed(2)}&lat=${ll.lat.toFixed(2)}&zoom=${zoom.toFixed(2)}`), 300);
+    router.push(`/globe?lon=${ll.lon.toFixed(2)}&lat=${ll.lat.toFixed(2)}&zoom=${zoom.toFixed(2)}`); // the map stays on screen until the globe is ready
   }, [router]);
+
+  /* ---------- get the globe ready while the map is idle, so zooming out switches without a wait ---------- */
+  useEffect(() => {
+    if (!engineReady) return;
+    router.prefetch("/globe");
+    prebuildWorldTexture();
+    // Skipped under browser automation (navigator.webdriver), where background requests would only keep the network
+    // busy while tests wait for it to go quiet.
+    if (navigator.webdriver) return;
+    void import("@/components/globe/GlobeView"); // fetch the globe's code now, so the switch does not wait for it
+    // dev server only: compile the globe route in the background (the first compile takes many seconds)
+    if (process.env.NODE_ENV !== "production") void fetch("/globe", { priority: "low" } as RequestInit).catch(() => undefined);
+  }, [engineReady, router]);
 
   /* ---------- live stats (real numbers, refreshed; a purchase bumps mapVersion and the map reloads its tiles) ---------- */
   useEffect(() => {
@@ -171,7 +183,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
           <button className="btn btn-primary btn-sm sm:!min-h-10 sm:!px-5" onClick={() => startBuy()} data-testid="find-your-spot">{t("findYourSpot")}</button>
         ) : null}
       />
-      <div className={`relative min-h-0 flex-1 transition-opacity duration-300 ${leaving ? "pointer-events-none opacity-0" : "opacity-100"}`}>
+      <div className="relative min-h-0 flex-1">
         <MapView
           ref={mapRef}
           label={t("canvasLabel")}

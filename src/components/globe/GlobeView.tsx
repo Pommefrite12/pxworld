@@ -6,7 +6,8 @@ import { useRouter } from "@/i18n/navigation";
 import { GEO, GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { lonLatToPixel, MERCATOR_BOTTOM, MERCATOR_TOP, LON_MIN, pixelToLonLat } from "@/lib/grid/projection";
 import { flatScaleForRadius, GLOBE_BASE_FRACTION, GLOBE_HANDOFF_ZOOM, GLOBE_MAX_LAT, GLOBE_MIN_ZOOM, project } from "@/lib/globe/orthographic";
-import { loadGeo, loadPlaces, type Geo, type Places } from "@/components/map/geo";
+import { loadPlaces, type Places } from "@/components/map/geo";
+import { TEXTURE_WIDTH, worldTexture } from "./worldTexture";
 
 /**
  * PROTOTYPE — the planet as a 3D globe. Pure WebGL 2, no library: one full-screen triangle whose fragment shader
@@ -14,11 +15,8 @@ import { loadGeo, loadPlaces, type Geo, type Places } from "@/components/map/geo
  * vector data as the flat map, drawn once into a texture). Zoom in and the flat map takes over at the same place.
  */
 
-const OCEAN = "#c9dfe8";
-const LAND = "#fbf5e6";
 const INK = "23,21,31";
 const FONT = `"Instrument Sans Variable", system-ui, sans-serif`;
-const TEXTURE_WIDTH = 4096;
 
 const VERT = `#version 300 es
 void main() {
@@ -82,30 +80,6 @@ function compile(gl: WebGL2RenderingContext, type: number, src: string) {
   return s;
 }
 
-/** Draws the flat world (same data as the flat map, 1:50m level) into a canvas, one pixel of texture per 10 grid pixels. */
-function worldTexture(geo: Geo, width: number): HTMLCanvasElement {
-  const c = document.createElement("canvas");
-  c.width = width;
-  c.height = Math.round((width * GRID_HEIGHT) / GRID_WIDTH);
-  const g = c.getContext("2d")!;
-  const k = width / GRID_WIDTH;
-  g.setTransform(k, 0, 0, k, 0, 0);
-  g.fillStyle = OCEAN;
-  g.fillRect(0, 0, GRID_WIDTH, GRID_HEIGHT);
-  const paths = geo.tilePaths("50", { x0: 0, y0: 0, x1: GRID_WIDTH, y1: GRID_HEIGHT }, false);
-  g.fillStyle = LAND;
-  g.fill(paths.fill, "evenodd");
-  g.lineJoin = "round";
-  g.lineCap = "round";
-  g.strokeStyle = `rgba(${INK},0.28)`;
-  g.lineWidth = 1.1 / k;
-  g.stroke(paths.borders);
-  g.strokeStyle = `rgba(${INK},0.6)`;
-  g.lineWidth = 1.5 / k;
-  g.stroke(paths.coast);
-  return c;
-}
-
 interface State { lon: number; lat: number; zoom: number }
 declare global { interface Window { __pxGlobe?: { ready: boolean; state: State; set(lon: number, lat: number, zoom: number): void; handedOff: boolean } } }
 
@@ -120,7 +94,6 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
   const [supported, setSupported] = useState(true);
   const [ready, setReady] = useState(false);
   const [info, setInfo] = useState<State>({ lon: initial.lon, lat: initial.lat, zoom: initial.zoom ?? 1 });
-  const [leaving, setLeaving] = useState(false);
 
   const flatHref = useCallback((s: State, r: number) => {
     const p = lonLatToPixel({ lon: s.lon, lat: s.lat });
@@ -174,9 +147,7 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
       if (handed) return;
       handed = true;
       if (window.__pxGlobe) window.__pxGlobe.handedOff = true;
-      setLeaving(true);
-      const href = flatHref(view, radius());
-      setTimeout(() => router.push(href), 320);
+      router.push(flatHref(view, radius())); // no fade-out wait: the globe stays on screen until the flat map is ready
     };
 
     const clampView = () => {
@@ -343,9 +314,8 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
 
     /* ------------------------------------------------------------------ data */
 
-    void loadGeo().then((geo) => {
+    void worldTexture(texWidth).then((img) => {
       if (destroyed) return;
-      const img = worldTexture(geo, texWidth);
       gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
       gl.generateMipmap(gl.TEXTURE_2D);
@@ -374,6 +344,9 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
       };
     }
     schedule();
+    // dev server only: compile the flat map's route in the background so the way back is not a cold start
+    if (process.env.NODE_ENV !== "production" && !navigator.webdriver) void fetch("/", { priority: "low" } as RequestInit).catch(() => undefined);
+    router.prefetch("/");
 
     return () => {
       destroyed = true;
@@ -403,7 +376,7 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
   }
 
   return (
-    <div ref={wrapRef} className={`absolute inset-0 overflow-hidden bg-paper transition-opacity duration-300 ${leaving ? "opacity-0" : "opacity-100"}`} data-testid="globe">
+    <div ref={wrapRef} className={`absolute inset-0 overflow-hidden bg-paper transition-opacity duration-150 ${ready ? "opacity-100" : "opacity-0"}`} data-testid="globe">
       <canvas ref={glRef} role="application" aria-label={t("canvasLabel")} tabIndex={0} className="absolute inset-0 block h-full w-full touch-none select-none outline-offset-[-3px]" style={{ cursor: "grab" }} />
       <canvas ref={labelsRef} aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" />
 
