@@ -13,6 +13,8 @@ const securityHeaders = [
 
 const config: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  // GitHub Codespaces serves the dev site from https://<name>-3000.app.github.dev
+  allowedDevOrigins: ["*.app.github.dev"],
   reactStrictMode: true,
   poweredByHeader: false,
   serverExternalPackages: ["sharp", "pg"],

@@ -1,0 +1,29 @@
+{
+  "name": "Pixel World (Node 22 + PostgreSQL 16)",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "shutdownAction": "stopCompose",
+
+  // Same settings as .env.example (development sign-in + simulated Stripe), pointed at the "db" container.
+  "containerEnv": {
+    "DATABASE_URL": "postgres://pixel:pixel@db:5432/pixelworld",
+    "TEST_PG_ADMIN_URL": "postgres://pixel:pixel@db:5432/postgres"
+  },
+
+  // Runs once, when the codespace is created: install, configure, create the tables.
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  // Runs every time you open the codespace: start the site.
+  "postAttachCommand": "npm run dev",
+
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "Pixel World", "onAutoForward": "notify" }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "bradlc.vscode-tailwindcss"]
+    }
+  }
+}

@@ -22,7 +22,8 @@ export async function createCheckoutSession(order: OrderForCheckout, email: stri
   if (stripeMockEnabled()) {
     const id = `cs_mock_${order.id}`;
     await query("select public.px_attach_checkout_session($1, $2)", [order.id, id]);
-    return { id, url: `${siteUrl()}/dev/checkout/${order.id}` };
+    // relative on purpose: works behind any host (localhost, Codespaces, a tunnel)
+    return { id, url: `/dev/checkout/${order.id}` };
   }
   const desc = `${order.w}×${order.h} px parcel at (${order.x}, ${order.y})`;
   const nowS = Math.floor(Date.now() / 1000);

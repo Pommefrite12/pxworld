@@ -15,7 +15,14 @@ Next.js 16 (App Router) · React 19 · TypeScript (strict) · Tailwind CSS 4 · 
 Stripe Checkout + webhooks · `next-intl` (English, French; add a language by adding one JSON file) · `sharp` for image
 validation and tiles · Vitest · Playwright · deployable on Vercel.
 
-## Quick start (no external account needed)
+## Try it without installing anything: GitHub Codespaces
+
+On GitHub, open the repository → **Code** → **Codespaces** → **Create codespace on branch `claude/funny-bell-k7v5xf`**
+(free accounts get monthly hours). A virtual machine with Node 22 and PostgreSQL is built from `.devcontainer/`, the tables
+are created and the site starts by itself; open the **PORTS** tab and click the globe next to port 3000. Sign-in is the
+development form and Stripe is simulated, exactly like the local setup below.
+
+## Quick start on your computer (no external account needed)
 
 ```bash
 npm install
