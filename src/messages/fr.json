@@ -29,7 +29,8 @@
     "zoomLevel": "Niveau de zoom",
     "credits": "Crédits",
     "statsUnavailable": "Les chiffres en direct sont momentanément indisponibles.",
-    "spotTaken": "Désolé, quelqu'un vient de prendre cet emplacement. Choisissez-en un autre."
+    "spotTaken": "Désolé, quelqu'un vient de prendre cet emplacement. Choisissez-en un autre.",
+    "globe": "Globe 3D (prototype)"
   },
   "stats": {
     "label": "Statistiques en direct",
@@ -785,5 +786,15 @@
     "title": "Une erreur est survenue",
     "lead": "Une erreur inattendue s'est produite. Veuillez réessayer.",
     "retry": "Réessayer"
+  },
+  "globe": {
+    "title": "Globe",
+    "prototype": "Prototype",
+    "canvasLabel": "Globe 3D de la Terre. Faites glisser pour tourner, molette ou pincement pour zoomer, Entrée pour ouvrir la carte plate.",
+    "hint": "Faites glisser pour tourner, zoomez avec la molette : la carte plate s'ouvre toute seule quand vous approchez.",
+    "zoomIn": "Zoom avant",
+    "zoomOut": "Zoom arrière",
+    "openFlat": "Ouvrir la carte plate ici",
+    "unsupported": "Votre navigateur ne peut pas afficher le globe 3D (WebGL 2 est nécessaire). La carte plate fonctionne partout."
   }
 }

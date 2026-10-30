@@ -29,7 +29,8 @@
     "zoomLevel": "Zoom level",
     "credits": "Credits",
     "statsUnavailable": "Live figures are temporarily unavailable.",
-    "spotTaken": "Sorry, someone just took this spot. Pick another one."
+    "spotTaken": "Sorry, someone just took this spot. Pick another one.",
+    "globe": "3D globe (prototype)"
   },
   "stats": {
     "label": "Live statistics",
@@ -785,5 +786,15 @@
     "title": "Something went wrong",
     "lead": "An unexpected error happened. Please try again.",
     "retry": "Try again"
+  },
+  "globe": {
+    "title": "Globe",
+    "prototype": "Prototype",
+    "canvasLabel": "3D globe of the Earth. Drag to rotate, scroll or pinch to zoom, Enter to open the flat map.",
+    "hint": "Drag to rotate, scroll to zoom in: the flat map opens by itself when you get close.",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "openFlat": "Open the flat map here",
+    "unsupported": "Your browser cannot draw the 3D globe (WebGL 2 is required). The flat map works everywhere."
   }
 }

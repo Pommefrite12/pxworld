@@ -33,6 +33,18 @@ Layers, by zoom (`scale` = screen px per grid px, 0.029 … 48):
 | Hit-testing, collisions | the same JSON tiles | client-side convenience only; the database decides |
 | Overlays | selection, preview of the buyer's creation, highlight | |
 
+### 3D globe (prototype, `/globe`)
+
+`src/components/globe/GlobeView.tsx`: pure WebGL 2, no library. One full-screen triangle; the fragment shader inverts the
+orthographic projection per pixel (`src/lib/globe/orthographic.ts`, unit-tested) and reads the flat world from a 4096-px texture
+drawn once from the same vector data as the flat map (1:50m land, coasts, borders), through the grid's own Mercator mapping
+(`MERCATOR_TOP/BOTTOM`), with mip level chosen from the screen-space derivative of the sphere normal. Dot field ("pixel field"),
+rim glow, and a 2D overlay for country names (same collision logic) and big cities. Poles are outside the grid and drawn as sea/ice.
+Zooming past ×3 hands over to the flat map at the same place: `flatScaleForRadius` equates the screen size of one radian of
+longitude on the globe (`r·cos φ`) and on the flat map (`s·W/2π`). The flat map's controls have a globe button back.
+Not in the prototype: parcels on the globe (they are specks at this scale), buying from the globe, sub-pixel antialiasing of the limb
+on weak GPUs. The flat map stays the only place where pixels are bought and drawn.
+
 The 1:10m layers are **not** loaded as a whole: `public/data/geo/` holds them cut into 2 500-px cells (`g-{cx}-{cy}.json`: land, country borders, admin-1 borders; `c1-…`: cities 15 000–400 000; `c2-…`: towns 1 000–15 000 in 625-px cells), plus `index.json` listing the non-empty cells. The engine fetches a cell when a tile or label layer needs it (6 requests at a time, newest first, LRU-evicted) and draws the 1:50m level meanwhile; tiles are redrawn when the cells arrive. A cell's polygons are cut exactly at its border and their coastline is derived on the client by skipping the edges that merely lie on the border, so there are no false lines and no seams. `scripts/build-world-data.mts` produces everything (`npm run data:world`, ~10 s; needs the 40 MB Natural Earth admin-1 file, downloaded once into `.data/`).
 
 Frame cost measured in headless Chromium with *software* rendering (no GPU): ≈ 0.4–2 ms per frame at world and deep zoom, ≈ 9 ms at mid zoom (many large tile blits); real GPU-accelerated browsers are considerably faster. `tests/e2e/ui.spec.ts` guards against regressions.

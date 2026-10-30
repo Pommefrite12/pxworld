@@ -56,13 +56,16 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
     clearTimeout(urlTimer.current);
     urlTimer.current = setTimeout(() => {
       const u = new URL(window.location.href);
-      if (u.pathname.includes("/p/")) return; // permalink pages keep their canonical URL
+      // only on the map's own address: permalink pages keep their canonical URL, and a navigation to another page
+      // (the globe, say) must never be overwritten by a late timer
+      const home = locale === "en" ? "/" : `/${locale}`;
+      if (u.pathname !== home && u.pathname !== `${home}/`) return;
       u.searchParams.set("x", String(Math.round(cam.x))); u.searchParams.set("y", String(Math.round(cam.y)));
       u.searchParams.set("z", String(Number(cam.scale.toPrecision(3))));
-      history.replaceState(null, "", u);
+      history.replaceState(history.state, "", u); // keep the router's own history state intact
     }, 500);
     return () => clearTimeout(urlTimer.current);
-  }, [cam]);
+  }, [cam, locale]);
 
   /* ---------- buy mode ---------- */
   const applySelection = useCallback((r: Rect | null) => {
