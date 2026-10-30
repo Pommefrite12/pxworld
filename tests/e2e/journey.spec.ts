@@ -36,7 +36,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
   });
 
   test("an anonymous visitor can explore and is sent to sign in before buying; the spot is kept", async ({ page }) => {
-    await page.goto(`/?bx=${SPOT.x}&by=${SPOT.y}&bw=${SPOT.w}&bh=${SPOT.h}`);
+    await page.goto(`/map?bx=${SPOT.x}&by=${SPOT.y}&bw=${SPOT.w}&bh=${SPOT.h}`);
     const panel = page.getByTestId("buy-panel");
     await expect(panel).toBeVisible();
     await expect(page.getByTestId("buy-status")).toContainText(/free/i);
@@ -52,7 +52,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
   });
 
   test("alice designs, pays and receives the parcel only after the (mock) webhook", async ({ browser }) => {
-    const { ctx, page } = await newUser(browser, "alice@example.test", `/?bx=${SPOT.x}&by=${SPOT.y}&bw=${SPOT.w}&bh=${SPOT.h}`);
+    const { ctx, page } = await newUser(browser, "alice@example.test", `/map?bx=${SPOT.x}&by=${SPOT.y}&bw=${SPOT.w}&bh=${SPOT.h}`);
     await expect(page.getByTestId("buy-status")).toContainText(/free/i);
     await page.getByTestId("buy-continue").click();
 
@@ -118,7 +118,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
   });
 
   test("nobody else can buy any of those pixels (client check and server check)", async ({ browser }) => {
-    const { ctx, page } = await newUser(browser, "bob@example.test", `/?bx=${SPOT.x + 10}&by=${SPOT.y + 10}&bw=20&bh=20`);
+    const { ctx, page } = await newUser(browser, "bob@example.test", `/map?bx=${SPOT.x + 10}&by=${SPOT.y + 10}&bw=20&bh=20`);
     await expect(page.getByTestId("buy-status")).toContainText(/overlaps an existing parcel/i);
     await expect(page.getByTestId("buy-continue")).toBeDisabled();
     // and the server refuses even if the client is bypassed
@@ -134,7 +134,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     expect(res.status()).toBe(409);
     expect((await res.json()).error).toBe("px_parcel_unavailable");
     // an adjacent parcel is fine
-    await page.goto(`/?bx=${SPOT.x + 20}&by=${SPOT.y}&bw=20&bh=20`);
+    await page.goto(`/map?bx=${SPOT.x + 20}&by=${SPOT.y}&bw=20&bh=20`);
     await expect(page.getByTestId("buy-status")).toContainText(/free/i);
     await ctx.close();
   });

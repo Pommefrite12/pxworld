@@ -4,9 +4,10 @@ import { expect, test } from "@playwright/test";
 test.describe("mobile (touch)", () => {
   test("the map is immediately usable, and a spot can be chosen with a tap", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("application")).toBeVisible();
+    await expect(page.getByRole("application")).toBeVisible(); // the globe
     await expect(page.getByTestId("find-your-spot")).toBeVisible();
-    await page.getByTestId("find-your-spot").click();
+    await page.getByTestId("find-your-spot").click(); // → the flat map, already in buy mode
+    await page.waitForURL(/\/map\?/, { timeout: 20_000 });
     await page.waitForTimeout(1200);
     const box = (await page.getByRole("application").boundingBox())!;
     await page.touchscreen.tap(box.x + box.width * 0.4, box.y + 120);

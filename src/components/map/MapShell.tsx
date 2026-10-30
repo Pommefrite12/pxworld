@@ -21,7 +21,7 @@ export interface MapShellProps {
   stats: PublicStats | null;
   pricing: Pricing;
   viewer: HeaderViewer | null;
-  initial: { camera: Camera | null; parcelCode: string | null; buy: Rect | null };
+  initial: { camera: Camera | null; parcelCode: string | null; buy: Rect | null; startBuy?: boolean };
 }
 
 const DEFAULT_SIZE = { w: 20, h: 20 };
@@ -51,20 +51,20 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
     const ll = pixelToLonLat(c.x, c.y);
     const vp = engine()?.viewport ?? { w: 1200, h: 800 };
     const zoom = globeZoomForFlatScale(c.scale, ll.lat, vp.w, vp.h);
-    router.push(`/globe?lon=${ll.lon.toFixed(2)}&lat=${ll.lat.toFixed(2)}&zoom=${zoom.toFixed(2)}`); // the map stays on screen until the globe is ready
+    router.push(`/?lon=${ll.lon.toFixed(2)}&lat=${ll.lat.toFixed(2)}&zoom=${zoom.toFixed(2)}`); // the map stays on screen until the globe is ready
   }, [router]);
 
   /* ---------- get the globe ready while the map is idle, so zooming out switches without a wait ---------- */
   useEffect(() => {
     if (!engineReady) return;
-    router.prefetch("/globe");
+    router.prefetch("/");
     prebuildWorldTexture();
     // Skipped under browser automation (navigator.webdriver), where background requests would only keep the network
     // busy while tests wait for it to go quiet.
     if (navigator.webdriver) return;
     void import("@/components/globe/GlobeView"); // fetch the globe's code now, so the switch does not wait for it
     // dev server only: compile the globe route in the background (the first compile takes many seconds)
-    if (process.env.NODE_ENV !== "production") void fetch("/globe", { priority: "low" } as RequestInit).catch(() => undefined);
+    if (process.env.NODE_ENV !== "production") void fetch("/", { priority: "low" } as RequestInit).catch(() => undefined);
   }, [engineReady, router]);
 
   /* ---------- live stats (real numbers, refreshed; a purchase bumps mapVersion and the map reloads its tiles) ---------- */
@@ -82,7 +82,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
       const u = new URL(window.location.href);
       // only on the map's own address: permalink pages keep their canonical URL, and a navigation to another page
       // (the globe, say) must never be overwritten by a late timer
-      const home = locale === "en" ? "/" : `/${locale}`;
+      const home = locale === "en" ? "/map" : `/${locale}/map`;
       if (u.pathname !== home && u.pathname !== `${home}/`) return;
       u.searchParams.set("x", String(Math.round(cam.x))); u.searchParams.set("y", String(Math.round(cam.y)));
       u.searchParams.set("z", String(Number(cam.scale.toPrecision(3))));
@@ -140,7 +140,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
     return () => { clearTimeout(id); ctl.abort(); };
   }, [selection, selState]);
 
-  const buyUrl = (r: Rect) => `/?bx=${r.x}&by=${r.y}&bw=${r.w}&bh=${r.h}`;
+  const buyUrl = (r: Rect) => `/map?bx=${r.x}&by=${r.y}&bw=${r.w}&bh=${r.h}`;
   const continueBuy = () => {
     if (!selection) return;
     if (!viewer) { window.location.assign(`/auth/sign-in?next=${encodeURIComponent(buyUrl(selection))}`); return; }
@@ -163,6 +163,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
     started.current = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-off initialisation from the deep link, once the engine exists
     if (initial.buy) startBuy(initial.buy);
+    else if (initial.startBuy) startBuy(null); // "Find your spot" from the globe
     if (initial.parcelCode) engine()?.setHighlight(initial.parcelCode);
   }, [engineReady, initial, startBuy]);
 

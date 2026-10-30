@@ -14,7 +14,7 @@ const camera = async (page: import("@playwright/test").Page) => {
 };
 
 test.describe("accessibility (axe, WCAG 2.1 A/AA)", () => {
-  for (const path of ["/", "/fr", "/discover", "/rules", "/terms", "/auth/sign-in", "/auth/sign-up"]) {
+  for (const path of ["/", "/fr", "/map", "/discover", "/rules", "/terms", "/auth/sign-in", "/auth/sign-up"]) {
     test(`no serious violation on ${path}`, async ({ page }) => {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
@@ -28,7 +28,7 @@ test.describe("accessibility (axe, WCAG 2.1 A/AA)", () => {
 test.describe("map interaction", () => {
   test("geography is fully drawn at every zoom (no missing tiles) and a frame is cheap", async ({ page }) => {
     for (const [x, y, z] of [[19000, 11700, 2.5], [18984, 11738, 12], [10000, 8000, 0.4], [18000, 12000, 40], [18844, 11643, 5], [18984, 11738, 0.7], [10500, 12957, 1.5], [15322, 300, 3], [39000, 8272, 6]] as const) {
-      await page.goto(`/?x=${x}&y=${y}&z=${z}`);
+      await page.goto(`/map?x=${x}&y=${y}&z=${z}`);
       await page.waitForFunction(() => window.__pxEngine && (window.__pxEngine as unknown as { geo: unknown }).geo && !window.__pxEngine.geoPending, undefined, { timeout: 20_000 });
       const ms = await page.evaluate(async () => {
         const e = window.__pxEngine as unknown as { cam: { x: number; scale: number }; invalidate(): void; draw(): void };
@@ -43,7 +43,7 @@ test.describe("map interaction", () => {
   test("zooming in reveals more detail: départements, cities of 15 000+, then towns of 1 000+", async ({ page }) => {
     type View = { x0: number; y0: number; x1: number; y1: number };
     type GeoApi = { adminLabels(): { en: string; dep: boolean }[] | null; townsIn(tier: 1 | 2, v: View): { name: string }[] };
-    await page.goto("/?x=18984&y=11738&z=2");
+    await page.goto("/map?x=18984&y=11738&z=2");
     await page.waitForFunction(() => window.__pxEngine && (window.__pxEngine as unknown as { geo: unknown }).geo && !window.__pxEngine.geoPending, undefined, { timeout: 20_000 });
     const names = (tier: 1 | 2, v: View) => page.evaluate(([t, view]) => ((window.__pxEngine as unknown as { geo: GeoApi }).geo.townsIn(t, view)).map((x) => x.name), [tier, v] as const);
     // départements (admin-1 names, loaded on demand)
@@ -58,7 +58,7 @@ test.describe("map interaction", () => {
   });
 
   test("the map wraps around: panning past the Bering Strait continues on the other side, positions stay real", async ({ page }) => {
-    await page.goto("/?x=39000&y=8300&z=1");
+    await page.goto("/map?x=39000&y=8300&z=1");
     await page.waitForFunction(() => Boolean(window.__pxEngine), undefined, { timeout: 20_000 });
     const r = await page.evaluate(() => {
       const e = window.__pxEngine as unknown as {
@@ -78,7 +78,7 @@ test.describe("map interaction", () => {
   });
 
   test("keyboard: arrows pan, plus/minus zoom, 0 recentres", async ({ page }) => {
-    await page.goto("/?x=20000&y=8000&z=1");
+    await page.goto("/map?x=20000&y=8000&z=1");
     const canvas = page.getByRole("application");
     await canvas.focus();
     const before = await camera(page);
@@ -91,7 +91,7 @@ test.describe("map interaction", () => {
   });
 
   test("wheel zoom is anchored under the cursor and is capped at the maximum zoom", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/map");
     await page.waitForTimeout(800);
     const c = await camera(page);
     const box = (await page.getByRole("application").boundingBox())!;
@@ -109,7 +109,7 @@ test.describe("map interaction", () => {
   });
 
   test("drag pans the map", async ({ page }) => {
-    await page.goto("/?x=25000&y=10000&z=2");
+    await page.goto("/map?x=25000&y=10000&z=2");
     await page.waitForTimeout(500);
     const before = await camera(page);
     const box = (await page.getByRole("application").boundingBox())!;
@@ -123,7 +123,7 @@ test.describe("map interaction", () => {
   });
 
   test("geographic search flies to a country and a city, and understands coordinates", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/map");
     const search = page.getByRole("combobox").first();
     await search.fill("Paris");
     await page.getByRole("listbox").getByRole("option").first().click();
@@ -140,7 +140,7 @@ test.describe("map interaction", () => {
   });
 
   test("buy mode: clicking the map places a parcel, collisions and bounds are reported", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/map");
     await page.getByTestId("find-your-spot").click();
     await page.waitForTimeout(1200);
     const box = (await page.getByRole("application").boundingBox())!;
@@ -164,7 +164,7 @@ test.describe("editor", () => {
     const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 } });
     expect((await ctx.request.post("/api/dev/login", { data: { email: "preview@example.test" } })).ok()).toBeTruthy();
     const page = await ctx.newPage();
-    await page.goto("/?bx=30000&by=3000&bw=20&bh=20");
+    await page.goto("/map?bx=30000&by=3000&bw=20&bh=20");
     await expect(page.getByTestId("buy-status")).toContainText(/free/i);
     await page.getByTestId("buy-continue").click();
     const dialog = page.getByRole("dialog");
@@ -190,7 +190,7 @@ test.describe("editor", () => {
     const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 } });
     await ctx.request.post("/api/dev/login", { data: { email: "uploader@example.test" } });
     const page = await ctx.newPage();
-    await page.goto("/?bx=31000&by=3000&bw=30&bh=30");
+    await page.goto("/map?bx=31000&by=3000&bw=30&bh=30");
     await expect(page.getByTestId("buy-status")).toContainText(/free/i);
     await page.getByTestId("buy-continue").click();
     const dialog = page.getByRole("dialog");

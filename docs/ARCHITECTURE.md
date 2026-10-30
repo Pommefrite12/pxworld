@@ -33,7 +33,9 @@ Layers, by zoom (`scale` = screen px per grid px, 0.029 … 48):
 | Hit-testing, collisions | the same JSON tiles | client-side convenience only; the database decides |
 | Overlays | selection, preview of the buyer's creation, highlight | |
 
-### 3D globe (prototype, `/globe`)
+### 3D globe (the home page, `/`)
+
+Routes: `/` is the globe (`GlobeScreen`: header with search and "Find your spot", live counter, globe); `/map` is the flat map where pixels are bought and drawn (all deep links: `?x&y&z`, `?bx&by&bw&bh`, `?p=code`, `?buy=1`); old addresses `/?x…`, `/?bx…`, `/?p…` redirect to `/map`, and `/globe` redirects to `/`. The header's search turns the globe to a place (a pixel position or a parcel opens the flat map); "Find your spot" opens `/map?…&buy=1` at the globe's centre. The header and the globe talk through two window events (`globe/bus.ts`). No dot field on the globe.
 
 `src/components/globe/GlobeView.tsx`: pure WebGL 2, no library. One full-screen triangle; the fragment shader inverts the
 orthographic projection per pixel (`src/lib/globe/orthographic.ts`, unit-tested) and reads the flat world from a 4096-px texture

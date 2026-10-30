@@ -20,10 +20,10 @@ export default async function MyParcels({ params }: { params: Promise<{ locale: 
           <h1 className="text-3xl font-extrabold">{t("title")}</h1>
           <p className="mt-1 text-ink-soft">{t("summary", { parcels: f.number(stats.parcels), pixels: f.number(stats.pixels) })}</p>
         </div>
-        <Link href="/" className="btn btn-primary">{t("buyMore")}</Link>
+        <Link href="/map" className="btn btn-primary">{t("buyMore")}</Link>
       </div>
       {parcels.length === 0 ? (
-        <div className="card mt-8 p-10 text-center"><p className="text-lg font-semibold">{t("empty")}</p><Link href="/" className="btn btn-primary mt-4">{t("findSpot")}</Link></div>
+        <div className="card mt-8 p-10 text-center"><p className="text-lg font-semibold">{t("empty")}</p><Link href="/map" className="btn btn-primary mt-4">{t("findSpot")}</Link></div>
       ) : (
         <ul className="mt-8 grid gap-4 sm:grid-cols-2">
           {parcels.map((p) => {
@@ -44,7 +44,7 @@ export default async function MyParcels({ params }: { params: Promise<{ locale: 
                   {p.last_rejection && !p.pending_asset_id && !p.published_asset_id && <p className="mt-1 text-xs text-danger">{t("rejectedBecause", { reason: p.last_rejection })}</p>}
                   <div className="mt-2.5 flex flex-wrap gap-2">
                     <Link className="btn btn-ghost btn-sm" href={`/p/${p.code}`}>{t("view")}</Link>
-                    <Link className="btn btn-ghost btn-sm" href={`/?x=${Math.round(cx)}&y=${Math.round(cy)}&z=${Number(z.toPrecision(3))}&p=${p.code}`}>{t("onMap")}</Link>
+                    <Link className="btn btn-ghost btn-sm" href={`/map?x=${Math.round(cx)}&y=${Math.round(cy)}&z=${Number(z.toPrecision(3))}&p=${p.code}`}>{t("onMap")}</Link>
                     <Link className="btn btn-ink btn-sm" href={`/account/parcels/${p.code}/edit`}>{t("edit")}</Link>
                   </div>
                 </div>

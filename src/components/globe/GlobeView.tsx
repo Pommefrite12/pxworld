@@ -7,10 +7,11 @@ import { GEO, GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { lonLatToPixel, MERCATOR_BOTTOM, MERCATOR_TOP, LON_MIN, pixelToLonLat } from "@/lib/grid/projection";
 import { flatScaleForRadius, GLOBE_BASE_FRACTION, GLOBE_HANDOFF_ZOOM, GLOBE_MAX_LAT, GLOBE_MIN_ZOOM, project } from "@/lib/globe/orthographic";
 import { loadPlaces, type Places } from "@/components/map/geo";
+import { GLOBE_BUY, GLOBE_GOTO, type GlobeGoto } from "./bus";
 import { TEXTURE_WIDTH, worldTexture } from "./worldTexture";
 
 /**
- * PROTOTYPE — the planet as a 3D globe. Pure WebGL 2, no library: one full-screen triangle whose fragment shader
+ * The planet as a 3D globe (the home page). Pure WebGL 2, no library: one full-screen triangle whose fragment shader
  * inverts the orthographic projection for every pixel and reads the flat world (ocean, land, borders — the very same
  * vector data as the flat map, drawn once into a texture). Zoom in and the flat map takes over at the same place.
  */
@@ -31,7 +32,7 @@ uniform float uRadius;     // device px
 uniform vec2 uView;        // lon0, lat0 (radians)
 uniform sampler2D uTex;    // the flat world (grid space)
 uniform vec4 uBand;        // west edge (rad), Mercator top, Mercator bottom, grid width
-uniform vec3 uGrid;        // grid width, grid height, texture width
+uniform vec3 uGrid;        // grid width, grid height, texture width (only the last one is used)
 uniform vec2 uLat;         // lat min, lat max of the grid (rad)
 out vec4 o;
 const float PI = 3.14159265358979;
@@ -60,11 +61,6 @@ void main() {
     float v = (uBand.y - asinh(tan(lat))) / (uBand.y - uBand.z);
     float lod = log2(max(1.0, uGrid.z / (2.0 * PI) * arcPx / cosLat));
     col = textureLod(uTex, vec2(u, v), lod).rgb;
-    // the "pixel field": a dot every 250 grid pixels, fading out when the dots get too small to read
-    float spacing = 250.0 * 2.0 * PI / uGrid.x * uRadius * cosLat * z;
-    vec2 cell = fract(vec2(u * uGrid.x, v * uGrid.y) / 250.0) - 0.5;
-    float dotA = (1.0 - smoothstep(0.07, 0.11, length(cell))) * smoothstep(7.0, 13.0, spacing) * 0.3;
-    col = mix(col, vec3(0.09, 0.08, 0.12), dotA);
   }
   col *= 0.78 + 0.22 * pow(z, 0.7);
   col = mix(col, vec3(0.45, 0.6, 0.72), smoothstep(0.9, 1.0, d) * 0.3);
@@ -90,14 +86,14 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
   const glRef = useRef<HTMLCanvasElement>(null);
   const labelsRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const api = useRef<{ zoomBy(f: number): void; openFlat(): void } | null>(null);
+  const api = useRef<{ zoomBy(f: number): void; openFlat(buy?: boolean): void } | null>(null);
   const [supported, setSupported] = useState(true);
   const [ready, setReady] = useState(false);
   const [info, setInfo] = useState<State>({ lon: initial.lon, lat: initial.lat, zoom: initial.zoom ?? 1 });
 
-  const flatHref = useCallback((s: State, r: number) => {
+  const flatHref = useCallback((s: State, r: number, buy = false) => {
     const p = lonLatToPixel({ lon: s.lon, lat: s.lat });
-    return `/?x=${Math.round(p.x)}&y=${Math.round(p.y)}&z=${Number(flatScaleForRadius(r, s.lat).toPrecision(3))}`;
+    return `/map?x=${Math.round(p.x)}&y=${Math.round(p.y)}&z=${Number(flatScaleForRadius(r, s.lat).toPrecision(3))}${buy ? "&buy=1" : ""}`;
   }, []);
 
   useEffect(() => {
@@ -123,7 +119,7 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
 
     const view: State = { lon: initial.lon, lat: initial.lat, zoom: Math.max(GLOBE_MIN_ZOOM, Math.min(GLOBE_HANDOFF_ZOOM - 0.2, initial.zoom ?? GLOBE_MIN_ZOOM)) };
     let spin = initial.spin && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    let w = 1, h = 1, dpr = 1, glDpr = 1, r0 = 300;
+    let w = 1, h = 1, dpr = 1, glDpr = 1, r0 = 300, lift = 0;
     let dirty = true, raf = 0, last = 0, velocity = { x: 0, y: 0 }, destroyed = false, handed = false;
     let places: Places | null = null;
     let countries: { name: { en: string; fr: string }; lon: number; lat: number; angW: number }[] = [];
@@ -140,14 +136,15 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
       canvas.width = Math.round(w * glDpr); canvas.height = Math.round(h * glDpr);
       labels.width = Math.round(w * dpr); labels.height = Math.round(h * dpr);
       r0 = GLOBE_BASE_FRACTION * Math.min(w, h);
+      lift = w < 600 && h > w * 1.3 ? Math.min(90, h * 0.12) : 0; // phones in portrait: leave room for the counter below the globe
       dirty = true;
     };
 
-    const handOff = () => {
+    const handOff = (buy = false) => {
       if (handed) return;
       handed = true;
       if (window.__pxGlobe) window.__pxGlobe.handedOff = true;
-      router.push(flatHref(view, radius())); // no fade-out wait: the globe stays on screen until the flat map is ready
+      router.push(flatHref(view, radius(), buy)); // no fade-out wait: the globe stays on screen until the flat map is ready
     };
 
     const clampView = () => {
@@ -159,13 +156,21 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
     const zoomBy = (f: number) => { spin = false; view.zoom *= f; clampView(); dirty = true; if (view.zoom >= GLOBE_HANDOFF_ZOOM) handOff(); };
     api.current = { zoomBy, openFlat: handOff };
 
+    /** Turns the globe to a place (search): the shortest way round, easing in and out. */
+    let fly: { from: State; to: State; t0: number; dur: number } | null = null;
+    const flyTo = (lon: number, lat: number, zoom: number) => {
+      spin = false; velocity = { x: 0, y: 0 };
+      fly = { from: { ...view }, to: { lon, lat: Math.max(-GLOBE_MAX_LAT, Math.min(GLOBE_MAX_LAT, lat)), zoom: Math.max(GLOBE_MIN_ZOOM, Math.min(GLOBE_HANDOFF_ZOOM - 0.2, zoom)) }, t0: performance.now(), dur: 900 };
+      schedule();
+    };
+
     /* ------------------------------------------------------------------ drawing */
 
     const drawGl = () => {
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.uniform2f(uCenter, canvas.width / 2, canvas.height / 2);
+      gl.uniform2f(uCenter, canvas.width / 2, canvas.height / 2 + lift * glDpr); // GL's y axis points up
       gl.uniform1f(uRadius, radius() * glDpr);
       gl.uniform2f(uView, (view.lon * Math.PI) / 180, (view.lat * Math.PI) / 180);
       gl.uniform4f(uBand, (LON_MIN * Math.PI) / 180, MERCATOR_TOP, MERCATOR_BOTTOM, GRID_WIDTH);
@@ -179,7 +184,7 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       g.clearRect(0, 0, w, h);
       if (!places) return;
-      const r = radius(), cx = w / 2, cy = h / 2;
+      const r = radius(), cx = w / 2, cy = h / 2 - lift;
       const lang = locale === "fr" ? "fr" : "en";
       const placed: { x0: number; y0: number; x1: number; y1: number }[] = [];
       const put = (text: string, x: number, y: number, a: number, align: CanvasTextAlign, ink: number) => {
@@ -226,6 +231,16 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
       last = now;
       let again = false;
       const r = radius();
+      if (fly) {
+        const k = Math.min(1, (now - fly.t0) / fly.dur), e = k < 0.5 ? 4 * k * k * k : 1 - (-2 * k + 2) ** 3 / 2;
+        const dl = ((((fly.to.lon - fly.from.lon + 180) % 360) + 360) % 360) - 180;
+        view.lon = fly.from.lon + dl * e;
+        view.lat = fly.from.lat + (fly.to.lat - fly.from.lat) * e;
+        view.zoom = fly.from.zoom * (fly.to.zoom / fly.from.zoom) ** e;
+        clampView();
+        dirty = true;
+        if (k >= 1) fly = null; else again = true;
+      }
       if (spin) { view.lon += dt * 0.004; dirty = true; again = true; } // ≈ 4° per second
       if (velocity.x || velocity.y) {
         view.lon -= (velocity.x * dt) / (r * Math.max(0.35, Math.cos((view.lat * Math.PI) / 180))) * (180 / Math.PI);
@@ -253,7 +268,7 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
     const onDown = (e: PointerEvent) => {
       canvas.setPointerCapture(e.pointerId);
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      spin = false; velocity = { x: 0, y: 0 };
+      spin = false; velocity = { x: 0, y: 0 }; fly = null;
       if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinchDist = Math.hypot(a!.x - b!.x, a!.y - b!.y); }
       trail.length = 0;
     };
@@ -290,7 +305,7 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
         schedule();
       }
     };
-    const onWheel = (e: WheelEvent) => { e.preventDefault(); zoomBy(Math.exp(-e.deltaY * 0.0016)); schedule(); };
+    const onWheel = (e: WheelEvent) => { e.preventDefault(); fly = null; zoomBy(Math.exp(-e.deltaY * 0.0016)); schedule(); };
     const onKey = (e: KeyboardEvent) => {
       const step = 6 / view.zoom;
       spin = false;
@@ -302,6 +317,10 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
       else return;
       e.preventDefault(); clampView(); invalidate();
     };
+    const onGoto = (e: Event) => { const d = (e as CustomEvent<GlobeGoto>).detail; flyTo(d.lon, d.lat, d.zoom); };
+    const onBuy = () => handOff(true);
+    window.addEventListener(GLOBE_GOTO, onGoto);
+    window.addEventListener(GLOBE_BUY, onBuy);
     canvas.addEventListener("pointerdown", onDown);
     canvas.addEventListener("pointermove", onMove);
     canvas.addEventListener("pointerup", onUp);
@@ -352,6 +371,8 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
       destroyed = true;
       cancelAnimationFrame(raf);
       ro.disconnect();
+      window.removeEventListener(GLOBE_GOTO, onGoto);
+      window.removeEventListener(GLOBE_BUY, onBuy);
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointermove", onMove);
       canvas.removeEventListener("pointerup", onUp);
@@ -380,22 +401,16 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
       <canvas ref={glRef} role="application" aria-label={t("canvasLabel")} tabIndex={0} className="absolute inset-0 block h-full w-full touch-none select-none outline-offset-[-3px]" style={{ cursor: "grab" }} />
       <canvas ref={labelsRef} aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" />
 
-      <div className="pointer-events-none absolute left-3 top-3 sm:left-5 sm:top-5">
-        <p className="inline-block rounded-full bg-signal-strong px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">{t("prototype")}</p>
-      </div>
+      <p className="pixel-num pointer-events-none absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[0.7rem] shadow-float sm:left-5 sm:top-5" data-testid="globe-readout">
+        {fmt(info.lat, "N", "S")} {fmt(info.lon, "E", "W")} · {info.zoom.toFixed(1)}×
+      </p>
 
-      <div className="pointer-events-none absolute inset-x-3 bottom-3 flex flex-col items-start gap-2 sm:inset-x-5 sm:bottom-5 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex flex-col items-start gap-2">
-          <p className="pixel-num pointer-events-auto rounded-full bg-white/90 px-3 py-1 text-[0.7rem] shadow-float" data-testid="globe-readout">
-            {fmt(info.lat, "N", "S")} {fmt(info.lon, "E", "W")} · {info.zoom.toFixed(1)}×
-          </p>
-          <p className="max-w-xs rounded-2xl bg-white/85 px-3 py-2 text-xs text-ink-soft shadow-float">{t("hint")}</p>
-        </div>
-        <div className="pointer-events-auto flex items-center gap-2">
-          <button className="btn btn-ghost !bg-white !min-h-11 !w-11 !px-0 text-lg shadow-float" onClick={() => api.current?.zoomBy(1 / 1.5)} aria-label={t("zoomOut")} title={t("zoomOut")}>−</button>
-          <button className="btn btn-ghost !bg-white !min-h-11 !w-11 !px-0 text-lg shadow-float" onClick={() => api.current?.zoomBy(1.5)} aria-label={t("zoomIn")} title={t("zoomIn")}>+</button>
-          <button className="btn btn-primary" onClick={() => api.current?.openFlat()} data-testid="globe-open-flat" disabled={!ready}>{t("openFlat")}</button>
-        </div>
+      <div className="pointer-events-auto absolute bottom-3 right-3 flex flex-col gap-1.5 sm:bottom-5 sm:right-5">
+        <button className="btn btn-ghost !bg-white !min-h-11 !w-11 !px-0 text-lg shadow-float" onClick={() => api.current?.zoomBy(1.5)} aria-label={t("zoomIn")} title={t("zoomIn")}>+</button>
+        <button className="btn btn-ghost !bg-white !min-h-11 !w-11 !px-0 text-lg shadow-float" onClick={() => api.current?.zoomBy(1 / 1.5)} aria-label={t("zoomOut")} title={t("zoomOut")}>−</button>
+        <button className="btn btn-ghost !bg-white !min-h-11 !w-11 !px-0 shadow-float" onClick={() => api.current?.openFlat()} aria-label={t("openFlat")} title={t("openFlat")} data-testid="globe-open-flat" disabled={!ready}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2z" /><path d="M9 4v14M15 6v14" /></svg>
+        </button>
       </div>
     </div>
   );

@@ -30,7 +30,7 @@
     "credits": "Crédits",
     "statsUnavailable": "Les chiffres en direct sont momentanément indisponibles.",
     "spotTaken": "Désolé, quelqu'un vient de prendre cet emplacement. Choisissez-en un autre.",
-    "globe": "Globe 3D (prototype)"
+    "globe": "Globe 3D"
   },
   "stats": {
     "label": "Statistiques en direct",
@@ -789,9 +789,7 @@
   },
   "globe": {
     "title": "Globe",
-    "prototype": "Prototype",
     "canvasLabel": "Globe 3D de la Terre. Faites glisser pour tourner, molette ou pincement pour zoomer, Entrée pour ouvrir la carte plate.",
-    "hint": "Faites glisser pour tourner, zoomez avec la molette : la carte plate s'ouvre toute seule quand vous approchez.",
     "zoomIn": "Zoom avant",
     "zoomOut": "Zoom arrière",
     "openFlat": "Ouvrir la carte plate ici",
