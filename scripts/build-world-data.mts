@@ -4,14 +4,16 @@
 // Sources (all licences allow commercial use; attribution is shown on the site, see /credits):
 //   • Natural Earth land & countries 1:110m, 1:50m and 1:10m (public domain) via the `world-atlas` package (ISC)
 //   • Natural Earth admin-1 "states & provinces" 1:10m (public domain), downloaded once into .data/natural-earth
+//   • French communes, simplified (Etalab "contours des communes", Licence Ouverte 2.0) via the open repository
+//     gregoiredavid/france-geojson, downloaded once into .data/communes
 //   • GeoNames populated places (CC BY 4.0) via the `all-the-cities` package (MIT)
 //   • Country names (en/fr) from `i18n-iso-countries` (MIT)
 //
 // Output (public/data):
 //   land-110.json, land-50.json, borders-50.json   whole-world files for the zoomed-out levels
 //   admin-lo.json                                  simplified admin-1 borders for the middle zoom levels
-//   geo/index.json + geo/g-{cx}-{cy}.json          1:10m land, country borders and admin-1 borders, cut into
-//                                                  2 500-px cells and loaded on demand
+//   geo/index.json + geo/g-{cx}-{cy}.json          1:10m land, country borders, admin-1 borders and commune
+//                                                  borders (France), cut into 2 500-px cells, loaded on demand
 //   geo/c1-…, geo/c2-…                             cities 15 000–400 000 and 1 000–15 000 inhabitants, same cells
 //   places.json                                    countries (label anchors) + cities ≥ 400 000
 //   admin-labels.json, search-cities.json          admin-1 unit names / smaller cities, for labels and search
@@ -37,6 +39,7 @@ fs.mkdirSync(geoOut, { recursive: true });
 
 const Q = 4; // quarter-pixel precision
 const CELL = 2500; // grid pixels per chunk edge (16 × 10 cells)
+const CELL_COMMUNE = 250; // commune borders (≈ 35 000 communes) are dense: 250-px cells keep each file around 50 KB
 const CELL_SMALL = 625; // the 1 000–15 000 inhabitants layer is dense (≈ 90 000 places): finer cells keep every file small
 const CX = W / CELL, CY = H / CELL;
 const TOL_HI = 0.3; // simplification tolerance (grid px) of the 1:10m layers: below the quarter-pixel precision anyway
@@ -223,6 +226,24 @@ function chunkLine(f: Flat, into: "borders" | "admin") {
   }
 }
 
+/** Commune borders live in their own, finer cells, one file each (m-{cx}-{cy}.json). */
+const communeCells = new Map<string, number[][]>();
+function chunkCommune(f: Flat) {
+  const b = bboxOf(f);
+  const cx0 = Math.max(0, Math.floor(b.x0 / CELL_COMMUNE)), cx1 = Math.min(W / CELL_COMMUNE - 1, Math.floor(b.x1 / CELL_COMMUNE));
+  const cy0 = Math.max(0, Math.floor(b.y0 / CELL_COMMUNE)), cy1 = Math.min(H / CELL_COMMUNE - 1, Math.floor(b.y1 / CELL_COMMUNE));
+  for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
+    const rect: Rect4 = { x0: cx * CELL_COMMUNE, y0: cy * CELL_COMMUNE, x1: (cx + 1) * CELL_COMMUNE, y1: (cy + 1) * CELL_COMMUNE };
+    for (const piece of clipPolylineToRect(f, rect, false)) {
+      const e = encode(piece);
+      if (e.length < 4) continue;
+      const key = `${cx}-${cy}`;
+      if (!communeCells.has(key)) communeCells.set(key, []);
+      communeCells.get(key)!.push(e);
+    }
+  }
+}
+
 function buildLand10() {
   const topo = readTopo("land-10m");
   let rings = 0;
@@ -237,13 +258,13 @@ function buildLand10() {
   console.log("  land-10m rings".padEnd(24), rings);
 }
 
-function buildLines(lines: LL[][], into: "borders" | "admin") {
+function buildLines(lines: LL[][], into: "borders" | "admin" | "commune") {
   let n = 0;
   for (const l of lines) for (const f of projectLine(l)) {
     if (!touchesWorld(bboxOf(f))) continue;
     const s = simplify(f, TOL_HI);
     if (s.length < 4) continue;
-    chunkLine(s, into);
+    if (into === "commune") chunkCommune(s); else chunkLine(s, into);
     n++;
   }
   console.log(`  ${into} lines`.padEnd(24), n);
@@ -264,6 +285,23 @@ async function loadAdmin1(): Promise<any> {
   }
   return JSON.parse(fs.readFileSync(file, "utf8"));
 }
+
+const COMMUNES_URL = "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/communes-version-simplifiee.geojson";
+
+async function loadCommunes(): Promise<any> {
+  const file = process.env.COMMUNES ?? path.join(root, ".data/communes/communes-version-simplifiee.geojson");
+  if (!fs.existsSync(file)) {
+    console.log("downloading the French communes (≈ 19 MB, once) …");
+    const res = await fetch(COMMUNES_URL);
+    if (!res.ok) throw new Error(`communes download failed: HTTP ${res.status}`);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, Buffer.from(await res.arrayBuffer()));
+  }
+  return JSON.parse(fs.readFileSync(file, "utf8"));
+}
+
+/** INSEE code → département code: 2 digits ("76"), 3 for overseas ("971"); Corsica is "2A"/"2B". */
+const departementOf = (code: string) => (code.startsWith("97") || code.startsWith("98") ? code.slice(0, 3) : code.slice(0, 2));
 
 interface AdminLabel { x: number; y: number; s: number; en: string; fr: string; cc: string; dep: 0 | 1 }
 
@@ -392,10 +430,22 @@ async function main() {
   const admin = await loadAdmin1();
   // internal borders only: arcs shared by two units of the SAME country (the country outline is drawn from the countries layer)
   const topo: any = topology({ admin });
-  const adminLines = (mesh(topo, topo.objects.admin, (a: any, b: any) => a !== b && a.properties?.adm0_a3 === b.properties?.adm0_a3) as any).coordinates as LL[][];
+  const sameCountry = (a: any, b: any) => a !== b && a.properties?.adm0_a3 === b.properties?.adm0_a3;
+  const adminLines = (mesh(topo, topo.objects.admin, sameCountry) as any).coordinates as LL[][];
   console.log("  admin-1 internal lines".padEnd(24), adminLines.length);
-  buildLines(adminLines, "admin");
   write("admin-lo.json", linesFile(adminLines, TOL_ADMIN_LO));
+
+  // France in detail: the communes give both the département borders (exactly aligned with them) and the commune borders
+  const isMetroFr = (g: any) => g.properties?.adm0_a3 === "FRA" && /m[ée]tropol/i.test(`${g.properties?.type_en ?? ""} ${g.properties?.type ?? ""}`);
+  const adminNoFr = (mesh(topo, topo.objects.admin, (a: any, b: any) => sameCountry(a, b) && !(isMetroFr(a) && isMetroFr(b))) as any).coordinates as LL[][];
+  const communes = await loadCommunes();
+  for (const f of communes.features) f.properties.dep = departementOf(String(f.properties.code));
+  const ctopo: any = topology({ c: communes });
+  const communeLines = (mesh(ctopo, ctopo.objects.c, (a: any, b: any) => a !== b && a.properties.dep === b.properties.dep) as any).coordinates as LL[][];
+  const departementLines = (mesh(ctopo, ctopo.objects.c, (a: any, b: any) => a !== b && a.properties.dep !== b.properties.dep) as any).coordinates as LL[][];
+  console.log("  communes".padEnd(24), communes.features.length, "→ commune lines", communeLines.length, "département lines", departementLines.length, "(NE admin lines kept outside metropolitan France:", adminNoFr.length, "of", adminLines.length + ")");
+  buildLines([...adminNoFr, ...departementLines], "admin");
+  buildLines(communeLines, "commune");
   show("admin-lo.json");
   const labels = adminLabels(admin);
   write("admin-labels.json", labels.map((l) => [l.x, l.y, l.s, l.en, l.fr, l.cc, l.dep]));
@@ -422,7 +472,7 @@ async function main() {
   write("search-cities.json", mid.map((c) => [Math.round(c.x), Math.round(c.y), c.pop, c.name, c.cc]));
   show("search-cities.json");
 
-  const index: Record<string, unknown> = { cell: CELL, cellSmall: CELL_SMALL, q: Q, g: [] as string[], c1: [] as string[], c2: [] as string[] };
+  const index: Record<string, unknown> = { cell: CELL, cellSmall: CELL_SMALL, cellCommune: CELL_COMMUNE, q: Q, g: [] as string[], c1: [] as string[], c2: [] as string[] };
   let chunkBytes = 0, files = 0;
   for (const [key, cell] of [...cells.entries()].sort()) {
     const g: Record<string, number[][]> = {};
@@ -433,6 +483,8 @@ async function main() {
     if (cell.c1.length) { writeChunk(`c1-${key}.json`, cell.c1); (index.c1 as string[]).push(key); }
   }
   for (const [key, rows] of [...smallCells.entries()].sort()) { writeChunk(`c2-${key}.json`, rows); (index.c2 as string[]).push(key); }
+  index.m = [] as string[];
+  for (const [key, lines] of [...communeCells.entries()].sort()) { writeChunk(`m-${key}.json`, lines); (index.m as string[]).push(key); }
   function writeChunk(name: string, data: unknown) {
     const json = JSON.stringify(data);
     fs.writeFileSync(path.join(geoOut, name), json);

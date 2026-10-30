@@ -29,8 +29,7 @@
     "zoomLevel": "Zoom level",
     "credits": "Credits",
     "statsUnavailable": "Live figures are temporarily unavailable.",
-    "spotTaken": "Sorry, someone just took this spot. Pick another one.",
-    "satellite": "Satellite imagery in the background"
+    "spotTaken": "Sorry, someone just took this spot. Pick another one."
   },
   "stats": {
     "label": "Live statistics",
@@ -569,15 +568,15 @@
           "h": "Map data",
           "ul": [
             "Land, country and administrative (département, state, province) outlines: Natural Earth (public domain), 1:110m, 1:50m and 1:10m scales; land and countries are distributed through the world-atlas package (ISC).",
+            "French commune boundaries (about 35,000 towns and villages): Etalab \"contours des communes\", Licence Ouverte 2.0, simplified and distributed by the open repository gregoiredavid/france-geojson.",
             "City names and positions: GeoNames (geonames.org), licensed under Creative Commons Attribution 4.0, distributed through the all-the-cities package (MIT). Cities of 1,000 inhabitants and more are shown as you zoom in.",
-            "Country names: i18n-iso-countries (MIT).",
-            "Satellite imagery: NASA Blue Marble. We acknowledge the use of imagery provided by services from NASA's Global Imagery Browse Services (GIBS), part of NASA's Earth Observing System Data and Information System (EOSDIS). The tiles are requested by your browser directly from NASA's servers while the satellite background is switched on."
+            "Country names: i18n-iso-countries (MIT)."
           ]
         },
         {
           "h": "Projection",
           "p": [
-            "The map uses the Web Mercator projection (the one of every online map) on a grid of 40,000 × 25,000 pixels, from 168.5°W to 191.5°E (the map's edge is in the Bering Strait, so no country is cut or shown twice) and from 56.7°S to 83.8°N (all of Greenland and Tierra del Fuego included). A pixel is about 1 km wide at the equator and gets smaller towards the poles, like on any Mercator map; the vertical scale is fitted to the frame, about 5% below a pure Mercator. The level of detail (borders, départements, cities) increases as you zoom."
+            "The map uses the Web Mercator projection (the one of every online map) on a grid of 40,000 × 25,000 pixels, from 56.7°S to 83.8°N (all of Greenland and Tierra del Fuego included). The map wraps around horizontally: its edge is in the Bering Strait, so Russia's far east continues into Alaska when you pan, and no country is cut or drawn twice. A pixel is about 1 km wide at the equator and gets smaller towards the poles, like on any Mercator map; the vertical scale is fitted to the frame, about 5% below a pure Mercator. The level of detail (borders, départements, commune boundaries, cities) increases as you zoom."
           ]
         },
         {

@@ -1,8 +1,6 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { centeredRect, clampToGrid, intersects, type Rect } from "@/lib/grid/geometry";
-import { webTileRange, webTileToGrid } from "@/lib/grid/projection";
 import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
-import { SATELLITE_ALPHA, SATELLITE_MAX_Z, SatelliteTiles } from "./satellite";
 
 /**
  * Pixel World map engine — a purpose-built Canvas 2D renderer.
@@ -15,7 +13,6 @@ import { SATELLITE_ALPHA, SATELLITE_MAX_Z, SatelliteTiles } from "./satellite";
  * Data strategy (nothing ever scales with one billion):
  *   • geography      — static vector layer (Natural Earth 1:110m → 1:10m land, borders, départements/states; GeoNames cities),
  *                      detail chosen by zoom and fetched per 2 500-px cell only where the camera looks
- *   • satellite      — optional NASA Blue Marble tiles (Web-Mercator pyramid), drawn faintly under the vector map
  *   • zoomed out     — 256 px raster tiles composited server-side from parcel images (z = 0…8, CDN-cached per map version)
  *   • zoomed in      — JSON metadata tiles of 1000×1000 px (parcels in view only) + each parcel's own PNG, lazily loaded
  *   • interaction    — hit-testing uses the metadata tiles; the server remains the only authority for purchases
@@ -60,6 +57,10 @@ const COLORS = {
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const rasterSpan = (z: number) => RASTER_PX * 2 ** z;
+/** The map wraps around horizontally (like every web map): x is taken modulo the world width. */
+const wrapX = (x: number) => ((x % W) + W) % W;
+/** Shortest signed horizontal distance between two positions on the wrapped world. */
+const wrapDelta = (d: number) => ((((d + W / 2) % W) + W) % W) - W / 2;
 
 export class MapEngine {
   cam: Camera = { x: W / 2, y: H / 2, scale: 0.03 };
@@ -73,12 +74,12 @@ export class MapEngine {
   private minScale = 0.02;
   private raf = 0;
   private dirty = true;
+  /** World copy being drawn: copy c shows the world shifted by c·W, so the map is continuous across the Bering Strait. */
+  private offX = 0;
   private destroyed = false;
 
   private geo: Geo | null = null;
   private places: Places | null = null;
-  private sat = new SatelliteTiles();
-  private satelliteOn = true;
   private tiles = new Map<string, Tile>();
   private tileQueue: string[] = [];
   private inflight = 0;
@@ -110,7 +111,6 @@ export class MapEngine {
     if (!ctx) throw new Error("Canvas 2D unavailable");
     this.ctx = ctx;
     this.bindEvents();
-    this.sat.onLoad = () => this.invalidate();
     void loadGeo().then((g) => { this.geo = g; g.onUpdate = () => this.invalidate(); this.invalidate(); });
     void loadPlaces().then((p) => { this.places = p; this.invalidate(); });
     void document.fonts?.ready.then(() => this.invalidate());
@@ -122,15 +122,13 @@ export class MapEngine {
     const first = this.w === 1 && this.h === 1;
     this.w = Math.max(1, cssW); this.h = Math.max(1, cssH); this.dpr = dpr;
     this.canvas.width = Math.round(this.w * dpr); this.canvas.height = Math.round(this.h * dpr);
-    this.minScale = Math.min(this.w / W, this.h / H) * 0.98;
+    // the whole planet fits (height or width): on a window wider than the world, the continuation of the map shows at the sides
+    this.minScale = Math.min(this.w / W, this.h / H);
     if (first) this.cam.scale = this.minScale;
     this.constrain();
     this.cb.onCamera?.({ ...this.cam });
     this.invalidate();
   }
-
-  /** Switches the faint satellite background on or off. */
-  setSatellite(on: boolean) { this.satelliteOn = on; this.invalidate(); }
 
   setMode(mode: Mode) { this.mode = mode; if (mode === "explore") { this.ghost = null; this.brush = null; } this.invalidate(); }
   setBrush(b: { w: number; h: number } | null) { this.brush = b; this.ghost = null; this.invalidate(); }
@@ -155,9 +153,10 @@ export class MapEngine {
   fitWorld(animate = true) { this.flyTo({ x: W / 2, y: H / 2, scale: this.minScale }, animate ? 900 : 0); }
 
   flyTo(target: Camera, duration = 900) {
-    const to = this.constrained({ ...target, scale: clamp(target.scale, this.minScale, MAX_SCALE) });
+    const wrapped = this.constrained({ ...target, scale: clamp(target.scale, this.minScale, MAX_SCALE) });
     this.velocity = { x: 0, y: 0 };
-    if (duration <= 0) { this.cam = to; this.anim = null; this.afterCameraChange(); return; }
+    if (duration <= 0) { this.cam = wrapped; this.anim = null; this.afterCameraChange(); return; }
+    const to = { ...wrapped, x: this.cam.x + wrapDelta(wrapped.x - this.cam.x) }; // fly the short way round the world
     this.anim = { from: { ...this.cam }, to, t0: performance.now(), dur: duration };
     this.invalidate();
   }
@@ -175,11 +174,12 @@ export class MapEngine {
     this.flyTo({ scale, x: wx - (ax - this.w / 2) / scale, y: wy - (ay - this.h / 2) / scale }, animate ? 280 : 0);
   }
 
+  /** Screen → grid position; a point over the wrapped copy of the world maps back to the real position. */
   screenToWorld(sx: number, sy: number) {
-    return { x: this.cam.x + (sx - this.w / 2) / this.cam.scale, y: this.cam.y + (sy - this.h / 2) / this.cam.scale };
+    return { x: wrapX(this.cam.x + (sx - this.w / 2) / this.cam.scale), y: this.cam.y + (sy - this.h / 2) / this.cam.scale };
   }
   worldToScreen(wx: number, wy: number) {
-    return { x: (wx - this.cam.x) * this.cam.scale + this.w / 2, y: (wy - this.cam.y) * this.cam.scale + this.h / 2 };
+    return { x: (wx + this.offX - this.cam.x) * this.cam.scale + this.w / 2, y: (wy - this.cam.y) * this.cam.scale + this.h / 2 };
   }
 
   get fitScale() { return this.minScale; }
@@ -208,9 +208,10 @@ export class MapEngine {
   /* ------------------------------------------------------------------ camera helpers */
 
   private constrained(c: Camera): Camera {
-    const halfW = this.w / 2 / c.scale, halfH = this.h / 2 / c.scale;
-    // Keep the world on screen: centre when it is smaller than the viewport, otherwise keep a margin of one half-view inside.
-    const x = W <= halfW * 2 ? W / 2 : clamp(c.x, halfW * 0.15, W - halfW * 0.15);
+    const halfH = this.h / 2 / c.scale;
+    // horizontally the world wraps around; vertically keep it on screen: centre when it is smaller than the viewport,
+    // otherwise keep a margin of one half-view inside
+    const x = wrapX(c.x);
     const y = H <= halfH * 2 ? H / 2 : clamp(c.y, halfH * 0.15, H - halfH * 0.15);
     return { x, y, scale: c.scale };
   }
@@ -490,7 +491,7 @@ export class MapEngine {
       const { from, to } = this.anim;
       const scale = from.scale * (to.scale / from.scale) ** e;
       // interpolate the *screen-space* focus so the zoom feels anchored rather than swooping
-      this.cam = { scale, x: from.x + (to.x - from.x) * e, y: from.y + (to.y - from.y) * e };
+      this.cam = { scale, x: wrapX(from.x + (to.x - from.x) * e), y: from.y + (to.y - from.y) * e };
       this.cb.onCamera?.({ ...this.cam });
       if (k >= 1) this.anim = null; else again = true;
     } else if (this.velocity.x || this.velocity.y) {
@@ -519,37 +520,48 @@ export class MapEngine {
     ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, w, h);
 
-    const x0 = (0 - cam.x) * s + w / 2, y0 = (0 - cam.y) * s + h / 2, ww = W * s, hh = H * s;
-    // world frame with a flat "paper cut" shadow
+    // the world is a horizontal band: it never ends on the left or right, only at the top and bottom
+    const y0 = (0 - cam.y) * s + h / 2, hh = H * s;
     ctx.fillStyle = `rgba(${COLORS.ink},0.07)`;
-    ctx.fillRect(x0 + 4, y0 + 6, ww, hh);
+    ctx.fillRect(0, y0 + 6, w, hh);
     ctx.fillStyle = COLORS.ocean;
-    ctx.fillRect(x0, y0, ww, hh);
+    ctx.fillRect(0, y0, w, hh);
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(x0, y0, ww, hh);
+    ctx.rect(0, y0, w, hh);
     ctx.clip();
-    this.drawGeography(s);
-    this.drawSatellite(s);
-    this.drawDots(s, x0, y0, ww, hh);
-    if (this.mode === "buy") { ctx.fillStyle = `rgba(${COLORS.free},0.13)`; ctx.fillRect(x0, y0, ww, hh); }
-    // zoomed in, place names sit UNDER the parcels (owners cover the map); zoomed out, parcels are specks and names stay readable on top
-    if (s >= RASTER_BELOW) this.drawLabels(s);
-    this.drawParcels(s);
-    if (s < RASTER_BELOW) this.drawLabels(s);
-    this.drawGrid(s);
-    this.drawOverlays(s);
+    this.geoPending = false;
+    const halfW = w / 2 / s;
+    for (let c = Math.floor((cam.x - halfW) / W); c <= Math.floor((cam.x + halfW) / W); c++) {
+      this.offX = c * W; // draw the world copy that covers this stretch of the screen
+      const x0 = (this.offX - cam.x) * s + w / 2, ww = W * s;
+      this.drawGeography(s);
+      this.drawDots(s, x0, y0, ww, hh);
+      if (this.mode === "buy") { ctx.fillStyle = `rgba(${COLORS.free},0.13)`; ctx.fillRect(x0, y0, ww, hh); }
+      // zoomed in, place names sit UNDER the parcels (owners cover the map); zoomed out, parcels are specks and names stay readable on top
+      if (s >= RASTER_BELOW) this.drawLabels(s);
+      this.drawParcels(s);
+      if (s < RASTER_BELOW) this.drawLabels(s);
+      this.drawGrid(s);
+      this.drawOverlays(s);
+    }
+    this.offX = 0;
     ctx.restore();
 
+    // top and bottom edge of the planet
     ctx.strokeStyle = `rgba(${COLORS.ink},0.55)`;
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(x0 - 0.75, y0 - 0.75, ww + 1.5, hh + 1.5);
+    ctx.beginPath();
+    ctx.moveTo(0, y0 - 0.75); ctx.lineTo(w, y0 - 0.75);
+    ctx.moveTo(0, y0 + hh + 0.75); ctx.lineTo(w, y0 + hh + 0.75);
+    ctx.stroke();
   }
 
   private visibleWorld() {
     const { cam, w, h } = this;
-    return { x0: cam.x - w / 2 / cam.scale, y0: cam.y - h / 2 / cam.scale, x1: cam.x + w / 2 / cam.scale, y1: cam.y + h / 2 / cam.scale };
+    // expressed in the grid coordinates of the world copy being drawn (offX)
+    return { x0: cam.x - w / 2 / cam.scale - this.offX, y0: cam.y - h / 2 / cam.scale, x1: cam.x + w / 2 / cam.scale - this.offX, y1: cam.y + h / 2 / cam.scale };
   }
 
   /**
@@ -572,16 +584,25 @@ export class MapEngine {
     const scale = 2 ** k, size = GEO_TILE_PX / scale;
     const rect = { x0: tx * size, y0: ty * size, x1: (tx + 1) * size, y1: (ty + 1) * size };
     const admin = k >= -3; // départements / states / provinces appear once a country spans a few hundred screen pixels
+    const communes = k >= 2; // commune borders (France) appear once a commune is a few dozen screen pixels wide
     let lod = this.lodFor(k);
-    let paths = this.geo.tilePaths(lod, rect, admin);
+    let paths = this.geo.tilePaths(lod, rect, admin, communes);
     // the 1:10m cells this tile needs are still downloading: draw the 1:50m level meanwhile, redrawn when they arrive
-    if (!paths.complete && lod === "10") { lod = "50"; paths = this.geo.tilePaths(lod, rect, admin); }
+    if (!paths.complete && lod === "10") { lod = "50"; paths = this.geo.tilePaths(lod, rect, admin, communes); }
+    const complete = paths.complete && !paths.extraPending;
     const dprBoost = this.dpr > 1.5 ? 1.15 : 1;
     g.setTransform(scale, 0, 0, scale, -tx * GEO_TILE_PX, -ty * GEO_TILE_PX);
     g.lineJoin = "round";
     g.lineCap = "round"; // clipped outlines are separate pieces: round caps close the joints between them
     g.fillStyle = COLORS.land;
     g.fill(paths.fill, "evenodd");
+    if (communes) {
+      g.strokeStyle = `rgba(${COLORS.ink},${k >= 4 ? 0.42 : k >= 3 ? 0.34 : 0.24})`;
+      g.lineWidth = (k >= 3 ? 1.05 : 0.85) * dprBoost / scale;
+      g.setLineDash([1.6 / scale, 2.4 / scale]);
+      g.stroke(paths.communes);
+      g.setLineDash([]);
+    }
     if (admin) {
       g.strokeStyle = `rgba(${COLORS.ink},${k >= 2 ? 0.34 : k >= 0 ? 0.28 : 0.18})`;
       g.lineWidth = (k >= 1 ? 1.1 : 0.9) * dprBoost / scale;
@@ -600,7 +621,7 @@ export class MapEngine {
     g.strokeStyle = `rgba(${COLORS.ink},0.62)`;
     g.lineWidth = (clamp(1.6 + k * 0.12, 1.4, 2.6) * dprBoost) / scale;
     g.stroke(paths.coast);
-    return { c, complete: paths.complete };
+    return { c, complete };
   }
 
   private drawGeography(s: number) {
@@ -612,7 +633,6 @@ export class MapEngine {
     const tx0 = Math.max(0, Math.floor(v.x0 / size)), tx1 = Math.min(Math.floor(W / size), Math.floor(v.x1 / size));
     const ty0 = Math.max(0, Math.floor(v.y0 / size)), ty1 = Math.min(Math.floor(H / size), Math.floor(v.y1 / size));
     let budget = 4;
-    this.geoPending = false;
     ctx.imageSmoothingEnabled = true;
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
       const key = `${k}/${tx}/${ty}`;
@@ -643,46 +663,6 @@ export class MapEngine {
       const old = [...this.geoTiles.entries()].sort((x, y) => x[1].used - y[1].used).slice(0, this.geoTiles.size - cacheMax + 8);
       for (const [key] of old) this.geoTiles.delete(key);
     }
-  }
-
-  /**
-   * Satellite imagery under the vector map, at low opacity. The tiles are those of the standard Web-Mercator pyramid;
-   * `webTileToGrid` says where each one lands on the grid. Tile edges are rounded to whole screen pixels using one shared
-   * function per edge, so neighbours never overlap (which would show as lines at this opacity) nor leave gaps.
-   */
-  private drawSatellite(s: number) {
-    if (!this.satelliteOn) return;
-    const { ctx } = this;
-    const z = clamp(Math.ceil(Math.log2((W * s * this.dpr) / 320)), 0, SATELLITE_MAX_Z);
-    const n = 2 ** z;
-    const v = this.visibleWorld();
-    const r = webTileRange(z, { x0: Math.max(0, v.x0), y0: Math.max(0, v.y0), x1: Math.min(W, v.x1), y1: Math.min(H, v.y1) });
-    const edgeX = (tx: number) => Math.round(this.worldToScreen(webTileToGrid(z, tx, 0).x, 0).x);
-    const edgeY = (ty: number) => Math.round(this.worldToScreen(0, webTileToGrid(z, 0, ty).y).y);
-    ctx.save();
-    ctx.globalAlpha = SATELLITE_ALPHA;
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    for (let ty = r.ty0; ty <= r.ty1; ty++) {
-      const y0 = edgeY(ty), y1 = edgeY(ty + 1);
-      for (let tx = r.tx0; tx <= r.tx1; tx++) {
-        const x0 = edgeX(tx), x1 = edgeX(tx + 1);
-        const col = ((tx % n) + n) % n; // the map starts at lonMin, so the pyramid wraps inside it
-        const img = this.sat.get(z, col, ty, this.frameNo);
-        if (img) { ctx.drawImage(img, x0, y0, x1 - x0, y1 - y0); continue; }
-        // not loaded yet: stand in with the part of a coarser tile we already have
-        for (let d = 1; d <= 5 && z - d >= 0; d++) {
-          const px = col >> d, py = ty >> d;
-          const anc = this.sat.peek(z - d, px, py, this.frameNo);
-          if (!anc) continue;
-          const sub = anc.naturalWidth / 2 ** d;
-          ctx.drawImage(anc, (col - (px << d)) * sub, (ty - (py << d)) * sub, sub, sub, x0, y0, x1 - x0, y1 - y0);
-          break;
-        }
-      }
-    }
-    ctx.restore();
-    this.sat.evict(this.frameNo);
   }
 
   /** The "pixel field": a dot matrix over the whole planet at far zoom, which melts into the pixel grid as you zoom in. */

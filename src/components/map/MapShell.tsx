@@ -41,23 +41,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
   const [parcelCode, setParcelCode] = useState<string | null>(initial.parcelCode);
   const [dialog, setDialog] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [satellite, setSatellite] = useState(true);
   const engine = () => mapRef.current?.engine ?? null;
-
-  /* ---------- satellite background: on by default, the choice is remembered ---------- */
-  useEffect(() => {
-    try {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- reads a browser-only preference once, after hydration
-      if (localStorage.getItem("px-satellite") === "0") setSatellite(false);
-    } catch { /* storage unavailable: keep the default */ }
-  }, []);
-  useEffect(() => { if (engineReady) engine()?.setSatellite(satellite); }, [engineReady, satellite]);
-  const toggleSatellite = () => {
-    setSatellite((on) => {
-      try { localStorage.setItem("px-satellite", on ? "0" : "1"); } catch { /* ignore */ }
-      return !on;
-    });
-  };
 
   /* ---------- live stats (real numbers, refreshed; a purchase bumps mapVersion and the map reloads its tiles) ---------- */
   useEffect(() => {
@@ -161,7 +145,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
   }, []);
 
   const zoomed = cam.scale >= 0.25;
-  const showHero = mode === "explore" && !parcelCode && !zoomed;
+  const fullStats = mode === "explore" && !parcelCode && !zoomed; // full counter card when zoomed out, compact one when zoomed in
 
   return (
     <div className="flex h-dvh flex-col" data-testid="map-shell">
@@ -186,23 +170,16 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
           onSelectionState={setSelState}
         />
 
-        {/* hero (top) + live counter (bottom): the Pacific corner of the map is empty ocean, so the card hides nothing */}
-        <div className="pointer-events-none absolute inset-3 z-10 flex flex-col justify-between sm:inset-5">
-          <div>
-            {showHero && (
-              <div className="animate-rise pointer-events-auto max-w-md rounded-3xl bg-paper/80 p-3 backdrop-blur-sm sm:-m-3">
-                <h1 className="font-display text-[1.65rem] font-extrabold leading-[1.05] tracking-tight sm:text-[2.3rem]">
-                  {t("sloganA")} <span className="text-signal">{t("sloganB")}</span> <span className="block sm:inline">{t("sloganC")}</span>
-                </h1>
-                <p className="mt-2 max-w-sm text-sm text-ink-soft sm:text-base">{t("pitch")}</p>
-              </div>
-            )}
-          </div>
+        {/* the page title stays for search engines and screen readers; the map itself is the hero */}
+        <h1 className="sr-only">{t("sloganA")} {t("sloganB")} {t("sloganC")}</h1>
+
+        {/* live counter (bottom) */}
+        <div className="pointer-events-none absolute inset-3 z-10 flex flex-col justify-end sm:inset-5">
           <div className="flex max-w-[calc(100%-4.5rem)] flex-col items-start gap-2 sm:max-w-none">
-            {stats ? <StatsCard stats={stats} compact={!showHero} /> : <p className="card pointer-events-auto px-4 py-3 text-sm text-ink-soft">{t("statsUnavailable")}</p>}
+            {stats ? <StatsCard stats={stats} compact={!fullStats} /> : <p className="card pointer-events-auto px-4 py-3 text-sm text-ink-soft">{t("statsUnavailable")}</p>}
             {cursor && <CursorReadout x={cursor.x} y={cursor.y} />}
             <p className="pointer-events-auto rounded-full bg-white/85 px-3 py-1 text-[0.65rem] text-ink-faint shadow-float">
-              © Natural Earth · GeoNames · NASA · <Link href="/credits" className="underline">{t("credits")}</Link>
+              © Natural Earth · GeoNames · <Link href="/credits" className="underline">{t("credits")}</Link>
             </p>
           </div>
         </div>
@@ -210,7 +187,6 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
           cam={cam}
           className={`absolute z-10 ${mode === "buy" ? "bottom-[calc(60vh+1rem)] right-3 md:bottom-5 md:right-[25rem]" : "bottom-3 right-3 sm:bottom-5 sm:right-5"}`}
           onZoomIn={() => engine()?.zoomBy(1.8)} onZoomOut={() => engine()?.zoomBy(1 / 1.8)} onFit={() => engine()?.fitWorld()}
-          satellite={satellite} onSatellite={toggleSatellite}
         />
 
         {mode === "buy" && (

@@ -57,28 +57,24 @@ test.describe("map interaction", () => {
     expect(incomplete).toBe(0);
   });
 
-  test("satellite background: faint NASA tiles under the map, switchable, and the choice is remembered", async ({ page }) => {
-    const urls: string[] = [];
-    const red = await sharp({ create: { width: 256, height: 256, channels: 3, background: "#ff0000" } }).jpeg().toBuffer();
-    await page.route("https://gibs.earthdata.nasa.gov/**", (route) => { urls.push(route.request().url()); return route.fulfill({ status: 200, contentType: "image/jpeg", body: red }); });
-    await page.goto("/?x=4000&y=15000&z=0.2"); // open Pacific (124°W, 25°N): plain ocean colour in the middle of the screen
-    const centre = async () => {
-      const vp = page.viewportSize()!;
-      const png = await page.screenshot({ clip: { x: vp.width / 2 - 40, y: vp.height / 2 - 40, width: 80, height: 80 } });
-      const { channels } = await sharp(png).stats();
-      return { r: channels[0]!.mean, g: channels[1]!.mean };
-    };
-    await expect.poll(() => urls.length, { timeout: 15_000 }).toBeGreaterThan(0);
-    // ocean is blue-green (g > r); a red satellite tile at low opacity tips it towards red
-    await expect.poll(async () => { const c = await centre(); return c.r > c.g; }, { timeout: 15_000 }).toBe(true);
-    expect(urls.some((u) => /BlueMarble_ShadedRelief_Bathymetry\/default\/GoogleMapsCompatible_Level8\/\d\/\d+\/\d+\.jpeg$/.test(u))).toBe(true);
-    const toggle = page.getByTestId("satellite-toggle");
-    await expect(toggle).toHaveAttribute("aria-pressed", "true");
-    await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-pressed", "false");
-    await expect.poll(async () => { const c = await centre(); return c.g > c.r; }, { timeout: 10_000 }).toBe(true);
-    await page.reload();
-    await expect(page.getByTestId("satellite-toggle")).toHaveAttribute("aria-pressed", "false"); // remembered
+  test("the map wraps around: panning past the Bering Strait continues on the other side, positions stay real", async ({ page }) => {
+    await page.goto("/?x=39000&y=8300&z=1");
+    await page.waitForFunction(() => Boolean(window.__pxEngine), undefined, { timeout: 20_000 });
+    const r = await page.evaluate(() => {
+      const e = window.__pxEngine as unknown as {
+        cam: { x: number; scale: number }; flyTo(c: { x: number; y: number; scale: number }, d: number): void;
+        screenToWorld(x: number, y: number): { x: number; y: number }; viewport: { w: number; h: number };
+      };
+      e.flyTo({ x: 39990, y: 8300, scale: 1 }, 0);
+      const v = e.viewport;
+      const right = e.screenToWorld(v.w / 2 + 400, v.h / 2).x; // 400 px right of the centre = 10 px past the east edge
+      e.flyTo({ x: 40_300, y: 8300, scale: 1 }, 0); // beyond the edge: the camera comes back in range
+      return { right, camX: e.cam.x };
+    });
+    expect(r.right).toBeGreaterThan(300);
+    expect(r.right).toBeLessThan(420); // the real position on the west side of the map, not x > 40 000
+    expect(r.camX).toBeGreaterThan(250);
+    expect(r.camX).toBeLessThan(350);
   });
 
   test("keyboard: arrows pan, plus/minus zoom, 0 recentres", async ({ page }) => {

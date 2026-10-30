@@ -43,7 +43,7 @@ function scaleBar(scale: number) {
   return { len, px: len * scale };
 }
 
-export function MapControls({ cam, onZoomIn, onZoomOut, onFit, satellite, onSatellite, className = "" }: { cam: Camera; onZoomIn: () => void; onZoomOut: () => void; onFit: () => void; satellite: boolean; onSatellite: () => void; className?: string }) {
+export function MapControls({ cam, onZoomIn, onZoomOut, onFit, className = "" }: { cam: Camera; onZoomIn: () => void; onZoomOut: () => void; onFit: () => void; className?: string }) {
   const t = useTranslations("map");
   const f = useFormatter();
   const bar = useMemo(() => scaleBar(cam.scale), [cam.scale]);
@@ -66,9 +66,6 @@ export function MapControls({ cam, onZoomIn, onZoomOut, onFit, satellite, onSate
         <button className={btn} onClick={onZoomOut} aria-label={t("zoomOut")} title={t("zoomOut")}>−</button>
         <button className={btn} onClick={onFit} aria-label={t("recenter")} title={t("recenter")}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>
-        </button>
-        <button className={`${btn} ${satellite ? "ring-2 ring-ink" : "!text-ink-faint"}`} onClick={onSatellite} aria-pressed={satellite} aria-label={t("satellite")} title={t("satellite")} data-testid="satellite-toggle">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18" /></svg>
         </button>
       </div>
     </div>

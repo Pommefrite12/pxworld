@@ -69,30 +69,3 @@ export function pixelToLonLat(x: number, y: number): LonLat {
 export function metersPerPixel(latDeg: number): number {
   return ((2 * Math.PI * 6_378_137) / GRID_WIDTH) * Math.cos(latDeg * RAD);
 }
-
-/**
- * Grid position of the top-left corner of tile (tx, ty) at zoom z of the standard Web-Mercator tile pyramid (2^z × 2^z
- * tiles, as served by every satellite/web-map provider), plus the tile's size in grid pixels. `tx` is NOT wrapped: it may
- * lie beyond 2^z, because the map starts at `lonMin`, not at 180°W.
- */
-export function webTileToGrid(z: number, tx: number, ty: number): { x: number; y: number; w: number; h: number } {
-  const n = 2 ** z;
-  const mercTop = Math.PI * (1 - (2 * ty) / n); // Mercator ordinate (radians) of the tile's top edge
-  return {
-    x: ((tx / n) * 360 - 180 - LON_MIN) / 360 * GRID_WIDTH,
-    y: (M_TOP - mercTop) * PROJ_RY,
-    w: GRID_WIDTH / n,
-    h: (2 * Math.PI * PROJ_RY) / n,
-  };
-}
-
-/**
- * Indices of the tiles of zoom z that cover a rectangle of the grid. `tx` is not wrapped (take it modulo 2^z to fetch a
- * tile), `ty` is clamped to the pyramid.
- */
-export function webTileRange(z: number, r: { x0: number; y0: number; x1: number; y1: number }): { tx0: number; tx1: number; ty0: number; ty1: number } {
-  const n = 2 ** z;
-  const f0 = (LON_MIN + 180) / 360;
-  const row = (gy: number) => Math.min(n - 1, Math.max(0, Math.floor((n / 2) * (1 - (M_TOP - gy / PROJ_RY) / Math.PI))));
-  return { tx0: Math.floor((r.x0 / GRID_WIDTH + f0) * n), tx1: Math.floor((r.x1 / GRID_WIDTH + f0) * n), ty0: row(r.y0), ty1: row(r.y1) };
-}

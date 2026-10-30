@@ -8,12 +8,12 @@ import { SEAM_X } from "@/lib/grid/projection";
  *   • "110" / "50" — whole-world files (Natural Earth 1:110m and 1:50m), downloaded once;
  *   • "10"         — Natural Earth 1:10m land, country borders and admin-1 borders (départements, states, provinces),
  *                    cut into 2 500-px cells that are fetched only where the camera looks.
- * Cities (GeoNames) follow the same on-demand principle, in two tiers.
+ * Commune borders (France) and cities (GeoNames, two tiers) follow the same on-demand principle, in finer cells.
  */
 
 interface LandFile { q: number; polygons: number[][][] }
 interface LinesFile { q: number; lines: number[][] }
-interface IndexFile { cell: number; cellSmall: number; q: number; g: string[]; c1: string[]; c2: string[] }
+interface IndexFile { cell: number; cellSmall: number; cellCommune: number; q: number; g: string[]; c1: string[]; c2: string[]; m: string[] }
 interface ChunkFile { land?: number[][]; borders?: number[][]; admin?: number[][] }
 
 export interface Country { k: "c"; code: string | null; en: string; fr: string; bbox: [number, number, number, number] }
@@ -27,7 +27,7 @@ export interface AdminLabel { x: number; y: number; s: number; en: string; fr: s
 export interface SearchTown { x: number; y: number; pop: number; name: string; cc: string }
 
 export type Lod = "110" | "50" | "10";
-export interface TilePaths { fill: Path2D; coast: Path2D; borders: Path2D; admin: Path2D }
+export interface TilePaths { fill: Path2D; coast: Path2D; borders: Path2D; admin: Path2D; communes: Path2D }
 
 interface Ring { pts: Float64Array; x0: number; y0: number; x1: number; y1: number }
 
@@ -109,6 +109,7 @@ export class Geo {
 
   private frame = 0;
   private chunks = new Map<string, Slot<Chunk>>();
+  private communeChunks = new Map<string, Slot<Ring[]>>();
   private townCells = [new Map<string, Slot<Town[]>>(), new Map<string, Slot<Town[]>>()] as const;
   private adminLo: Ring[] | null = null;
   private adminLoState: "idle" | "loading" = "idle";
@@ -116,14 +117,14 @@ export class Geo {
   private labelsState: "idle" | "loading" = "idle";
   private queue: (() => void)[] = [];
   private active = 0;
-  private cells: { g: Set<string>; c1: Set<string>; c2: Set<string> };
+  private cells: { g: Set<string>; c1: Set<string>; c2: Set<string>; m: Set<string> };
 
   private seamX: number;
   private lowCoast: Ring[];
   private midCoast: Ring[];
 
   constructor(private low: Ring[], private mid: Ring[], private borders50: Ring[], private index: IndexFile) {
-    this.cells = { g: new Set(index.g), c1: new Set(index.c1), c2: new Set(index.c2) };
+    this.cells = { g: new Set(index.g), c1: new Set(index.c1), c2: new Set(index.c2), m: new Set(index.m) };
     this.seamX = Math.round(SEAM_X * index.q) / index.q; // as stored in the quantised data
     this.lowCoast = coastOf(low, UNCLIPPED, this.seamX);
     this.midCoast = coastOf(mid, UNCLIPPED, this.seamX);
@@ -200,13 +201,15 @@ export class Geo {
    * geometry that is actually inside that tile, whatever the complexity of the whole planet.
    *
    * `complete` is false while 1:10m chunks (or the coarse admin borders) the tile needs are still downloading:
-   * the caller then draws a coarser level and asks again once `version` changes.
+   * the caller then draws a coarser level and asks again once `version` changes. `extraPending` is true when only the
+   * commune borders are still on their way: the tile can be drawn with everything else and redrawn later.
    */
-  tilePaths(lod: Lod, c: Rect4, admin: boolean): TilePaths & { complete: boolean } {
-    const fill = new Path2D(), coast = new Path2D(), borders = new Path2D(), adminPath = new Path2D();
+  tilePaths(lod: Lod, c: Rect4, admin: boolean, communes = false): TilePaths & { complete: boolean; extraPending: boolean } {
+    const fill = new Path2D(), coast = new Path2D(), borders = new Path2D(), adminPath = new Path2D(), communePath = new Path2D();
     const m = 4; // grid pixels of margin so strokes continue past the tile edge
     const wide: Rect4 = { x0: c.x0 - m, y0: c.y0 - m, x1: c.x1 + m, y1: c.y1 + m };
-    let complete = true;
+    let complete = true, extraPending = false;
+    const out = () => ({ fill, coast, borders, admin: adminPath, communes: communePath, complete, extraPending });
     if (lod === "10") {
       const size = this.index.cell;
       const cx0 = Math.max(0, Math.floor(wide.x0 / size)), cx1 = Math.floor(wide.x1 / size);
@@ -217,13 +220,24 @@ export class Geo {
         const s = this.chunk(cx, cy);
         if (s.state === "loading") complete = false; else if (s.data) ready.push(s.data);
       }
-      if (!complete) return { fill, coast, borders, admin: adminPath, complete };
+      if (!complete) return out();
       for (const ch of ready) {
         addLand(fill, coast, ch.fill, ch.coast, wide);
         addLines(borders, ch.borders, wide);
         if (admin) addLines(adminPath, ch.admin, wide);
       }
-      return { fill, coast, borders, admin: adminPath, complete };
+      if (communes) {
+        const cs = this.index.cellCommune, q = this.index.q;
+        const mx0 = Math.max(0, Math.floor(wide.x0 / cs)), mx1 = Math.floor(wide.x1 / cs);
+        const my0 = Math.max(0, Math.floor(wide.y0 / cs)), my1 = Math.floor(wide.y1 / cs);
+        for (let cy = my0; cy <= my1; cy++) for (let cx = mx0; cx <= mx1; cx++) {
+          const key = `${cx}-${cy}`;
+          if (!this.cells.m.has(key)) continue; // no commune data here (only France so far)
+          const s = this.slot(this.communeChunks, key, `/data/geo/m-${key}.json`, (raw: number[][]): Ring[] => raw.map((r) => decodeRing(r, q)), CHUNK_MAX);
+          if (s.state === "loading") extraPending = true; else if (s.data) addLines(communePath, s.data, wide);
+        }
+      }
+      return out();
     }
     addLand(fill, coast, lod === "110" ? this.low : this.mid, lod === "110" ? this.lowCoast : this.midCoast, wide);
     addLines(borders, this.borders50, wide);
@@ -231,7 +245,7 @@ export class Geo {
       this.loadAdminLo();
       if (!this.adminLo) complete = false; else addLines(adminPath, this.adminLo, wide);
     }
-    return { fill, coast, borders, admin: adminPath, complete };
+    return out();
   }
 
   /* ------------------------------------------------------------------ cities and admin names */

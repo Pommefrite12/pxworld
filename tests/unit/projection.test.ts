@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GEO, GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
-import { LAT_MAX, lonLatToPixel, metersPerPixel, pixelToLonLat, PROJ_R, PROJ_RY, SEAM_X, webTileToGrid, wrapLon } from "@/lib/grid/projection";
+import { LAT_MAX, lonLatToPixel, metersPerPixel, pixelToLonLat, PROJ_R, PROJ_RY, SEAM_X, wrapLon } from "@/lib/grid/projection";
 
 describe("Web-Mercator grid projection", () => {
   it("keeps every country whole: Greenland's tip, Chile's southernmost islands, Russia's far east", () => {
@@ -57,25 +57,5 @@ describe("Web-Mercator grid projection", () => {
   it("converts pixels to ground distance with cos(lat)", () => {
     expect(metersPerPixel(0)).toBeCloseTo(1001.88, 1);
     expect(metersPerPixel(60)).toBeCloseTo(metersPerPixel(0) / 2, 6);
-  });
-
-  it("places the tiles of the standard web-map pyramid exactly where the projection puts their corners", () => {
-    // independent slippy-map formulas: tile corner → lon/lat → grid pixel
-    const tileCorner = (z: number, tx: number, ty: number) => {
-      const n = 2 ** z;
-      return { lon: (tx / n) * 360 - 180, lat: (Math.atan(Math.sinh(Math.PI * (1 - (2 * ty) / n))) * 180) / Math.PI };
-    };
-    for (const [z, tx, ty] of [[3, 4, 2], [5, 16, 10], [8, 129, 87], [8, 2, 110]] as const) {
-      const g = webTileToGrid(z, tx, ty);
-      const c = tileCorner(z, tx, ty);
-      const p = lonLatToPixel({ lon: c.lon, lat: c.lat });
-      expect(g.y).toBeCloseTo(p.y, 6);
-      // x is not wrapped in webTileToGrid: compare modulo one world width
-      expect((((g.x - p.x) % GRID_WIDTH) + GRID_WIDTH) % GRID_WIDTH).toBeCloseTo(0, 6);
-    }
-    // neighbouring tiles abut exactly
-    const a = webTileToGrid(6, 20, 25), b = webTileToGrid(6, 21, 26);
-    expect(a.x + a.w).toBeCloseTo(b.x, 9);
-    expect(a.y + a.h).toBeCloseTo(b.y, 9);
   });
 });

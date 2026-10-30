@@ -29,8 +29,7 @@
     "zoomLevel": "Niveau de zoom",
     "credits": "Crédits",
     "statsUnavailable": "Les chiffres en direct sont momentanément indisponibles.",
-    "spotTaken": "Désolé, quelqu'un vient de prendre cet emplacement. Choisissez-en un autre.",
-    "satellite": "Fond satellite"
+    "spotTaken": "Désolé, quelqu'un vient de prendre cet emplacement. Choisissez-en un autre."
   },
   "stats": {
     "label": "Statistiques en direct",
@@ -569,15 +568,15 @@
           "h": "Données cartographiques",
           "ul": [
             "Contours des terres, des pays et des divisions administratives (départements, États, provinces) : Natural Earth (domaine public), aux échelles 1:110m, 1:50m et 1:10m ; les terres et les pays sont distribués via le paquet world-atlas (ISC).",
+            "Limites des communes de France (environ 35 000 villes et villages) : Etalab « contours des communes », Licence Ouverte 2.0, simplifiées et diffusées par le dépôt libre gregoiredavid/france-geojson.",
             "Noms et positions des villes : GeoNames (geonames.org), sous licence Creative Commons Attribution 4.0, distribués via le paquet all-the-cities (MIT). Les villes de 1 000 habitants et plus apparaissent au fil du zoom.",
-            "Noms des pays : i18n-iso-countries (MIT).",
-            "Imagerie satellite : NASA Blue Marble. Nous remercions les services d'imagerie GIBS (Global Imagery Browse Services) de la NASA, qui font partie de l'EOSDIS (Earth Observing System Data and Information System). Les tuiles sont demandées directement par votre navigateur aux serveurs de la NASA tant que le fond satellite est activé."
+            "Noms des pays : i18n-iso-countries (MIT)."
           ]
         },
         {
           "h": "Projection",
           "p": [
-            "La carte utilise la projection Web Mercator (celle de toutes les cartes en ligne), sur une grille de 40 000 × 25 000 pixels, de 168,5° O à 191,5° E (le bord de la carte est dans le détroit de Béring : aucun pays n'est coupé ni montré deux fois) et de 56,7° S à 83,8° N (tout le Groenland et la Terre de Feu compris). Un pixel mesure environ 1 km de large à l'équateur et rétrécit vers les pôles, comme sur toute carte Mercator ; l'échelle verticale est ajustée au cadre, environ 5 % sous une Mercator pure. Le niveau de détail (frontières, départements, villes) augmente avec le zoom."
+            "La carte utilise la projection Web Mercator (celle de toutes les cartes en ligne), sur une grille de 40 000 × 25 000 pixels, de 56,7° S à 83,8° N (tout le Groenland et la Terre de Feu compris). La carte se prolonge horizontalement : son bord est dans le détroit de Béring, donc l'extrême-orient russe se poursuit sur l'Alaska quand on fait défiler, et aucun pays n'est coupé ni dessiné deux fois. Un pixel mesure environ 1 km de large à l'équateur et rétrécit vers les pôles, comme sur toute carte Mercator ; l'échelle verticale est ajustée au cadre, environ 5 % sous une Mercator pure. Le niveau de détail (frontières, départements, limites de communes, villes) augmente avec le zoom."
           ]
         },
         {

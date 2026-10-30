@@ -11,7 +11,7 @@ import { lonLatToPixel } from "@/lib/grid/projection";
 const dir = path.resolve(__dirname, "../../public/data");
 const read = <T>(rel: string): T => JSON.parse(fs.readFileSync(path.join(dir, rel), "utf8")) as T;
 
-interface Index { cell: number; cellSmall: number; q: number; g: string[]; c1: string[]; c2: string[] }
+interface Index { cell: number; cellSmall: number; cellCommune: number; q: number; g: string[]; c1: string[]; c2: string[]; m: string[] }
 const index = read<Index>("geo/index.json");
 
 const decode = (flat: number[], q: number) => {
@@ -66,6 +66,30 @@ describe("generated world data", () => {
       expect([key, x0 >= cx * index.cell, x1 <= (cx + 1) * index.cell, y0 >= cy * index.cell, y1 <= (cy + 1) * index.cell]).toEqual([key, true, true, true, true]);
     }
     for (const t of ["c1", "c2"] as const) for (const key of index[t]) expect(fs.existsSync(path.join(dir, `geo/${t}-${key}.json`))).toBe(true);
+  });
+
+  it("commune borders (France) exist only in their own 250-px cells and cover Paris, Rouen and Marseille", { timeout: 60_000 }, () => {
+    expect(index.m.length).toBeGreaterThan(20);
+    const cs = index.cellCommune;
+    let covered = 0;
+    for (const key of index.m) {
+      const [cx, cy] = key.split("-").map(Number) as [number, number];
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, lines = 0;
+      for (const line of read<number[][]>(`geo/m-${key}.json`)) {
+        lines++;
+        for (const [x, y] of decode(line, index.q)) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+      }
+      expect(lines).toBeGreaterThan(0);
+      expect([key, x0 >= cx * cs, x1 <= (cx + 1) * cs, y0 >= cy * cs, y1 <= (cy + 1) * cs]).toEqual([key, true, true, true, true]);
+    }
+    for (const [lon, lat] of [[2.35, 48.85], [1.1, 49.44], [5.37, 43.3]] as const) {
+      const p = lonLatToPixel({ lon, lat });
+      if (index.m.includes(`${Math.floor(p.x / cs)}-${Math.floor(p.y / cs)}`)) covered++;
+    }
+    expect(covered).toBe(3);
+    // outside France there is no commune data (yet): Tokyo's cell is not listed
+    const tokyo = lonLatToPixel({ lon: 139.7, lat: 35.7 });
+    expect(index.m.includes(`${Math.floor(tokyo.x / cs)}-${Math.floor(tokyo.y / cs)}`)).toBe(false);
   });
 
   it("known places sit where the projection says: land under Paris, Sydney and the Sahara, sea in the mid-Atlantic", () => {
