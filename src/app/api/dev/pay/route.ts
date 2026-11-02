@@ -1,11 +1,10 @@
 import type Stripe from "stripe";
 import { NextResponse } from "next/server";
-import { getViewer } from "@/lib/auth/session";
+import { requireViewer } from "@/lib/auth/session";
 import { stripeMockEnabled } from "@/lib/env";
 import { queryOne } from "@/lib/db/pool";
 import { handleStripeEvent } from "@/lib/stripe/events";
 import { route } from "@/lib/http/route";
-import { verifyOrderToken } from "@/lib/stripe/orderToken";
 
 /**
  * DEVELOPMENT ONLY (STRIPE_MOCK=true, never in production, never next to a real key).
@@ -14,14 +13,11 @@ import { verifyOrderToken } from "@/lib/stripe/orderToken";
  */
 export const POST = route(async (req) => {
   if (!stripeMockEnabled()) return new Response("Not found", { status: 404 });
-  const viewer = await getViewer();
-  const { orderId, outcome, token } = (await req.json().catch(() => ({}))) as { orderId?: string; outcome?: "paid" | "expired"; token?: string };
-  // the buyer's own order: signed in, or (no account) holding the order's signed link — as on the real return from Stripe
-  const o = await queryOne<{ id: string; amount_cents: number; currency: string; stripe_checkout_session_id: string; email: string | null; username: string | null }>(
-    `select o.id, o.amount_cents, o.currency, o.stripe_checkout_session_id, u.email, p.username
-       from public.orders o join auth.users u on u.id = o.user_id join public.profiles p on p.id = o.user_id
-      where o.id = $1 and o.status = 'pending' and ($2::uuid = o.user_id or $3::boolean)`,
-    [orderId, viewer?.user.id ?? null, Boolean(orderId && verifyOrderToken(orderId, token))],
+  const viewer = await requireViewer();
+  const { orderId, outcome } = (await req.json().catch(() => ({}))) as { orderId?: string; outcome?: "paid" | "expired" };
+  const o = await queryOne<{ id: string; amount_cents: number; currency: string; stripe_checkout_session_id: string }>(
+    "select id, amount_cents, currency, stripe_checkout_session_id from public.orders where id = $1 and user_id = $2 and status = 'pending'",
+    [orderId, viewer.user.id],
   );
   if (!o) return NextResponse.json({ error: "not_found" }, { status: 404 });
   const base = { id: o.stripe_checkout_session_id, metadata: { order_id: o.id }, client_reference_id: o.id };
@@ -31,7 +27,7 @@ export const POST = route(async (req) => {
     data: {
       object: outcome === "expired" ? base : {
         ...base, payment_status: "paid", payment_intent: `pi_mock_${o.id}`, amount_subtotal: o.amount_cents, amount_total: o.amount_cents,
-        total_details: { amount_tax: 0 }, currency: o.currency, customer_details: { email: o.email, name: o.username, address: { country: "FR" }, tax_ids: [] },
+        total_details: { amount_tax: 0 }, currency: o.currency, customer_details: { email: viewer.user.email, name: viewer.profile.username, address: { country: "FR" }, tax_ids: [] },
       },
     },
   } as unknown as Stripe.Event;

@@ -21,13 +21,15 @@ interface Props {
   /** Land pixels inside the selection (null while unknown): the sea part of a coastal parcel is discounted. */
   landPixels: number | null;
   serverFree: ServerFree;
+  /** An account is needed to buy: anonymous visitors are sent to sign in (the spot is kept). */
+  signedIn: boolean;
   onContinue: () => void;
   onClose: () => void;
 }
 
 const num = (v: string) => (v === "" ? 0 : Math.max(0, Math.min(99999, Math.floor(Number(v)) || 0)));
 
-export function BuyPanel({ pricing, locale, size, onSize, selection, state, landPixels, serverFree, onContinue, onClose }: Props) {
+export function BuyPanel({ pricing, locale, size, onSize, selection, state, landPixels, serverFree, signedIn, onContinue, onClose }: Props) {
   const t = useTranslations("buy");
   const f = useFormatter();
   const [fine, setFine] = useState(false); // mobile: position fine-tuning is folded away to keep the map visible
@@ -62,7 +64,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, land
       <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-0.5">
         <fieldset>
           <legend className="label">{t("presets")}</legend>
-          <div className="grid grid-cols-5 gap-1.5">
+          <div className="grid grid-cols-3 gap-1.5">
             {PRESET_SIZES.map((p) => {
               const on = size.w === p.w && size.h === p.h;
               return (
@@ -104,7 +106,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, land
       <div className="shrink-0 pt-3">
         <p role="status" data-testid="buy-status" className={`rounded-[8px] px-3 py-2 text-sm font-semibold ${tone}`}>{status.text}</p>
         <button className="btn btn-primary mt-2.5 w-full" disabled={!ready} onClick={onContinue} data-testid="buy-continue">
-          {t("continue")}
+          {signedIn ? t("continue") : t("signInToContinue")}
         </button>
         <p className="mt-2 hidden text-[0.7rem] leading-snug text-ink-faint md:block">
           {t("legal")} <Link href="/terms" className="underline">{t("terms")}</Link> · <Link href="/rules" className="underline">{t("rules")}</Link>

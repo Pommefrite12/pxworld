@@ -40,7 +40,7 @@ export const GEO = {
 } as const;
 
 /** Parcel limits. The database enforces the hard ones with CHECK constraints. */
-export const MIN_AREA = 100;
+export const MIN_AREA = 25;
 export const MAX_SIDE = 1_000;
 /** Default business cap on one parcel's area (admin-configurable, never above HARD_MAX_AREA). */
 export const DEFAULT_MAX_AREA = 250_000;
@@ -48,6 +48,7 @@ export const HARD_MAX_AREA = 1_000_000;
 
 /** Quick-pick parcel formats offered in the buy panel. */
 export const PRESET_SIZES = [
+  { w: 5, h: 5 },
   { w: 10, h: 10 },
   { w: 20, h: 20 },
   { w: 50, h: 50 },

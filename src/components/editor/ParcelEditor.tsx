@@ -294,7 +294,6 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
           <span className="pixel-num w-12 text-center text-sm" data-testid="editor-zoom" aria-label={t("viewZoom")}>{zoom}×</span>
           <button type="button" className="btn btn-ghost btn-icon btn-sm" aria-label={t("zoomIn")} disabled={zi >= ZOOMS.length - 1} onClick={() => zoomTo(ZOOMS[zi + 1]!)}>+</button>
         </div>
-        <p className="mt-2 text-center text-xs text-ink-soft"><span className="pixel-num">{pw} × {ph}</span> — {t("exactRes", { k: S })}</p>
       </div>
 
       <div className="space-y-4 text-sm">

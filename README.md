@@ -1,7 +1,7 @@
 # Pixel World — *One planet. One billion pixels. Your mark.*
 
 A collaborative world map made of **exactly 1 000 000 000 virtual pixels** (40 000 × 25 000). Anyone can claim a
-rectangle of the planet (from 100 pixels, €0.50 per pixel to start), draw or upload a creation on it, and share a permanent
+rectangle of the planet (from 25 pixels, €0.50 per pixel to start), draw or upload a creation on it, and share a permanent
 link to its place on the map. A parcel can be shared with a secret link so that a community (a stream, a class, friends) draws on it together, moderated before it reaches the map. Inspired by The Million Dollar Homepage, built for the web of 2026: a real world map,
 fluid zoom down to the single pixel, accounts, moderation, secure Stripe payments, and a back office.
 
@@ -31,8 +31,7 @@ cp .env.example .env.local   # already configured for local development: dev sig
 npm run dev               # http://localhost:3000
 ```
 
-Buying needs **no account**: a visitor picks a spot, draws, gives an e-mail address and pays (see
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#buying-without-an-account)). In this local mode sign-in needs only an email (a clearly-labelled development form that cannot exist in production) and
+In this local mode sign-in needs only an email (a clearly-labelled development form that cannot exist in production) and
 payments are simulated through the *same* handler that processes real Stripe webhooks. Use an email starting with
 `admin` (e.g. `admin@example.test`) to get the admin role.
 

@@ -113,6 +113,7 @@
       "area_too_large": "La surface maximale est de {max} pixels."
     },
     "continue": "Créer ma parcelle",
+    "signInToContinue": "Connectez-vous pour continuer",
     "legal": "Emplacement virtuel sur la carte — aucun droit de propriété immobilière, géographique ou intellectuelle.",
     "terms": "Conditions",
     "rules": "Règles de la communauté",
@@ -136,9 +137,7 @@
       "description": "Courte description (facultatif)",
       "link": "Lien (facultatif)",
       "linkHint": "https uniquement. Les liens externes affichent leur domaine et sont marqués nofollow.",
-      "commercial": "Cette création est une publicité (elle sera signalée comme telle).",
-      "email": "Votre adresse e-mail",
-      "emailHint": "C'est tout ce qu'il nous faut : pas de compte, pas de mot de passe. Après le paiement, nous vous envoyons un lien pour modifier votre création plus tard. Votre adresse n'est jamais affichée publiquement."
+      "commercial": "Cette création est une publicité (elle sera signalée comme telle)."
     },
     "summary": {
       "parcel": "Parcelle",
@@ -149,7 +148,6 @@
     },
     "accept": "J'accepte les <terms>conditions</terms> et les <rules>règles de la communauté</rules>, et je comprends que ma création est publiée après modération.",
     "pay": "Payer {price}",
-    "signInInstead": "Connectez-vous pour acheter avec elle.",
     "redirecting": "Redirection vers le paiement sécurisé…",
     "securePayment": "Paiement sécurisé par Stripe. Votre parcelle est réservée pour vous pendant 35 minutes.",
     "errors": {
@@ -171,10 +169,7 @@
       "image_too_many_pixels": "L'image est trop grande.",
       "invalid_link": "Le lien doit être une adresse https valide.",
       "rate_limited": "Trop de tentatives. Patientez un peu.",
-      "invalid_email": "Saisissez une adresse e-mail valide.",
       "title_required": "Donnez un titre à votre création (3 caractères minimum).",
-      "account_exists": "Cette adresse e-mail a déjà un compte.",
-      "guest_checkout_unavailable": "L'achat sans compte n'est pas encore disponible sur ce serveur.",
       "payments_not_configured": "Les paiements ne sont pas encore disponibles.",
       "px_not_on_land": "Cette parcelle n'a pas assez de terre. Les océans et les mers ne s'achètent pas seuls : choisissez un emplacement avec plus de terre."
     },
@@ -184,7 +179,6 @@
   },
   "editor": {
     "canvasLabel": "Éditeur de parcelle, {w} sur {h} pixels",
-    "exactRes": "pixels de votre parcelle, chacun dessiné avec {k} × {k} points : le pinceau le plus fin fait 1/{k} de pixel.",
     "image": "Image",
     "upload": "Importer une image",
     "uploadHint": "PNG, JPEG ou WebP, jusqu'à 10 Mo. Elle est adaptée à votre parcelle.",
@@ -265,8 +259,6 @@
     "backToSignIn": "Retour à la connexion",
     "checkEmail": "Consultez votre boîte mail : nous vous avons envoyé un lien de confirmation.",
     "resetSent": "Si un compte existe pour cette adresse, un lien de réinitialisation est en route.",
-    "sendLink": "Recevoir plutôt un lien de connexion par e-mail",
-    "linkSent": "Si un compte existe pour cette adresse, un lien de connexion est en route. Aucun mot de passe n'est nécessaire.",
     "devBanner": "Mode développement : aucun mot de passe requis. Ce formulaire n'existe pas en production.",
     "sign-in": {
       "title": "Connexion",
@@ -291,7 +283,6 @@
     "errors": {
       "generic": "Une erreur est survenue. Veuillez réessayer.",
       "invalidCredentials": "E-mail ou mot de passe incorrect.",
-      "enterEmail": "Saisissez d'abord votre adresse e-mail.",
       "weakPassword": "Votre mot de passe doit contenir au moins 10 caractères.",
       "exists": "Un compte existe déjà pour cet e-mail.",
       "notConfigured": "L'authentification n'est pas configurée sur ce serveur."
@@ -437,10 +428,6 @@
     "confirmingLead": "Nous attendons la confirmation du prestataire de paiement. Cela prend en général quelques secondes.",
     "paidTitle": "Elle est à vous !",
     "paidLead": "Votre parcelle vous est attribuée. Votre création apparaîtra sur la carte dès qu'elle aura été modérée.",
-    "guestTitle": "Consultez votre boîte mail",
-    "guestLead": "Nous avons envoyé un lien à {email}. Ouvrez-le quand vous voulez modifier votre création ou revoir votre parcelle : aucun mot de passe n'est nécessaire.",
-    "guestDev": "Développement : aucun e-mail n'est envoyé.",
-    "guestDevOpen": "Ouvrir mon compte",
     "viewParcel": "Voir ma parcelle",
     "myParcels": "Mes parcelles",
     "slowTitle": "Confirmation toujours en attente",
@@ -541,7 +528,7 @@
         {
           "h": "Ce que vous achetez",
           "p": [
-            "La carte est une grille virtuelle de 1 000 000 000 de pixels (40 000 × 25 000). Une parcelle est un rectangle d'au moins 100 pixels. L'achat d'une parcelle vous donne le droit exclusif d'y afficher une création sur ce rectangle de la carte, selon les présentes conditions.",
+            "La carte est une grille virtuelle de 1 000 000 000 de pixels (40 000 × 25 000). Une parcelle est un rectangle d'au moins 25 pixels. L'achat d'une parcelle vous donne le droit exclusif d'y afficher une création sur ce rectangle de la carte, selon les présentes conditions.",
             "Une parcelle est un emplacement virtuel. Ce n'est ni un bien immobilier, ni un droit géographique, territorial ou de propriété intellectuelle, et elle ne vous donne aucun droit sur les lieux représentés par la carte.",
             "Seules les terres sont à vendre. Une parcelle peut inclure un peu de mer le long d'une côte, mais au moins la moitié de ses pixels doit être de la terre (la part exacte est fixée par les administrateurs), et une parcelle entièrement en mer ne peut pas être achetée. Vous ne payez que les pixels de terre : les pixels de mer de votre rectangle sont offerts, ou à prix réduit si un tarif réduit est en vigueur, et le récapitulatif de commande montre la répartition avant le paiement. Les compteurs de la carte ne comptent que les pixels de terre."
           ]

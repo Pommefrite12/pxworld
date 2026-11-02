@@ -141,21 +141,52 @@ test.describe("map interaction", () => {
 
   test("buy mode: clicking the map places a parcel, collisions and bounds are reported", async ({ page }) => {
     await page.goto("/map?x=26000&y=11000&z=0.6"); // Kazakhstan: dry land all around
+    // the button works once the page is interactive: a click before hydration does nothing
+    await page.waitForFunction(() => Boolean((window as unknown as { __pxEngine?: unknown }).__pxEngine));
     await page.getByTestId("find-your-spot").click();
-    await page.waitForTimeout(1200);
+    await expect(page.getByTestId("buy-panel")).toBeVisible();
+    await page.waitForTimeout(1800); // let the camera finish its flight before clicking the map
     const box = (await page.getByRole("application").boundingBox())!;
     await page.mouse.click(box.x + box.width * 0.4, box.y + box.height * 0.5);
     await expect(page.getByTestId("buy-status")).toContainText(/free/i, { timeout: 10_000 });
     // a size below the minimum is refused with an explanation, no parcel can be bought
+    await page.getByLabel("Width (px)").fill("4");
+    await page.getByLabel("Height (px)").fill("6");
+    await expect(page.getByTestId("buy-status")).toContainText(/minimum surface is 25/i); // 24 pixels
+    await expect(page.getByTestId("buy-continue")).toBeDisabled();
+    // the smallest parcel: 5 × 5 pixels = 25, €12.50
     await page.getByLabel("Width (px)").fill("5");
     await page.getByLabel("Height (px)").fill("5");
-    await expect(page.getByTestId("buy-status")).toContainText(/minimum surface is 100/i);
-    await expect(page.getByTestId("buy-continue")).toBeDisabled();
+    await expect(page.getByTestId("buy-price")).toHaveText("€12.50");
+    await expect(page.getByTestId("buy-continue")).toBeEnabled();
     // the price follows the size immediately
     await page.getByLabel("Width (px)").fill("30");
     await page.getByLabel("Height (px)").fill("40");
     await expect(page.getByTestId("buy-price")).toHaveText("€600"); // 1 200 pixels at €0.50
     await expect(page.getByTestId("buy-area")).toContainText("1,200");
+  });
+});
+
+test.describe("language switch", () => {
+  test("the whole button opens the list, and choosing a language changes the page and keeps the place", async ({ page }) => {
+    await page.goto("/discover");
+    const select = page.getByTestId("locale-switch");
+    const label = select.locator("xpath=..");
+    // the invisible select covers the whole pixel button: a click on its edge, its padding or its arrow all land on it
+    const [sb, lb] = [(await select.boundingBox())!, (await label.boundingBox())!];
+    expect([Math.round(sb.x), Math.round(sb.y), Math.round(sb.width), Math.round(sb.height)]).toEqual([Math.round(lb.x), Math.round(lb.y), Math.round(lb.width), Math.round(lb.height)]);
+    for (const [fx, fy] of [[0.08, 0.5], [0.5, 0.5], [0.92, 0.5], [0.5, 0.15]] as const) {
+      const hit = await page.evaluate(({ x, y }) => (document.elementFromPoint(x, y) as HTMLElement | null)?.getAttribute("data-testid"), { x: lb.x + lb.width * fx, y: lb.y + lb.height * fy });
+      expect(hit, `${fx},${fy}`).toBe("locale-switch");
+    }
+    await expect(label).toContainText("EN");
+    await select.selectOption("fr");
+    await expect(page).toHaveURL(/\/fr\/discover/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Découvrir");
+    await expect(page.getByTestId("locale-switch").locator("xpath=..")).toContainText("FR");
+    await page.getByTestId("locale-switch").selectOption("en");
+    await expect(page).toHaveURL(/\/discover$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Discover");
   });
 });
 

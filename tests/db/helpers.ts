@@ -39,6 +39,7 @@ export async function resetData() {
   await pool.query(`update public.app_settings set value = 'true'::jsonb where key = 'sales_open'`);
   await pool.query(`update public.app_settings set value = '0'::jsonb where key = 'sea_price_percent'`);
   await pool.query(`update public.app_settings set value = '50'::jsonb where key = 'min_land_percent'`);
+  await pool.query(`update public.app_settings set value = '25'::jsonb where key = 'min_area'`);
 }
 
 export type Rect = { x: number; y: number; w: number; h: number };

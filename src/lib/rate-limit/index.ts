@@ -36,10 +36,6 @@ export async function enforceRateLimit(req: Request, limit: Limit, userId?: stri
 
 export const LIMITS = {
   checkout: { name: "checkout", windowSeconds: 3600, max: 20 },
-  /** Buyers without an account: fewer attempts per address, since holding pixels costs nothing until they pay. */
-  guestCheckout: { name: "guest-checkout", windowSeconds: 3600, max: 8 },
-  /** New accounts created silently for such buyers. */
-  guestAccount: { name: "guest-account", windowSeconds: 3600, max: 6 },
   upload: { name: "upload", windowSeconds: 3600, max: 30 },
   report: { name: "report", windowSeconds: 3600, max: 10 },
   like: { name: "like", windowSeconds: 600, max: 60 },

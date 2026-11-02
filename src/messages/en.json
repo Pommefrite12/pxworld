@@ -113,6 +113,7 @@
       "area_too_large": "The maximum surface is {max} pixels."
     },
     "continue": "Design my parcel",
+    "signInToContinue": "Sign in to continue",
     "legal": "Virtual placement on the map — not real-estate, geographic or intellectual property.",
     "terms": "Terms",
     "rules": "Community rules",
@@ -136,9 +137,7 @@
       "description": "Short description (optional)",
       "link": "Link (optional)",
       "linkHint": "https only. External links are shown with their domain and marked nofollow.",
-      "commercial": "This creation is an advertisement (it will be labelled as such).",
-      "email": "Your e-mail address",
-      "emailHint": "That is all we need: no account, no password. After paying, we e-mail you a link to edit your creation later. Your address is never shown publicly."
+      "commercial": "This creation is an advertisement (it will be labelled as such)."
     },
     "summary": {
       "parcel": "Parcel",
@@ -149,7 +148,6 @@
     },
     "accept": "I accept the <terms>terms</terms> and the <rules>community rules</rules>, and I understand that my creation is published after moderation.",
     "pay": "Pay {price}",
-    "signInInstead": "Sign in to buy with it.",
     "redirecting": "Redirecting to secure payment…",
     "securePayment": "Secure payment by Stripe. Your parcel is held for you for 35 minutes.",
     "errors": {
@@ -171,10 +169,7 @@
       "image_too_many_pixels": "The image is too large.",
       "invalid_link": "The link must be a valid https address.",
       "rate_limited": "Too many attempts. Please wait a little.",
-      "invalid_email": "Please enter a valid e-mail address.",
       "title_required": "Please give your creation a title (at least 3 characters).",
-      "account_exists": "This e-mail address already has an account.",
-      "guest_checkout_unavailable": "Buying without an account is not available on this server yet.",
       "payments_not_configured": "Payments are not available yet.",
       "px_not_on_land": "This parcel does not have enough land. Oceans and seas cannot be bought on their own: pick a spot with more land."
     },
@@ -184,7 +179,6 @@
   },
   "editor": {
     "canvasLabel": "Parcel editor, {w} by {h} pixels",
-    "exactRes": "your parcel's pixels, each drawn with {k} × {k} dots: the finest brush is 1/{k} of a pixel.",
     "image": "Image",
     "upload": "Upload an image",
     "uploadHint": "PNG, JPEG or WebP, up to 10 MB. It is resized to your parcel.",
@@ -265,8 +259,6 @@
     "backToSignIn": "Back to sign in",
     "checkEmail": "Check your inbox: we sent you a confirmation link.",
     "resetSent": "If an account exists for this address, a reset link is on its way.",
-    "sendLink": "Email me a sign-in link instead",
-    "linkSent": "If an account exists for this address, a sign-in link is on its way. No password needed.",
     "devBanner": "Development mode: no password needed. This form does not exist in production.",
     "sign-in": {
       "title": "Sign in",
@@ -292,7 +284,6 @@
       "generic": "Something went wrong. Please try again.",
       "invalidCredentials": "Incorrect email or password.",
       "weakPassword": "Your password must have at least 10 characters.",
-      "enterEmail": "Enter your email address first.",
       "exists": "An account already exists for this email.",
       "notConfigured": "Authentication is not configured on this server."
     },
@@ -437,10 +428,6 @@
     "confirmingLead": "We are waiting for the payment provider to confirm. This usually takes a few seconds.",
     "paidTitle": "It's yours!",
     "paidLead": "Your parcel is attributed. Your creation will appear on the map as soon as it has been moderated.",
-    "guestTitle": "Check your inbox",
-    "guestLead": "We sent a link to {email}. Open it whenever you want to edit your creation or see your parcel: no password needed.",
-    "guestDev": "Development: no e-mail is sent.",
-    "guestDevOpen": "Open my account",
     "viewParcel": "View my parcel",
     "myParcels": "My parcels",
     "slowTitle": "Still waiting for confirmation",
@@ -541,7 +528,7 @@
         {
           "h": "What you buy",
           "p": [
-            "The map is a virtual grid of 1,000,000,000 pixels (40,000 × 25,000). A parcel is a rectangle of at least 100 pixels. Buying a parcel gives you the exclusive right to display one creation on that rectangle of the map, according to these terms.",
+            "The map is a virtual grid of 1,000,000,000 pixels (40,000 × 25,000). A parcel is a rectangle of at least 25 pixels. Buying a parcel gives you the exclusive right to display one creation on that rectangle of the map, according to these terms.",
             "A parcel is a virtual placement. It is not real-estate, nor a geographic, territorial or intellectual property right, and it gives you no right over the places the map depicts.",
             "Only land is for sale. A parcel may include some sea along a coast, but at least half of its pixels must be land (the exact share is set by the administrators), and a parcel entirely at sea cannot be bought. You pay for the land pixels only: the sea pixels of your rectangle are offered, or discounted if a reduced price is in force, and the order summary shows the split before you pay. The counters on the map count land pixels only."
           ]

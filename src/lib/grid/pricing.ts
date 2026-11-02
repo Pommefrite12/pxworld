@@ -1,4 +1,4 @@
-import { CURRENCY, DEFAULT_UNIT_PRICE_CENTS } from "./constants";
+import { CURRENCY, DEFAULT_UNIT_PRICE_CENTS, MIN_AREA } from "./constants";
 import { area, type Rect } from "./geometry";
 
 export interface PriceQuote {
@@ -26,7 +26,7 @@ export interface Pricing {
   seaPercent: number;
 }
 
-export const DEFAULT_PRICING: Pricing = { unitPriceCents: DEFAULT_UNIT_PRICE_CENTS, currency: "eur", minArea: 100, maxArea: 250_000, salesOpen: false, minLandPercent: 50, seaPercent: 0 };
+export const DEFAULT_PRICING: Pricing = { unitPriceCents: DEFAULT_UNIT_PRICE_CENTS, currency: "eur", minArea: MIN_AREA, maxArea: 250_000, salesOpen: false, minLandPercent: 50, seaPercent: 0 };
 
 /** Same arithmetic as `px_start_order`: at least `minLandPercent` % of the pixels (and at least one) must be land. */
 export function enoughLand(landPixels: number, areaPixels: number, minLandPercent: number): boolean {

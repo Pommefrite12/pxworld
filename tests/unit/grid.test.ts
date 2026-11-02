@@ -33,19 +33,24 @@ describe("area & presets", () => {
   it("computes surfaces", () => {
     expect(area({ w: 10, h: 10 })).toBe(100);
     expect(area({ w: 200, h: 200 })).toBe(40_000);
-    expect(PRESET_SIZES.map(area)).toEqual([100, 400, 2_500, 10_000, 40_000]);
+    expect(PRESET_SIZES.map(area)).toEqual([25, 100, 400, 2_500, 10_000, 40_000]);
+    expect(Math.min(...PRESET_SIZES.map(area))).toBe(MIN_AREA); // the smallest preset is the smallest parcel
   });
 });
 
 describe("validateRect", () => {
-  it("accepts the minimum parcel", () => expect(validateRect({ x: 0, y: 0, w: 10, h: 10 })).toBeNull());
+  it("accepts the minimum parcel", () => {
+    expect(validateRect({ x: 0, y: 0, w: 5, h: 5 })).toBeNull(); // 25 pixels
+    expect(validateRect({ x: 0, y: 0, w: 25, h: 1 })).toBeNull();
+  });
   it("rejects fractional / unsafe numbers", () => {
     expect(validateRect({ x: 0.5, y: 0, w: 10, h: 10 })).toBe("not_integer");
     expect(validateRect({ x: 0, y: 0, w: NaN, h: 10 })).toBe("not_integer");
     expect(validateRect({ x: 0, y: 0, w: Infinity, h: 10 })).toBe("not_integer");
   });
   it("rejects too small, non-positive and out-of-bounds parcels", () => {
-    expect(validateRect({ x: 0, y: 0, w: 9, h: 10 })).toBe("area_too_small");
+    expect(validateRect({ x: 0, y: 0, w: 4, h: 6 })).toBe("area_too_small"); // 24 pixels
+    expect(validateRect({ x: 0, y: 0, w: 1, h: 1 })).toBe("area_too_small");
     expect(validateRect({ x: 0, y: 0, w: 0, h: 100 })).toBe("non_positive");
     expect(validateRect({ x: -1, y: 0, w: 10, h: 10 })).toBe("out_of_bounds");
     expect(validateRect({ x: GRID_WIDTH - 9, y: 0, w: 10, h: 10 })).toBe("out_of_bounds");
@@ -59,7 +64,7 @@ describe("validateRect", () => {
     expect(validateRect({ x: 0, y: 0, w: 500, h: 500 }, { maxArea: 250_000 })).toBeNull();
     expect(validateRect({ x: 0, y: 0, w: 1_001, h: 1 }, { minArea: 1 })).toBe("side_too_large");
   });
-  it("min area constant is 100", () => expect(MIN_AREA).toBe(100));
+  it("min area constant is 25", () => expect(MIN_AREA).toBe(25));
 });
 
 describe("intersects", () => {

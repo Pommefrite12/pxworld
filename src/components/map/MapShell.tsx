@@ -142,7 +142,12 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
     return () => { clearTimeout(id); ctl.abort(); };
   }, [selection, selState]);
 
-  const continueBuy = () => { if (selection) setDialog(true); }; // no account needed: an e-mail address is asked at the payment step
+  const buyUrl = (r: Rect) => `/map?bx=${r.x}&by=${r.y}&bw=${r.w}&bh=${r.h}`;
+  const continueBuy = () => {
+    if (!selection) return;
+    if (!viewer) { window.location.assign(`/auth/sign-in?next=${encodeURIComponent(buyUrl(selection))}`); return; }
+    setDialog(true);
+  };
 
   /* ---------- navigation ---------- */
   const goTo = (target: SearchTarget) => {
@@ -221,7 +226,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
         {mode === "buy" && (
           <BuyPanel
             pricing={pricing} locale={locale} size={size} onSize={changeSize} selection={selection}
-            state={selState} landPixels={selLand} serverFree={serverFree} onContinue={continueBuy} onClose={stopBuy}
+            state={selState} landPixels={selLand} serverFree={serverFree} signedIn={Boolean(viewer)} onContinue={continueBuy} onClose={stopBuy}
           />
         )}
 
@@ -241,7 +246,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
 
       {dialog && selection && (
         <CheckoutDialog
-          rect={selection} pricing={pricing} landPixels={selLand} signedIn={Boolean(viewer)}
+          rect={selection} pricing={pricing} landPixels={selLand}
           onClose={() => { engine()?.setPreviewImage(null); setDialog(false); }}
           onPreviewOnMap={(img) => { const e = engine(); e?.setPreviewImage(img); if (img && e) e.fitRect(selection, { padding: 110, maxScale: 14 }); }}
           onUnavailable={() => { setDialog(false); setToast(t("spotTaken")); engine()?.setPreviewImage(null); setSelState(null); applySelection({ ...selection }); }}

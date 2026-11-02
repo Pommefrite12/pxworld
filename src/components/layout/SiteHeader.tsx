@@ -15,14 +15,15 @@ function LocaleSwitch() {
   const pathname = usePathname();
   const t = useTranslations("nav");
   return (
+    // The visible part is a pixel button; the real <select> is an invisible layer over the WHOLE button, so a click anywhere
+    // on it opens the native list of languages (a small select inside the padding only opened when hit exactly).
     <label className="btn btn-ghost btn-sm relative !gap-1 !pl-3 !pr-2">
-      <span className="sr-only">{t("language")}</span>
+      <span aria-hidden className="text-sm font-bold">{locale.toUpperCase()}</span>
+      <svg aria-hidden viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="m6 9 6 6 6-6" /></svg>
       <select value={locale} onChange={(e) => router.replace(pathname + (typeof window !== "undefined" ? window.location.search : ""), { locale: e.target.value as Locale })}
-        className="cursor-pointer appearance-none bg-transparent pr-1 text-sm font-bold text-ink outline-none" aria-label={t("language")}>
-        {locales.map((l) => <option key={l} value={l}>{l.toUpperCase()}</option>)}
+        className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0" aria-label={t("language")} data-testid="locale-switch">
+        {locales.map((l) => <option key={l} value={l}>{localeNames[l]}</option>)}
       </select>
-      <svg aria-hidden viewBox="0 0 24 24" className="pointer-events-none h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="m6 9 6 6 6-6" /></svg>
-      <span className="hidden">{localeNames[locale]}</span>
     </label>
   );
 }

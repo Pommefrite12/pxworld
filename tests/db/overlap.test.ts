@@ -49,7 +49,8 @@ describe("parcels table integrity (no application code involved)", () => {
     await expectPgError(insertParcel(u, -1, 0, 10, 10), "parcels_integers_in_grid");
     await expectPgError(insertParcel(u, 39_995, 0, 10, 10), "parcels_integers_in_grid");
     await expectPgError(insertParcel(u, 0, 24_995, 10, 10), "parcels_integers_in_grid");
-    await expectPgError(insertParcel(u, 0, 0, 9, 10), "parcels_min_area");
+    await expectPgError(insertParcel(u, 0, 0, 4, 6), "parcels_min_area"); // 24 pixels: the smallest parcel is 25
+    await insertParcel(u, 100, 100, 5, 5); // 25 pixels is fine
     await expectPgError(insertParcel(u, 0, 0, 0, 100), "parcels_integers_in_grid");
     await expectPgError(insertParcel(u, 0, 0, 1001, 1), "parcels_side_cap");
     await insertParcel(u, 39_990, 24_990, 10, 10); // last cells of the grid are valid

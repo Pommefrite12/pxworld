@@ -3,7 +3,6 @@ import type Stripe from "stripe";
 import { query, queryOne } from "@/lib/db/pool";
 import { env } from "@/lib/env";
 import { invalidatePublicStats } from "@/lib/data/map";
-import { sendManageLink } from "@/lib/auth/guest";
 import { stripe } from "./client";
 
 export type EventOutcome = "processed" | "duplicate" | "ignored";
@@ -110,7 +109,6 @@ export async function fulfillSession(session: Stripe.Checkout.Session): Promise<
   );
   const outcome = row?.outcome ?? "unknown";
   if (outcome === "refund_required" && pi) await refundOrder(orderId, pi, "pixels_unavailable");
-  if (outcome === "fulfilled") await sendManageLink(orderId); // a buyer without an account gets their sign-in link (once: replays are 'already_paid')
   return outcome;
 }
 

@@ -8,7 +8,6 @@ unless `PAYMENTS_LIVE_ENABLED=yes-i-have-approval` is set. Do not set it before 
 | Rule | Where |
 |---|---|
 | Prices computed server-side, from the surface and `app_settings.price_unit_cents` | `px_start_order` (SQL); the client quote is display-only |
-| A buyer without an account follows / cancels only their own order | return URLs carry an HMAC token of the order id (`lib/stripe/orderToken.ts`); `/api/orders/:id` answers 404 to anyone else |
 | Unique order id, snapshot of the rectangle and price | `orders` (`amount_cents = area × unit_price` is a CHECK) |
 | Reservation verified in the database | parcel `reserved` + `parcel_reservations` + exclusion constraint |
 | One order can never attribute the same area twice | `px_fulfill_order` locks the order, is idempotent, and relies on the exclusion constraint |
