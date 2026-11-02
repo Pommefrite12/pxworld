@@ -1,4 +1,5 @@
 import { isParcelCode } from "@/lib/grid/code";
+import { DEFAULT_PRICING } from "@/lib/grid/pricing";
 import { setRequestLocale } from "next-intl/server";
 import { MapShell } from "@/components/map/MapShell";
 import { getHeaderViewer } from "@/lib/auth/session";
@@ -39,7 +40,7 @@ export default async function HomePage({ params, searchParams }: { params: Promi
       <MapShell
         stats={stats}
         viewer={viewer}
-        pricing={pricing ?? { unitPriceCents: 100, currency: "eur", minArea: 100, maxArea: 250_000, salesOpen: false }}
+        pricing={pricing ?? DEFAULT_PRICING}
         initial={{ camera, parcelCode: isParcelCode(sp.p) ? sp.p : null, buy, startBuy }}
       />
     </main>

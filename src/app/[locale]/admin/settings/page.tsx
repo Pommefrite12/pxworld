@@ -15,6 +15,7 @@ export default async function Settings({ params }: { params: Promise<{ locale: s
       <SettingsForm locale={locale} canEdit={staff.staffRole === "admin"} values={{
         price_unit_cents: Number(m.price_unit_cents ?? 100), min_area: Number(m.min_area ?? 100), max_area: Number(m.max_area ?? 250000),
         reservation_ttl_minutes: Number(m.reservation_ttl_minutes ?? 35), max_active_reservations_per_user: Number(m.max_active_reservations_per_user ?? 3), sales_open: m.sales_open !== false,
+        sea_price_percent: Number(m.sea_price_percent ?? 0), min_land_percent: Number(m.min_land_percent ?? 50),
       }} />
     </div>
   );

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/grid/pricing";
 
-export function SettingsForm({ values, locale, canEdit }: { values: { price_unit_cents: number; min_area: number; max_area: number; reservation_ttl_minutes: number; max_active_reservations_per_user: number; sales_open: boolean }; locale: string; canEdit: boolean }) {
+export function SettingsForm({ values, locale, canEdit }: { values: { price_unit_cents: number; min_area: number; max_area: number; reservation_ttl_minutes: number; max_active_reservations_per_user: number; sales_open: boolean; sea_price_percent: number; min_land_percent: number }; locale: string; canEdit: boolean }) {
   const t = useTranslations("admin.settings");
   const router = useRouter();
   const [v, setV] = useState(values);
@@ -29,6 +29,8 @@ export function SettingsForm({ values, locale, canEdit }: { values: { price_unit
     <form onSubmit={save} className="card max-w-xl space-y-4 p-6">
       {num("price_unit_cents", t("price"), t("priceHint", { price: formatMoney(v.price_unit_cents, locale) }))}
       {num("min_area", t("minArea"))}
+      {num("min_land_percent", t("minLand"), t("minLandHint"))}
+      {num("sea_price_percent", t("seaPrice"), t("seaPriceHint"))}
       {num("max_area", t("maxArea"))}
       {num("reservation_ttl_minutes", t("ttl"), t("ttlHint"))}
       {num("max_active_reservations_per_user", t("maxHolds"))}

@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { SiteHeader, type HeaderViewer } from "@/components/layout/SiteHeader";
-import { BuyPanel, type Pricing, type ServerFree } from "@/components/buy/BuyPanel";
+import { BuyPanel, type ServerFree } from "@/components/buy/BuyPanel";
+import type { Pricing } from "@/lib/grid/pricing";
 import { CheckoutDialog } from "@/components/buy/CheckoutDialog";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { centeredRect, clampToGrid, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
@@ -40,6 +41,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
   const [size, setSize] = useState(initial.buy ? { w: initial.buy.w, h: initial.buy.h } : DEFAULT_SIZE);
   const [selection, setSelection] = useState<Rect | null>(null);
   const [selState, setSelState] = useState<SelectionState | null>(null);
+  const [selLand, setSelLand] = useState<number | null>(null);
   const [serverFree, setServerFree] = useState<ServerFree>(null);
   const [parcelCode, setParcelCode] = useState<string | null>(initial.parcelCode);
   const [dialog, setDialog] = useState(false);
@@ -158,6 +160,8 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
 
   // deep links: open the buy flow / focus a parcel once the engine exists
   const started = useRef(false);
+  useEffect(() => { if (engineReady) engine()?.setLandRule(pricing.minLandPercent); }, [engineReady, pricing.minLandPercent]);
+
   useEffect(() => {
     if (!engineReady || started.current) return;
     started.current = true;
@@ -196,6 +200,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
           onSelectParcel={onSelectParcel}
           onPlace={(r) => setSelection(r)}
           onSelectionState={setSelState}
+          onSelectionLand={setSelLand}
           onZoomOutToGlobe={toGlobe}
         />
 
@@ -222,7 +227,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
           <BuyPanel
             pricing={pricing} locale={locale} size={size} onSize={changeSize} selection={selection}
             onMoveSelection={(r) => { const c = clampToGrid(r); applySelection(c); }}
-            state={selState} serverFree={serverFree} signedIn={Boolean(viewer)} onContinue={continueBuy} onClose={stopBuy}
+            state={selState} landPixels={selLand} serverFree={serverFree} signedIn={Boolean(viewer)} onContinue={continueBuy} onClose={stopBuy}
           />
         )}
 
@@ -242,7 +247,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
 
       {dialog && selection && (
         <CheckoutDialog
-          rect={selection} pricing={pricing}
+          rect={selection} pricing={pricing} landPixels={selLand}
           onClose={() => { engine()?.setPreviewImage(null); setDialog(false); }}
           onPreviewOnMap={(img) => { const e = engine(); e?.setPreviewImage(img); if (img && e) e.fitRect(selection, { padding: 110, maxScale: 14 }); }}
           onUnavailable={() => { setDialog(false); setToast(t("spotTaken")); engine()?.setPreviewImage(null); setSelState(null); applySelection({ ...selection }); }}

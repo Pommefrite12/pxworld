@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { DEFAULT_PRICING } from "@/lib/grid/pricing";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { MapShell } from "@/components/map/MapShell";
@@ -51,7 +52,7 @@ export default async function ParcelPage({ params }: { params: Promise<{ locale:
       <MapShell
         stats={stats}
         viewer={viewer}
-        pricing={pricing ?? { unitPriceCents: 100, currency: "eur", minArea: 100, maxArea: 250_000, salesOpen: false }}
+        pricing={pricing ?? DEFAULT_PRICING}
         initial={{ camera: { x: p.x + p.w / 2 - 190 / scale, y: p.y + p.h / 2, scale }, parcelCode: p.code, buy: null }}
       />
     </main>

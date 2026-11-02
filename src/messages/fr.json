@@ -108,7 +108,7 @@
       "out": "La parcelle doit rester dans la carte.",
       "checking": "Vérification de la disponibilité…",
       "closed": "Les ventes sont momentanément fermées.",
-      "water": "Cet emplacement n'est pas entièrement sur la terre ferme. Les océans et les mers ne s'achètent pas : déplacez-le vers l'intérieur des terres."
+      "water": "Au moins {pct} % de votre parcelle doit être sur la terre ferme. Les océans et les mers ne s'achètent pas seuls : rapprochez-la des terres."
     },
     "sizeError": {
       "not_integer": "Les dimensions doivent être des nombres entiers.",
@@ -146,7 +146,10 @@
     },
     "summary": {
       "parcel": "Parcelle",
-      "total": "Total"
+      "total": "Total",
+      "land": "Terre",
+      "sea": "Mer",
+      "seaFree": "offerte"
     },
     "accept": "J'accepte les <terms>conditions</terms> et les <rules>règles de la communauté</rules>, et je comprends que ma création est publiée après modération.",
     "pay": "Payer {price}",
@@ -172,9 +175,11 @@
       "invalid_link": "Le lien doit être une adresse https valide.",
       "rate_limited": "Trop de tentatives. Patientez un peu.",
       "payments_not_configured": "Les paiements ne sont pas encore disponibles.",
-      "px_not_on_land": "Cette parcelle n'est pas entièrement sur la terre ferme. Les océans et les mers ne sont pas à vendre : choisissez un emplacement sur terre."
+      "px_not_on_land": "Cette parcelle n'a pas assez de terre. Les océans et les mers ne s'achètent pas seuls : choisissez un emplacement avec plus de terre."
     },
-    "fineTune": "Ajuster la position"
+    "fineTune": "Ajuster la position",
+    "seaFree": "{sea} px de votre parcelle sont en mer, offerts : vous ne payez que les {land} px de terre.",
+    "seaDiscount": "{sea} px de votre parcelle sont en mer, facturés {pct} % d'un pixel de terre ; {land} px sont de la terre."
   },
   "editor": {
     "canvasLabel": "Éditeur de parcelle, {w} sur {h} pixels",
@@ -475,7 +480,7 @@
           "p": [
             "La carte est une grille virtuelle de 1 000 000 000 de pixels (40 000 × 25 000). Une parcelle est un rectangle d'au moins 100 pixels. L'achat d'une parcelle vous donne le droit exclusif d'y afficher une création sur ce rectangle de la carte, selon les présentes conditions.",
             "Une parcelle est un emplacement virtuel. Ce n'est ni un bien immobilier, ni un droit géographique, territorial ou de propriété intellectuelle, et elle ne vous donne aucun droit sur les lieux représentés par la carte.",
-            "Seules les terres sont à vendre : une parcelle doit se trouver entièrement sur la terre ferme. Les océans et les mers ne s'achètent pas, donc une parcelle qui touche la côte doit être placée assez loin à l'intérieur. Les compteurs de la carte ne comptent que les pixels de terre."
+            "Seules les terres sont à vendre. Une parcelle peut inclure un peu de mer le long d'une côte, mais au moins la moitié de ses pixels doit être de la terre (la part exacte est fixée par les administrateurs), et une parcelle entièrement en mer ne peut pas être achetée. Vous ne payez que les pixels de terre : les pixels de mer de votre rectangle sont offerts, ou à prix réduit si un tarif réduit est en vigueur, et le récapitulatif de commande montre la répartition avant le paiement. Les compteurs de la carte ne comptent que les pixels de terre."
           ]
         },
         {
@@ -757,7 +762,11 @@
       "salesOpen": "Les ventes sont ouvertes",
       "save": "Enregistrer",
       "saved": "Paramètres enregistrés et journalisés.",
-      "adminOnly": "Seuls les administrateurs peuvent modifier les paramètres."
+      "adminOnly": "Seuls les administrateurs peuvent modifier les paramètres.",
+      "minLand": "Part minimale de terre d'une parcelle (%)",
+      "minLandHint": "Une parcelle peut inclure un peu de mer le long d'une côte, mais au moins cette part de ses pixels doit être de la terre (1–100). 100 = aucune mer.",
+      "seaPrice": "Prix d'un pixel de mer (% d'un pixel de terre)",
+      "seaPriceHint": "0 = les pixels de mer d'une parcelle côtière sont offerts ; 50 = moitié prix ; 100 = même prix que la terre."
     },
     "audit": {
       "title": "Journal d'audit",

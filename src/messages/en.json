@@ -108,7 +108,7 @@
       "out": "The parcel must stay inside the map.",
       "checking": "Checking availability…",
       "closed": "Sales are temporarily closed.",
-      "water": "This area is not entirely on land. Oceans and seas cannot be bought: move it inland."
+      "water": "At least {pct}% of your parcel must be on land. Oceans and seas cannot be bought on their own: move it inland."
     },
     "sizeError": {
       "not_integer": "Sizes must be whole numbers.",
@@ -146,7 +146,10 @@
     },
     "summary": {
       "parcel": "Parcel",
-      "total": "Total"
+      "total": "Total",
+      "land": "Land",
+      "sea": "Sea",
+      "seaFree": "offered"
     },
     "accept": "I accept the <terms>terms</terms> and the <rules>community rules</rules>, and I understand that my creation is published after moderation.",
     "pay": "Pay {price}",
@@ -172,9 +175,11 @@
       "invalid_link": "The link must be a valid https address.",
       "rate_limited": "Too many attempts. Please wait a little.",
       "payments_not_configured": "Payments are not available yet.",
-      "px_not_on_land": "This parcel is not entirely on land. Oceans and seas are not for sale: pick a spot on land."
+      "px_not_on_land": "This parcel does not have enough land. Oceans and seas cannot be bought on their own: pick a spot with more land."
     },
-    "fineTune": "Fine-tune position"
+    "fineTune": "Fine-tune position",
+    "seaFree": "{sea} px of your parcel are sea, offered: you only pay for the {land} px of land.",
+    "seaDiscount": "{sea} px of your parcel are sea, charged {pct}% of a land pixel; {land} px are land."
   },
   "editor": {
     "canvasLabel": "Parcel editor, {w} by {h} pixels",
@@ -475,7 +480,7 @@
           "p": [
             "The map is a virtual grid of 1,000,000,000 pixels (40,000 × 25,000). A parcel is a rectangle of at least 100 pixels. Buying a parcel gives you the exclusive right to display one creation on that rectangle of the map, according to these terms.",
             "A parcel is a virtual placement. It is not real-estate, nor a geographic, territorial or intellectual property right, and it gives you no right over the places the map depicts.",
-            "Only land is for sale: a parcel must lie entirely on land. Oceans and seas cannot be bought, so a parcel that touches the coast has to be placed far enough inland. The counters on the map count land pixels only."
+            "Only land is for sale. A parcel may include some sea along a coast, but at least half of its pixels must be land (the exact share is set by the administrators), and a parcel entirely at sea cannot be bought. You pay for the land pixels only: the sea pixels of your rectangle are offered, or discounted if a reduced price is in force, and the order summary shows the split before you pay. The counters on the map count land pixels only."
           ]
         },
         {
@@ -757,7 +762,11 @@
       "salesOpen": "Sales are open",
       "save": "Save",
       "saved": "Settings saved and journalised.",
-      "adminOnly": "Only administrators can change settings."
+      "adminOnly": "Only administrators can change settings.",
+      "minLand": "Minimum land share of a parcel (%)",
+      "minLandHint": "A parcel may include some sea along a coast, but at least this share of its pixels must be land (1–100). 100 = no sea at all.",
+      "seaPrice": "Price of a sea pixel (% of a land pixel)",
+      "seaPriceHint": "0 = the sea pixels of a coastal parcel are offered; 50 = half price; 100 = same price as land."
     },
     "audit": {
       "title": "Audit log",

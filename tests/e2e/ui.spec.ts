@@ -210,36 +210,51 @@ test.describe("editor", () => {
   });
 });
 
-test.describe("only land is for sale", () => {
-  const SEA = { x: 15389, y: 14350, w: 20, h: 20 }; // mid-Atlantic
-  const COAST = { x: 18167, y: 11839, w: 60, h: 60 }; // Pointe du Raz: part land, part sea
+test.describe("coastal parcels: land is paid, sea is offered, a parcel is never mostly sea", () => {
+  const SEA = { x: 15389, y: 14350, w: 20, h: 20 }; // mid-Atlantic: no land at all
+  const COAST_LOW = { x: 18167, y: 11839, w: 60, h: 60 }; // Pointe du Raz: 8.8 % land
+  const COAST_OK = { x: 18207, y: 11839, w: 60, h: 60 }; // same coast, a bit inland: 2 114 land pixels of 3 600 (58.7 %)
   const LAND = { x: 26000, y: 11000, w: 20, h: 20 }; // Kazakhstan
+  const url = (r: { x: number; y: number; w: number; h: number }) => `/map?bx=${r.x}&by=${r.y}&bw=${r.w}&bh=${r.h}`;
 
-  test("the buy panel says so for the sea and for a coastal spot, and lets a land spot through", async ({ page }) => {
-    for (const r of [SEA, COAST]) {
-      await page.goto(`/map?bx=${r.x}&by=${r.y}&bw=${r.w}&bh=${r.h}`);
-      await expect(page.getByTestId("buy-status")).toContainText(/not entirely on land/i, { timeout: 15_000 });
+  test("the buy panel refuses open sea and a mostly-sea parcel, prices a coastal one by its land, and a land one in full", async ({ page }) => {
+    for (const r of [SEA, COAST_LOW]) {
+      await page.goto(url(r));
+      await expect(page.getByTestId("buy-status")).toContainText(/at least 50% of your parcel must be on land/i, { timeout: 15_000 });
       await expect(page.getByTestId("buy-continue")).toBeDisabled();
     }
-    await page.goto(`/map?bx=${LAND.x}&by=${LAND.y}&bw=${LAND.w}&bh=${LAND.h}`);
+    await page.goto(url(COAST_OK));
     await expect(page.getByTestId("buy-status")).toContainText(/free/i, { timeout: 15_000 });
+    await expect(page.getByTestId("buy-sea-note")).toContainText(/1,486 px of your parcel are sea, offered.*2,114 px of land/i);
+    await expect(page.getByTestId("buy-price")).toHaveText("€2,114"); // the land only
+    await expect(page.getByTestId("buy-area")).toContainText("3,600"); // the whole rectangle is theirs
     await expect(page.getByTestId("buy-continue")).toBeEnabled();
+    await page.goto(url(LAND));
+    await expect(page.getByTestId("buy-status")).toContainText(/free/i, { timeout: 15_000 });
+    await expect(page.getByTestId("buy-sea-note")).toHaveCount(0);
+    await expect(page.getByTestId("buy-price")).toHaveText("€400");
   });
 
-  test("the server refuses a sea or coastal parcel on its own, whatever the browser says", async ({ browser }) => {
+  test("the server decides on its own: it refuses sea and mostly-sea parcels, and prices a coastal order by its land", async ({ browser }) => {
     const ctx = await browser.newContext();
-    expect((await ctx.request.post("/api/dev/login", { data: { email: "sea@example.test" } })).ok()).toBeTruthy();
-    const png = await sharp({ create: { width: 20, height: 20, channels: 3, background: "#12b886" } }).png().toBuffer();
+    expect((await ctx.request.post("/api/dev/login", { data: { email: "coast@example.test" } })).ok()).toBeTruthy();
+    const png = await sharp({ create: { width: 60, height: 60, channels: 3, background: "#12b886" } }).png().toBuffer();
     const post = (r: { x: number; y: number; w: number; h: number }) => ctx.request.post("/api/checkout", { multipart: { x: String(r.x), y: String(r.y), w: String(r.w), h: String(r.h), image: { name: "c.png", mimeType: "image/png", buffer: png } } });
-    for (const r of [SEA, COAST]) {
+    for (const r of [SEA, COAST_LOW]) {
       const res = await post(r);
       expect(res.status()).toBe(422);
       expect((await res.json()).error).toBe("px_not_on_land");
     }
-    // the availability probe agrees, and tells the two reasons apart
+    // the availability probe agrees and quotes the same price
     const probe = async (r: { x: number; y: number; w: number; h: number }) => (await ctx.request.get(`/api/availability?x=${r.x}&y=${r.y}&w=${r.w}&h=${r.h}`)).json();
-    expect(await probe(SEA)).toMatchObject({ free: false, onLand: false });
-    expect(await probe(LAND)).toMatchObject({ free: true, onLand: true });
+    expect(await probe(SEA)).toMatchObject({ free: false, onLand: false, landPixels: 0 });
+    expect(await probe(COAST_OK)).toMatchObject({ free: true, onLand: true, landPixels: 2114, price: { landPixels: 2114, seaPixels: 1486, totalCents: 211_400 } });
+    expect(await probe(LAND)).toMatchObject({ free: true, onLand: true, landPixels: 400 });
+    // an order for the coastal parcel is created at the land price (the mock checkout page shows the server's amount)
+    const ok = await post(COAST_OK);
+    expect(ok.ok()).toBeTruthy();
+    const { url: checkoutUrl } = await ok.json();
+    expect((await (await ctx.request.get(checkoutUrl)).text()).replace(/<!--.*?-->/g, "")).toContain("2114.00 EUR");
     await ctx.close();
   });
 });

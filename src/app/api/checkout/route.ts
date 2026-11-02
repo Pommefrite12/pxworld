@@ -7,7 +7,8 @@ import { LIMITS, enforceRateLimit } from "@/lib/rate-limit";
 import { validateRect } from "@/lib/grid/geometry";
 import { createCheckoutSession, type OrderForCheckout } from "@/lib/stripe/checkout";
 import { stripeConfigured } from "@/lib/stripe/client";
-import { isRectOnLand } from "@/lib/geo/landServer";
+import { landPixelsIn } from "@/lib/geo/landServer";
+import { enoughLand } from "@/lib/grid/pricing";
 import { parseCreationMeta, readCreationImage, storeCreation } from "@/lib/creations";
 
 export const maxDuration = 30;
@@ -32,15 +33,17 @@ export const POST = route(async (req) => {
   const pricing = await getPricing();
   if (!pricing.salesOpen) throw new HttpError(503, "px_sales_closed");
   if (validateRect(r, { minArea: pricing.minArea, maxArea: pricing.maxArea })) throw new HttpError(400, "px_invalid_rect");
-  if (!(await isRectOnLand(r))) throw new HttpError(422, "px_not_on_land"); // only land is for sale: no sea, no ocean
+  // coastal parcels are allowed, never mostly sea: the land count is made HERE, from the server's own map data
+  const landPx = await landPixelsIn(r);
+  if (!enoughLand(landPx, r.w * r.h, pricing.minLandPercent)) throw new HttpError(422, "px_not_on_land");
   const locale = form.get("locale") === "fr" ? "fr" : "en";
 
   const meta = parseCreationMeta(form);
   const img = await readCreationImage(form, r); // fail fast, before any pixel is held
 
   const [order] = await query<OrderForCheckout & { reservation_id: string }>(
-    "select order_id as id, parcel_id, $1::uuid as user_id, $2::int as x, $3::int as y, $4::int as w, $5::int as h, ($4 * $5)::int as area, amount_cents, currency, expires_at, reservation_id from public.px_start_order($1, $2, $3, $4, $5)",
-    [viewer.user.id, r.x, r.y, r.w, r.h],
+    "select order_id as id, parcel_id, $1::uuid as user_id, $2::int as x, $3::int as y, $4::int as w, $5::int as h, ($4 * $5)::int as area, amount_cents, currency, expires_at, reservation_id from public.px_start_order($1, $2, $3, $4, $5, $6)",
+    [viewer.user.id, r.x, r.y, r.w, r.h, landPx],
   );
   if (!order) throw new HttpError(500, "order_not_created");
 

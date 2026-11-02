@@ -5,10 +5,10 @@ import { useFormatter, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { PRESET_SIZES, GRID_HEIGHT, GRID_WIDTH, MAX_SIDE } from "@/lib/grid/constants";
 import { validateRect, type Rect } from "@/lib/grid/geometry";
-import { formatMoney, quote } from "@/lib/grid/pricing";
+import { formatMoney, quote, type Pricing } from "@/lib/grid/pricing";
 import type { SelectionState } from "@/components/map/engine";
 
-export interface Pricing { unitPriceCents: number; currency: string; minArea: number; maxArea: number; salesOpen: boolean }
+export type { Pricing };
 export type ServerFree = boolean | "checking" | null;
 
 interface Props {
@@ -19,6 +19,8 @@ interface Props {
   selection: Rect | null;
   onMoveSelection: (r: Rect) => void;
   state: SelectionState | null;
+  /** Land pixels inside the selection (null while unknown): the sea part of a coastal parcel is discounted. */
+  landPixels: number | null;
   serverFree: ServerFree;
   signedIn: boolean;
   onContinue: () => void;
@@ -27,12 +29,12 @@ interface Props {
 
 const num = (v: string) => (v === "" ? 0 : Math.max(0, Math.min(99999, Math.floor(Number(v)) || 0)));
 
-export function BuyPanel({ pricing, locale, size, onSize, selection, onMoveSelection, state, serverFree, signedIn, onContinue, onClose }: Props) {
+export function BuyPanel({ pricing, locale, size, onSize, selection, onMoveSelection, state, landPixels, serverFree, signedIn, onContinue, onClose }: Props) {
   const t = useTranslations("buy");
   const f = useFormatter();
   const [fine, setFine] = useState(false); // mobile: position fine-tuning is folded away to keep the map visible
   const sizeErr = validateRect({ x: 0, y: 0, ...size }, { minArea: pricing.minArea, maxArea: pricing.maxArea });
-  const q = size.w > 0 && size.h > 0 ? quote(size, pricing.unitPriceCents) : null;
+  const q = size.w > 0 && size.h > 0 ? quote(size, pricing.unitPriceCents, { landPixels: selection ? landPixels : null, seaPercent: pricing.seaPercent }) : null;
   const blocked = state === "blocked" || state === "out" || state === "water" || serverFree === false;
   const ready = Boolean(selection && !sizeErr && !blocked && state === "ok" && serverFree !== "checking" && pricing.salesOpen);
 
@@ -40,7 +42,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, onMoveSelec
     : sizeErr ? { tone: "bad", text: t(`sizeError.${sizeErr}`, { min: f.number(pricing.minArea), max: f.number(pricing.maxArea), side: MAX_SIDE }) }
     : !selection ? { tone: "info", text: t("status.place") }
     : state === "out" ? { tone: "bad", text: t("status.out") }
-    : state === "water" ? { tone: "bad", text: t("status.water") }
+    : state === "water" ? { tone: "bad", text: t("status.water", { pct: pricing.minLandPercent }) }
     : state === "blocked" ? { tone: "bad", text: t("status.blocked") }
     : serverFree === false ? { tone: "bad", text: t("status.reserved") }
     : state === "checking" || serverFree === "checking" ? { tone: "info", text: t("status.checking") }
@@ -109,6 +111,11 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, onMoveSelec
             <span className="text-sm text-ink-soft">{t("price")}</span>
             <span className="pixel-display text-[2.1rem] text-signal md:text-[2.4rem]" data-testid="buy-price">{q ? formatMoney(q.totalCents, locale, pricing.currency) : "—"}</span>
           </div>
+          {q && q.seaPixels > 0 && (
+            <p className="mt-1 text-xs text-ink-soft" data-testid="buy-sea-note">
+              {pricing.seaPercent === 0 ? t("seaFree", { land: f.number(q.landPixels), sea: f.number(q.seaPixels) }) : t("seaDiscount", { land: f.number(q.landPixels), sea: f.number(q.seaPixels), pct: pricing.seaPercent })}
+            </p>
+          )}
           <p className="mt-1 hidden text-[0.7rem] text-ink-faint md:block">{t("taxNote")}</p>
         </div>
       </div>

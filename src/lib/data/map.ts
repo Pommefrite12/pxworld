@@ -3,6 +3,7 @@ import { revalidateTag, unstable_cache } from "next/cache";
 import { query, queryOne } from "@/lib/db/pool";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { LAND_PIXELS } from "@/lib/geo/landPixels";
+import type { Pricing } from "@/lib/grid/pricing";
 
 export const TILE_SIZE = 1000; // virtual pixels per JSON metadata tile (40 × 25 tiles)
 export const TILES_X = GRID_WIDTH / TILE_SIZE;
@@ -68,9 +69,9 @@ export function invalidatePublicStats(): void {
   }
 }
 
-export async function getPricing(): Promise<{ unitPriceCents: number; currency: string; minArea: number; maxArea: number; salesOpen: boolean }> {
+export async function getPricing(): Promise<Pricing> {
   const rows = await query<{ key: string; value: unknown }>(
-    "select key, value from public.app_settings where key in ('price_unit_cents','currency','min_area','max_area','sales_open')",
+    "select key, value from public.app_settings where key in ('price_unit_cents','currency','min_area','max_area','sales_open','sea_price_percent','min_land_percent')",
   );
   const m = Object.fromEntries(rows.map((r) => [r.key, r.value]));
   return {
@@ -79,6 +80,8 @@ export async function getPricing(): Promise<{ unitPriceCents: number; currency: 
     minArea: Number(m.min_area ?? 100),
     maxArea: Number(m.max_area ?? 250_000),
     salesOpen: m.sales_open !== false,
+    minLandPercent: Number(m.min_land_percent ?? 50),
+    seaPercent: Number(m.sea_price_percent ?? 0),
   };
 }
 

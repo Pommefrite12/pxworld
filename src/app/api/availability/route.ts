@@ -1,10 +1,10 @@
 import { getPricing, isAreaFree } from "@/lib/data/map";
-import { isRectOnLand } from "@/lib/geo/landServer";
+import { landPixelsIn } from "@/lib/geo/landServer";
 import { json } from "@/lib/http/errors";
 import { intParam, route } from "@/lib/http/route";
 import { LIMITS, enforceRateLimit } from "@/lib/rate-limit";
 import { validateRect } from "@/lib/grid/geometry";
-import { quote } from "@/lib/grid/pricing";
+import { enoughLand, quote } from "@/lib/grid/pricing";
 
 /** Non-binding availability probe used while the buyer positions and customises a parcel. */
 export const GET = route(async (req) => {
@@ -15,7 +15,8 @@ export const GET = route(async (req) => {
   const pricing = await getPricing();
   const err = validateRect(rect as { x: number; y: number; w: number; h: number }, { minArea: pricing.minArea, maxArea: pricing.maxArea });
   if (err) return json({ error: "px_invalid_rect", reason: err }, { status: 400 });
-  const onLand = await isRectOnLand(rect as { x: number; y: number; w: number; h: number });
+  const landPixels = await landPixelsIn(rect as { x: number; y: number; w: number; h: number });
+  const onLand = enoughLand(landPixels, rect.w! * rect.h!, pricing.minLandPercent);
   const free = onLand && (await isAreaFree(rect.x, rect.y, rect.w, rect.h));
-  return json({ free, onLand, price: quote(rect as { w: number; h: number }, pricing.unitPriceCents) }, { cache: "no-store" });
+  return json({ free, onLand, landPixels, price: quote(rect as { w: number; h: number }, pricing.unitPriceCents, { landPixels, seaPercent: pricing.seaPercent }) }, { cache: "no-store" });
 });

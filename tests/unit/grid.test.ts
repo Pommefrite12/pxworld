@@ -6,7 +6,7 @@ import {
   area, centeredRect, clampToGrid, findCollision, formatRectCode, intersects, lonLatToPixel, pixelToLonLat, validateRect,
 } from "@/lib/grid/geometry";
 import { LAT_MAX } from "@/lib/grid/projection";
-import { formatMoney, quote } from "@/lib/grid/pricing";
+import { enoughLand, formatMoney, quote } from "@/lib/grid/pricing";
 
 describe("grid", () => {
   it("contains exactly one billion pixels", () => {
@@ -95,6 +95,32 @@ describe("placement helpers", () => {
     expect(centeredRect(100.4, 200.6, 10, 10)).toEqual({ x: 95, y: 196, w: 10, h: 10 });
   });
   it("formats a stable permalink code", () => expect(formatRectCode({ x: 1, y: 2, w: 10, h: 20 })).toBe("1.2.10x20"));
+});
+
+describe("coastal pricing: land at full price, sea at a percentage", () => {
+  it("a parcel entirely on land costs area × unit price, whatever the sea percentage", () => {
+    expect(quote({ w: 10, h: 10 }, 100, { landPixels: 100, seaPercent: 50 }).totalCents).toBe(10_000);
+    expect(quote({ w: 10, h: 10 }, 100, { landPixels: 100, seaPercent: 50 }).seaPixels).toBe(0);
+  });
+  it("the sea pixels of a coastal parcel are offered by default, or charged at the configured percentage", () => {
+    const free = quote({ w: 20, h: 20 }, 100, { landPixels: 300 });
+    expect(free).toMatchObject({ area: 400, landPixels: 300, seaPixels: 100, totalCents: 30_000 });
+    expect(quote({ w: 20, h: 20 }, 100, { landPixels: 300, seaPercent: 50 }).totalCents).toBe(30_000 + 5_000);
+    expect(quote({ w: 20, h: 20 }, 100, { landPixels: 300, seaPercent: 100 }).totalCents).toBe(40_000);
+  });
+  it("rounds the sea part down like the database does (integer arithmetic)", () => {
+    // 7 sea pixels × 99 cents × 33 % = 228.69 → 228
+    expect(quote({ w: 10, h: 10 }, 99, { landPixels: 93, seaPercent: 33 }).totalCents).toBe(93 * 99 + 228);
+  });
+  it("needs a minimum share of land, and never zero land", () => {
+    expect(enoughLand(50, 100, 50)).toBe(true);
+    expect(enoughLand(49, 100, 50)).toBe(false);
+    expect(enoughLand(0, 100, 50)).toBe(false);
+    expect(enoughLand(1, 100, 1)).toBe(true);
+    expect(enoughLand(100, 100, 100)).toBe(true);
+    expect(enoughLand(99, 100, 100)).toBe(false);
+    expect(enoughLand(101, 100, 50)).toBe(false); // more land than pixels is nonsense
+  });
 });
 
 describe("pricing", () => {

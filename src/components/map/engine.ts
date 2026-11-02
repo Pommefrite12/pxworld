@@ -1,6 +1,7 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
 import { shouldReturnToGlobe } from "@/lib/globe/orthographic";
+import { enoughLand } from "@/lib/grid/pricing";
 import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
 
 /**
@@ -31,6 +32,8 @@ export interface EngineCallbacks {
   onCursor?: (wx: number, wy: number) => void;
   onPlace?: (r: Rect) => void;
   onSelectionState?: (s: SelectionState) => void;
+  /** Land pixels inside the selection (null while unknown or when nothing is selected). */
+  onSelectionLand?: (landPixels: number | null) => void;
   /** The user zoomed out far enough that the planet is better shown as a globe (explore mode only). */
   onZoomOutToGlobe?: (c: Camera) => void;
 }
@@ -101,6 +104,8 @@ export class MapEngine {
   private brush: { w: number; h: number } | null = null;
   private ghost: Rect | null = null;
   private ghostWater: { key: string; ver: number; water: boolean } | null = null;
+  private minLandPercent = 50;
+  private selectionLand: number | null = null;
   private highlight: string | null = null;
   private hovered: MapParcel | null = null;
   private pulse = 0;
@@ -315,22 +320,26 @@ export class MapEngine {
 
   /* ------------------------------------------------------------------ selection */
 
+  /** At least this share of a parcel's pixels must be land (the rest may be sea, at a reduced price): the admin's setting. */
+  setLandRule(minLandPercent: number) { this.minLandPercent = minLandPercent; this.updateSelectionState(); this.invalidate(); }
+
   private updateSelectionState() {
     let s: SelectionState | null = null;
+    let landPx: number | null = null;
     const r = this.selection;
     if (r) {
       if (r.x < 0 || r.y < 0 || r.x + r.w > W || r.y + r.h > H) s = "out";
       else {
+        const land = this.geo?.landIn(r);
+        if (land && !land.pending) landPx = land.land;
         const hits = this.parcelsIn(r);
         s = hits === null ? "checking" : hits.length ? "blocked" : "ok";
-        if (s === "ok") {
-          // only land is for sale: every pixel of the parcel must be on land
-          const land = this.geo?.landIn(r);
-          s = !land || land.pending ? "checking" : land.land < r.w * r.h ? "water" : "ok";
-        }
+        // coastal parcels are fine (the sea part is discounted) but never mostly sea
+        if (s === "ok") s = landPx === null ? "checking" : enoughLand(landPx, r.w * r.h, this.minLandPercent) ? "ok" : "water";
       }
     }
     if (s !== this.selectionState) { this.selectionState = s; if (s) this.cb.onSelectionState?.(s); }
+    if (landPx !== this.selectionLand) { this.selectionLand = landPx; this.cb.onSelectionLand?.(landPx); }
   }
 
   private place(r: Rect) {
@@ -1017,7 +1026,7 @@ export class MapEngine {
       const g = this.ghost, key = `${g.x},${g.y},${g.w},${g.h}`, ver = this.geo?.version ?? -1;
       if (this.ghostWater?.key !== key || this.ghostWater.ver !== ver) {
         const l = this.geo?.landIn(g);
-        this.ghostWater = { key, ver, water: Boolean(l && !l.pending && l.land < g.w * g.h) };
+        this.ghostWater = { key, ver, water: Boolean(l && !l.pending && !enoughLand(l.land, g.w * g.h, this.minLandPercent)) };
       }
       draw(g, this.ghostWater.water ? "water" : null, true);
     }

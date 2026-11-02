@@ -12,6 +12,8 @@ import type { Pricing } from "./BuyPanel";
 interface Props {
   rect: Rect;
   pricing: Pricing;
+  /** Land pixels of the parcel (from the map data); the rest is sea, offered or discounted. */
+  landPixels: number | null;
   onClose: () => void;
   /** Show (blob) or clear (null) the creation inside the selection on the map; the dialog hides itself meanwhile. */
   onPreviewOnMap: (img: ImageBitmap | null) => void;
@@ -19,7 +21,7 @@ interface Props {
   onUnavailable: () => void;
 }
 
-export function CheckoutDialog({ rect, pricing, onClose, onPreviewOnMap, onUnavailable }: Props) {
+export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOnMap, onUnavailable }: Props) {
   const t = useTranslations("buy");
   const locale = useLocale();
   const f = useFormatter();
@@ -36,7 +38,7 @@ export function CheckoutDialog({ rect, pricing, onClose, onPreviewOnMap, onUnava
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const q = quote(rect, pricing.unitPriceCents);
+  const q = quote(rect, pricing.unitPriceCents, { landPixels, seaPercent: pricing.seaPercent });
   const onChange = useCallback((v: boolean) => setHas(v), []);
 
   useEffect(() => {
@@ -128,6 +130,12 @@ export function CheckoutDialog({ rect, pricing, onClose, onPreviewOnMap, onUnava
                   <dl className="space-y-1 text-sm">
                     <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.parcel")}</dt><dd className="pixel-num">{rect.w}×{rect.h} @ {rect.x},{rect.y}</dd></div>
                     <div className="flex justify-between"><dt className="text-ink-soft">{t("area")}</dt><dd className="pixel-num">{f.number(q.area)} px</dd></div>
+                    {q.seaPixels > 0 && (
+                      <>
+                        <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.land")}</dt><dd className="pixel-num">{f.number(q.landPixels)} px · {formatMoney(q.landPixels * q.unitPriceCents, locale, pricing.currency)}</dd></div>
+                        <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.sea")}</dt><dd className="pixel-num" data-testid="co-sea">{f.number(q.seaPixels)} px · {pricing.seaPercent === 0 ? t("summary.seaFree") : formatMoney(q.totalCents - q.landPixels * q.unitPriceCents, locale, pricing.currency)}</dd></div>
+                      </>
+                    )}
                     <div className="flex justify-between border-t border-line pt-2"><dt className="font-semibold">{t("summary.total")}</dt><dd className="pixel-display text-4xl text-signal" data-testid="co-total">{formatMoney(q.totalCents, locale, pricing.currency)}</dd></div>
                   </dl>
                   <p className="mt-1 text-xs text-ink-faint">{t("taxNote")}</p>
