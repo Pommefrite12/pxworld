@@ -44,6 +44,14 @@ interface Img { el: HTMLImageElement; state: "loading" | "ready" | "error"; used
 const TILE = 1000;
 const GEO_TILE_PX = 512;
 const GEO_CACHE_MAX = 64;
+/**
+ * The coarsest geography level. Its handful of tiles covers the whole world, is drawn with the land fill ONLY (no lines: a line
+ * stretched a thousand times would be a band) and is never evicted: whatever the zoom, a tile that is not drawn yet can at least
+ * be shown as a stretched, soft piece of it (land and sea) instead of a hole of ocean colour.
+ */
+const GEO_BASE_K = -5;
+/** A tile with its lines is only stretched from this many levels away at most (each level doubles the width of its lines). */
+const GEO_STAND_IN_LEVELS = 3;
 /** Commune borders (France) are only drawn from this render level on (≈ ×8 on a normal screen): a commune is then ~70+ px wide. */
 const COMMUNES_FROM_K = 4;
 const RASTER_PX = 256;
@@ -122,7 +130,7 @@ export class MapEngine {
     if (!ctx) throw new Error("Canvas 2D unavailable");
     this.ctx = ctx;
     this.bindEvents();
-    void loadGeo().then((g) => { this.geo = g; g.onUpdate = () => { if (this.selection) this.updateSelectionState(); this.invalidate(); }; this.updateSelectionState(); this.invalidate(); });
+    void loadGeo().then((g) => { this.geo = g; this.buildGeoBase(); g.onUpdate = () => { if (this.selection) this.updateSelectionState(); this.invalidate(); }; this.updateSelectionState(); this.invalidate(); });
     void loadPlaces().then((p) => { this.places = p; this.invalidate(); });
     void document.fonts?.ready.then(() => this.invalidate());
   }
@@ -619,7 +627,7 @@ export class MapEngine {
    * Rasterises one geography tile. With `strict` it refuses (returns null) to draw anything while data the tile needs is
    * still downloading — pre-rendering must never spend time on a stand-in that will be redrawn anyway.
    */
-  private renderGeoTile(k: number, tx: number, ty: number, strict = false): { c: HTMLCanvasElement; complete: boolean } | null {
+  private renderGeoTile(k: number, tx: number, ty: number, strict = false, fillOnly = false): { c: HTMLCanvasElement; complete: boolean } | null {
     if (!this.geo) return null;
     const scale = 2 ** k, size = GEO_TILE_PX / scale;
     const rect = { x0: tx * size, y0: ty * size, x1: (tx + 1) * size, y1: (ty + 1) * size };
@@ -641,6 +649,7 @@ export class MapEngine {
     g.lineCap = "round"; // clipped outlines are separate pieces: round caps close the joints between them
     g.fillStyle = COLORS.land;
     g.fill(paths.fill, "evenodd");
+    if (fillOnly) return { c, complete };
     // Borders are SOLID thin lines (dashes cost a lot to rasterise and read as noise), kept discreet by their opacity.
     if (communes) {
       g.strokeStyle = `rgba(${COLORS.ink},${k >= 5 ? 0.3 : 0.22})`;
@@ -744,6 +753,49 @@ export class MapEngine {
     return made;
   }
 
+  /** The pinned world-wide base (a few fill-only tiles, see `GEO_BASE_K`): built once the geography is there. */
+  private geoBase = new Map<string, HTMLCanvasElement>();
+  private buildGeoBase() {
+    if (!this.geo) return;
+    const size = GEO_TILE_PX / 2 ** GEO_BASE_K;
+    for (let ty = 0; ty <= Math.floor(H / size); ty++) for (let tx = 0; tx <= Math.floor(W / size); tx++) {
+      const r = this.renderGeoTile(GEO_BASE_K, tx, ty, false, true);
+      if (r) this.geoBase.set(`${tx}/${ty}`, r.c);
+    }
+  }
+
+  /**
+   * What to show for a tile that is not drawn yet, so that the ocean colour never shows through over land: the nearest coarser
+   * tile we have (a few levels at most), else the soft world base, stretched — and over it any finer tiles we already have, shrunk.
+   */
+  private drawGeoStandIn(k: number, tx: number, ty: number, ax: number, ay: number, px: number) {
+    const { ctx } = this;
+    const size = GEO_TILE_PX / 2 ** k;
+    const stretch = (c: HTMLCanvasElement, kk: number) => {
+      const sz = GEO_TILE_PX / 2 ** kk, bx = Math.floor((tx * size) / sz), by = Math.floor((ty * size) / sz);
+      const f = (size / sz) * GEO_TILE_PX;
+      return { bx, by, draw: () => ctx.drawImage(c, ((tx * size) - bx * sz) / sz * GEO_TILE_PX, ((ty * size) - by * sz) / sz * GEO_TILE_PX, f, f, ax, ay, px + 0.6, px + 0.6) };
+    };
+    let done = false;
+    for (let kk = k - 1; kk >= Math.max(k - GEO_STAND_IN_LEVELS, GEO_BASE_K) && !done; kk--) {
+      const sz = GEO_TILE_PX / 2 ** kk;
+      const anc = this.geoTiles.get(`${kk}/${Math.floor((tx * size) / sz)}/${Math.floor((ty * size) / sz)}`);
+      if (anc) { stretch(anc.c, kk).draw(); done = true; }
+    }
+    if (!done) {
+      const sz = GEO_TILE_PX / 2 ** GEO_BASE_K;
+      const base = this.geoBase.get(`${Math.floor((tx * size) / sz)}/${Math.floor((ty * size) / sz)}`);
+      if (base) stretch(base, GEO_BASE_K).draw();
+    }
+    for (let d = 2; d >= 1; d--) { // the finer level first, the closer one over it
+      const n = 2 ** d;
+      for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+        const child = this.geoTiles.get(`${k + d}/${tx * n + i}/${ty * n + j}`);
+        if (child) ctx.drawImage(child.c, ax + (i * px) / n, ay + (j * px) / n, px / n + 0.6, px / n + 0.6);
+      }
+    }
+  }
+
   private drawGeography(s: number) {
     if (!this.geo) return;
     const { ctx } = this;
@@ -752,30 +804,28 @@ export class MapEngine {
     const v = this.visibleWorld();
     const tx0 = Math.max(0, Math.floor(v.x0 / size)), tx1 = Math.min(Math.floor(W / size), Math.floor(v.x1 / size));
     const ty0 = Math.max(0, Math.floor(v.y0 / size)), ty1 = Math.min(Math.floor(H / size), Math.floor(v.y1 / size));
-    let budget = 4;
     ctx.imageSmoothingEnabled = true;
+    // a few tiles are rasterised per frame (the cost is bounded), the ones nearest to the middle of the view first
+    const missing: { tx: number; ty: number; d: number }[] = [];
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
-      const key = `${k}/${tx}/${ty}`;
-      let tile = this.geoTiles.get(key);
+      const tile = this.geoTiles.get(`${k}/${tx}/${ty}`);
       // a tile drawn from a coarser level while data was missing is redrawn once new data has arrived
-      const stale = tile && !tile.complete && tile.ver !== this.geo.version;
-      if ((!tile || stale) && budget > 0) {
-        const r = this.renderGeoTile(k, tx, ty);
-        if (r) { tile = { c: r.c, used: 0, complete: r.complete, ver: this.geo.version }; this.geoTiles.set(key, tile); budget--; }
+      if (!tile || (!tile.complete && tile.ver !== this.geo.version)) missing.push({ tx, ty, d: Math.hypot((tx + 0.5) * size - this.cam.x, (ty + 0.5) * size - this.cam.y) });
+    }
+    if (missing.length) {
+      missing.sort((a, b) => a.d - b.d);
+      for (const m of missing.slice(0, 4)) {
+        const r = this.renderGeoTile(k, m.tx, m.ty);
+        if (r) this.geoTiles.set(`${k}/${m.tx}/${m.ty}`, { c: r.c, used: 0, complete: r.complete, ver: this.geo.version });
       }
+    }
+    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+      const tile = this.geoTiles.get(`${k}/${tx}/${ty}`);
       const a = this.worldToScreen(tx * size, ty * size);
       const px = size * s;
       if (tile) { tile.used = this.frameNo; ctx.drawImage(tile.c, a.x, a.y, px + 0.6, px + 0.6); if (!tile.complete && tile.ver !== this.geo.version) this.geoPending = true; continue; }
       this.geoPending = true;
-      // not rendered yet: reuse a coarser level we already have rather than showing a hole
-      for (let kk = k - 1; kk >= k - 6; kk--) {
-        const sz = GEO_TILE_PX / 2 ** kk, ax = Math.floor((tx * size) / sz), ay = Math.floor((ty * size) / sz);
-        const anc = this.geoTiles.get(`${kk}/${ax}/${ay}`);
-        if (!anc) continue;
-        const f = size / sz * GEO_TILE_PX;
-        ctx.drawImage(anc.c, ((tx * size) - ax * sz) / sz * GEO_TILE_PX, ((ty * size) - ay * sz) / sz * GEO_TILE_PX, f, f, a.x, a.y, px + 0.6, px + 0.6);
-        break;
-      }
+      this.drawGeoStandIn(k, tx, ty, a.x, a.y, px);
     }
     // never evict what is on screen: the cache must at least hold the visible tiles
     const cacheMax = Math.max(GEO_CACHE_MAX, (tx1 - tx0 + 1) * (ty1 - ty0 + 1) + 16);

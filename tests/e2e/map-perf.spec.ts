@@ -105,3 +105,33 @@ test("the only grid is the 1 px one, and only in the last stretch of the zoom (f
   });
   expect(drawn).toEqual({ "0.05": false, "0.3": false, "0.8": false, "2": false, "5": false, "12": false, "20": false, "23": false, "26": true, "30": true, "40": true, "48": true });
 });
+
+test("zooming out or panning over land never flashes the ocean colour while the new tiles are being drawn", async ({ page }) => {
+  await page.goto(`/map?x=27200&y=11100&z=24`); // the steppe near Omsk: land all around
+  await engine(page);
+  const flashes = await page.evaluate(async () => {
+    const e = (window as unknown as { __pxEngine: Eng & { zoomBy: (f: number) => void; scheduleWarm: () => void } }).__pxEngine;
+    e.scheduleWarm = () => undefined; // nothing is prepared in advance here: this is about what is shown while tiles are missing
+    const canvas = document.querySelector('[role="application"]') as HTMLCanvasElement;
+    const ctx = canvas.getContext("2d")!;
+    const points: [number, number][] = [];
+    for (let i = 0; i < 5; i++) for (let j = 0; j < 3; j++) points.push([Math.round(canvas.width * (0.3 + 0.1 * i)), Math.round(canvas.height * (0.35 + 0.15 * j))]);
+    const isOcean = (d: Uint8ClampedArray) => Math.abs(d[0]! - 201) <= 2 && Math.abs(d[1]! - 223) <= 2 && Math.abs(d[2]! - 232) <= 2;
+    let frames = 0, bad = 0;
+    const sample = () => new Promise<void>((resolve) => requestAnimationFrame(() => {
+      frames++;
+      if (points.some(([x, y]) => isOcean(ctx.getImageData(x, y, 1, 1).data))) bad++;
+      resolve();
+    }));
+    const settle = async (n: number) => { for (let i = 0; i < n; i++) await sample(); };
+    // four zoom-out steps in a row (a wheel), tiles of every new level missing
+    for (let i = 0; i < 4; i++) { e.zoomBy(1 / 1.8); await settle(6); }
+    await settle(20);
+    // then jumps across the land at the level reached: whole columns of tiles never drawn
+    for (let i = 0; i < 4; i++) { e.flyTo({ x: e.cam.x + (i % 2 ? -1 : 1) * 500 / e.cam.scale, y: e.cam.y, scale: e.cam.scale }, 0); await settle(3); }
+    await settle(20);
+    return { frames, bad };
+  });
+  expect(flashes.frames).toBeGreaterThan(60);
+  expect(flashes.bad, `${flashes.bad} of ${flashes.frames} frames showed the ocean colour over land`).toBe(0);
+});
