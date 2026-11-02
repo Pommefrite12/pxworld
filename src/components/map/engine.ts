@@ -42,7 +42,9 @@ interface Img { el: HTMLImageElement; state: "loading" | "ready" | "error"; used
 
 const TILE = 1000;
 const GEO_TILE_PX = 512;
-const GEO_CACHE_MAX = 48;
+const GEO_CACHE_MAX = 64;
+/** Commune borders (France) are only drawn from this render level on (≈ ×8 on a normal screen): a commune is then ~70+ px wide. */
+const COMMUNES_FROM_K = 4;
 const RASTER_PX = 256;
 const MAX_Z = 8;
 const MAX_IMAGES_IN_FLIGHT = 12;
@@ -209,6 +211,7 @@ export class MapEngine {
 
   destroy() {
     this.destroyed = true;
+    this.cancelWarm();
     cancelAnimationFrame(this.raf);
     this.cleanup.forEach((f) => f());
   }
@@ -498,6 +501,7 @@ export class MapEngine {
 
   invalidate() {
     this.dirty = true;
+    this.cancelWarm(); // something is changing on screen: tile preparation waits for the next quiet moment
     if (!this.raf && !this.destroyed) this.raf = requestAnimationFrame((t) => this.frame(t));
   }
 
@@ -534,6 +538,7 @@ export class MapEngine {
     if (this.dirty || again) { this.dirty = false; this.draw(); }
     if (this.geoPending) { this.dirty = true; again = true; } // geography tiles are still being rasterised: draw the next batch next frame
     if (again) this.raf = requestAnimationFrame((n) => this.frame(n));
+    else this.scheduleWarm();
   }
 
   /* ------------------------------------------------------------------ drawing */
@@ -610,53 +615,133 @@ export class MapEngine {
   /** Level of detail for a render level k (2^k device pixels per grid pixel). */
   private lodFor(k: number): Lod { return k <= -2 ? "110" : k === -1 ? "50" : "10"; }
 
-  private renderGeoTile(k: number, tx: number, ty: number): { c: HTMLCanvasElement; complete: boolean } | null {
+  /**
+   * Rasterises one geography tile. With `strict` it refuses (returns null) to draw anything while data the tile needs is
+   * still downloading — pre-rendering must never spend time on a stand-in that will be redrawn anyway.
+   */
+  private renderGeoTile(k: number, tx: number, ty: number, strict = false): { c: HTMLCanvasElement; complete: boolean } | null {
     if (!this.geo) return null;
+    const scale = 2 ** k, size = GEO_TILE_PX / scale;
+    const rect = { x0: tx * size, y0: ty * size, x1: (tx + 1) * size, y1: (ty + 1) * size };
+    const admin = k >= -3; // départements / states / provinces appear once a country spans a few hundred screen pixels
+    const communes = k >= COMMUNES_FROM_K; // commune borders: only once a commune is wide enough to read, and its data is worth loading
+    let lod = this.lodFor(k);
+    let paths = this.geo.tilePaths(lod, rect, admin, communes);
+    if (strict && !(paths.complete && !paths.extraPending)) return null;
+    // the 1:10m cells this tile needs are still downloading: draw the 1:50m level meanwhile, redrawn when they arrive
+    if (!paths.complete && lod === "10") { lod = "50"; paths = this.geo.tilePaths(lod, rect, admin, communes); }
+    const complete = paths.complete && !paths.extraPending;
     const c = document.createElement("canvas");
     c.width = c.height = GEO_TILE_PX;
     const g = c.getContext("2d");
     if (!g) return null;
-    const scale = 2 ** k, size = GEO_TILE_PX / scale;
-    const rect = { x0: tx * size, y0: ty * size, x1: (tx + 1) * size, y1: (ty + 1) * size };
-    const admin = k >= -3; // départements / states / provinces appear once a country spans a few hundred screen pixels
-    const communes = k >= 2; // commune borders (France) appear once a commune is a few dozen screen pixels wide
-    let lod = this.lodFor(k);
-    let paths = this.geo.tilePaths(lod, rect, admin, communes);
-    // the 1:10m cells this tile needs are still downloading: draw the 1:50m level meanwhile, redrawn when they arrive
-    if (!paths.complete && lod === "10") { lod = "50"; paths = this.geo.tilePaths(lod, rect, admin, communes); }
-    const complete = paths.complete && !paths.extraPending;
     const dprBoost = this.dpr > 1.5 ? 1.15 : 1;
     g.setTransform(scale, 0, 0, scale, -tx * GEO_TILE_PX, -ty * GEO_TILE_PX);
     g.lineJoin = "round";
     g.lineCap = "round"; // clipped outlines are separate pieces: round caps close the joints between them
     g.fillStyle = COLORS.land;
     g.fill(paths.fill, "evenodd");
+    // Borders are SOLID thin lines (dashes cost a lot to rasterise and read as noise), kept discreet by their opacity.
     if (communes) {
-      g.strokeStyle = `rgba(${COLORS.ink},${k >= 4 ? 0.42 : k >= 3 ? 0.34 : 0.24})`;
-      g.lineWidth = (k >= 3 ? 1.05 : 0.85) * dprBoost / scale;
-      g.setLineDash([1.6 / scale, 2.4 / scale]);
+      g.strokeStyle = `rgba(${COLORS.ink},${k >= 5 ? 0.3 : 0.22})`;
+      g.lineWidth = (k >= 5 ? 0.9 : 0.75) * dprBoost / scale;
       g.stroke(paths.communes);
-      g.setLineDash([]);
     }
     if (admin) {
-      g.strokeStyle = `rgba(${COLORS.ink},${k >= 2 ? 0.34 : k >= 0 ? 0.28 : 0.18})`;
-      g.lineWidth = (k >= 1 ? 1.1 : 0.9) * dprBoost / scale;
-      g.setLineDash([2.2 / scale, 3.2 / scale]);
+      g.strokeStyle = `rgba(${COLORS.ink},${k >= 2 ? 0.3 : k >= 0 ? 0.24 : 0.15})`;
+      g.lineWidth = (k >= 1 ? 1 : 0.85) * dprBoost / scale;
       g.stroke(paths.admin);
-      g.setLineDash([]);
     }
     if (k >= -4) {
       const strong = k >= 0;
-      g.strokeStyle = `rgba(${COLORS.ink},${strong ? 0.42 : clamp(0.1 + (k + 4) * 0.025, 0.1, 0.22)})`;
-      g.lineWidth = (strong ? 1.5 : 1.8) * dprBoost / scale;
-      g.setLineDash(strong ? [9 / scale, 3 / scale, 2 / scale, 3 / scale] : [6 / scale, 5 / scale]);
+      g.strokeStyle = `rgba(${COLORS.ink},${strong ? 0.36 : clamp(0.09 + (k + 4) * 0.022, 0.09, 0.2)})`;
+      g.lineWidth = (strong ? 1.3 : 1.4) * dprBoost / scale;
       g.stroke(paths.borders);
-      g.setLineDash([]);
     }
     g.strokeStyle = `rgba(${COLORS.ink},0.62)`;
     g.lineWidth = (clamp(1.6 + k * 0.12, 1.4, 2.6) * dprBoost) / scale;
     g.stroke(paths.coast);
     return { c, complete };
+  }
+
+  /* ------------------------------------------------------------------ pre-rendering */
+
+  private warmTimer = 0;
+  private warmIdle = 0;
+  private warmScratch: CanvasRenderingContext2D | null = null;
+
+  private cancelWarm() {
+    if (this.warmTimer) clearTimeout(this.warmTimer);
+    if (this.warmIdle) (window as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(this.warmIdle);
+    this.warmTimer = this.warmIdle = 0;
+  }
+
+  /**
+   * Once the camera has been still for a moment, rasterise — one tile per idle slot — the tiles the next gesture will need:
+   * the ring around the view, the level one step closer (centre of the view) and the level one step further. A pan or a zoom
+   * step then only blits tiles that already exist instead of rasterising them while the finger moves. The geometry of those
+   * tiles is requested too, so it is downloaded before it is needed.
+   */
+  private scheduleWarm() {
+    if (this.warmTimer || this.warmIdle || this.destroyed || !this.geo) return;
+    this.warmTimer = window.setTimeout(() => {
+      this.warmTimer = 0;
+      const ric = (window as { requestIdleCallback?: (cb: (d: IdleDeadline) => void, o?: { timeout: number }) => number }).requestIdleCallback;
+      const step = (d?: IdleDeadline) => {
+        this.warmIdle = 0;
+        if (this.destroyed || this.dirty || this.anim || this.drag !== "none" || this.geoPending || document.visibilityState === "hidden") return; // the next frame reschedules
+        let left = true;
+        do { left = this.warmNow(1) > 0; } while (left && d && d.timeRemaining() > 14);
+        if (left) this.scheduleWarm();
+      };
+      this.warmIdle = ric ? ric(step, { timeout: 1500 }) : window.setTimeout(() => step(), 40);
+    }, 220);
+  }
+
+  /** Tiles likely to be needed next and not prepared yet, most likely first (the level of the view, then closer, then further). */
+  private warmCandidates(): { k: number; tx: number; ty: number }[] {
+    const s = this.cam.scale, k = Math.ceil(Math.log2(s * this.dpr));
+    const lean = ((navigator as { deviceMemory?: number }).deviceMemory ?? 8) < 4 || (navigator as { connection?: { saveData?: boolean } }).connection?.saveData === true;
+    const out: { k: number; tx: number; ty: number }[] = [];
+    const level = (kk: number, share: number, margin: number, max: number) => {
+      const size = GEO_TILE_PX / 2 ** kk, hw = (this.w / 2 / s) * share, hh = (this.h / 2 / s) * share;
+      const tx0 = Math.max(0, Math.floor((this.cam.x - hw) / size) - margin), tx1 = Math.min(Math.floor(W / size), Math.floor((this.cam.x + hw) / size) + margin);
+      const ty0 = Math.max(0, Math.floor((this.cam.y - hh) / size) - margin), ty1 = Math.min(Math.floor(H / size), Math.floor((this.cam.y + hh) / size) + margin);
+      const list: { k: number; tx: number; ty: number; d: number }[] = [];
+      for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+        if (this.geoTiles.has(`${kk}/${tx}/${ty}`)) continue; // already prepared (the visible ones, mostly): it must not take a slot
+        list.push({ k: kk, tx, ty, d: Math.hypot((tx + 0.5) * size - this.cam.x, (ty + 0.5) * size - this.cam.y) });
+      }
+      out.push(...list.sort((a, b) => a.d - b.d).slice(0, max));
+    };
+    level(k, 1, 1, 14); // the view and the ring around it (what a pan reveals)
+    if (!lean) {
+      level(k + 1, 0.5, 0, 8); // one zoom step closer: the middle of the view
+      if (k - 1 >= -5) level(k - 1, 1, 0, 6); // one zoom step further
+    }
+    return out;
+  }
+
+  /**
+   * Rasterises up to `max` of the tiles `warmCandidates` lists that do not exist yet and whose data is here; returns how many it
+   * made (0: nothing left to prepare). Also what the idle scheduler calls, one tile at a time.
+   */
+  warmNow(max = Infinity): number {
+    if (!this.geo) return 0;
+    const cap = GEO_CACHE_MAX - 4;
+    let made = 0;
+    for (const c of this.warmCandidates()) {
+      if (made >= max || this.geoTiles.size >= cap) break;
+      const key = `${c.k}/${c.tx}/${c.ty}`;
+      const r = this.renderGeoTile(c.k, c.tx, c.ty, true); // null while its data is still downloading (that download is now under way)
+      if (!r) continue;
+      // canvas drawing is lazy: touching the tile once makes the browser rasterise it now rather than at the first blit
+      if (!this.warmScratch) { const sc = document.createElement("canvas"); sc.width = sc.height = 1; this.warmScratch = sc.getContext("2d"); }
+      this.warmScratch?.drawImage(r.c, 0, 0, 1, 1);
+      this.geoTiles.set(key, { c: r.c, used: this.frameNo, complete: true, ver: this.geo.version });
+      made++;
+    }
+    return made;
   }
 
   private drawGeography(s: number) {
