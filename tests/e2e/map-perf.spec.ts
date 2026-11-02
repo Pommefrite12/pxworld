@@ -82,3 +82,26 @@ test("tiles are prepared in advance while the map is idle: a pan then only blits
   });
   expect(drawTimeRenders).toBe(0);
 });
+
+test("the only grid is the 1 px one, and only in the last stretch of the zoom (from ×24; the maximum is ×48)", async ({ page }) => {
+  await page.goto(`/map?x=27200&y=11100&z=2`); // free land in Kazakhstan
+  await engine(page);
+  const drawn = await page.evaluate(async () => {
+    const e = (window as unknown as { __pxEngine: Eng & { drawGrid: (s: number) => void } }).__pxEngine;
+    const proto = CanvasRenderingContext2D.prototype, stroke = proto.stroke, grid = e.drawGrid.bind(e);
+    let inGrid = false, strokes = 0;
+    proto.stroke = function (...a: [] | [Path2D]) { if (inGrid) strokes++; return (stroke as (...x: unknown[]) => void).apply(this, a); };
+    e.drawGrid = (s: number) => { inGrid = true; try { grid(s); } finally { inGrid = false; } };
+    const out: Record<string, boolean> = {};
+    try {
+      for (const s of [0.05, 0.3, 0.8, 2, 5, 12, 20, 23, 26, 30, 40, 48]) {
+        strokes = 0;
+        e.flyTo({ x: 27_200, y: 11_100, scale: s }, 0);
+        for (let i = 0; i < 4; i++) await new Promise((r) => requestAnimationFrame(() => r(null)));
+        out[String(s)] = strokes > 0;
+      }
+    } finally { proto.stroke = stroke; e.drawGrid = grid; }
+    return out;
+  });
+  expect(drawn).toEqual({ "0.05": false, "0.3": false, "0.8": false, "2": false, "5": false, "12": false, "20": false, "23": false, "26": true, "30": true, "40": true, "48": true });
+});

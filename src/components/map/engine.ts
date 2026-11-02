@@ -1,4 +1,5 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
+import { gridAlpha } from "@/lib/map/pixelGrid";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
 import { enoughLand } from "@/lib/grid/pricing";
 import { ASSET_SIZES, assetSizeFor, assetUrl } from "@/lib/images/sizes";
@@ -573,13 +574,12 @@ export class MapEngine {
       this.offX = c * W; // draw the world copy that covers this stretch of the screen
       const x0 = (this.offX - cam.x) * s + w / 2, ww = W * s;
       this.drawGeography(s);
-      this.onLand(s, () => this.drawDots(s, x0, y0, ww, hh)); // the pixel field only exists on land: the sea is not for sale
       if (this.mode === "buy") { ctx.fillStyle = `rgba(${COLORS.free},0.13)`; ctx.fillRect(x0, y0, ww, hh); }
       // zoomed in, place names sit UNDER the parcels (owners cover the map); zoomed out, parcels are specks and names stay readable on top
       if (s >= RASTER_BELOW) this.drawLabels(s);
       // the pixel grid is a guide to FREE land: it is drawn before the parcels, so a parcel that has been taken shows its
       // creation clean, with no grid line across it
-      this.onLand(s, () => this.drawGrid(s)); // same for the pixel grid: only land
+      this.onLand(s, () => this.drawGrid(s)); // the 1 px grid only exists on land: the sea is not for sale
       // A parcel is a rectangle (what is bought, and where it may be placed), but its drawing is cut along the coast: only
       // the part on land is shown, the sea stays sea. (The parcel's own page shows the whole drawing.)
       this.onLand(s, () => this.drawParcels(s), true);
@@ -785,7 +785,6 @@ export class MapEngine {
     }
   }
 
-  /** The "pixel field": a dot matrix over the whole planet at far zoom, which melts into the pixel grid as you zoom in. */
   /** Land (grid px) around the view at the current level of detail, kept while the camera stays inside it. */
   private landCache: { lod: Lod; ver: number; complete: boolean; rect: { x0: number; y0: number; x1: number; y1: number }; path: Path2D } | null = null;
 
@@ -810,7 +809,7 @@ export class MapEngine {
   }
 
   /**
-   * Runs `draw` clipped to the land: grid lines and dots stop at the coast instead of covering oceans and seas.
+   * Runs `draw` clipped to the land: grid lines stop at the coast instead of covering oceans and seas.
    * Without geography yet, nothing is drawn — unless `whenUnknown` (a creation must never disappear because the coast has not loaded).
    */
   private onLand(s: number, draw: () => void, whenUnknown = false) {
@@ -823,20 +822,6 @@ export class MapEngine {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     draw();
     ctx.restore();
-  }
-
-  private drawDots(s: number, x0: number, y0: number, ww: number, hh: number) {
-    const alpha = clamp((1.2 - s) / 1.0, 0, 1) * 0.5;
-    if (alpha <= 0.01) return;
-    const { ctx, w, h } = this;
-    let step = 250;
-    while (step * s < 13) step *= 2;
-    const px = step * s;
-    const ox = x0 % px, oy = y0 % px;
-    ctx.fillStyle = `rgba(${COLORS.ink},${alpha * 0.2})`;
-    const r = clamp(px * 0.07, 0.8, 2);
-    for (let y = oy; y < h; y += px) for (let x = ox; x < w; x += px) ctx.fillRect(x - r / 2, y - r / 2, r, r);
-    void ww; void hh;
   }
 
   /**
@@ -1035,26 +1020,22 @@ export class MapEngine {
     }
   }
 
+  /** The 1-pixel grid, in the last stretch of the zoom only (see `gridAlpha`). */
   private drawGrid(s: number) {
+    const alpha = gridAlpha(s);
+    if (alpha <= 0.005) return;
     const { ctx, w, h } = this;
     const v = this.visibleWorld();
-    const line = (step: number, alpha: number) => {
-      if (alpha <= 0.005) return;
-      ctx.strokeStyle = `rgba(${COLORS.ink},${alpha})`;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      const gx0 = Math.max(0, Math.floor(v.x0 / step) * step), gx1 = Math.min(W, Math.ceil(v.x1 / step) * step);
-      const gy0 = Math.max(0, Math.floor(v.y0 / step) * step), gy1 = Math.min(H, Math.ceil(v.y1 / step) * step);
-      const ya = this.worldToScreen(0, gy0).y, yb = this.worldToScreen(0, gy1).y;
-      const xa = this.worldToScreen(gx0, 0).x, xb = this.worldToScreen(gx1, 0).x;
-      for (let x = gx0; x <= gx1; x += step) { const sx = Math.round(this.worldToScreen(x, 0).x) + 0.5; ctx.moveTo(sx, Math.max(0, ya)); ctx.lineTo(sx, Math.min(h, yb)); }
-      for (let y = gy0; y <= gy1; y += step) { const sy = Math.round(this.worldToScreen(0, y).y) + 0.5; ctx.moveTo(Math.max(0, xa), sy); ctx.lineTo(Math.min(w, xb), sy); }
-      ctx.stroke();
-    };
-    // gradual: 1px grid fades in from 3× to 10×; 10 px grid from 0.8× ; 100 px grid from 0.12×
-    line(1, clamp((s - 3) / 7, 0, 1) * 0.2);
-    line(10, clamp((s - 0.8) / 2.2, 0, 1) * (s > 10 ? 0.28 : 0.14));
-    line(100, clamp((s - 0.12) / 0.5, 0, 1) * 0.12);
+    ctx.strokeStyle = `rgba(${COLORS.ink},${alpha})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    const gx0 = Math.max(0, Math.floor(v.x0)), gx1 = Math.min(W, Math.ceil(v.x1));
+    const gy0 = Math.max(0, Math.floor(v.y0)), gy1 = Math.min(H, Math.ceil(v.y1));
+    const ya = this.worldToScreen(0, gy0).y, yb = this.worldToScreen(0, gy1).y;
+    const xa = this.worldToScreen(gx0, 0).x, xb = this.worldToScreen(gx1, 0).x;
+    for (let x = gx0; x <= gx1; x++) { const sx = Math.round(this.worldToScreen(x, 0).x) + 0.5; ctx.moveTo(sx, Math.max(0, ya)); ctx.lineTo(sx, Math.min(h, yb)); }
+    for (let y = gy0; y <= gy1; y++) { const sy = Math.round(this.worldToScreen(0, y).y) + 0.5; ctx.moveTo(Math.max(0, xa), sy); ctx.lineTo(Math.min(w, xb), sy); }
+    ctx.stroke();
   }
 
   private drawOverlays(s: number) {
