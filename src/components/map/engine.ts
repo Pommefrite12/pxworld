@@ -923,7 +923,9 @@ export class MapEngine {
           if (p.assetId && sw >= 2) {
             const img = this.loadImage(this.images, p.assetId, `/api/assets/${p.assetId}`, 400);
             if (img.state === "ready") {
-              ctx.imageSmoothingEnabled = false;
+              // crisp dots when the creation is shown at its own size or larger; a finer (half-pixel) creation drawn smaller is averaged
+              ctx.imageSmoothingEnabled = img.el.naturalWidth > rw * 1.001;
+              ctx.imageSmoothingQuality = "high";
               ctx.drawImage(img.el, rx, ry, rw, rh);
               drawn = true;
             }
@@ -1008,7 +1010,8 @@ export class MapEngine {
       const bad = state === "blocked" || state === "out" || state === "water";
       const col = bad ? COLORS.danger : COLORS.free;
       if (!ghost && this.previewImage) {
-        ctx.imageSmoothingEnabled = false;
+        ctx.imageSmoothingEnabled = ((this.previewImage as ImageBitmap).width ?? 0) > r.w * 1.001;
+        ctx.imageSmoothingQuality = "high";
         ctx.drawImage(this.previewImage, r.x, r.y, r.w, r.h);
       } else {
         ctx.fillStyle = `rgba(${col},${ghost ? 0.22 : 0.35})`;

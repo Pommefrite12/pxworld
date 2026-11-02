@@ -170,19 +170,19 @@ test.describe("editor", () => {
     const dialog = page.getByRole("dialog");
     const canvas = dialog.locator("canvas").first();
     const box = (await canvas.boundingBox())!;
-    // the canvas is the exact parcel resolution, scaled up for editing
-    expect(await canvas.evaluate((c: HTMLCanvasElement) => [c.width, c.height])).toEqual([20, 20]);
+    // the canvas has two dots per pixel of the parcel (half-pixel precision), scaled up for editing
+    expect(await canvas.evaluate((c: HTMLCanvasElement) => [c.width, c.height])).toEqual([40, 40]);
     await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.5);
     await dialog.getByRole("button", { name: "Preview on the map" }).click();
     await expect(page.getByText("Previewing on the map")).toBeVisible();
     await expect.poll(() => page.evaluate(() => Boolean((window.__pxEngine as unknown as { previewImage: unknown }).previewImage))).toBe(true);
     await page.getByRole("button", { name: "Back to the editor" }).click();
     await expect(dialog.getByTestId("to-review")).toBeEnabled(); // the drawing survived the round trip
-    // the exported image has exactly the parcel's dimensions
+    // the exported image has the parcel's dimensions × 2 (the parcel itself stays 20 × 20 pixels)
     await dialog.getByTestId("to-review").click();
     const img = dialog.getByRole("img", { name: "Final render, pixel for pixel" });
     await expect(img).toBeVisible();
-    expect(await img.evaluate((i: HTMLImageElement) => [i.naturalWidth, i.naturalHeight])).toEqual([20, 20]);
+    expect(await img.evaluate((i: HTMLImageElement) => [i.naturalWidth, i.naturalHeight])).toEqual([40, 40]);
     await ctx.close();
   });
 
@@ -198,10 +198,10 @@ test.describe("editor", () => {
     await dialog.locator('input[type="file"]').setInputFiles({ name: "wide.png", mimeType: "image/png", buffer: photo });
     await expect(dialog.getByTestId("to-review")).toBeEnabled();
     await expect(dialog.getByRole("radiogroup", { name: "Fit" }).getByRole("radio", { name: "Fill" })).toBeVisible();
-    // the editing canvas keeps the exact parcel resolution whatever the photo size
-    expect(await dialog.locator("canvas").first().evaluate((c: HTMLCanvasElement) => [c.width, c.height])).toEqual([30, 30]);
+    // the editing canvas keeps the parcel's resolution × 2 whatever the photo size
+    expect(await dialog.locator("canvas").first().evaluate((c: HTMLCanvasElement) => [c.width, c.height])).toEqual([60, 60]);
     // the pixels of the composed result come from the photo (cover fit → fully green)
-    const centre = await dialog.locator("canvas").first().evaluate((c: HTMLCanvasElement) => Array.from(c.getContext("2d")!.getImageData(15, 15, 1, 1).data));
+    const centre = await dialog.locator("canvas").first().evaluate((c: HTMLCanvasElement) => Array.from(c.getContext("2d")!.getImageData(30, 30, 1, 1).data));
     expect(centre).toEqual([18, 184, 134, 255]);
     // a disguised SVG is refused before any upload happens
     await dialog.locator('input[type="file"]').setInputFiles({ name: "evil.png", mimeType: "image/svg+xml", buffer: Buffer.from("<svg xmlns='http://www.w3.org/2000/svg'/>") });

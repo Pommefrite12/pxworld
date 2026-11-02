@@ -13,12 +13,16 @@ const ZOOMS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32];
 const POLL_MS = 2000;
 const FLUSH_MS = 350;
 const BATCH = 2000;
+/** Brush thickness in PIXELS: half a pixel is one dot. */
+const BRUSHES = [0.5, 1, 2, 3, 5, 8];
 
 type Tool = "pencil" | "hand";
 
-export function DrawBoard({ token, w, h, baseAssetId }: { token: string; w: number; h: number; baseAssetId: string | null }) {
+/** `w` × `h` are the parcel's pixels; the canvas is `scale` times finer: every pixel holds scale × scale dots, a 0.5 px brush paints one. */
+export function DrawBoard({ token, w: parcelW, h: parcelH, scale, baseAssetId }: { token: string; w: number; h: number; scale: number; baseAssetId: string | null }) {
   const t = useTranslations("draw");
   const f = useFormatter();
+  const w = parcelW * scale, h = parcelH * scale; // everything below is counted in dots
   const view = useRef<HTMLCanvasElement>(null);
   const outer = useRef<HTMLDivElement>(null);
   const holder = useRef<HTMLDivElement>(null);
@@ -38,7 +42,7 @@ export function DrawBoard({ token, w, h, baseAssetId }: { token: string; w: numb
   const [slow, setSlow] = useState(false);
   const [n, setN] = useState(0);
   const [color, setColor] = useState(PALETTE[2]!);
-  const [brush, setBrush] = useState(1);
+  const [brush, setBrush] = useState(1); // px
   const [tool, setTool] = useState<Tool>("pencil");
   const [zoom, setZoom] = useState(1);
   const drag = useRef<{ x: number; y: number; sx: number; sy: number } | null>(null);
@@ -65,7 +69,7 @@ export function DrawBoard({ token, w, h, baseAssetId }: { token: string; w: numb
         try {
           const bmp = await createImageBitmap(await (await fetch(`/api/assets/${baseAssetId}`)).blob());
           const c = Object.assign(document.createElement("canvas"), { width: w, height: h }).getContext("2d")!;
-          c.imageSmoothingEnabled = false;
+          c.imageSmoothingEnabled = false; // a creation at the parcel's own resolution is enlarged without blur
           c.drawImage(bmp, 0, 0, w, h);
           data.data.set(c.getImageData(0, 0, w, h).data);
         } catch { /* the creation could not be loaded: draw on white */ }
@@ -143,8 +147,9 @@ export function DrawBoard({ token, w, h, baseAssetId }: { token: string; w: numb
     return { x: Math.floor(((e.clientX - r.left) / r.width) * w), y: Math.floor(((e.clientY - r.top) / r.height) * h) };
   };
   const stamp = (cx: number, cy: number) => {
-    const o = Math.floor(brush / 2);
-    const x0 = Math.max(0, cx - o), y0 = Math.max(0, cy - o), x1 = Math.min(w, cx - o + brush), y1 = Math.min(h, cy - o + brush);
+    const size = Math.max(1, Math.round(brush * scale)); // dots
+    const o = Math.floor(size / 2);
+    const x0 = Math.max(0, cx - o), y0 = Math.max(0, cy - o), x1 = Math.min(w, cx - o + size), y1 = Math.min(h, cy - o + size);
     for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { setPixel(y * w + x, rgbInt, true); pending.current.set(y * w + x, rgbInt); }
     if (x1 > x0 && y1 > y0) draw(x0, y0, x1 - x0, y1 - y0);
   };
@@ -192,12 +197,12 @@ export function DrawBoard({ token, w, h, baseAssetId }: { token: string; w: numb
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
       <div ref={outer}>
         <div ref={holder} className="mx-auto max-h-[70vh] overflow-auto rounded-xl bg-white shadow-[0_0_0_1.5px_var(--color-line)]" style={{ maxWidth: Math.max(w * zoom, 120) }} data-testid="draw-holder">
-          <canvas ref={view} width={w} height={h} aria-label={t("canvas", { w, h })} data-testid="draw-canvas" data-ready={ready}
+          <canvas ref={view} width={w} height={h} aria-label={t("canvas", { w: parcelW, h: parcelH })} data-testid="draw-canvas" data-ready={ready}
             className="pixelated block touch-none" style={{ width: w * zoom, height: h * zoom, imageRendering: "pixelated", cursor: tool === "hand" ? "grab" : "crosshair" }}
             onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />
         </div>
         <p className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center text-xs text-ink-soft" aria-live="polite">
-          <span className="pixel-num">{w} × {h}</span>
+          <span className="pixel-num">{parcelW} × {parcelH}</span>
           <span data-testid="draw-count">{t("painted", { n: f.number(n) })}</span>
           <span className={online ? "text-[#0b7a5a]" : "text-danger"} data-testid="draw-status">{online ? `● ${t("live")}` : t("reconnecting")}</span>
         </p>
@@ -216,7 +221,7 @@ export function DrawBoard({ token, w, h, baseAssetId }: { token: string; w: numb
             <input type="color" aria-label={t("customColor")} value={color} onChange={(e) => { setColor(e.target.value); setTool("pencil"); }} className="h-9 w-12 cursor-pointer rounded-md border-0 bg-transparent p-0" />
             <label className="label !mb-0 flex-1" htmlFor="dr-brush">{t("brush")}</label>
             <select id="dr-brush" className="field !min-h-9 !w-20 !py-1" value={brush} onChange={(e) => setBrush(Number(e.target.value))}>
-              {[1, 2, 3, 5, 8].map((b) => <option key={b} value={b}>{b} px</option>)}
+              {BRUSHES.map((b) => <option key={b} value={b}>{f.number(b)} px</option>)}
             </select>
           </div>
         </section>

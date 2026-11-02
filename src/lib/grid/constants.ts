@@ -55,6 +55,14 @@ export const PRESET_SIZES = [
   { w: 200, h: 200 },
 ] as const;
 
+/**
+ * Drawing precision. A parcel still has exactly w × h pixels — that is what is sold, counted and priced — but a creation
+ * is drawn at TWICE that resolution: every pixel holds 2 × 2 dots, so the finest brush is half a pixel (0.5 px).
+ * Images of the parcel's own size (scale 1: older creations, simple uploads) stay valid; the editor produces scale 2.
+ */
+export const CREATION_SCALE = 2;
+export const CREATION_SCALES = [1, CREATION_SCALE] as const;
+
 /** Default price: €0.50 per pixel, in minor units (cents). */
 export const DEFAULT_UNIT_PRICE_CENTS = 50;
 export const CURRENCY = "eur";

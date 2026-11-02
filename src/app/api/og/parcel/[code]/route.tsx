@@ -16,9 +16,12 @@ export async function GET(_req: Request, ctx: { params: Promise<{ code: string }
     const row = await queryOne<{ storage_path: string }>("select storage_path from public.parcel_assets where id = $1", [p.creation.asset_id]);
     const bytes = row ? await objectStore().get(row.storage_path) : null;
     if (bytes) {
-      const k = Math.max(1, Math.floor(BOX / Math.max(p.w, p.h)));
-      const out = k > 1
-        ? await sharp(bytes).resize(p.w * k, p.h * k, { kernel: "nearest" }).png().toBuffer() // integer upscale keeps pixels razor sharp
+      // integer upscale of the creation's own dots keeps them razor sharp (a creation may be at half-pixel precision)
+      const meta = await sharp(bytes).metadata();
+      const sw = meta.width ?? p.w, sh = meta.height ?? p.h;
+      const kk = Math.floor(BOX / Math.max(sw, sh));
+      const out = kk > 1
+        ? await sharp(bytes).resize(sw * kk, sh * kk, { kernel: "nearest" }).png().toBuffer()
         : await sharp(bytes).resize({ width: BOX, height: BOX, fit: "inside", kernel: "lanczos3" }).png().toBuffer();
       dataUrl = `data:image/png;base64,${out.toString("base64")}`;
     }

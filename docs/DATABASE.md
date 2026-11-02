@@ -91,9 +91,13 @@ See [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
 
 `parcels.land_px` (NULL = all land) and `orders.land_px` / `orders.sea_percent` record how many pixels of a parcel are land and which sea price applied. `px_start_order(user, x, y, w, h, p_land default null)` takes the land count from the application server, checks `1 ≤ p_land ≤ area` and `p_land × 100 ≥ area × min_land_percent`, and prices the order as `land × unit + ⌊sea × unit × sea_percent / 100⌋`; the `orders_amount_consistent` check re-derives that from the row. Settings `sea_price_percent` (0–100, default 0) and `min_land_percent` (1–100, default 50) go through `px_set_setting` (admins only). `px_public_stats().sold_pixels` sums `coalesce(land_px, area)`.
 
+## Half-pixel drawing (migration 10)
+
+`px_add_asset` now accepts an image of `w × h` or `2w × 2h` (anything else raises `px_bad_dimensions`); `px_collab_paint` bounds the overlay to `2w × 2h` dots; overlays drawn before the migration are expanded to their 2 × 2 dots and `reset_version` is moved so connected pages reload. Prices, `area`, `land_px` and `px_public_stats()` are untouched: a parcel is still `w × h` pixels (`tests/db/half-pixel.test.ts`).
+
 ## Drawing together (migration 9)
 
-`parcel_collab` (one row per shared parcel: secret `token` of 40 hex characters, `enabled`, a `version` counter, `reset_version`) and `parcel_collab_pixels` (`parcel_id, x, y, rgb, version`; x/y relative to the parcel). Both are server-only (RLS on, nothing granted to `anon`/`authenticated`). `px_collab_enable(user, parcel, rotate)`, `px_collab_disable`, `px_collab_reset` are owner-only and journalled; `px_collab_paint(token, xs[], ys[], rgb[])` is the one write open to the holder of a token: all-or-nothing, ≤ 2 000 pixels, bounds-checked, last write wins, and serialised per parcel by a row lock so that versions follow commit order (`tests/db/collab.test.ts`, including 40 concurrent writers).
+`parcel_collab` (one row per shared parcel: secret `token` of 40 hex characters, `enabled`, a `version` counter, `reset_version`) and `parcel_collab_pixels` (`parcel_id, x, y, rgb, version`; x/y in dots, relative to the parcel). Both are server-only (RLS on, nothing granted to `anon`/`authenticated`). `px_collab_enable(user, parcel, rotate)`, `px_collab_disable`, `px_collab_reset` are owner-only and journalled; `px_collab_paint(token, xs[], ys[], rgb[])` is the one write open to the holder of a token: all-or-nothing, ≤ 2 000 pixels, bounds-checked, last write wins, and serialised per parcel by a row lock so that versions follow commit order (`tests/db/collab.test.ts`, including 40 concurrent writers).
 
 ## Default price (migrations 7 and 8)
 

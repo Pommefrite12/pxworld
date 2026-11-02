@@ -1,15 +1,17 @@
 "use client";
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
+import { CREATION_SCALE as S } from "@/lib/grid/constants";
 
 export interface ParcelEditorHandle {
-  /** Final raster at the parcel's EXACT resolution (w × h) — what the server stores, byte for byte after canonical re-encoding. */
+  /** Final raster at the editor's full precision (w·S × h·S, every pixel = S × S dots) — what the server stores, after canonical re-encoding. */
   exportPng(): Promise<Blob>;
   hasContent(): boolean;
 }
 
 interface Props {
+  /** The parcel's size in PIXELS. The drawing itself is S × finer (half-pixel dots): `exportPng` returns w·S × h·S. */
   w: number;
   h: number;
   /** Existing creation to start from (editing an owned parcel). */
@@ -22,20 +24,26 @@ type Fit = "cover" | "contain" | "stretch";
 
 const PALETTE = ["#17151f", "#ffffff", "#ff4d2e", "#ff9f1c", "#ffd23f", "#12b886", "#0b7a5a", "#2b35e0", "#5bc0eb", "#9b5de5", "#f15bb5", "#8d6e63", "#c9c1ae", "#6b6b78", "#fbf5e6", "#c9dfe8"];
 const MAX_FILE = 10 * 1024 * 1024;
+/** Brush thickness in PIXELS; half a pixel is one dot. */
+const BRUSHES = [0.5, 1, 2, 3, 5, 8];
+/** A very detailed picture can outgrow the upload limit at full precision: it is then sent at the parcel's own resolution. */
+const MAX_PNG_BYTES = 2.8 * 1024 * 1024;
 
 interface Photo { bitmap: ImageBitmap; fit: Fit; zoom: number; ox: number; oy: number; smooth: boolean }
 interface TextLayer { value: string; size: number; color: string; x: number; y: number; bold: boolean }
 
 const hexToRgba = (hex: string): [number, number, number, number] => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16), 255];
 
-export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function ParcelEditor({ w, h, initialImageUrl, onChange }, ref) {
+export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function ParcelEditor({ w: pw, h: ph, initialImageUrl, onChange }, ref) {
   const t = useTranslations("editor");
+  const f = useFormatter();
+  const w = pw * S, h = ph * S; // everything below works in dots
   const view = useRef<HTMLCanvasElement>(null);
   const paint = useRef<HTMLCanvasElement | null>(null);
   const undo = useRef<ImageData[]>([]);
   const [tool, setTool] = useState<Tool>("pencil");
   const [color, setColor] = useState(PALETTE[2]!);
-  const [brush, setBrush] = useState(1);
+  const [brush, setBrush] = useState(1); // px
   const [bg, setBg] = useState("#ffffff"); // always an opaque colour: a creation has no transparent pixel
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [text, setText] = useState<TextLayer | null>(null);
@@ -90,7 +98,9 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
     let alive = true;
     fetch(initialImageUrl).then((r) => r.blob()).then((b) => createImageBitmap(b)).then((bmp) => {
       if (!alive) return;
-      const p = ensurePaint(); p.getContext("2d")!.drawImage(bmp, 0, 0, w, h);
+      const p = ensurePaint(); const pc = p.getContext("2d")!;
+      pc.imageSmoothingEnabled = false; // an older creation (1 pixel = 1 dot) is enlarged without blur
+      pc.drawImage(bmp, 0, 0, w, h);
       setPainted(true); setUndoCount((n) => n + 1); // pixels the old image left empty show the (white) background
     }).catch(() => undefined);
     return () => { alive = false; };
@@ -101,9 +111,16 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
     exportPng: () => new Promise<Blob>((resolve, reject) => {
       const c = document.createElement("canvas"); c.width = w; c.height = h;
       compose(c.getContext("2d")!);
-      c.toBlob((b) => (b ? resolve(b) : reject(new Error("export failed"))), "image/png");
+      c.toBlob((b) => {
+        if (!b) { reject(new Error("export failed")); return; }
+        if (b.size <= MAX_PNG_BYTES) { resolve(b); return; }
+        const small = document.createElement("canvas"); small.width = pw; small.height = ph; // too heavy: the parcel's own resolution
+        const sc = small.getContext("2d")!; sc.imageSmoothingEnabled = true; sc.imageSmoothingQuality = "high";
+        sc.drawImage(c, 0, 0, pw, ph);
+        small.toBlob((s) => (s ? resolve(s) : reject(new Error("export failed"))), "image/png");
+      }, "image/png");
     }),
-  }), [compose, hasContent, w, h]);
+  }), [compose, hasContent, w, h, pw, ph]);
 
   const pushUndo = () => {
     const p = ensurePaint();
@@ -126,9 +143,10 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
 
   const stamp = (x: number, y: number) => {
     const ctx = ensurePaint().getContext("2d")!;
-    const o = Math.floor(brush / 2);
-    if (tool === "eraser") ctx.clearRect(x - o, y - o, brush, brush);
-    else { ctx.fillStyle = color; ctx.fillRect(x - o, y - o, brush, brush); }
+    const size = Math.max(1, Math.round(brush * S)); // dots
+    const o = Math.floor(size / 2);
+    if (tool === "eraser") ctx.clearRect(x - o, y - o, size, size);
+    else { ctx.fillStyle = color; ctx.fillRect(x - o, y - o, size, size); }
   };
   const line = (x0: number, y0: number, x1: number, y1: number) => { // Bresenham: no gaps in fast strokes
     const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
@@ -226,13 +244,13 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
       <div>
         <div className="relative mx-auto overflow-hidden rounded-xl bg-white shadow-[0_0_0_1.5px_var(--color-line)]" style={{ width: "100%", maxWidth: w * zoomPx, aspectRatio: `${w} / ${h}` }}>
           <canvas
-            ref={view} width={w} height={h} aria-label={t("canvasLabel", { w, h })}
+            ref={view} width={w} height={h} aria-label={t("canvasLabel", { w: pw, h: ph })}
             className="pixelated block h-full w-full touch-none"
             style={{ cursor: tool === "move" ? "move" : tool === "text" ? "grab" : "crosshair" }}
             onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
           />
         </div>
-        <p className="mt-2 text-center text-xs text-ink-soft"><span className="pixel-num">{w} × {h}</span> — {t("exactRes")}</p>
+        <p className="mt-2 text-center text-xs text-ink-soft"><span className="pixel-num">{pw} × {ph}</span> — {t("exactRes")}</p>
       </div>
 
       <div className="space-y-4 text-sm">
@@ -276,7 +294,7 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
             <input type="color" aria-label={t("customColor")} value={color} onChange={(e) => { setColor(e.target.value); if (text) setText({ ...text, color: e.target.value }); }} className="h-9 w-12 cursor-pointer rounded-md border-0 bg-transparent p-0" />
             <label className="label !mb-0 flex-1" htmlFor="ed-brush">{t("brush")}</label>
             <select id="ed-brush" className="field !min-h-9 !w-20 !py-1" value={brush} onChange={(e) => setBrush(Number(e.target.value))}>
-              {[1, 2, 3, 5, 8].map((b) => <option key={b} value={b}>{b} px</option>)}
+              {BRUSHES.map((b) => <option key={b} value={b}>{f.number(b)} px</option>)}
             </select>
           </div>
         </section>
@@ -287,7 +305,7 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
               <input className="field" value={text.value} maxLength={40} aria-label={t("text.label")} onChange={(e) => setText({ ...text, value: e.target.value })} placeholder={t("text.placeholder")} />
               <div className="flex items-center gap-2">
                 <label className="label !mb-0" htmlFor="ed-ts">{t("text.size")}</label>
-                <input id="ed-ts" type="range" min={6} max={Math.max(12, Math.min(96, h))} value={text.size} onChange={(e) => setText({ ...text, size: Number(e.target.value) })} className="flex-1 accent-signal" />
+                <input id="ed-ts" type="range" min={6} max={Math.max(12, Math.min(192, h))} value={text.size} onChange={(e) => setText({ ...text, size: Number(e.target.value) })} className="flex-1 accent-signal" />
                 <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={text.bold} onChange={(e) => setText({ ...text, bold: e.target.checked })} />B</label>
               </div>
               <p className="text-xs text-ink-faint">{t("text.hint")}</p>

@@ -21,7 +21,7 @@ function hexToRgb(hex: string | null) {
   return { r: parseInt(hex.slice(1, 3), 16), g: parseInt(hex.slice(3, 5), 16), b: parseInt(hex.slice(5, 7), 16) };
 }
 
-interface Row { x: number; y: number; w: number; h: number; path: string | null; color: string | null }
+interface Row { x: number; y: number; w: number; h: number; path: string | null; color: string | null; src_w: number | null }
 
 /**
  * Renders the 256×256 PNG for tile (z, tx, ty): the parcels of that region, downscaled by 2^z.
@@ -38,7 +38,8 @@ export async function renderRasterTile(z: number, tx: number, ty: number): Promi
   const rows = await query<Row>(
     `select p.x, p.y, p.w, p.h,
             case when p.hidden_at is null then a.storage_path end as path,
-            case when p.hidden_at is null then a.avg_color end as color
+            case when p.hidden_at is null then a.avg_color end as color,
+            case when p.hidden_at is null then a.width end as src_w
        from public.parcels p left join public.parcel_assets a on a.id = p.published_asset_id
       where p.status = 'active' and p.bbox && box(point($1::float8, $2::float8), point($3::float8, $4::float8))
       order by p.area desc limit 4000`,
@@ -58,7 +59,8 @@ export async function renderRasterTile(z: number, tx: number, ty: number): Promi
         const bytes = await objectStore().get(r.path);
         if (bytes) {
           input = await sharp(bytes)
-            .resize(w, h, { fit: "fill", kernel: z === 0 ? "nearest" : "lanczos3" })
+            // crisp pixels only when the creation is magnified or kept as is; a finer (half-pixel) creation shown smaller is averaged
+            .resize(w, h, { fit: "fill", kernel: z === 0 && (r.src_w ?? 0) <= w ? "nearest" : "lanczos3" })
             .png({ compressionLevel: 1 })
             .toBuffer();
         }

@@ -66,6 +66,8 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await expect(dialog.getByTestId("to-review")).toBeDisabled(); // nothing designed yet
     // no transparent background: the background is a colour, full stop
     await expect(dialog.getByRole("button", { name: /transparent/i })).toHaveCount(0);
+    // the finest brush is half a pixel
+    await expect(dialog.locator("#ed-brush option")).toHaveText(["0.5 px", "1 px", "2 px", "3 px", "5 px", "8 px"]);
 
     // draw directly in the parcel with the pencil: a diagonal stroke
     const canvas = dialog.locator("canvas").first();
@@ -186,11 +188,12 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     const bytes = await img.body();
     expect(bytes.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
     // no transparency anywhere: alice drew one diagonal stroke on the default background, everything else is opaque white
+    // (the parcel is still 20 × 20 pixels, 400 of them sold: only the drawing is finer)
     const { data, info } = await sharp(bytes).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
     expect((await sharp(bytes).metadata()).hasAlpha).toBe(false);
     expect([...data.subarray(0, 4)]).toEqual([255, 255, 255, 255]); // the top-left corner
     for (let i = 3; i < data.length; i += 4) expect(data[i]).toBe(255);
-    expect(info).toMatchObject({ width: 20, height: 20 });
+    expect(info).toMatchObject({ width: 40, height: 40 }); // a 20 × 20 pixel parcel is drawn at half-pixel precision: 2 × 2 dots per pixel
     // public parcel card
     const card = await (await request.get(`/api/parcels/${parcelCode}`)).json();
     expect(card).toMatchObject({ code: parcelCode, w: 20, h: 20, area: 400, creation: { title: "Hello world", assetId } });

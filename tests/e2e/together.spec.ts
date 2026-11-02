@@ -91,15 +91,16 @@ test.describe.serial("drawing together", () => {
     await expect(pb.getByTestId("draw-canvas")).toHaveAttribute("data-ready", "true", { timeout: 20_000 });
     await expect(pa.getByTestId("sign-in-link")).toBeVisible(); // really no account
 
-    // A paints red: pick the red swatch (#ff4d2e) and click three pixels
+    // A paints red with the finest brush (half a pixel = one dot): pick the red swatch (#ff4d2e) and click three dots
     await pa.getByRole("button", { name: "#ff4d2e" }).click();
+    await pa.locator("#dr-brush").selectOption("0.5");
     const box = (await pa.getByTestId("draw-canvas").boundingBox())!;
-    const zoom = box.width / SPOT.w;
-    for (const [px, py] of [[2, 3], [3, 3], [4, 3]]) await pa.mouse.click(box.x + (px! + 0.5) * zoom, box.y + (py! + 0.5) * zoom);
-    await expect(pa.getByTestId("draw-count")).toContainText("3 pixels painted");
+    const dot = box.width / (SPOT.w * 2); // the canvas is two dots per pixel
+    for (const [dx, dy] of [[4, 6], [5, 6], [6, 6]]) await pa.mouse.click(box.x + (dx! + 0.5) * dot, box.y + (dy! + 0.5) * dot);
+    await expect(pa.getByTestId("draw-count")).toContainText("3 dots painted");
     // …and B, who has not touched anything, sees them without reloading
-    await expect(pb.getByTestId("draw-count")).toContainText("3 pixels painted", { timeout: 15_000 });
-    const onB = await pb.getByTestId("draw-canvas").evaluate((c: HTMLCanvasElement) => [...c.getContext("2d")!.getImageData(3, 3, 1, 1).data]);
+    await expect(pb.getByTestId("draw-count")).toContainText("3 dots painted", { timeout: 15_000 });
+    const onB = await pb.getByTestId("draw-canvas").evaluate((c: HTMLCanvasElement) => [...c.getContext("2d")!.getImageData(5, 6, 1, 1).data]);
     expect(onB).toEqual([0xff, 0x4d, 0x2e, 255]);
     // what is stored: exactly those three pixels
     expect((await sql<{ n: number }>(`select count(*)::int n from public.parcel_collab_pixels where parcel_id = $1`, [parcelId]))[0]!.n).toBe(3);
@@ -109,11 +110,12 @@ test.describe.serial("drawing together", () => {
   test("the approved creation is underneath: the canvas starts from it, not from white", async ({ page }) => {
     await page.goto(`/draw/${token}`);
     await expect(page.getByTestId("draw-canvas")).toHaveAttribute("data-ready", "true", { timeout: 20_000 });
-    await expect(page.getByTestId("draw-count")).toContainText("3 pixels painted", { timeout: 15_000 });
+    await expect(page.getByTestId("draw-count")).toContainText("3 dots painted", { timeout: 15_000 });
     const px = await page.getByTestId("draw-canvas").evaluate((c: HTMLCanvasElement) => {
       const d = c.getContext("2d")!;
-      return { blue: [...d.getImageData(20, 10, 1, 1).data], red: [...d.getImageData(2, 3, 1, 1).data] };
+      return { w: c.width, h: c.height, blue: [...d.getImageData(40, 20, 1, 1).data], red: [...d.getImageData(5, 6, 1, 1).data] };
     });
+    expect([px.w, px.h]).toEqual([SPOT.w * 2, SPOT.h * 2]); // twice the parcel's size: half-pixel dots
     expect(px.blue).toEqual([0x2b, 0x35, 0xe0, 255]); // the owner's approved blue creation
     expect(px.red).toEqual([0xff, 0x4d, 0x2e, 255]); // the community's stroke on top
   });
@@ -121,16 +123,16 @@ test.describe.serial("drawing together", () => {
   test("the public API only changes what it should: deltas, bounds, bad input, size and rate limits", async () => {
     const ctx = await visitor();
     const full = await state(ctx, token);
-    expect(full).toMatchObject({ w: SPOT.w, h: SPOT.h, title: "Chat canvas", reset: false, more: false });
+    expect(full).toMatchObject({ w: SPOT.w, h: SPOT.h, scale: 2, title: "Chat canvas", reset: false, more: false });
     expect(full.p).toHaveLength(9);
     const v0 = full.version;
 
-    expect((await paint(ctx, token, [29, 19, 0x00ff00])).status()).toBe(200);
+    expect((await paint(ctx, token, [59, 39, 0x00ff00])).status()).toBe(200); // the very last dot of the canvas
     const delta = await state(ctx, token, v0);
-    expect(delta.p).toEqual([29, 19, 0x00ff00]); // only what changed
+    expect(delta.p).toEqual([59, 39, 0x00ff00]); // only what changed
     expect((await state(ctx, token, delta.version)).p).toEqual([]);
 
-    for (const bad of [[30, 0, 1], [0, 20, 1], [-1, 0, 1], [0, 0, 16777216], [0, 0], [0, 0, 1, 2], [0, 0, 1.5], [0, 0, "x"]]) {
+    for (const bad of [[60, 0, 1], [0, 40, 1], [-1, 0, 1], [0, 0, 16777216], [0, 0], [0, 0, 1, 2], [0, 0, 1.5], [0, 0, "x"]]) {
       const r = await paint(ctx, token, bad as number[]);
       expect(r.status(), JSON.stringify(bad)).toBe(400);
     }
@@ -173,11 +175,12 @@ test.describe.serial("drawing together", () => {
     expect((await admin.post("/api/admin/action", { data: { action: "review_asset", assetId, decision: "approve" } })).status()).toBe(200);
     const img = await owner.get(`/api/assets/${assetId}`);
     const { data, info } = await sharp(await img.body()).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-    expect([info.width, info.height]).toEqual([SPOT.w, SPOT.h]);
-    const at = (x: number, y: number) => [...data.subarray((y * SPOT.w + x) * 4, (y * SPOT.w + x) * 4 + 4)];
-    expect(at(3, 3)).toEqual([0xff, 0x4d, 0x2e, 255]); // a stroke
-    expect(at(29, 19)).toEqual([0x00, 0xff, 0x00, 255]); // another one
-    expect(at(20, 10)).toEqual([0x2b, 0x35, 0xe0, 255]); // the creation underneath is kept
+        expect([info.width, info.height]).toEqual([SPOT.w * 2, SPOT.h * 2]); // published at half-pixel precision
+    const at = (x: number, y: number) => [...data.subarray((y * info.width + x) * 4, (y * info.width + x) * 4 + 4)];
+    expect(at(5, 6)).toEqual([0xff, 0x4d, 0x2e, 255]); // a stroke (one dot)
+    expect(at(59, 39)).toEqual([0x00, 0xff, 0x00, 255]); // another one
+    expect(at(40, 20)).toEqual([0x2b, 0x35, 0xe0, 255]); // the creation underneath is kept (its pixels became 2 × 2 dots)
+    expect(at(6, 7)).toEqual([0x2b, 0x35, 0xe0, 255]); // …and a dot next to a stroke is untouched
     // the title is kept too (not replaced by something generic)
     expect((await (await owner.get(`/api/parcels/${code}`)).json()).creation.title).toBe("Chat canvas");
   });

@@ -37,6 +37,15 @@ Layers, by zoom (`scale` = screen px per grid px, 0.029 … 48):
 
 The unit of sale is the **pixel** (default **€0.50**, `app_settings.price_unit_cents = 50`, admin-editable; migrations 7 and 8 move the earlier factory defaults of 100 and 10 cents to 50 and leave any other price an admin chose alone). A parcel's surface is its number of pixels, and so is its price: two parcels of the same size cost the same wherever they are.
 
+### Drawing finer than a pixel (half-pixel dots)
+
+The grid does not change: a parcel is `w × h` **pixels**, those are what is sold, counted (`available`, `sold`) and priced (€0.50 each). What changes is how finely a creation is **drawn**: every pixel holds 2 × 2 dots (`CREATION_SCALE = 2`), so the editor's finest brush is **0.5 px** (one dot), next to 1, 2, 3, 5 and 8 px.
+
+* A creation image is the parcel's size **or twice it**: the editor exports `2w × 2h`; an older creation or a plain upload at `w × h` stays valid (`px_add_asset` and `processCreation` accept both, nothing else). The asset rows keep the real image size.
+* The map shows dots crisply once they are magnified (≥ 1 dot per screen pixel); a finer creation drawn smaller than its own size is averaged (canvas smoothing in the engine, lanczos in the server's raster tiles) instead of picking one dot at random.
+* "Draw together" works in dots too: its overlay is `2w × 2h`, and a published snapshot is composed at that resolution (an older creation underneath is enlarged by nearest-neighbour, so nothing is invented). Migration 10 converts overlays drawn before it (each pixel → its 4 dots).
+* A very detailed picture can outgrow the upload limit (3 MB) at full precision: the editor then sends it at the parcel's own resolution.
+
 ### Only land is for sale — coastal parcels pay for their land
 
 Oceans and seas cannot be bought on their own, but a rectangle along a coast may include some sea (otherwise coastal land would stay unsold). Two admin settings (`app_settings`, editable in the back office) define the deal:

@@ -14,7 +14,7 @@ export const POST = route(async (req, ctx: { params: Promise<{ code: string }> }
   const { code } = await ctx.params;
   const parcel = await getOwnedParcelByCode(viewer.user.id, code);
   if (!parcel) throw new HttpError(404, "not_found");
-  if (Number(req.headers.get("content-length") ?? 0) > 3 * 1024 * 1024) throw new HttpError(413, "too_large");
+  if (Number(req.headers.get("content-length") ?? 0) > 4 * 1024 * 1024) throw new HttpError(413, "too_large");
   const form = await req.formData();
   const meta = parseCreationMeta(form);
   const img = await readCreationImage(form, { w: parcel.w, h: parcel.h });

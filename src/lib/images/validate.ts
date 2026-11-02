@@ -1,9 +1,11 @@
 import { createHash } from "node:crypto";
 import sharp, { type OutputInfo } from "sharp";
 
-/** Hard limits for uploaded creations. The raster is exactly the parcel's size (≤ 1000 × 1000). */
-export const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
-const MAX_INPUT_PIXELS = 1_000 * 1_000;
+import { CREATION_SCALES, HARD_MAX_AREA } from "@/lib/grid/constants";
+
+/** Hard limits for uploaded creations. The raster is the parcel's size, or twice it (see CREATION_SCALE). */
+export const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
+const MAX_INPUT_PIXELS = Math.max(...CREATION_SCALES) ** 2 * HARD_MAX_AREA;
 
 export class ImageError extends Error {
   constructor(public code:
@@ -76,7 +78,7 @@ async function averageColor(png: Buffer): Promise<string> {
  * Validates an uploaded creation and returns a canonical PNG.
  *  - size cap, content sniffing (SVG and executables are always refused), decompression-bomb guard
  *  - the pixels are decoded and RE-ENCODED: metadata, embedded payloads and trailing bytes are dropped
- *  - dimensions must match the parcel EXACTLY (the client renders at the parcel's resolution)
+ *  - dimensions must match the parcel EXACTLY: its own size, or twice it (half-pixel precision)
  *  - NO transparency: the editor never produces any, and a file that has some (a PNG cut-out, a WebP with alpha) is
  *    flattened onto white here, so the stored creation is always fully opaque
  */
@@ -99,7 +101,9 @@ export async function processCreation(input: Buffer, expected: { w: number; h: n
     throw new ImageError("corrupt");
   }
   const { width, height } = decoded.info;
-  if (width !== expected.w || height !== expected.h) throw new ImageError("bad_dimensions", `${width}x${height} ≠ ${expected.w}x${expected.h}`);
+  if (!CREATION_SCALES.some((k) => width === expected.w * k && height === expected.h * k)) {
+    throw new ImageError("bad_dimensions", `${width}x${height} ≠ ${expected.w}x${expected.h} (or ${CREATION_SCALES.map((k) => `${expected.w * k}x${expected.h * k}`).join(" / ")})`);
+  }
 
   const png = await sharp(decoded.data, { raw: { width, height, channels: 3 } })
     .png({ compressionLevel: 9, adaptiveFiltering: true })

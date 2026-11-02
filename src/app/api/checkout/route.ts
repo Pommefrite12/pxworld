@@ -30,7 +30,7 @@ export const POST = route(async (req) => {
   if (!stripeConfigured()) throw new HttpError(503, "payments_not_configured");
 
   const len = Number(req.headers.get("content-length") ?? 0);
-  if (len > 3 * 1024 * 1024) throw new HttpError(413, "too_large");
+  if (len > 4 * 1024 * 1024) throw new HttpError(413, "too_large");
   const form = await req.formData();
   const rect = { x: intParam(String(form.get("x")), 0, 1e9), y: intParam(String(form.get("y")), 0, 1e9), w: intParam(String(form.get("w")), 1, 1e9), h: intParam(String(form.get("h")), 1, 1e9) };
   if (rect.x === null || rect.y === null || rect.w === null || rect.h === null) throw new HttpError(400, "px_invalid_rect");
