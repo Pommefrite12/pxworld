@@ -105,7 +105,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await page.waitForURL(/\/p\/[0-9a-f]{10}/);
     parcelCode = page.url().split("/").pop()!.split("?")[0]!;
     expect(parcelCode).toMatch(/^[0-9a-f]{10}$/);
-    await expect(page.getByText(/waiting for moderation/i)).toBeVisible();
+    await expect(page.getByText(/will appear once our moderators/i)).toBeVisible();
 
     // my parcels + orders
     await page.goto("/account/parcels");
@@ -140,7 +140,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
       return c.toDataURL("image/png");
     });
     form.set("image", new Blob([Buffer.from(png.split(",")[1]!, "base64")], { type: "image/png" }), "c.png");
-    const res = await page.request.post("/api/checkout", { multipart: { x: String(SPOT.x + 10), y: String(SPOT.y + 10), w: "20", h: "20", image: { name: "c.png", mimeType: "image/png", buffer: Buffer.from(png.split(",")[1]!, "base64") } } });
+    const res = await page.request.post("/api/checkout", { multipart: { x: String(SPOT.x + 10), y: String(SPOT.y + 10), w: "20", h: "20", title: "Too late", image: { name: "c.png", mimeType: "image/png", buffer: Buffer.from(png.split(",")[1]!, "base64") } } });
     expect(res.status()).toBe(409);
     expect((await res.json()).error).toBe("px_parcel_unavailable");
     // an adjacent parcel is fine

@@ -26,8 +26,8 @@ async function sql<T = Record<string, unknown>>(text: string, params: unknown[] 
 let nextAddress = 10;
 const anonymous = () => pwRequest.newContext({ baseURL: BASE, extraHTTPHeaders: { "x-forwarded-for": `198.51.100.${nextAddress++}` } });
 
-const checkout = async (ctx: APIRequestContext, rect: { x: number; y: number; w: number; h: number }, email?: string) =>
-  ctx.post("/api/checkout", { multipart: { x: String(rect.x), y: String(rect.y), w: String(rect.w), h: String(rect.h), ...(email === undefined ? {} : { email }), image: { name: "c.png", mimeType: "image/png", buffer: await png(rect.w, rect.h) } } });
+const checkout = async (ctx: APIRequestContext, rect: { x: number; y: number; w: number; h: number }, email?: string, title = "Guest test") =>
+  ctx.post("/api/checkout", { multipart: { x: String(rect.x), y: String(rect.y), w: String(rect.w), h: String(rect.h), title, ...(email === undefined ? {} : { email }), image: { name: "c.png", mimeType: "image/png", buffer: await png(rect.w, rect.h) } } });
 
 test.describe.serial("buying without an account", () => {
   test("an e-mail address is enough: design, pay, and the parcel belongs to a guest account with no session", async ({ page }) => {
@@ -47,9 +47,16 @@ test.describe.serial("buying without an account", () => {
 
     // the only extra field: an e-mail address. Paying needs the terms AND a plausible address.
     await expect(dialog.getByTestId("co-email")).toBeVisible();
-    await dialog.getByTestId("co-title").fill("No account needed");
     await dialog.getByTestId("co-accept").check();
-    await expect(dialog.getByTestId("co-pay")).toBeDisabled();
+    await dialog.getByTestId("co-email").fill("Guest.Buyer@Example.test");
+    // the title is required too: a few characters, shown when someone clicks the parcel on the map
+    await expect(dialog.getByTestId("co-pay")).toBeDisabled(); // no title yet
+    await dialog.getByTestId("co-title").fill("ab");
+    await expect(dialog.getByTestId("co-pay")).toBeDisabled(); // too short
+    await dialog.getByTestId("co-title").fill("  ab  ");
+    await expect(dialog.getByTestId("co-pay")).toBeDisabled(); // spaces do not count
+    await dialog.getByTestId("co-title").fill("No account needed");
+    await expect(dialog.getByTestId("co-pay")).toBeEnabled();
     await dialog.getByTestId("co-email").fill("not-an-email");
     await expect(dialog.getByTestId("co-pay")).toBeDisabled();
     await dialog.getByTestId("co-email").fill("Guest.Buyer@Example.test");
@@ -87,6 +94,22 @@ test.describe.serial("buying without an account", () => {
     const [parcel] = await sql<{ code: string }>(`select p.code from public.parcels p join auth.users u on u.id = p.owner_id where lower(u.email) = 'guest.buyer@example.test'`);
     const pub = await (await page.request.get(`/api/parcels/${parcel!.code}`)).json();
     expect(pub.owner.username).toBe(row!.username);
+  });
+
+  test("the title is required by the server too: missing, too short or blank is refused before anything is held", async () => {
+    const ctx = await anonymous();
+    const spot = { x: SPOT.x + 100, y: SPOT.y, w: 20, h: 20 };
+    for (const title of [undefined, "", "   ", "ab", "  ab  ", "\u200b\u200b\u200b"]) { // nothing, blank, too short, padded, invisible characters
+      const r = await ctx.post("/api/checkout", { multipart: { x: String(spot.x), y: String(spot.y), w: "20", h: "20", email: "title.test@example.test", ...(title === undefined ? {} : { title }), image: { name: "c.png", mimeType: "image/png", buffer: await png(20, 20) } } });
+      expect(r.status(), String(title)).toBe(400);
+      expect((await r.json()).error).toBe("title_required");
+    }
+    expect(await sql(`select 1 from auth.users where email = 'title.test@example.test'`)).toHaveLength(0); // no account for a refused request
+    expect((await (await ctx.get(`/api/availability?x=${spot.x}&y=${spot.y}&w=20&h=20`)).json()).free).toBe(true);
+    // three characters are enough
+    const ok = await checkout(ctx, spot, "title.test@example.test", "Hey");
+    expect(ok.status(), await ok.text()).toBe(200);
+    await ctx.dispose();
   });
 
   test("the address is checked, and a bad request never creates an account", async () => {

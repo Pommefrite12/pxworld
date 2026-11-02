@@ -91,6 +91,10 @@ See [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
 
 `parcels.land_px` (NULL = all land) and `orders.land_px` / `orders.sea_percent` record how many pixels of a parcel are land and which sea price applied. `px_start_order(user, x, y, w, h, p_land default null)` takes the land count from the application server, checks `1 ≤ p_land ≤ area` and `p_land × 100 ≥ area × min_land_percent`, and prices the order as `land × unit + ⌊sea × unit × sea_percent / 100⌋`; the `orders_amount_consistent` check re-derives that from the row. Settings `sea_price_percent` (0–100, default 0) and `min_land_percent` (1–100, default 50) go through `px_set_setting` (admins only). `px_public_stats().sold_pixels` sums `coalesce(land_px, area)`.
 
+## Drawing together (migration 9)
+
+`parcel_collab` (one row per shared parcel: secret `token` of 40 hex characters, `enabled`, a `version` counter, `reset_version`) and `parcel_collab_pixels` (`parcel_id, x, y, rgb, version`; x/y relative to the parcel). Both are server-only (RLS on, nothing granted to `anon`/`authenticated`). `px_collab_enable(user, parcel, rotate)`, `px_collab_disable`, `px_collab_reset` are owner-only and journalled; `px_collab_paint(token, xs[], ys[], rgb[])` is the one write open to the holder of a token: all-or-nothing, ≤ 2 000 pixels, bounds-checked, last write wins, and serialised per parcel by a row lock so that versions follow commit order (`tests/db/collab.test.ts`, including 40 concurrent writers).
+
 ## Default price (migrations 7 and 8)
 
 Migration 7 (`…07_price_10_cents.sql`) moved the factory default of `app_settings.price_unit_cents` from 100 to 10 cents; migration 8 (`…08_price_50_cents.sql`) moves it to **50** (€0.50 per pixel) when it still holds 100 or 10. Any other value, i.e. a price an admin chose on purpose, is never touched, and existing orders keep their own `unit_price_cents` snapshot. Re-running them is harmless (`tests/db/price-default.test.ts`).

@@ -22,14 +22,16 @@ export interface Limit {
   max: number;
 }
 
+/** One bucket of the fixed-window limiter. Throws 429 when exceeded. */
+export async function enforceKeyLimit(bucket: string, limit: Limit): Promise<void> {
+  const row = await queryOne<{ ok: boolean }>("select public.px_rate_limit($1, $2, $3) as ok", [bucket, limit.windowSeconds, limit.max]);
+  if (!row?.ok) throw new HttpError(429, "rate_limited");
+}
+
 /** Fixed-window limiter in PostgreSQL (shared by every serverless instance). Throws 429 when exceeded. */
 export async function enforceRateLimit(req: Request, limit: Limit, userId?: string | null): Promise<void> {
-  const buckets = [`${limit.name}:ip:${ipHash(req)}`];
-  if (userId) buckets.push(`${limit.name}:user:${userId}`);
-  for (const bucket of buckets) {
-    const row = await queryOne<{ ok: boolean }>("select public.px_rate_limit($1, $2, $3) as ok", [bucket, limit.windowSeconds, limit.max]);
-    if (!row?.ok) throw new HttpError(429, "rate_limited");
-  }
+  await enforceKeyLimit(`${limit.name}:ip:${ipHash(req)}`, limit);
+  if (userId) await enforceKeyLimit(`${limit.name}:user:${userId}`, limit);
 }
 
 export const LIMITS = {
@@ -44,4 +46,8 @@ export const LIMITS = {
   availability: { name: "availability", windowSeconds: 60, max: 120 },
   auth: { name: "auth", windowSeconds: 600, max: 30 },
   profile: { name: "profile", windowSeconds: 3600, max: 30 },
+  /** Drawing together (public links): per address, and per link so one popular link cannot swamp the database. */
+  drawRead: { name: "draw-read", windowSeconds: 60, max: 240 },
+  drawWrite: { name: "draw-write", windowSeconds: 60, max: 120 },
+  drawWriteLink: { name: "draw-write-link", windowSeconds: 60, max: 6000 },
 } satisfies Record<string, Limit>;

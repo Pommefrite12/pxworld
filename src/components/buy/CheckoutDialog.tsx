@@ -7,6 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { fitSize } from "@/components/map/ParcelCard";
 import { formatMoney, quote } from "@/lib/grid/pricing";
 import type { Rect } from "@/lib/grid/geometry";
+import { TITLE_MAX, TITLE_MIN, isValidTitle } from "@/lib/security/text";
 import type { Pricing } from "./BuyPanel";
 
 interface Props {
@@ -136,7 +137,7 @@ export function CheckoutDialog({ rect, pricing, landPixels, signedIn, onClose, o
                     <p className="mt-1 text-xs text-ink-faint">{t("fields.emailHint")}</p>
                   </div>
                 )}
-                <div><label className="label" htmlFor="co-title-in">{t("fields.title")}</label><input id="co-title-in" className="field" maxLength={80} value={title} onChange={(e) => setTitle(e.target.value)} data-testid="co-title" /></div>
+                <div><label className="label" htmlFor="co-title-in">{t("fields.title")}</label><input id="co-title-in" className="field" required minLength={TITLE_MIN} maxLength={TITLE_MAX} autoComplete="off" value={title} onChange={(e) => setTitle(e.target.value)} data-testid="co-title" /><p className="mt-1 text-xs text-ink-faint">{t("fields.titleHint", { min: TITLE_MIN })}</p></div>
                 <div><label className="label" htmlFor="co-desc">{t("fields.description")}</label><textarea id="co-desc" className="field !min-h-20" maxLength={280} rows={3} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
                 <div><label className="label" htmlFor="co-link">{t("fields.link")}</label><input id="co-link" className="field" type="url" inputMode="url" placeholder="https://" maxLength={500} value={link} onChange={(e) => setLink(e.target.value)} /><p className="mt-1 text-xs text-ink-faint">{t("fields.linkHint")}</p></div>
                 <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={commercial} onChange={(e) => setCommercial(e.target.checked)} /><span>{t("fields.commercial")}</span></label>
@@ -161,7 +162,7 @@ export function CheckoutDialog({ rect, pricing, landPixels, signedIn, onClose, o
                     {error}{errorCode === "account_exists" && <> <Link href="/auth/sign-in?next=%2F" className="underline">{t("signInInstead")}</Link></>}
                   </p>
                 )}
-                <button className="btn btn-primary w-full" type="submit" disabled={busy || !accepted || (!signedIn && !emailOk)} data-testid="co-pay">{busy ? t("redirecting") : t("pay", { price: formatMoney(q.totalCents, locale, pricing.currency) })}</button>
+                <button className="btn btn-primary w-full" type="submit" disabled={busy || !accepted || !isValidTitle(title) || (!signedIn && !emailOk)} data-testid="co-pay">{busy ? t("redirecting") : t("pay", { price: formatMoney(q.totalCents, locale, pricing.currency) })}</button>
                 <p className="text-center text-xs text-ink-faint">{t("securePayment")}</p>
               </form>
             </div>

@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { PageShell } from "@/components/layout/PageShell";
+import { CollabPanel } from "@/components/account/CollabPanel";
 import { EditCreation } from "@/components/account/EditCreation";
 import { Link } from "@/i18n/navigation";
 import { requirePageViewer } from "@/lib/auth/guards";
+import { ownerCollab } from "@/lib/collab";
 import { getLatestAssetsOf, getOwnedParcelByCode } from "@/lib/data/parcels";
 import { queryOne } from "@/lib/db/pool";
 
@@ -17,8 +19,8 @@ export default async function EditParcel({ params }: { params: Promise<{ locale:
   const v = await requirePageViewer(locale, `/account/parcels/${code}/edit`);
   const parcel = await getOwnedParcelByCode(v.user.id, code);
   if (!parcel || parcel.status !== "active") notFound();
-  const [t, f, versions, published] = await Promise.all([
-    getTranslations("account.edit"), getFormatter(), getLatestAssetsOf(parcel.id),
+  const [t, f, versions, collab, published] = await Promise.all([
+    getTranslations("account.edit"), getFormatter(), getLatestAssetsOf(parcel.id), ownerCollab(parcel.id),
     queryOne<{ id: string; title: string | null; description: string | null; link_url: string | null }>(
       "select a.id, a.title, a.description, a.link_url from public.parcels p join public.parcel_assets a on a.id = p.published_asset_id where p.id = $1", [parcel.id]),
   ]);
@@ -30,6 +32,7 @@ export default async function EditParcel({ params }: { params: Promise<{ locale:
       <div className="mt-8">
         <EditCreation code={code} w={parcel.w} h={parcel.h} current={{ assetId: published?.id ?? versions[0]?.id ?? null, title: published?.title ?? null, description: published?.description ?? null, link: published?.link_url ?? null }} />
       </div>
+      <CollabPanel code={code} initial={collab && { enabled: collab.enabled, token: collab.token, pixels: collab.pixels }} />
       <section className="mt-12" aria-label={t("history")}>
         <h2 className="text-xl font-bold">{t("history")}</h2>
         <ul className="mt-3 divide-y divide-line rounded-2xl bg-white shadow-float">

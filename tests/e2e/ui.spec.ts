@@ -239,7 +239,7 @@ test.describe("coastal parcels: land is paid, sea is offered, a parcel is never 
     const ctx = await browser.newContext();
     expect((await ctx.request.post("/api/dev/login", { data: { email: "coast@example.test" } })).ok()).toBeTruthy();
     const png = await sharp({ create: { width: 60, height: 60, channels: 3, background: "#12b886" } }).png().toBuffer();
-    const post = (r: { x: number; y: number; w: number; h: number }) => ctx.request.post("/api/checkout", { multipart: { x: String(r.x), y: String(r.y), w: String(r.w), h: String(r.h), image: { name: "c.png", mimeType: "image/png", buffer: png } } });
+    const post = (r: { x: number; y: number; w: number; h: number }) => ctx.request.post("/api/checkout", { multipart: { x: String(r.x), y: String(r.y), w: String(r.w), h: String(r.h), title: "Coast test", image: { name: "c.png", mimeType: "image/png", buffer: png } } });
     for (const r of [SEA, COAST_LOW]) {
       const res = await post(r);
       expect(res.status()).toBe(422);

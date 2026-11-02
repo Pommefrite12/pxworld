@@ -123,12 +123,22 @@ Typing an address never signs anybody in (that would let a stranger take over an
 per address, 8 guest checkout attempts and 6 new guest accounts per hour, plus the usual per-account limits. In development there is no
 mailbox: the success page shows a clearly-labelled "open my account" button instead of the e-mail.
 
+## 3b. Drawing together
+
+The owner of a parcel (in *My parcels → Draw together*) creates a **secret link** `/draw/<token>`. Anybody holding it — no account — paints pixels on that parcel: a streamer lets their community draw, a school class draws one picture, and so on.
+
+* **An overlay, not the creation.** Strokes are stored in `parcel_collab_pixels` (sparse: only painted pixels) on top of the parcel's *approved* creation (white while none is approved). They never appear on the map by themselves. The owner **publishes** the result: the server composes approved creation + overlay into a PNG and submits it as a **new version** (`px_add_asset`), which waits for a moderator like any edit. So everything the map shows is still moderated, whoever held the pen.
+* **Live without WebSockets.** The page sends its strokes in small batches (`POST /api/draw/:token/pixels`, ≤ 2 000 pixels) and polls `GET /api/draw/:token?since=N` every 2 s for what changed after version N (a few bytes when nothing did). Painting takes a row lock on `parcel_collab`, so versions are assigned in commit order and "everything after N" can never miss a change. Last write of a pixel wins.
+* **The link is the capability** (160-bit random token). The owner can renew it (the old one dies, the drawing is kept), switch it off (the drawing is kept), reset the drawing (connected pages reload it), and publish. A parcel hidden by moderation, revoked, or whose owner is suspended stops accepting strokes at once; unknown, closed and hidden links all answer the same 404.
+* **Abuse limits.** Per address: 120 paint requests and 240 reads a minute; per link: 6 000 paint requests a minute; the database refuses anything outside the parcel; owner actions are written to `audit_logs`. The page is `noindex` and sends no referrer, since the URL is a secret.
+
 ## 4. Modules
 
 * `lib/grid` — pure geometry/pricing shared by client and server (tested exhaustively).
 * `lib/db` — `pg` pool, transactions with deadlock retry. All business writes call `px_*` SQL functions.
 * `lib/auth` — Supabase SSR session (production) or a signed dev cookie (development only, impossible in production); `guest.ts` — buying without an account.
 * `lib/stripe` — checkout creation, event handling (idempotency ledger), reconciliation, auto-refund.
+* `lib/collab.ts` — drawing together: state/delta reads, validated paint batches, snapshot publishing.
 * `lib/images` — content sniffing, decompression-bomb guard, canonical PNG re-encode, average colour, hash.
 * `lib/storage` — private object store: Supabase Storage in production, local files in development.
 * `lib/rate-limit` — PostgreSQL fixed-window counters shared by all serverless instances.

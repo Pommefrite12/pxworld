@@ -2,12 +2,13 @@ import "server-only";
 import { query } from "@/lib/db/pool";
 import { HttpError } from "@/lib/http/errors";
 import { objectStore } from "@/lib/storage";
-import { cleanText } from "@/lib/security/text";
+import { TITLE_MAX, cleanText, isValidTitle } from "@/lib/security/text";
 import { sanitizeExternalUrl } from "@/lib/security/url";
 import { ImageError, MAX_UPLOAD_BYTES, processCreation, type ProcessedImage } from "@/lib/images/validate";
 
 export interface CreationMeta {
-  title: string | null;
+  /** Required (see `isValidTitle`): it is what people read when they click the parcel on the map. */
+  title: string;
   description: string | null;
   link: string | null;
   commercial: boolean;
@@ -17,8 +18,10 @@ export function parseCreationMeta(form: FormData): CreationMeta {
   const rawLink = form.get("link");
   const link = typeof rawLink === "string" && rawLink.trim() ? sanitizeExternalUrl(rawLink) : null;
   if (typeof rawLink === "string" && rawLink.trim() && !link) throw new HttpError(400, "invalid_link");
+  const title = cleanText(form.get("title"), TITLE_MAX);
+  if (!title || !isValidTitle(title)) throw new HttpError(400, "title_required");
   return {
-    title: cleanText(form.get("title"), 80),
+    title,
     description: cleanText(form.get("description"), 280),
     link,
     commercial: form.get("commercial") === "true" || form.get("commercial") === "on",

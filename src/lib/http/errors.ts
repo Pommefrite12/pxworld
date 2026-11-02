@@ -19,6 +19,9 @@ const PX_STATUS: Record<string, number> = {
   px_not_found: 404,
   px_bad_dimensions: 400,
   px_parcel_not_editable: 409,
+  px_collab_closed: 404, // unknown, switched off, hidden… all look the same from outside
+  px_collab_bad_batch: 400,
+  px_collab_out_of_bounds: 400,
   px_not_pending: 409,
   px_parcel_not_active: 409,
   px_bad_decision: 400,

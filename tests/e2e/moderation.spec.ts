@@ -64,7 +64,7 @@ test.describe.serial("moderation & protection", () => {
   });
 
   test("uploads are validated by content, not by file name or declared type", async () => {
-    const fd = (buffer: Buffer, name = "x.png", mimeType = "image/png") => ({ multipart: { title: "t", image: { name, mimeType, buffer } } });
+    const fd = (buffer: Buffer, name = "x.png", mimeType = "image/png") => ({ multipart: { title: "Test title", image: { name, mimeType, buffer } } });
     const url = `/api/parcels/${code}/creation`;
     // SVG with a .png name and image/png type
     const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"><script>alert(1)</script></svg>');
@@ -83,7 +83,7 @@ test.describe.serial("moderation & protection", () => {
     r = await carol.post(url, fd(Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(2_200_000)])));
     expect([413, 422]).toContain(r.status());
     // dangerous link
-    r = await carol.post(url, { multipart: { title: "t", link: "javascript:alert(1)", image: { name: "a.png", mimeType: "image/png", buffer: await png(30, 30) } } });
+    r = await carol.post(url, { multipart: { title: "Test title", link: "javascript:alert(1)", image: { name: "a.png", mimeType: "image/png", buffer: await png(30, 30) } } });
     expect([r.status(), (await r.json()).error]).toEqual([400, "invalid_link"]);
     // somebody else's parcel
     r = await dave.post(url, fd(await png(30, 30)));
@@ -174,12 +174,12 @@ test.describe.serial("moderation & protection", () => {
     const userId = (await sql<{ id: string }>("select id from auth.users where email = 'carol@example.test'"))[0]!.id;
     expect((await mod.post("/api/admin/action", { data: { action: "suspend_user", userId, suspended: true } })).status()).toBe(403); // moderators cannot
     expect((await admin.post("/api/admin/action", { data: { action: "suspend_user", userId, suspended: true, reason: "test" } })).status()).toBe(200);
-    const buyAttempt = await carol.post("/api/checkout", { multipart: { x: "31000", y: "12000", w: "10", h: "10", image: { name: "c.png", mimeType: "image/png", buffer: await png(10, 10) } } });
+    const buyAttempt = await carol.post("/api/checkout", { multipart: { x: "31000", y: "12000", w: "10", h: "10", title: "Suspended buyer", image: { name: "c.png", mimeType: "image/png", buffer: await png(10, 10) } } });
     expect([buyAttempt.status(), (await buyAttempt.json()).error]).toEqual([403, "px_account_suspended"]);
     const edit = await carol.post(`/api/parcels/${code}/creation`, { multipart: { image: { name: "c.png", mimeType: "image/png", buffer: await png(30, 30) } } });
     expect(edit.status()).toBe(403);
     expect((await admin.post("/api/admin/action", { data: { action: "suspend_user", userId, suspended: false } })).status()).toBe(200);
-    const ok = await carol.post(`/api/parcels/${code}/creation`, { multipart: { title: "back", image: { name: "c.png", mimeType: "image/png", buffer: await png(30, 30, "#12b886") } } });
+    const ok = await carol.post(`/api/parcels/${code}/creation`, { multipart: { title: "Back again", image: { name: "c.png", mimeType: "image/png", buffer: await png(30, 30, "#12b886") } } });
     expect(ok.status()).toBe(201);
   });
 

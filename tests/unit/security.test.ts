@@ -29,3 +29,19 @@ describe("cleanText", () => {
     expect(cleanText("<script>alert(1)</script>", 100)).toBe("<script>alert(1)</script>");
   });
 });
+
+describe("creation title", () => {
+  it("needs a few real characters: counted as characters, spaces do not count", async () => {
+    const { TITLE_MAX, TITLE_MIN, isValidTitle } = await import("@/lib/security/text");
+    expect([TITLE_MIN, TITLE_MAX]).toEqual([3, 80]);
+    expect(isValidTitle("")).toBe(false);
+    expect(isValidTitle("   ")).toBe(false);
+    expect(isValidTitle("ab")).toBe(false);
+    expect(isValidTitle("  ab  ")).toBe(false);
+    expect(isValidTitle("abc")).toBe(true);
+    expect(isValidTitle("  abc ")).toBe(true);
+    expect(isValidTitle("🎨🎨")).toBe(false); // two emoji are two characters, not four UTF-16 units
+    expect(isValidTitle("🎨🎨🎨")).toBe(true);
+    expect(isValidTitle("日本語")).toBe(true);
+  });
+});

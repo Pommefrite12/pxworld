@@ -46,6 +46,7 @@ export default async function MyParcels({ params }: { params: Promise<{ locale: 
                     <Link className="btn btn-ghost btn-sm" href={`/p/${p.code}`}>{t("view")}</Link>
                     <Link className="btn btn-ghost btn-sm" href={`/map?x=${Math.round(cx)}&y=${Math.round(cy)}&z=${Number(z.toPrecision(3))}&p=${p.code}`}>{t("onMap")}</Link>
                     <Link className="btn btn-ink btn-sm" href={`/account/parcels/${p.code}/edit`}>{t("edit")}</Link>
+                    <Link className="btn btn-ghost btn-sm" href={`/account/parcels/${p.code}/edit#collab`} data-testid="draw-together-link">{t("drawTogether")}</Link>
                   </div>
                 </div>
               </li>
