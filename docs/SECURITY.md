@@ -12,7 +12,7 @@
 | **Uploads** | size cap, **content sniffing** (names/MIME ignored), SVG & executables refused, decompression-bomb limit, animation refused, dimensions must match the parcel exactly, decoded, **flattened onto white (a creation has no transparency)** and **re-encoded to a canonical PNG** (metadata/trailing payloads dropped), served with `nosniff` + `CSP: sandbox`, private storage bucket |
 | **Output encoding** | React escapes everything; user text is plain text (control/bidi characters stripped); no `dangerouslySetInnerHTML` |
 | **External links** | https only, no credentials/IP literals/localhost/odd ports, ≤ 500 chars; shown with their domain, `rel="noopener noreferrer nofollow ugc"` (+`sponsored` for ads) |
-| **CSRF** | cookie-authenticated mutations check `Origin` against the host (`assertSameOrigin`); cookies are `SameSite=Lax` |
+| **CSRF** | cookie-authenticated mutations check `Origin` against the site's own addresses (`assertSameOrigin`: the host the request arrived on or the proxy forwarded, the configured `NEXT_PUBLIC_SITE_URL`, and — development Codespaces only — that Codespace's forwarded ports; any other website is refused with `403 bad_origin`; the refused origin is logged in development); cookies are `SameSite=Lax` |
 | **Rate limiting** | PostgreSQL fixed windows, per IP-hash and per user: checkout, uploads, reports, likes, availability probes, profile edits; anti-hoarding cap on unpaid reservations |
 | **Privacy** | IPs are only stored as salted hashes (set `RATE_LIMIT_SALT`); no tracking cookies |
 | **Audit** | append-only `audit_logs` + `moderation_actions` (triggers forbid UPDATE/DELETE); every staff action and payment event is journalised atomically with its effect |
