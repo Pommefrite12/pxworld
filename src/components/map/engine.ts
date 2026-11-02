@@ -610,7 +610,9 @@ export class MapEngine {
       // the pixel grid is a guide to FREE land: it is drawn before the parcels, so a parcel that has been taken shows its
       // creation clean, with no grid line across it
       this.onLand(s, () => this.drawGrid(s)); // same for the pixel grid: only land
-      this.drawParcels(s);
+      // A parcel is a rectangle (what is bought, and where it may be placed), but its drawing is cut along the coast: only
+      // the part on land is shown, the sea stays sea. (The parcel's own page shows the whole drawing.)
+      this.onLand(s, () => this.drawParcels(s), true);
       if (s < RASTER_BELOW) this.drawLabels(s);
       this.drawOverlays(s);
     }
@@ -757,10 +759,13 @@ export class MapEngine {
     return t.fill;
   }
 
-  /** Runs `draw` clipped to the land: grid lines and dots stop at the coast instead of covering oceans and seas. */
-  private onLand(s: number, draw: () => void) {
+  /**
+   * Runs `draw` clipped to the land: grid lines and dots stop at the coast instead of covering oceans and seas.
+   * Without geography yet, nothing is drawn — unless `whenUnknown` (a creation must never disappear because the coast has not loaded).
+   */
+  private onLand(s: number, draw: () => void, whenUnknown = false) {
     const path = this.landPath(s);
-    if (!path) return; // geography not loaded yet: nothing to draw yet
+    if (!path) { if (whenUnknown) draw(); return; }
     const { ctx, dpr, cam, w, h } = this;
     ctx.save();
     ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * ((this.offX - cam.x) * s + w / 2), dpr * (h / 2 - cam.y * s)); // grid → device px
@@ -1021,9 +1026,13 @@ export class MapEngine {
       const bad = state === "blocked" || state === "out" || state === "water";
       const col = bad ? COLORS.danger : COLORS.free;
       if (!ghost && this.previewImage) {
-        ctx.imageSmoothingEnabled = ((this.previewImage as ImageBitmap).width ?? 0) > r.w * 1.001;
-        ctx.imageSmoothingQuality = "high";
-        ctx.drawImage(this.previewImage, r.x, r.y, r.w, r.h);
+        // the preview is cut along the coast too, so what you see is what will be shown
+        const img = this.previewImage;
+        this.onLand(s, () => {
+          ctx.imageSmoothingEnabled = ((img as ImageBitmap).width ?? 0) > r.w * 1.001;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(img, r.x, r.y, r.w, r.h);
+        }, true);
       } else {
         ctx.fillStyle = `rgba(${col},${ghost ? 0.22 : 0.35})`;
         ctx.fillRect(r.x, r.y, r.w, r.h);

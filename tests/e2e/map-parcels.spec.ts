@@ -50,3 +50,44 @@ test("the pixel grid is a guide to FREE land: a taken parcel shows its creation 
   expect(outside.length, "the free land around it is gridded").toBeGreaterThan(2);
   await Promise.all([api.dispose(), admin.dispose()]);
 });
+
+test("a parcel on the coast keeps its rectangle, but its drawing is cut along the coast: the sea stays sea", async ({ page }) => {
+  const COAST = { x: 18_220, y: 11_340, w: 60, h: 60 }; // the Channel coast: 1 903 of its 3 600 pixels are land (52.9 %)
+  const api = await pwRequest.newContext({ baseURL: BASE, extraHTTPHeaders: { "x-forwarded-for": "203.0.113.202" } });
+  const admin = await pwRequest.newContext({ baseURL: BASE, extraHTTPHeaders: { "x-forwarded-for": "203.0.113.203" } });
+  expect((await api.post("/api/dev/login", { data: { email: "coastowner@example.test" } })).ok()).toBeTruthy();
+  expect((await admin.post("/api/dev/login", { data: { email: "admin.coast@example.test", role: "admin" } })).ok()).toBeTruthy();
+  const probe = await (await api.get(`/api/availability?x=${COAST.x}&y=${COAST.y}&w=60&h=60`)).json();
+  expect(probe).toMatchObject({ free: true, onLand: true, landPixels: 1903 });
+  const image = await sharp({ create: { width: COAST.w, height: COAST.h, channels: 3, background: "#2b35e0" } }).png().toBuffer();
+  const r = await api.post("/api/checkout", { multipart: { x: String(COAST.x), y: String(COAST.y), w: "60", h: "60", title: "Coast test", image: { name: "c.png", mimeType: "image/png", buffer: image } } });
+  expect(r.status(), await r.text()).toBe(200);
+  const { orderId } = await r.json();
+  expect((await (await api.post("/api/dev/pay", { data: { orderId, outcome: "paid" } })).json()).outcome).toBe("processed");
+  const db = new pg.Client({ connectionString: (process.env.TEST_PG_ADMIN_URL ?? "postgres://pixel:pixel@127.0.0.1:54329/postgres").replace(/\/[^/]*$/, "/pixelworld_e2e") });
+  await db.connect();
+  const { rows } = await db.query(`select a.id from public.parcel_assets a join public.parcels p on p.id = a.parcel_id where p.x = $1 and p.y = $2 and a.status = 'pending'`, [COAST.x, COAST.y]);
+  await db.end();
+  expect((await admin.post("/api/admin/action", { data: { action: "review_asset", assetId: rows[0]!.id, decision: "approve" } })).status()).toBe(200);
+
+  // centred on the parcel, 10 screen pixels per grid pixel: the rectangle is 600 × 600
+  await page.setViewportSize({ width: 1360, height: 860 });
+  await page.goto(`/map?x=${COAST.x + 30}&y=${COAST.y + 30}&z=10`);
+  const shares = () => page.getByRole("application").evaluate((c: HTMLCanvasElement) => {
+    const k = c.width / c.clientWidth, half = 30 * 10 * k;
+    const x0 = Math.round(c.width / 2 - half + 2), y0 = Math.round(c.height / 2 - half + 2), size = Math.round(2 * half - 4);
+    const d = c.getContext("2d")!.getImageData(x0, y0, size, size).data;
+    let blue = 0, sea = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i] === 0x2b && d[i + 1] === 0x35 && d[i + 2] === 0xe0) blue++;
+      else if (Math.abs(d[i]! - 201) < 4 && Math.abs(d[i + 1]! - 223) < 4 && Math.abs(d[i + 2]! - 232) < 4) sea++;
+    }
+    return { blue: blue / (d.length / 4), sea: sea / (d.length / 4) };
+  });
+  await expect.poll(async () => (await shares()).blue, { timeout: 30_000 }).toBeGreaterThan(0.2); // the creation is on screen
+  const { blue, sea } = await shares();
+  expect(blue, "the drawing covers the land part of the rectangle (about 53 %)").toBeGreaterThan(0.44);
+  expect(blue, "…and not the sea part").toBeLessThan(0.62);
+  expect(sea, "the sea part of the rectangle shows the sea").toBeGreaterThan(0.3);
+  await Promise.all([api.dispose(), admin.dispose()]);
+});
