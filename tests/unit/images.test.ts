@@ -75,11 +75,39 @@ describe("processCreation", () => {
     expect(out.png.includes("trailing-payload")).toBe(false);
     expect(out.png.includes("secret-exif-marker")).toBe(false);
   });
-  it("keeps transparency", async () => {
-    const buf = await sharp({ create: { width: 10, height: 10, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).png().toBuffer();
-    const out = await processCreation(buf, { w: 10, h: 10 });
-    const { data } = await sharp(out.png).raw().toBuffer({ resolveWithObject: true });
-    expect(data[3]).toBe(0);
+  describe("has no transparency: everything is flattened onto white", () => {
+    const pixels = async (png: Buffer) => {
+      const { data, info } = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      return { data, channels: info.channels };
+    };
+    const px = (d: Buffer, i: number) => [d[i * 4], d[i * 4 + 1], d[i * 4 + 2], d[i * 4 + 3]];
+
+    it("a fully transparent PNG becomes plain white", async () => {
+      const buf = await sharp({ create: { width: 10, height: 10, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).png().toBuffer();
+      const out = await processCreation(buf, { w: 10, h: 10 });
+      const { data } = await pixels(out.png);
+      for (let i = 0; i < 100; i++) expect(px(data, i), `pixel ${i}`).toEqual([255, 255, 255, 255]);
+      expect((await sharp(out.png).metadata()).hasAlpha).toBe(false); // the stored file does not even carry an alpha channel
+    });
+
+    it("a cut-out keeps its opaque part and loses its transparent part", async () => {
+      const raw = Buffer.alloc(10 * 10 * 4);
+      for (let i = 0; i < 100; i++) raw.set(i < 50 ? [200, 30, 30, 255] : [0, 0, 0, 0], i * 4); // top half red, bottom half empty
+      const out = await processCreation(await sharp(raw, { raw: { width: 10, height: 10, channels: 4 } }).png().toBuffer(), { w: 10, h: 10 });
+      const { data } = await pixels(out.png);
+      expect(px(data, 10)).toEqual([200, 30, 30, 255]);
+      expect(px(data, 90)).toEqual([255, 255, 255, 255]);
+    });
+
+    it("semi-transparent pixels are blended with white, WebP included", async () => {
+      const half = await sharp({ create: { width: 10, height: 10, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0.5 } } }).webp({ lossless: true }).toBuffer();
+      const out = await processCreation(half, { w: 10, h: 10 });
+      const { data } = await pixels(out.png);
+      const [r, g, b, a] = px(data, 0) as number[];
+      expect(a).toBe(255);
+      expect(r).toBeGreaterThan(120); expect(r).toBeLessThan(135); // black at 50 % over white ≈ mid grey
+      expect([r, g]).toEqual([g, b]);
+    });
   });
 });
 

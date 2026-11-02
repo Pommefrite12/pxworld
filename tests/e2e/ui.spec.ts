@@ -155,8 +155,7 @@ test.describe("map interaction", () => {
     await page.getByLabel("Width (px)").fill("30");
     await page.getByLabel("Height (px)").fill("40");
     await expect(page.getByTestId("buy-price")).toHaveText("€600"); // 1 200 pixels at €0.50
-    await expect(page.getByTestId("buy-px")).toHaveText("1,200 px");
-    await expect(page.getByTestId("buy-area")).toContainText("km²");
+    await expect(page.getByTestId("buy-area")).toContainText("1,200");
   });
 });
 
@@ -228,8 +227,7 @@ test.describe("coastal parcels: land is paid, sea is offered, a parcel is never 
     await expect(page.getByTestId("buy-status")).toContainText(/free/i, { timeout: 15_000 });
     await expect(page.getByTestId("buy-sea-note")).toContainText(/1,486 px of your parcel are sea, offered.*2,114 px of land/i);
     await expect(page.getByTestId("buy-price")).toHaveText("€1,057"); // the land only: 2 114 pixels at €0.50
-    await expect(page.getByTestId("buy-px")).toHaveText("3,600 px"); // the whole rectangle is theirs
-    await expect(page.getByTestId("buy-area")).toContainText("km²");
+    await expect(page.getByTestId("buy-area")).toContainText("3,600"); // the whole rectangle is theirs
     await expect(page.getByTestId("buy-continue")).toBeEnabled();
     await page.goto(url(LAND));
     await expect(page.getByTestId("buy-status")).toContainText(/free/i, { timeout: 15_000 });

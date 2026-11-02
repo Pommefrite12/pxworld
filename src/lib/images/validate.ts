@@ -77,6 +77,8 @@ async function averageColor(png: Buffer): Promise<string> {
  *  - size cap, content sniffing (SVG and executables are always refused), decompression-bomb guard
  *  - the pixels are decoded and RE-ENCODED: metadata, embedded payloads and trailing bytes are dropped
  *  - dimensions must match the parcel EXACTLY (the client renders at the parcel's resolution)
+ *  - NO transparency: the editor never produces any, and a file that has some (a PNG cut-out, a WebP with alpha) is
+ *    flattened onto white here, so the stored creation is always fully opaque
  */
 export async function processCreation(input: Buffer, expected: { w: number; h: number }): Promise<ProcessedImage> {
   if (input.length === 0) throw new ImageError("corrupt");
@@ -89,7 +91,8 @@ export async function processCreation(input: Buffer, expected: { w: number; h: n
 
   let decoded: { data: Buffer; info: OutputInfo };
   try {
-    decoded = await sharp(input, { limitInputPixels: MAX_INPUT_PIXELS, failOn: "error", animated: false }).rotate().ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    decoded = await sharp(input, { limitInputPixels: MAX_INPUT_PIXELS, failOn: "error", animated: false })
+      .rotate().flatten({ background: "#ffffff" }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   } catch (e) {
     if (e instanceof ImageError) throw e;
     if (/pixel limit|exceeds/i.test(String((e as Error).message))) throw new ImageError("too_many_pixels");
@@ -98,7 +101,7 @@ export async function processCreation(input: Buffer, expected: { w: number; h: n
   const { width, height } = decoded.info;
   if (width !== expected.w || height !== expected.h) throw new ImageError("bad_dimensions", `${width}x${height} ≠ ${expected.w}x${expected.h}`);
 
-  const png = await sharp(decoded.data, { raw: { width, height, channels: 4 } })
+  const png = await sharp(decoded.data, { raw: { width, height, channels: 3 } })
     .png({ compressionLevel: 9, adaptiveFiltering: true })
     .toBuffer();
   return {

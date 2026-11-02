@@ -55,7 +55,7 @@ export const PRESET_SIZES = [
   { w: 200, h: 200 },
 ] as const;
 
-/** Default price: €0.50 per pixel (a pixel is ≈ 1 km² at the equator), in minor units (cents). */
+/** Default price: €0.50 per pixel, in minor units (cents). */
 export const DEFAULT_UNIT_PRICE_CENTS = 50;
 export const CURRENCY = "eur";
 

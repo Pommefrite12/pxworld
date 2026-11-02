@@ -192,7 +192,6 @@ test.describe.serial("moderation & protection", () => {
     // an existing order keeps its price
     const mine = await (await carol.get("/account/orders")).text();
     expect(mine).toMatch(/€450(?![\d.,])/); // 30×30 pixels bought at €0.50 each, price unchanged by the later increase
-    expect(mine).toMatch(/km²/); // the surface is shown in km²
     expect((await admin.post("/api/admin/action", { data: { action: "set_setting", key: "price_unit_cents", value: 50 } })).status()).toBe(200);
   });
 

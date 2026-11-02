@@ -8,7 +8,7 @@
 | **Authorisation** | roles in `admin_roles` (never a client-editable flag), re-read from the DB on every admin request, **and** re-checked inside every staff SQL function; admin pages and `/api/admin/action` both enforce it; suspended users are blocked in SQL |
 | **RLS** | enabled everywhere, grants revoked then re-granted per column; tested (`permissions.test.ts`) |
 | **Payments** | server-priced, verified webhooks (raw-body signature), idempotency ledger, amount/currency verification, live keys refused by default |
-| **Uploads** | size cap, **content sniffing** (names/MIME ignored), SVG & executables refused, decompression-bomb limit, animation refused, dimensions must match the parcel exactly, decoded and **re-encoded to a canonical PNG** (metadata/trailing payloads dropped), served with `nosniff` + `CSP: sandbox`, private storage bucket |
+| **Uploads** | size cap, **content sniffing** (names/MIME ignored), SVG & executables refused, decompression-bomb limit, animation refused, dimensions must match the parcel exactly, decoded, **flattened onto white (a creation has no transparency)** and **re-encoded to a canonical PNG** (metadata/trailing payloads dropped), served with `nosniff` + `CSP: sandbox`, private storage bucket |
 | **Output encoding** | React escapes everything; user text is plain text (control/bidi characters stripped); no `dangerouslySetInnerHTML` |
 | **External links** | https only, no credentials/IP literals/localhost/odd ports, ≤ 500 chars; shown with their domain, `rel="noopener noreferrer nofollow ugc"` (+`sponsored` for ads) |
 | **CSRF** | cookie-authenticated mutations check `Origin` against the host (`assertSameOrigin`); cookies are `SameSite=Lax` |

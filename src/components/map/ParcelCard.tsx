@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { areaKm2, formatKm2 } from "@/lib/grid/surface";
 import { hostOf } from "@/lib/security/url";
 
 /** Integer upscale (crisp pixels) up to `box` px; downscale smoothly beyond. */
@@ -88,7 +87,7 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
             )}
             <dl className="grid grid-cols-3 gap-2 border-t border-line pt-3 text-xs text-ink-soft">
               <div><dt>{t("size")}</dt><dd className="pixel-num text-sm text-ink">{info.w}×{info.h}</dd></div>
-              <div><dt>{t("area")}</dt><dd className="pixel-num text-sm text-ink">{formatKm2(areaKm2(info), locale)} km²<span className="block text-xs text-ink-faint">{f.number(info.area)} px</span></dd></div>
+              <div><dt>{t("area")}</dt><dd className="pixel-num text-sm text-ink">{f.number(info.area)} px</dd></div>
               <div><dt>{t("published")}</dt><dd className="text-sm text-ink">{info.creation?.publishedAt ? f.dateTime(new Date(info.creation.publishedAt), { dateStyle: "medium" }) : "—"}</dd></div>
             </dl>
             <div className="flex flex-wrap gap-2 pt-1">

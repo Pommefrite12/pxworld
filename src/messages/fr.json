@@ -34,8 +34,8 @@
   },
   "stats": {
     "label": "Statistiques en direct",
-    "sold": "Pixels vendus",
-    "filled": "Part des terres vendues",
+    "sold": "Pixels acquis",
+    "filled": "Part des terres acquises",
     "available": "Disponibles",
     "owners": "Propriétaires",
     "creations": "Créations",
@@ -82,13 +82,11 @@
       "violence": "Violence ou contenu dangereux",
       "other": "Autre"
     },
-    "shareDescription": "Une création de {w}×{h} pixels ({km2} km², {area} pixels) par {owner} sur Pixel World, le planisphère collaboratif d'un milliard de pixels."
+    "shareDescription": "Une création de {w}×{h} pixels ({area} pixels) par {owner} sur Pixel World, le planisphère collaboratif d'un milliard de pixels."
   },
   "buy": {
     "title": "Réservez vos pixels",
     "unitPrice": "{price} le pixel · paiement unique",
-    "pixelsBought": "Pixels achetés",
-    "surfaceNote": "Surface du monde réel couverte par votre parcelle (un pixel fait environ 1 km² à l'équateur, moins vers les pôles) ; vous achetez des pixels.",
     "close": "Fermer",
     "presets": "Tailles courantes",
     "width": "Largeur (px)",
@@ -96,12 +94,6 @@
     "area": "Surface",
     "price": "Prix",
     "taxNote": "Les taxes éventuelles sont calculées au paiement.",
-    "position": "Position (x, y du pixel en haut à gauche)",
-    "nudge": "Déplacer la parcelle d'un pixel",
-    "up": "Haut",
-    "down": "Bas",
-    "left": "Gauche",
-    "right": "Droite",
     "status": {
       "place": "Cliquez ou touchez la carte pour poser votre parcelle, puis faites-la glisser pour l'ajuster.",
       "free": "Cet emplacement est libre.",
@@ -184,7 +176,7 @@
       "payments_not_configured": "Les paiements ne sont pas encore disponibles.",
       "px_not_on_land": "Cette parcelle n'a pas assez de terre. Les océans et les mers ne s'achètent pas seuls : choisissez un emplacement avec plus de terre."
     },
-    "fineTune": "Ajuster la position",
+    "fineTune": "Taille personnalisée",
     "seaFree": "{sea} px de votre parcelle sont en mer, offerts : vous ne payez que les {land} px de terre.",
     "seaDiscount": "{sea} px de votre parcelle sont en mer, facturés {pct} % d'un pixel de terre ; {land} px sont de la terre."
   },
@@ -223,7 +215,6 @@
       "remove": "Retirer le texte"
     },
     "background": "Arrière-plan",
-    "transparent": "Transparent",
     "undo": "Annuler",
     "clear": "Tout effacer",
     "errors": {
@@ -500,7 +491,7 @@
         {
           "h": "Prix et paiement",
           "p": [
-            "Le prix initial est de 0,50 € par pixel (un pixel fait environ 1 km² à l'équateur), calculé automatiquement à partir du nombre de pixels et toujours recalculé par nos serveurs. Nous pouvons modifier le prix des ventes futures ; les parcelles déjà achetées ne sont pas concernées. Les paiements sont traités par Stripe ; nous ne voyons ni ne conservons votre numéro de carte.",
+            "Le prix initial est de 0,50 € par pixel, calculé automatiquement à partir du nombre de pixels et toujours recalculé par nos serveurs. Nous pouvons modifier le prix des ventes futures ; les parcelles déjà achetées ne sont pas concernées. Les paiements sont traités par Stripe ; nous ne voyons ni ne conservons votre numéro de carte.",
             "Lorsque vous démarrez un achat, les pixels sont réservés pour vous pour une durée limitée. Si vous ne payez pas dans ce délai, la réservation est libérée. Votre parcelle ne vous est attribuée que lorsque le prestataire de paiement nous a confirmé le paiement."
           ]
         },
@@ -648,7 +639,7 @@
       "refundsDue": "Remboursements à traiter",
       "heldReservations": "Réservations en cours",
       "figures": "Chiffres clés",
-      "pixelsSold": "Pixels vendus",
+      "pixelsSold": "Pixels acquis",
       "fill": "Carte remplie",
       "parcels": "Parcelles",
       "owners": "Propriétaires",
@@ -662,7 +653,7 @@
       "rev30": "30 derniers jours",
       "rev7": "7 derniers jours",
       "tax": "Taxes collectées",
-      "daily": "Pixels vendus par jour (30 jours)",
+      "daily": "Pixels acquis par jour (30 jours)",
       "ordersByStatus": "Commandes par statut"
     },
     "moderation": {

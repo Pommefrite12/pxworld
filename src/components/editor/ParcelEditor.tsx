@@ -36,7 +36,7 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
   const [tool, setTool] = useState<Tool>("pencil");
   const [color, setColor] = useState(PALETTE[2]!);
   const [brush, setBrush] = useState(1);
-  const [bg, setBg] = useState<string | null>("#ffffff");
+  const [bg, setBg] = useState("#ffffff"); // always an opaque colour: a creation has no transparent pixel
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [text, setText] = useState<TextLayer | null>(null);
   const [painted, setPainted] = useState(false);
@@ -57,8 +57,8 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
 
   /** Composite = background → photo → drawing → text. Pure function of the editor state. */
   const compose = useCallback((ctx: CanvasRenderingContext2D) => {
-    ctx.clearRect(0, 0, w, h);
-    if (bg) { ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h); }
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
     if (photo) {
       const { bitmap: b, fit, zoom, ox, oy, smooth } = photo;
       const base = fit === "cover" ? Math.max(w / b.width, h / b.height) : fit === "contain" ? Math.min(w / b.width, h / b.height) : 0;
@@ -91,7 +91,7 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
     fetch(initialImageUrl).then((r) => r.blob()).then((b) => createImageBitmap(b)).then((bmp) => {
       if (!alive) return;
       const p = ensurePaint(); p.getContext("2d")!.drawImage(bmp, 0, 0, w, h);
-      setBg(null); setPainted(true); setUndoCount((n) => n + 1);
+      setPainted(true); setUndoCount((n) => n + 1); // pixels the old image left empty show the (white) background
     }).catch(() => undefined);
     return () => { alive = false; };
   }, [initialImageUrl, ensurePaint, w, h]);
@@ -224,7 +224,7 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div>
-        <div className="checker relative mx-auto overflow-hidden rounded-xl shadow-[0_0_0_1.5px_var(--color-line)]" style={{ width: "100%", maxWidth: w * zoomPx, aspectRatio: `${w} / ${h}` }}>
+        <div className="relative mx-auto overflow-hidden rounded-xl bg-white shadow-[0_0_0_1.5px_var(--color-line)]" style={{ width: "100%", maxWidth: w * zoomPx, aspectRatio: `${w} / ${h}` }}>
           <canvas
             ref={view} width={w} height={h} aria-label={t("canvasLabel", { w, h })}
             className="pixelated block h-full w-full touch-none"
@@ -300,8 +300,7 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
 
         <section aria-label={t("background")} className="flex items-center gap-2">
           <span className="label !mb-0 flex-1">{t("background")}</span>
-          <button className={`btn btn-sm ${bg === null ? "btn-ink" : "btn-ghost"}`} onClick={() => setBg(null)}>{t("transparent")}</button>
-          <input type="color" aria-label={t("background")} value={bg ?? "#ffffff"} onChange={(e) => setBg(e.target.value)} className="h-9 w-12 cursor-pointer rounded-md border-0 bg-transparent p-0" />
+          <input type="color" aria-label={t("background")} value={bg} onChange={(e) => setBg(e.target.value)} className="h-9 w-12 cursor-pointer rounded-md border-0 bg-transparent p-0" />
         </section>
 
         <div className="flex gap-2">

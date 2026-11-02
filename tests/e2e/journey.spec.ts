@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import sharp from "sharp";
 import { LAND_PIXELS } from "../../src/lib/geo/landPixels";
-import { areaKm2, formatKm2 } from "../../src/lib/grid/surface";
 
 /**
  * The main user journey, end to end, against a real PostgreSQL and the real Next.js server.
@@ -43,13 +43,11 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await expect(panel).toBeVisible();
     await expect(page.getByTestId("buy-status")).toContainText(/free/i);
     await expect(page.getByTestId("buy-price")).toHaveText("€200"); // 400 pixels at €0.50
-    await expect(page.getByTestId("buy-px")).toHaveText("400 px");
-    // the surface is shown in km²: this spot is at 58.5°N, where a pixel covers ≈ 0.29 km² (1.05 at the equator),
-    // so 20×20 pixels are about 115 km² — the figure is independent of the price
-    await expect(page.getByTestId("buy-area")).toHaveText(`${formatKm2(areaKm2(SPOT), "en")} km²`);
-    const km2 = areaKm2(SPOT);
-    expect(km2).toBeGreaterThan(105);
-    expect(km2).toBeLessThan(125);
+    await expect(page.getByTestId("buy-area")).toContainText("400");
+    // the surface is counted in pixels only, and the position is not editable by hand (no coordinates, no arrows)
+    await expect(panel).not.toContainText("km²");
+    await expect(panel.getByLabel("x", { exact: true })).toHaveCount(0);
+    await expect(panel.getByRole("group", { name: /one pixel/i })).toHaveCount(0);
     // no sign-in, no sign-up: the design step opens at once, on the same spot
     await expect(page.getByTestId("buy-continue")).toHaveText("Design my parcel");
     await page.getByTestId("buy-continue").click();
@@ -66,6 +64,8 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
     await expect(dialog.getByTestId("to-review")).toBeDisabled(); // nothing designed yet
+    // no transparent background: the background is a colour, full stop
+    await expect(dialog.getByRole("button", { name: /transparent/i })).toHaveCount(0);
 
     // draw directly in the parcel with the pencil: a diagonal stroke
     const canvas = dialog.locator("canvas").first();
@@ -79,7 +79,9 @@ test.describe.serial("buy → pay → moderate → publish", () => {
 
     await dialog.getByTestId("co-title").fill("Hello world");
     await expect(dialog.getByTestId("co-total")).toHaveText("€200");
-    await expect(dialog.getByTestId("co-area")).toHaveText(`${formatKm2(areaKm2(SPOT), "en")} km² · 400 px`);
+    await expect(dialog.getByTestId("co-area")).toHaveText("400 px");
+    await expect(dialog).not.toContainText("km²");
+    await expect(dialog).not.toContainText(`@ ${SPOT.x}`); // no coordinates in the summary either
     await expect(dialog.getByTestId("co-pay")).toBeDisabled(); // terms not accepted yet
     await dialog.getByTestId("co-accept").check();
     await dialog.getByTestId("co-pay").click();
@@ -183,6 +185,12 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     expect(img.headers()["content-type"]).toBe("image/png");
     const bytes = await img.body();
     expect(bytes.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+    // no transparency anywhere: alice drew one diagonal stroke on the default background, everything else is opaque white
+    const { data, info } = await sharp(bytes).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    expect((await sharp(bytes).metadata()).hasAlpha).toBe(false);
+    expect([...data.subarray(0, 4)]).toEqual([255, 255, 255, 255]); // the top-left corner
+    for (let i = 3; i < data.length; i += 4) expect(data[i]).toBe(255);
+    expect(info).toMatchObject({ width: 20, height: 20 });
     // public parcel card
     const card = await (await request.get(`/api/parcels/${parcelCode}`)).json();
     expect(card).toMatchObject({ code: parcelCode, w: 20, h: 20, area: 400, creation: { title: "Hello world", assetId } });

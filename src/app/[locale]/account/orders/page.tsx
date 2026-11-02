@@ -5,7 +5,6 @@ import { Link } from "@/i18n/navigation";
 import { requirePageViewer } from "@/lib/auth/guards";
 import { getOrdersOf } from "@/lib/data/parcels";
 import { formatMoney } from "@/lib/grid/pricing";
-import { areaKm2, formatKm2 } from "@/lib/grid/surface";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { robots: { index: false } };
@@ -29,7 +28,7 @@ export default async function Orders({ params }: { params: Promise<{ locale: str
               {orders.map((o) => (
                 <tr key={o.id} className="border-b border-line last:border-0" data-testid="order-row">
                   <td className="p-4 whitespace-nowrap">{f.dateTime(o.created_at, { dateStyle: "medium", timeStyle: "short" })}</td>
-                  <td className="p-4 pixel-num">{formatKm2(areaKm2(o), locale)} km² · {o.w}×{o.h} px<br /><span className="text-xs text-ink-faint">#{o.id.slice(0, 8)}</span></td>
+                  <td className="p-4 pixel-num">{o.w}×{o.h} · {f.number(o.area)} px<br /><span className="text-xs text-ink-faint">#{o.id.slice(0, 8)}</span></td>
                   <td className="p-4 pixel-num">{formatMoney(o.amount_total_cents ?? o.amount_cents, locale, o.currency)}{o.amount_tax_cents ? <span className="block text-xs text-ink-faint">{t("incTax", { tax: formatMoney(o.amount_tax_cents, locale, o.currency) })}</span> : null}</td>
                   <td className="p-4"><span className="chip" data-testid="order-status">{t(`statuses.${o.status}`)}</span></td>
                   <td className="p-4 text-right">{o.status === "paid" && <Link className="font-semibold text-cobalt underline" href={`/p/${o.parcel_code}`}>{t("viewParcel")}</Link>}</td>
