@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
 import { metersPerPixel, pixelToLonLat } from "@/lib/grid/geometry";
 import type { Camera } from "./engine";
 import type { PublicStats } from "@/lib/data/map";
@@ -50,7 +49,6 @@ export function MapControls({ cam, onZoomIn, onZoomOut, onFit, className = "" }:
   // Mercator: the ground size of a pixel shrinks with cos(latitude), so the scale bar follows the latitude of the view centre
   const km = (bar.len * metersPerPixel(pixelToLonLat(cam.x, cam.y).lat)) / 1000;
   const btn = "btn btn-ghost btn-icon !min-h-11 !min-w-11 text-lg";
-  const centre = pixelToLonLat(cam.x, cam.y);
   return (
     <div className={`pointer-events-none flex items-end gap-3 ${className}`}>
       <div className="pointer-events-auto hidden badge-px px-3 py-1.5 text-[0.7rem] sm:block" aria-hidden>
@@ -68,9 +66,6 @@ export function MapControls({ cam, onZoomIn, onZoomOut, onFit, className = "" }:
         <button className={btn} onClick={onFit} aria-label={t("recenter")} title={t("recenter")}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>
         </button>
-        <Link href={`/?lon=${centre.lon.toFixed(2)}&lat=${centre.lat.toFixed(2)}`} className={btn} prefetch={false} aria-label={t("globe")} title={t("globe")} data-testid="open-globe">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18" /></svg>
-        </Link>
       </div>
     </div>
   );

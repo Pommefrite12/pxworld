@@ -9,7 +9,7 @@ import { validateRect } from "@/lib/grid/geometry";
 
 export const dynamic = "force-dynamic";
 
-/** The flat map: where pixels are bought and drawn. The home page is the globe; this is its zoomed-in continuation. */
+/** The flat map: where pixels are bought and drawn. It is the home page (`/`) too; this address stays for existing links. */
 
 const num = (v: string | string[] | undefined) => (typeof v === "string" && /^-?\d+(\.\d+)?$/.test(v) ? Number(v) : null);
 

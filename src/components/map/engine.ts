@@ -1,6 +1,5 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
-import { shouldReturnToGlobe } from "@/lib/globe/orthographic";
 import { enoughLand } from "@/lib/grid/pricing";
 import { ASSET_SIZES, assetSizeFor, assetUrl } from "@/lib/images/sizes";
 import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
@@ -35,8 +34,6 @@ export interface EngineCallbacks {
   onSelectionState?: (s: SelectionState) => void;
   /** Land pixels inside the selection (null while unknown or when nothing is selected). */
   onSelectionLand?: (landPixels: number | null) => void;
-  /** The user zoomed out far enough that the planet is better shown as a globe (explore mode only). */
-  onZoomOutToGlobe?: (c: Camera) => void;
 }
 
 type TileParcel = [string, number, number, number, number, string | null, string | null];
@@ -84,10 +81,6 @@ export class MapEngine {
   private dirty = true;
   /** World copy being drawn: copy c shows the world shifted by c·W, so the map is continuous across the Bering Strait. */
   private offX = 0;
-  private globeFired = false;
-  /** While the page is leaving for the globe, no new request may compete with its navigation. */
-  private suspended = false;
-  private aborter = new AbortController();
   private destroyed = false;
 
   private geo: Geo | null = null;
@@ -183,19 +176,7 @@ export class MapEngine {
     this.flyTo({ x: r.x + r.w / 2 + (opts.offsetX ?? 0) / scale, y: r.y + r.h / 2, scale }, opts.duration ?? 900);
   }
 
-  /** A zoom-out gesture reached the point where the globe takes over: tell the page (once). */
-  private checkGlobe(requestedScale: number, prevScale: number) {
-    if (this.globeFired || this.mode !== "explore" || !this.cb.onZoomOutToGlobe) return;
-    const latDeg = pixelToLonLat(this.cam.x, this.cam.y).lat;
-    if (!shouldReturnToGlobe({ prevScale, requestedScale, minScale: this.minScale, latDeg, viewW: this.w, viewH: this.h })) return;
-    this.globeFired = true;
-    this.suspend();
-    setTimeout(() => { this.globeFired = false; this.suspended = false; this.aborter = new AbortController(); this.invalidate(); }, 2500); // if the page did not navigate, carry on
-    this.cb.onZoomOutToGlobe({ ...this.cam, scale: Math.max(requestedScale, this.minScale) });
-  }
-
   zoomBy(factor: number, ax = this.w / 2, ay = this.h / 2, animate = true) {
-    this.checkGlobe(this.cam.scale * factor, this.cam.scale);
     const scale = clamp(this.cam.scale * factor, this.minScale, MAX_SCALE);
     const wx = this.cam.x + (ax - this.w / 2) / this.cam.scale, wy = this.cam.y + (ay - this.h / 2) / this.cam.scale;
     this.flyTo({ scale, x: wx - (ax - this.w / 2) / scale, y: wy - (ay - this.h / 2) / scale }, animate ? 280 : 0);
@@ -247,21 +228,7 @@ export class MapEngine {
 
   /* ------------------------------------------------------------------ data */
 
-  /**
-   * Stops every pending map request: zooming out sweeps over the whole world, which queues hundreds of tile and
-   * image requests, and the browser only runs a few at a time — they would delay the globe's own page and scripts.
-   */
-  private suspend() {
-    this.suspended = true;
-    this.tileQueue = [];
-    this.aborter.abort();
-    for (const map of [this.rasters, this.images]) {
-      for (const [key, e] of [...map.entries()]) if (e.state === "loading") { e.el.onload = null; e.el.onerror = null; e.el.src = ""; map.delete(key); } // asked for again if we stay
-    }
-  }
-
   private ensureTile(tx: number, ty: number) {
-    if (this.suspended) return;
     if (tx < 0 || ty < 0 || tx >= W / TILE || ty >= H / TILE) return;
     const key = `${tx},${ty}`;
     if (this.tiles.has(key)) return;
@@ -276,7 +243,7 @@ export class MapEngine {
       const [tx, ty] = key.split(",").map(Number) as [number, number];
       const version = this.version;
       this.inflight++;
-      fetch(`/api/map/tiles/${tx}/${ty}?v=${version}`, { signal: this.aborter.signal })
+      fetch(`/api/map/tiles/${tx}/${ty}?v=${version}`)
         .then((r) => (r.ok ? (r.json() as Promise<TileParcel[]>) : Promise.reject(new Error(String(r.status)))))
         .then((rows) => {
           if (version !== this.version) return;
@@ -298,7 +265,7 @@ export class MapEngine {
     if (e) { e.used = performance.now(); return e; }
     // at most a dozen images in flight per layer: the tiles still wanted next frame are asked for then, the ones the
     // camera has already left are never requested at all
-    if (this.suspended || this.loadingCount(map) >= MAX_IMAGES_IN_FLIGHT) return { el: new Image(), state: "loading", used: performance.now() };
+    if (this.loadingCount(map) >= MAX_IMAGES_IN_FLIGHT) return { el: new Image(), state: "loading", used: performance.now() };
     const el = new Image();
     el.decoding = "async";
     e = { el, state: "loading", used: performance.now() };
@@ -399,7 +366,6 @@ export class MapEngine {
         const [a, b] = [...this.pointers.values()];
         if (!a || !b) return;
         const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1, cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
-        this.checkGlobe(this.pinch.scale * (dist / this.pinch.dist), this.cam.scale);
         const scale = clamp(this.pinch.scale * (dist / this.pinch.dist), this.minScale, MAX_SCALE);
         const anchor = this.screenToWorldAt(this.pinch.cx, this.pinch.cy, this.pinch.scale, this.cam);
         this.cam = this.constrained({ scale, x: anchor.x - (cx - this.w / 2) / scale, y: anchor.y - (cy - this.h / 2) / scale });
@@ -439,8 +405,7 @@ export class MapEngine {
       const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1;
       const k = e.ctrlKey ? 0.012 : 0.0016; // trackpad pinch reports ctrlKey
       const factor = Math.exp(-e.deltaY * unit * k);
-      this.checkGlobe(this.cam.scale * factor, this.cam.scale);
-      const scale = clamp(this.cam.scale * factor, this.minScale, MAX_SCALE);
+        const scale = clamp(this.cam.scale * factor, this.minScale, MAX_SCALE);
       const a = this.screenToWorld(p.x, p.y);
       this.anim = null;
       this.cam = this.constrained({ scale, x: a.x - (p.x - this.w / 2) / scale, y: a.y - (p.y - this.h / 2) / scale });

@@ -129,7 +129,7 @@
   /* icon button: square */
   .btn-icon { min-width: 2.25rem; padding-inline: 0.35rem; }
 
-  /* small floating labels on the map / globe */
+  /* small floating labels on the map */
   .badge-px {
     background: rgb(252 249 242 / 0.92); border-radius: 7px; box-shadow: 0 0 0 1.5px var(--color-line), var(--shadow-8bit);
     backdrop-filter: blur(4px);

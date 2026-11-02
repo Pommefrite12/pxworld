@@ -30,9 +30,6 @@ const mercY = (latDeg: number): number => {
 
 const M_TOP = mercY(GEO.latMax);
 const M_BOTTOM = mercY(GEO.latMin);
-/** Mercator ordinates of the top and bottom edge of the grid (used by the globe shader to find a texture row). */
-export const MERCATOR_TOP = M_TOP;
-export const MERCATOR_BOTTOM = M_BOTTOM;
 
 /** Pixels per unit of Mercator ordinate (vertical scale of the frame). */
 export const PROJ_RY = GRID_HEIGHT / (M_TOP - M_BOTTOM);

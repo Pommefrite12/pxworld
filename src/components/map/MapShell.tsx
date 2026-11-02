@@ -9,8 +9,6 @@ import type { Pricing } from "@/lib/grid/pricing";
 import { CheckoutDialog } from "@/components/buy/CheckoutDialog";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { centeredRect, clampToGrid, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
-import { globeZoomForFlatScale } from "@/lib/globe/orthographic";
-import { prebuildWorldTexture } from "@/components/globe/worldTexture";
 import type { PublicStats } from "@/lib/data/map";
 import { MapView, type MapViewHandle } from "./MapView";
 import type { Camera, MapParcel, Mode, SelectionState } from "./engine";
@@ -48,27 +46,6 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
   const [toast, setToast] = useState<string | null>(null);
   const engine = () => mapRef.current?.engine ?? null;
 
-  /* ---------- zooming out far enough turns the map into the 3D globe, at the same place ---------- */
-  const toGlobe = useCallback((c: Camera) => {
-    const ll = pixelToLonLat(c.x, c.y);
-    const vp = engine()?.viewport ?? { w: 1200, h: 800 };
-    const zoom = globeZoomForFlatScale(c.scale, ll.lat, vp.w, vp.h);
-    router.push(`/?lon=${ll.lon.toFixed(2)}&lat=${ll.lat.toFixed(2)}&zoom=${zoom.toFixed(2)}`); // the map stays on screen until the globe is ready
-  }, [router]);
-
-  /* ---------- get the globe ready while the map is idle, so zooming out switches without a wait ---------- */
-  useEffect(() => {
-    if (!engineReady) return;
-    router.prefetch("/");
-    prebuildWorldTexture();
-    // Skipped under browser automation (navigator.webdriver), where background requests would only keep the network
-    // busy while tests wait for it to go quiet.
-    if (navigator.webdriver) return;
-    void import("@/components/globe/GlobeView"); // fetch the globe's code now, so the switch does not wait for it
-    // dev server only: compile the globe route in the background (the first compile takes many seconds)
-    if (process.env.NODE_ENV !== "production") void fetch("/", { priority: "low" } as RequestInit).catch(() => undefined);
-  }, [engineReady, router]);
-
   /* ---------- live stats (real numbers, refreshed; a purchase bumps mapVersion and the map reloads its tiles) ---------- */
   useEffect(() => {
     const tick = () => fetch("/api/stats").then((r) => (r.ok ? r.json() : null)).then((s: PublicStats | null) => s && setStats(s)).catch(() => undefined);
@@ -82,10 +59,10 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
     clearTimeout(urlTimer.current);
     urlTimer.current = setTimeout(() => {
       const u = new URL(window.location.href);
-      // only on the map's own address: permalink pages keep their canonical URL, and a navigation to another page
-      // (the globe, say) must never be overwritten by a late timer
-      const home = locale === "en" ? "/map" : `/${locale}/map`;
-      if (u.pathname !== home && u.pathname !== `${home}/`) return;
+      // only on the map's own addresses (home and /map): permalink pages keep their canonical URL, and a navigation to another
+      // page must never be overwritten by a late timer
+      const base = locale === "en" ? "" : `/${locale}`;
+      if (![`${base}`, `${base}/`, `${base}/map`, `${base}/map/`].includes(u.pathname)) return;
       u.searchParams.set("x", String(Math.round(cam.x))); u.searchParams.set("y", String(Math.round(cam.y)));
       u.searchParams.set("z", String(Number(cam.scale.toPrecision(3))));
       history.replaceState(history.state, "", u); // keep the router's own history state intact
@@ -167,7 +144,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
     started.current = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-off initialisation from the deep link, once the engine exists
     if (initial.buy) startBuy(initial.buy);
-    else if (initial.startBuy) startBuy(null); // "Find your spot" from the globe
+    else if (initial.startBuy) startBuy(null); // "Find your spot" link (?buy=1)
     if (initial.parcelCode) engine()?.setHighlight(initial.parcelCode);
   }, [engineReady, initial, startBuy]);
 
@@ -201,7 +178,6 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
           onPlace={(r) => setSelection(r)}
           onSelectionState={setSelState}
           onSelectionLand={setSelLand}
-          onZoomOutToGlobe={toGlobe}
         />
 
         {/* the page title stays for search engines and screen readers; the map itself is the hero */}

@@ -36,7 +36,7 @@ In development, **`/dev/design`** shows every button family in its three states 
 | `btn btn-nav` | navigation pill (finer steps) | *Découvrir ›* |
 | `btn-icon` (with a variant) | square icon button | close, zoom, search |
 | `btn-sm` | smaller | toolbars |
-| `badge-px` | small floating label on the map / globe | coordinates, credits |
+| `badge-px` | small floating label on the map | coordinates, credits |
 | `card`, `field`, `chip`, `label` | surfaces, inputs, tags (notched details, soft 8-bit shadow, clear focus) | |
 
 States can be forced for documentation with the helper classes `is-hover` and `is-active`.

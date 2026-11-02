@@ -102,10 +102,35 @@ test.describe("map interaction", () => {
     expect(z.scale).toBeLessThanOrEqual(48);
     expect(z.scale).toBeGreaterThan(c.scale * 20);
     expect(z.x).toBeGreaterThan(c.x); // zoomed towards the right half
-    // zooming out is bounded by the whole-world view: one more step out turns the map into the globe (see globe.spec.ts)
+    // zooming out is bounded by the whole-world view: the map stays a flat map, there is no globe to fall into
     for (let i = 0; i < 4; i++) await page.mouse.wheel(0, 200);
     await page.waitForTimeout(300);
     expect((await camera(page)).scale).toBeGreaterThanOrEqual(c.scale * 0.99);
+  });
+
+  test("the planet is 2D only: the home page is the map, zooming all the way out stays on it, and there is no globe button", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("application")).toBeVisible();
+    await expect(page.getByTestId("zoom-level")).toBeVisible(); // the map's own controls are on the home page
+    await expect(page.getByTestId("open-globe")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /globe|globe 3D/i })).toHaveCount(0);
+    await page.waitForFunction(() => Boolean((window as unknown as { __pxEngine?: unknown }).__pxEngine));
+    const url0 = page.url();
+    // zoom out as far as possible, by wheel and by the button: still the same page, same map
+    for (let i = 0; i < 30; i++) await page.mouse.wheel(0, 400);
+    for (let i = 0; i < 6; i++) await page.getByRole("button", { name: "Zoom out" }).click();
+    await page.waitForTimeout(1500);
+    expect(new URL(page.url()).pathname).toBe(new URL(url0).pathname);
+    await expect(page.getByRole("application")).toBeVisible();
+    expect((await camera(page)).scale).toBeGreaterThan(0);
+    // old addresses: the globe route and the home page with a camera land on the map
+    await page.goto("/globe?lon=2&lat=48&zoom=2");
+    await expect(page).toHaveURL(/localhost:\d+\/?$/);
+    await expect(page.getByRole("application")).toBeVisible();
+    await page.goto("/fr/globe");
+    await expect(page).toHaveURL(/\/fr\/?$/);
+    await page.goto("/?x=19000&y=11700&z=6");
+    expect((await camera(page)).scale).toBeCloseTo(6, 0);
   });
 
   test("drag pans the map", async ({ page }) => {
