@@ -66,13 +66,13 @@ describe("webhook endpoint: authenticity", () => {
 describe("webhook endpoint: payments", () => {
   it("a verified checkout.session.completed attributes the parcel and records billing data", async () => {
     const { o, sessionId } = await newOrder();
-    const ev = signed("checkout.session.completed", completed(o, sessionId, { total_details: { amount_tax: 800 }, amount_total: 4800 }));
+    const ev = signed("checkout.session.completed", completed(o, sessionId, { total_details: { amount_tax: 4000 }, amount_total: 24000 }));
     const res = await webhook(ev.req());
     expect(res.status).toBe(200);
     expect(await orderStatus(o.order_id)).toBe("paid");
     expect(await parcelStatus(o.parcel_id)).toBe("active");
     const row = (await pool.query("select amount_subtotal_cents, amount_tax_cents, amount_total_cents, customer_email, billing_country from public.orders where id = $1", [o.order_id])).rows[0];
-    expect(row).toEqual({ amount_subtotal_cents: 4000, amount_tax_cents: 800, amount_total_cents: 4800, customer_email: "buyer@example.test", billing_country: "FR" });
+    expect(row).toEqual({ amount_subtotal_cents: 20000, amount_tax_cents: 4000, amount_total_cents: 24000, customer_email: "buyer@example.test", billing_country: "FR" });
     expect((await pool.query("select status from public.stripe_events where id = $1", [ev.id])).rows[0].status).toBe("processed");
   });
 
@@ -160,7 +160,7 @@ describe("webhook endpoint: abandoned, failed, refunded, disputed", () => {
   it("payment_intent.payment_failed is recorded and the order stays payable", async () => {
     const { o } = await newOrder();
     await webhook(signed("payment_intent.payment_failed", {
-      id: "pi_failed_1", amount: 4000, currency: "eur", metadata: { order_id: o.order_id },
+      id: "pi_failed_1", amount: 20000, currency: "eur", metadata: { order_id: o.order_id },
       last_payment_error: { code: "card_declined", message: "Your card was declined." },
     }).req());
     expect((await pool.query("select status, failure_code from public.payments where stripe_payment_intent_id = 'pi_failed_1'")).rows[0]).toEqual({ status: "failed", failure_code: "card_declined" });

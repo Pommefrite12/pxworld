@@ -4,8 +4,8 @@ import { closeDb, createUser, expectPgError, fulfill, pool, resetData, startOrde
 afterAll(closeDb);
 beforeEach(resetData);
 
-/** The default price the tests start from (helpers.resetData): €0.10 per pixel. */
-const UNIT = 10;
+/** The default price the tests start from (helpers.resetData): €0.50 per pixel. */
+const UNIT = 50;
 const setting = (key: string, value: number) => pool.query(`update public.app_settings set value = $2::jsonb where key = $1`, [key, JSON.stringify(value)]);
 const parcelRow = async (id: string) => (await pool.query(`select land_px, area from public.parcels where id = $1`, [id])).rows[0];
 const orderRow = async (id: string) => (await pool.query(`select land_px, area, amount_cents from public.orders where id = $1`, [id])).rows[0];

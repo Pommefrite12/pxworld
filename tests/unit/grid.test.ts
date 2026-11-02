@@ -124,12 +124,12 @@ describe("coastal pricing: land at full price, sea at a percentage", () => {
 });
 
 describe("pricing", () => {
-  it("charges €0.10 per pixel by default", () => {
-    expect(DEFAULT_UNIT_PRICE_CENTS).toBe(10);
-    expect(DEFAULT_PRICING.unitPriceCents).toBe(10);
-    expect(quote({ w: 10, h: 10 }).totalCents).toBe(1_000); // €10
-    expect(quote({ w: 20, h: 20 }).totalCents).toBe(4_000); // €40
-    expect(quote({ w: 200, h: 200 }).totalCents).toBe(400_000); // €4,000
+  it("charges €0.50 per pixel by default", () => {
+    expect(DEFAULT_UNIT_PRICE_CENTS).toBe(50);
+    expect(DEFAULT_PRICING.unitPriceCents).toBe(50);
+    expect(quote({ w: 10, h: 10 }).totalCents).toBe(5_000); // €50
+    expect(quote({ w: 20, h: 20 }).totalCents).toBe(20_000); // €200
+    expect(quote({ w: 200, h: 200 }).totalCents).toBe(2_000_000); // €20,000
   });
   it("follows the configured unit price", () => {
     expect(quote({ w: 10, h: 10 }, 250).totalCents).toBe(25_000);
@@ -141,8 +141,8 @@ describe("pricing", () => {
   it("formats money per locale", () => {
     expect(formatMoney(10_000, "en")).toBe("€100");
     expect(formatMoney(10_050, "en")).toBe("€100.50");
-    expect(formatMoney(10, "en")).toBe("€0.10"); // the unit price itself
-    expect(formatMoney(10, "fr").replace(/\s/g, " ")).toBe("0,10 €");
+    expect(formatMoney(50, "en")).toBe("€0.50"); // the unit price itself
+    expect(formatMoney(50, "fr").replace(/\s/g, " ")).toBe("0,50 €");
     expect(formatMoney(10_000, "fr").replace(/\s/g, " ")).toBe("100 €");
   });
 });

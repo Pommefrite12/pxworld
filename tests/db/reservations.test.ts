@@ -5,11 +5,11 @@ afterAll(closeDb);
 beforeEach(resetData);
 
 describe("px_start_order", () => {
-  it("prices on the server: area × unit price, €0.10 per pixel by default", async () => {
+  it("prices on the server: area × unit price, €0.50 per pixel by default", async () => {
     const u = await createUser();
     const o = await startOrder(u, { x: 1000, y: 1000, w: 20, h: 20 });
-    expect(Number(o.amount_cents)).toBe(4_000);
-    expect(o.unit_price_cents).toBe(10);
+    expect(Number(o.amount_cents)).toBe(20_000);
+    expect(o.unit_price_cents).toBe(50);
     expect(o.currency).toBe("eur");
     const { rows } = await pool.query(`select status from public.parcels where id = $1`, [o.parcel_id]);
     expect(rows[0].status).toBe("reserved");
@@ -20,7 +20,7 @@ describe("px_start_order", () => {
     const first = await startOrder(u, { x: 0, y: 0, w: 10, h: 10 });
     await pool.query(`select public.px_set_setting($1, 'price_unit_cents', '250')`, [admin]);
     const second = await startOrder(u, { x: 100, y: 0, w: 10, h: 10 });
-    expect(Number(first.amount_cents)).toBe(1_000);
+    expect(Number(first.amount_cents)).toBe(5_000);
     expect(Number(second.amount_cents)).toBe(25_000);
   });
 

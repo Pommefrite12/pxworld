@@ -67,7 +67,7 @@ describe("map version", () => {
     const v0 = await version();
     const o = await startOrder(u, { x: 0, y: 0, w: 10, h: 10 });
     expect(await version()).toBe(v0); // a reservation is invisible: no cache churn
-    await pool.query(`select public.px_fulfill_order($1, null, 'pi_v', null, 1000, 0, 1000, 'eur', null, null, null, null)`, [o.order_id]);
+    await pool.query(`select public.px_fulfill_order($1, null, 'pi_v', null, 5000, 0, 5000, 'eur', null, null, null, null)`, [o.order_id]);
     expect(await version()).toBe(v0 + 1);
     await pool.query(
       `insert into public.parcels (owner_id, x, y, w, h, status) select $1, 100 + i * 20, 100, 10, 10, 'active' from generate_series(0, 999) i`, [u]);

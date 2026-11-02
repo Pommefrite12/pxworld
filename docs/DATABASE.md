@@ -91,6 +91,6 @@ See [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
 
 `parcels.land_px` (NULL = all land) and `orders.land_px` / `orders.sea_percent` record how many pixels of a parcel are land and which sea price applied. `px_start_order(user, x, y, w, h, p_land default null)` takes the land count from the application server, checks `1 ≤ p_land ≤ area` and `p_land × 100 ≥ area × min_land_percent`, and prices the order as `land × unit + ⌊sea × unit × sea_percent / 100⌋`; the `orders_amount_consistent` check re-derives that from the row. Settings `sea_price_percent` (0–100, default 0) and `min_land_percent` (1–100, default 50) go through `px_set_setting` (admins only). `px_public_stats().sold_pixels` sums `coalesce(land_px, area)`.
 
-## Default price (migration 7)
+## Default price (migrations 7 and 8)
 
-`20261029000007_price_10_cents.sql` sets `app_settings.price_unit_cents` to **10** (€0.10 per pixel) when it still holds the factory default of 100; a value an admin chose on purpose is never touched, and existing orders keep their own `unit_price_cents` snapshot. Re-running it is harmless (`tests/db/price-default.test.ts`).
+Migration 7 (`…07_price_10_cents.sql`) moved the factory default of `app_settings.price_unit_cents` from 100 to 10 cents; migration 8 (`…08_price_50_cents.sql`) moves it to **50** (€0.50 per pixel) when it still holds 100 or 10. Any other value, i.e. a price an admin chose on purpose, is never touched, and existing orders keep their own `unit_price_cents` snapshot. Re-running them is harmless (`tests/db/price-default.test.ts`).

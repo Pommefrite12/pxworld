@@ -15,7 +15,7 @@ Items marked **(approval)** need an explicit decision from the project owner bef
 - [ ] Restore drill performed once (docs/BACKUP_RESTORE.md).
 - [ ] CSP added in report-only mode, then enforced; MFA for admins; WAF rules on sign-up/checkout.
 - [ ] Load test of the map endpoints behind the CDN (tiles are immutable per version).
-- [ ] Review the initial price in `/admin/settings` (default €0.10/pixel = 10 cents).
+- [ ] Review the initial price in `/admin/settings` (default €0.50/pixel = 50 cents).
 
 ## Payments — go live
 - [ ] **(approval)** Switch Stripe to live keys and live webhook secret; set `PAYMENTS_LIVE_ENABLED=yes-i-have-approval`.

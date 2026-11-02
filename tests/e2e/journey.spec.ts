@@ -42,7 +42,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     const panel = page.getByTestId("buy-panel");
     await expect(panel).toBeVisible();
     await expect(page.getByTestId("buy-status")).toContainText(/free/i);
-    await expect(page.getByTestId("buy-price")).toHaveText("€40"); // 400 pixels at €0.10
+    await expect(page.getByTestId("buy-price")).toHaveText("€200"); // 400 pixels at €0.50
     await expect(page.getByTestId("buy-px")).toHaveText("400 px");
     // the surface is shown in km²: this spot is at 58.5°N, where a pixel covers ≈ 0.29 km² (1.05 at the equator),
     // so 20×20 pixels are about 115 km² — the figure is independent of the price
@@ -79,7 +79,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await dialog.getByTestId("to-review").click();
 
     await dialog.getByTestId("co-title").fill("Hello world");
-    await expect(dialog.getByTestId("co-total")).toHaveText("€40");
+    await expect(dialog.getByTestId("co-total")).toHaveText("€200");
     await expect(dialog.getByTestId("co-area")).toHaveText(`${formatKm2(areaKm2(SPOT), "en")} km² · 400 px`);
     await expect(dialog.getByTestId("co-pay")).toBeDisabled(); // terms not accepted yet
     await dialog.getByTestId("co-accept").check();
