@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
+import { clampLevel, fitScale, formatLevel, levelsFor } from "@/lib/editor/zoom";
 
 /**
  * The shared canvas of a parcel. Everything the people holding the link paint is sent to the server in small batches and
@@ -9,7 +10,6 @@ import { useFormatter, useTranslations } from "next-intl";
  * same drawing a moment later. No account, no WebSocket: plain requests, easy to scale and to limit.
  */
 const PALETTE = ["#17151f", "#ffffff", "#ff4d2e", "#ff9f1c", "#ffd23f", "#12b886", "#0b7a5a", "#2b35e0", "#5bc0eb", "#9b5de5", "#f15bb5", "#8d6e63", "#c9c1ae", "#6b6b78", "#fbf5e6", "#c9dfe8"];
-const ZOOMS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32];
 const POLL_MS = 2000;
 const FLUSH_MS = 350;
 const BATCH = 2000;
@@ -45,7 +45,13 @@ export function DrawBoard({ token, w: parcelW, h: parcelH, scale, baseAssetId }:
   const [color, setColor] = useState(PALETTE[2]!);
   const [brush, setBrush] = useState(1); // px
   const [tool, setTool] = useState<Tool>("pencil");
-  const [zoom, setZoom] = useState(1);
+  // View zoom: 1× = the whole canvas in the available space; `fit` is the size of a dot (screen px) at 1×, `level` the multiple
+  const [fit, setFit] = useState(() => 720 / Math.max(w, h));
+  const [level, setLevel] = useState(1);
+  const levels = useMemo(() => levelsFor(fit), [fit]);
+  const zoom = clampLevel(level, levels);
+  const dotPx = fit * zoom;
+  const keepCentre = useRef<{ fx: number; fy: number } | null>(null);
   const drag = useRef<{ x: number; y: number; sx: number; sy: number } | null>(null);
 
   const draw = useCallback((x: number, y: number, w1 = 1, h1 = 1) => {
@@ -185,21 +191,38 @@ export function DrawBoard({ token, w: parcelW, h: parcelH, scale, baseAssetId }:
   };
   const onUp = () => { drag.current = null; };
 
-  /* start at a zoom that fits the page (big parcels start small and can be zoomed) */
+  /* 1× shows the whole canvas, whatever the parcel's size; the space is measured again when it changes */
   useEffect(() => {
-    const room = Math.min(outer.current?.clientWidth ?? 720, 720); // the column, not the canvas holder (which is as wide as the canvas)
-    const fit = [...ZOOMS].reverse().find((z) => z * w <= room && z * h <= 600) ?? 1;
-    setZoom(fit);
+    const el = outer.current;
+    if (!el) return;
+    const measure = () => { if (el.clientWidth > 0) setFit(fitScale(w, h, Math.min(el.clientWidth, 720), Math.min(600, window.innerHeight * 0.65))); };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener("resize", measure);
+    return () => { ro.disconnect(); window.removeEventListener("resize", measure); };
   }, [w, h]);
-  const zi = ZOOMS.indexOf(zoom);
+  const zi = levels.indexOf(zoom);
+  const zoomTo = (l: number) => {
+    const hd = holder.current;
+    if (hd) keepCentre.current = { fx: (hd.scrollLeft + hd.clientWidth / 2) / (w * dotPx), fy: (hd.scrollTop + hd.clientHeight / 2) / (h * dotPx) };
+    setLevel(l);
+  };
+  useLayoutEffect(() => { // after a zoom, keep looking at the same spot
+    const hd = holder.current, c = keepCentre.current;
+    if (!hd || !c) return;
+    hd.scrollLeft = c.fx * w * dotPx - hd.clientWidth / 2;
+    hd.scrollTop = c.fy * h * dotPx - hd.clientHeight / 2;
+    keepCentre.current = null;
+  }, [dotPx, w, h]);
 
   if (closed) return <p role="alert" className="card p-6 text-center font-semibold" data-testid="draw-closed-live">{t("closedTitle")}</p>;
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
       <div ref={outer}>
-        <div ref={holder} className="mx-auto max-h-[70vh] overflow-auto rounded-xl bg-white shadow-[0_0_0_1.5px_var(--color-line)]" style={{ maxWidth: Math.max(w * zoom, 120) }} data-testid="draw-holder">
+        <div ref={holder} className="mx-auto max-h-[70vh] overflow-auto rounded-xl bg-white shadow-[0_0_0_1.5px_var(--color-line)]" style={{ maxWidth: Math.max(w * dotPx, 120) }} data-testid="draw-holder">
           <canvas ref={view} width={w} height={h} aria-label={t("canvas", { w: parcelW, h: parcelH })} data-testid="draw-canvas" data-ready={ready}
-            className="pixelated block touch-none" style={{ width: w * zoom, height: h * zoom, imageRendering: "pixelated", cursor: tool === "hand" ? "grab" : "crosshair" }}
+            className="pixelated block touch-none" style={{ width: w * dotPx, height: h * dotPx, imageRendering: dotPx < 1 ? "auto" : "pixelated", cursor: tool === "hand" ? "grab" : "crosshair" }}
             onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />
         </div>
         <p className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center text-xs text-ink-soft" aria-live="polite">
@@ -234,9 +257,9 @@ export function DrawBoard({ token, w: parcelW, h: parcelH, scale, baseAssetId }:
           </div>
           <div className="flex items-center gap-2">
             <span className="label !mb-0 flex-1">{t("zoom")}</span>
-            <button className="btn btn-ghost btn-sm !w-9 !px-0" aria-label={t("zoomOut")} disabled={zi <= 0} onClick={() => setZoom(ZOOMS[zi - 1]!)}>−</button>
-            <span className="pixel-num w-10 text-center" data-testid="draw-zoom">{zoom}×</span>
-            <button className="btn btn-ghost btn-sm !w-9 !px-0" aria-label={t("zoomIn")} disabled={zi >= ZOOMS.length - 1} onClick={() => setZoom(ZOOMS[zi + 1]!)}>+</button>
+            <button className="btn btn-ghost btn-sm !w-9 !px-0" aria-label={t("zoomOut")} disabled={zi <= 0} onClick={() => zoomTo(levels[zi - 1]!)}>−</button>
+            <span className="pixel-num w-10 text-center" data-testid="draw-zoom" title={t("zoomHint")}>{formatLevel(zoom)}</span>
+            <button className="btn btn-ghost btn-sm !w-9 !px-0" aria-label={t("zoomIn")} disabled={zi >= levels.length - 1} onClick={() => zoomTo(levels[zi + 1]!)}>+</button>
           </div>
         </section>
       </div>

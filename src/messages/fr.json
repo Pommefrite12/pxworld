@@ -202,6 +202,7 @@
       "hand": "Déplacer la vue"
     },
     "viewZoom": "Zoom de la vue",
+    "viewZoomHint": "1× affiche toute la parcelle",
     "zoomIn": "Zoom avant",
     "zoomOut": "Zoom arrière",
     "palette": "Couleurs",
@@ -385,6 +386,7 @@
     "zoom": "Zoom",
     "zoomIn": "Zoom avant",
     "zoomOut": "Zoom arrière",
+    "zoomHint": "1× affiche toute la toile",
     "pencil": "Peindre",
     "hand": "Déplacer",
     "painted": "{n} points peints",

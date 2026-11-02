@@ -202,6 +202,7 @@
       "hand": "Pan the view"
     },
     "viewZoom": "View zoom",
+    "viewZoomHint": "1× shows the whole parcel",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
     "palette": "Colours",
@@ -385,6 +386,7 @@
     "zoom": "Zoom",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
+    "zoomHint": "1× shows the whole canvas",
     "pencil": "Paint",
     "hand": "Move",
     "painted": "{n} dots painted",

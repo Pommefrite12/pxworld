@@ -90,6 +90,9 @@ test.describe.serial("drawing together", () => {
     await expect(pa.getByTestId("draw-canvas")).toHaveAttribute("data-ready", "true", { timeout: 20_000 });
     await expect(pb.getByTestId("draw-canvas")).toHaveAttribute("data-ready", "true", { timeout: 20_000 });
     await expect(pa.getByTestId("sign-in-link")).toBeVisible(); // really no account
+    // 1× shows the whole canvas: nothing to scroll
+    await expect(pa.getByTestId("draw-zoom")).toHaveText("1×");
+    expect(await pa.getByTestId("draw-holder").evaluate((h: HTMLElement) => h.scrollWidth <= h.clientWidth + 1 && h.scrollHeight <= h.clientHeight + 1)).toBe(true);
 
     // A paints red with the finest brush (a tenth of a pixel = one dot): pick the red swatch (#ff4d2e) and click three dots
     await pa.getByRole("button", { name: "#ff4d2e" }).click();

@@ -254,6 +254,43 @@ test.describe("editor", () => {
     await ctx.close();
   });
 
+  test("zoom 1× shows the WHOLE parcel in the editor, whatever its size; zooming in magnifies from there", async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 } });
+    await ctx.request.post("/api/dev/login", { data: { email: "wholeparcel@example.test" } });
+    const page = await ctx.newPage();
+    // a tiny parcel (50 dots), a big one (2 000 × 2 000 dots) and the widest one (4 000 × 1 000 dots)
+    for (const [bx, by, bw, bh, dots] of [[27_000, 9_000, 5, 5, [50, 50]], [27_000, 9_000, 200, 200, [2000, 2000]], [28_000, 9_000, 1000, 250, [4000, 1000]]] as const) {
+      await page.goto(`/map?bx=${bx}&by=${by}&bw=${bw}&bh=${bh}`);
+      await expect(page.getByTestId("buy-status")).toContainText(/free/i, { timeout: 20_000 });
+      await page.getByTestId("buy-continue").click();
+      const dialog = page.getByRole("dialog");
+      const canvas = dialog.locator("canvas").first();
+      const holder = dialog.getByTestId("editor-holder");
+      expect(await canvas.evaluate((c: HTMLCanvasElement) => [c.width, c.height]), `${bw}x${bh} dots`).toEqual(dots);
+      await expect(dialog.getByTestId("editor-zoom")).toHaveText("1×");
+      const view = async () => holder.evaluate((h: HTMLElement) => {
+        const c = h.querySelector("canvas")!.getBoundingClientRect(), r = h.getBoundingClientRect();
+        return { cw: c.width, ch: c.height, hw: r.width, hh: r.height, scrollsX: h.scrollWidth > h.clientWidth + 1, scrollsY: h.scrollHeight > h.clientHeight + 1, inside: c.left >= r.left - 1 && c.right <= r.right + 1 && c.top >= r.top - 1 && c.bottom <= r.bottom + 1 };
+      });
+      const one = await view();
+      expect(one.scrollsX || one.scrollsY, `${bw}x${bh}: nothing to scroll at 1×`).toBe(false);
+      expect(one.inside, `${bw}x${bh}: all of it is inside the view`).toBe(true);
+      expect(one.cw / one.ch, `${bw}x${bh}: same shape as the parcel`).toBeCloseTo(bw / bh, 1);
+      expect(Math.max(one.cw, one.ch), `${bw}x${bh}: as big as the space allows`).toBeGreaterThan(400);
+      // zooming in magnifies (and then there is something to scroll), zooming back out shows it all again
+      await dialog.getByRole("button", { name: "Zoom in" }).click();
+      await dialog.getByRole("button", { name: "Zoom in" }).click();
+      const zoomed = await view();
+      expect(zoomed.cw).toBeGreaterThan(one.cw * 1.9);
+      expect(zoomed.scrollsX || zoomed.scrollsY).toBe(true);
+      await dialog.getByRole("button", { name: "Zoom out" }).click();
+      await dialog.getByRole("button", { name: "Zoom out" }).click();
+      expect(Math.round((await view()).cw)).toBe(Math.round(one.cw));
+      await dialog.getByRole("button", { name: "Close" }).click();
+    }
+    await ctx.close();
+  });
+
   test("an uploaded photo is cropped to the parcel; unsupported files are refused client-side", async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 } });
     await ctx.request.post("/api/dev/login", { data: { email: "uploader@example.test" } });

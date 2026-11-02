@@ -1,7 +1,8 @@
 "use client";
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
+import { clampLevel, fitScale, formatLevel, levelsFor } from "@/lib/editor/zoom";
 import { creationScale } from "@/lib/grid/constants";
 
 export interface ParcelEditorHandle {
@@ -27,8 +28,6 @@ const MAX_FILE = 10 * 1024 * 1024;
 /** Brush thickness in PIXELS, among the sizes that are a whole number of dots at this precision (0.1 px is one dot when k = 10). */
 const BRUSH_PX = [0.1, 0.2, 0.5, 1, 2, 3, 5, 8];
 const brushesFor = (k: number) => BRUSH_PX.filter((b) => Math.abs(b * k - Math.round(b * k)) < 1e-9 && b * k >= 1);
-/** On-screen size of one dot, in screen pixels: zoom steps of the editing canvas. */
-const ZOOMS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32];
 /** A very detailed picture can outgrow the upload limit at full precision: it is then sent at a lower precision. */
 const MAX_PNG_BYTES = 2.8 * 1024 * 1024;
 /** Undo snapshots are full copies of the canvas: keep their total memory bounded whatever the precision. */
@@ -48,7 +47,13 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
   const brushes = useMemo(() => brushesFor(S), [S]);
   const outer = useRef<HTMLDivElement>(null);
   const holder = useRef<HTMLDivElement>(null);
-  const [zoom, setZoom] = useState(1);
+  // View zoom: 1× = the whole parcel in the available space; `fit` is the size of a dot (screen px) at 1×, `level` the multiple
+  const [fit, setFit] = useState(() => 640 / Math.max(w, h));
+  const [level, setLevel] = useState(1);
+  const levels = useMemo(() => levelsFor(fit), [fit]);
+  const zoom = clampLevel(level, levels); // the level actually shown
+  const dotPx = fit * zoom;
+  const keepCentre = useRef<{ fx: number; fy: number } | null>(null);
   const view = useRef<HTMLCanvasElement>(null);
   const paint = useRef<HTMLCanvasElement | null>(null);
   const undo = useRef<ImageData[]>([]);
@@ -251,24 +256,36 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
     return () => window.removeEventListener("keydown", k);
   });
 
-  // Start at a zoom that fits the space (the editor often opens inside a dialog that is not displayed yet, so the width is
-  // watched until the first real measure); the finest brushes need more, which the buttons (and the pan tool) give.
-  const userZoomed = useRef(false);
+  // The space is measured, and measured again when it changes (the editor often opens inside a dialog that is not displayed
+  // yet): the whole parcel must be visible at 1×, so a fit is computed from the width and the height available.
   useEffect(() => {
     const el = outer.current;
     if (!el) return;
-    const fit = () => {
-      if (userZoomed.current || el.clientWidth === 0) return;
-      const room = Math.min(el.clientWidth, 640);
-      setZoom([...ZOOMS].reverse().find((z) => z * w <= room && z * h <= 560) ?? 1);
+    const measure = () => {
+      if (el.clientWidth === 0) return;
+      setFit(fitScale(w, h, Math.min(el.clientWidth, 640), Math.min(560, window.innerHeight * 0.62)));
     };
-    fit();
-    const ro = new ResizeObserver(fit);
+    measure();
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
-    return () => ro.disconnect();
+    window.addEventListener("resize", measure);
+    return () => { ro.disconnect(); window.removeEventListener("resize", measure); };
   }, [w, h]);
-  const zi = ZOOMS.indexOf(zoom);
-  const zoomTo = (z: number) => { userZoomed.current = true; setZoom(z); };
+  const zi = levels.indexOf(zoom);
+  const zoomTo = (l: number) => {
+    const hd = holder.current;
+    if (hd) keepCentre.current = { fx: (hd.scrollLeft + hd.clientWidth / 2) / (w * dotPx), fy: (hd.scrollTop + hd.clientHeight / 2) / (h * dotPx) };
+    setLevel(l);
+  };
+  // after a zoom, keep looking at the same spot of the canvas
+  useLayoutEffect(() => {
+    const hd = holder.current, c = keepCentre.current;
+    if (!hd || !c) return;
+    hd.scrollLeft = c.fx * w * dotPx - hd.clientWidth / 2;
+    hd.scrollTop = c.fy * h * dotPx - hd.clientHeight / 2;
+    keepCentre.current = null;
+  }, [dotPx, w, h]);
+
   const tools: { id: Tool; label: string; icon: string; disabled?: boolean }[] = [
     { id: "pencil", label: t("tools.pencil"), icon: "✎" },
     { id: "eraser", label: t("tools.eraser"), icon: "⌫" },
@@ -281,18 +298,18 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div ref={outer}>
-        <div ref={holder} className="mx-auto max-h-[70vh] overflow-auto rounded-xl bg-white shadow-[0_0_0_1.5px_var(--color-line)]" style={{ maxWidth: w * zoom }} data-testid="editor-holder">
+        <div ref={holder} className="mx-auto max-h-[70vh] overflow-auto rounded-xl bg-white shadow-[0_0_0_1.5px_var(--color-line)]" style={{ maxWidth: w * dotPx }} data-testid="editor-holder">
           <canvas
             ref={view} width={w} height={h} aria-label={t("canvasLabel", { w: pw, h: ph })}
             className="pixelated block touch-none"
-            style={{ width: w * zoom, height: h * zoom, cursor: tool === "hand" || tool === "text" ? "grab" : tool === "move" ? "move" : "crosshair" }}
+            style={{ width: w * dotPx, height: h * dotPx, imageRendering: dotPx < 1 ? "auto" : "pixelated", cursor: tool === "hand" || tool === "text" ? "grab" : tool === "move" ? "move" : "crosshair" }}
             onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
           />
         </div>
         <div className="mt-2 flex items-center justify-center gap-2">
-          <button type="button" className="btn btn-ghost btn-icon btn-sm" aria-label={t("zoomOut")} disabled={zi <= 0} onClick={() => zoomTo(ZOOMS[zi - 1]!)}>−</button>
-          <span className="pixel-num w-12 text-center text-sm" data-testid="editor-zoom" aria-label={t("viewZoom")}>{zoom}×</span>
-          <button type="button" className="btn btn-ghost btn-icon btn-sm" aria-label={t("zoomIn")} disabled={zi >= ZOOMS.length - 1} onClick={() => zoomTo(ZOOMS[zi + 1]!)}>+</button>
+          <button type="button" className="btn btn-ghost btn-icon btn-sm" aria-label={t("zoomOut")} disabled={zi <= 0} onClick={() => zoomTo(levels[zi - 1]!)}>−</button>
+          <span className="pixel-num w-12 text-center text-sm" data-testid="editor-zoom" aria-label={t("viewZoom")} title={t("viewZoomHint")}>{formatLevel(zoom)}</span>
+          <button type="button" className="btn btn-ghost btn-icon btn-sm" aria-label={t("zoomIn")} disabled={zi >= levels.length - 1} onClick={() => zoomTo(levels[zi + 1]!)}>+</button>
         </div>
       </div>
 
