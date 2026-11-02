@@ -607,9 +607,11 @@ export class MapEngine {
       if (this.mode === "buy") { ctx.fillStyle = `rgba(${COLORS.free},0.13)`; ctx.fillRect(x0, y0, ww, hh); }
       // zoomed in, place names sit UNDER the parcels (owners cover the map); zoomed out, parcels are specks and names stay readable on top
       if (s >= RASTER_BELOW) this.drawLabels(s);
+      // the pixel grid is a guide to FREE land: it is drawn before the parcels, so a parcel that has been taken shows its
+      // creation clean, with no grid line across it
+      this.onLand(s, () => this.drawGrid(s)); // same for the pixel grid: only land
       this.drawParcels(s);
       if (s < RASTER_BELOW) this.drawLabels(s);
-      this.onLand(s, () => this.drawGrid(s)); // same for the pixel grid
       this.drawOverlays(s);
     }
     this.offX = 0;

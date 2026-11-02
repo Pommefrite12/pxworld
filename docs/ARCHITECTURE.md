@@ -37,6 +37,10 @@ Layers, by zoom (`scale` = screen px per grid px, 0.029 … 48):
 
 The unit of sale is the **pixel** (default **€0.50**, `app_settings.price_unit_cents = 50`, admin-editable; migrations 7 and 8 move the earlier factory defaults of 100 and 10 cents to 50 and leave any other price an admin chose alone). A parcel's surface is its number of pixels, and so is its price: two parcels of the same size cost the same wherever they are.
 
+### Draw order on the map
+
+Geography → pixel field and, zoomed in, place names → **pixel grid** (land only) → **parcels** → place names when zoomed out → overlays (selection, highlight). The grid is a guide to *free* land, so it sits under the parcels: a taken parcel shows its creation (or, while it awaits moderation, its neutral block) with no grid line across it (`tests/e2e/map-parcels.spec.ts` checks every pixel of a parcel).
+
 ### Drawing finer than a pixel (down to 0.1 px)
 
 The grid does not change: a parcel is `w × h` **pixels**, those are what is sold, counted (`available`, `sold`) and priced (€0.50 each). What changes is how finely a creation is **drawn**: every pixel holds `k × k` dots, so the finest brush is `1/k` of a pixel — **0.1 px** when `k = 10`. The editor offers 0.1, 0.2, 0.5, 1, 2, 3, 5 and 8 px (those that are a whole number of dots at the parcel's precision).
