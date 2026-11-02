@@ -184,7 +184,7 @@
   },
   "editor": {
     "canvasLabel": "Parcel editor, {w} by {h} pixels",
-    "exactRes": "your parcel's pixels. Each one holds 4 dots: the finest brush is half a pixel.",
+    "exactRes": "your parcel's pixels, each drawn with {k} × {k} dots: the finest brush is 1/{k} of a pixel.",
     "image": "Image",
     "upload": "Upload an image",
     "uploadHint": "PNG, JPEG or WebP, up to 10 MB. It is resized to your parcel.",
@@ -203,8 +203,12 @@
       "eraser": "Eraser",
       "fill": "Fill",
       "move": "Move image",
-      "text": "Move text"
+      "text": "Move text",
+      "hand": "Pan the view"
     },
+    "viewZoom": "View zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
     "palette": "Colours",
     "customColor": "Custom colour",
     "brush": "Brush size",
@@ -382,7 +386,7 @@
     "leadTitled": "Everyone with this link can add pixels to “{title}” by {owner}.",
     "lead": "Everyone with this link can add pixels to this parcel by {owner}.",
     "rule": "What you paint shows up for everyone with the link, right away. It is not on the map: the owner chooses when to publish it, and moderators review it first.",
-    "canvas": "Shared canvas of {w} × {h} pixels, drawn at half-pixel precision. Click or drag to paint.",
+    "canvas": "Shared canvas of {w} × {h} pixels, drawn down to a fraction of a pixel. Click or drag to paint.",
     "palette": "Colours",
     "customColor": "Pick any colour",
     "brush": "Brush",

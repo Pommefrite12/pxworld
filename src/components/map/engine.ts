@@ -2,6 +2,7 @@ import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
 import { shouldReturnToGlobe } from "@/lib/globe/orthographic";
 import { enoughLand } from "@/lib/grid/pricing";
+import { ASSET_SIZES, assetSizeFor, assetUrl } from "@/lib/images/sizes";
 import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
 
 /**
@@ -921,10 +922,18 @@ export class MapEngine {
           const rx = Math.round(a.x), ry = Math.round(a.y), rw = Math.round(a.x + sw) - rx, rh = Math.round(a.y + sh) - ry;
           let drawn = false;
           if (p.assetId && sw >= 2) {
-            const img = this.loadImage(this.images, p.assetId, `/api/assets/${p.assetId}`, 400);
+            // a creation can carry up to 10 × 10 dots per pixel: ask for the size this screen can show, not for all of it
+            const size = assetSizeFor(Math.max(rw, rh) * this.dpr);
+            let img = this.loadImage(this.images, `${p.assetId}@${size}`, assetUrl(p.assetId, Math.max(rw, rh) * this.dpr), 400);
+            if (img.state !== "ready") { // meanwhile show a smaller variant already in memory, if any
+              for (let i = ASSET_SIZES.indexOf(size) - 1; i >= 0; i--) {
+                const e = this.images.get(`${p.assetId}@${ASSET_SIZES[i]}`);
+                if (e?.state === "ready") { img = e; break; }
+              }
+            }
             if (img.state === "ready") {
-              // crisp dots when the creation is shown at its own size or larger; a finer (half-pixel) creation drawn smaller is averaged
-              ctx.imageSmoothingEnabled = img.el.naturalWidth > rw * 1.001;
+              // crisp dots when the creation is shown at its own size or larger; a finer one drawn smaller is averaged
+              ctx.imageSmoothingEnabled = img.el.naturalWidth > rw * this.dpr * 1.001;
               ctx.imageSmoothingQuality = "high";
               ctx.drawImage(img.el, rx, ry, rw, rh);
               drawn = true;

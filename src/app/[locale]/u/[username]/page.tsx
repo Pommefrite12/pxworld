@@ -4,6 +4,7 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import { PageShell } from "@/components/layout/PageShell";
 import { Link } from "@/i18n/navigation";
 import { getPublicProfile } from "@/lib/data/parcels";
+import { assetUrl } from "@/lib/images/sizes";
 import { USERNAME_RE } from "@/lib/security/text";
 
 export const revalidate = 60;
@@ -42,7 +43,7 @@ export default async function PublicProfile({ params }: { params: Promise<{ loca
         <ul className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-6">
           {p.creations.map((c) => (
             <li key={c.code}><Link href={`/p/${c.code}`} className="card checker grid aspect-square place-items-center overflow-hidden p-1.5" aria-label={c.title ?? c.code}>
-              <img src={`/api/assets/${c.asset_id}`} alt={c.title ?? ""} loading="lazy" className="pixelated h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
+              {c.asset_id && <img src={assetUrl(c.asset_id, 520)} alt={c.title ?? ""} loading="lazy" className="pixelated h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />}
             </Link></li>
           ))}
         </ul>

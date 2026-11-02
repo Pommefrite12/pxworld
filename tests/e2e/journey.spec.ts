@@ -66,8 +66,8 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await expect(dialog.getByTestId("to-review")).toBeDisabled(); // nothing designed yet
     // no transparent background: the background is a colour, full stop
     await expect(dialog.getByRole("button", { name: /transparent/i })).toHaveCount(0);
-    // the finest brush is half a pixel
-    await expect(dialog.locator("#ed-brush option")).toHaveText(["0.5 px", "1 px", "2 px", "3 px", "5 px", "8 px"]);
+    // the finest brush is a tenth of a pixel
+    await expect(dialog.locator("#ed-brush option")).toHaveText(["0.1 px", "0.2 px", "0.5 px", "1 px", "2 px", "3 px", "5 px", "8 px"]);
 
     // draw directly in the parcel with the pencil: a diagonal stroke
     const canvas = dialog.locator("canvas").first();
@@ -192,8 +192,17 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     const { data, info } = await sharp(bytes).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
     expect((await sharp(bytes).metadata()).hasAlpha).toBe(false);
     expect([...data.subarray(0, 4)]).toEqual([255, 255, 255, 255]); // the top-left corner
-    for (let i = 3; i < data.length; i += 4) expect(data[i]).toBe(255);
-    expect(info).toMatchObject({ width: 40, height: 40 }); // a 20 × 20 pixel parcel is drawn at half-pixel precision: 2 × 2 dots per pixel
+    let opaque = true; // one assertion, not 40 000: a slow loop here let the server close an idle connection before the next request
+    for (let i = 3; i < data.length; i += 4) if (data[i] !== 255) { opaque = false; break; }
+    expect(opaque).toBe(true);
+    expect(info).toMatchObject({ width: 200, height: 200 }); // a 20 × 20 pixel parcel is drawn at a tenth-of-a-pixel precision: 10 × 10 dots per pixel
+    // thumbnails and far-away parcels get a shrunk copy (never enlarged); only the listed sizes are served
+    const sizeOf = async (q: string) => { const r = await request.get(`/api/assets/${assetId}${q}`); return r.status() === 200 ? (await sharp(await r.body()).metadata()).width : r.status(); };
+    expect(await sizeOf("?max=64")).toBe(64);
+    expect(await sizeOf("?max=128")).toBe(128);
+    expect(await sizeOf("?max=1024")).toBe(200); // already smaller than that: returned as is
+    expect(await sizeOf("?max=99")).toBe(400); // not one of the allowed sizes
+    expect(await sizeOf("?max=abc")).toBe(400);
     // public parcel card
     const card = await (await request.get(`/api/parcels/${parcelCode}`)).json();
     expect(card).toMatchObject({ code: parcelCode, w: 20, h: 20, area: 400, creation: { title: "Hello world", assetId } });

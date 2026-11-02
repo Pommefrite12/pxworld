@@ -13,12 +13,13 @@ const ZOOMS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32];
 const POLL_MS = 2000;
 const FLUSH_MS = 350;
 const BATCH = 2000;
-/** Brush thickness in PIXELS: half a pixel is one dot. */
-const BRUSHES = [0.5, 1, 2, 3, 5, 8];
+/** Brush thickness in PIXELS, among the sizes that are a whole number of dots at this precision (0.1 px is one dot at 10 dots per pixel). */
+const BRUSH_PX = [0.1, 0.2, 0.5, 1, 2, 3, 5, 8];
+const brushesFor = (k: number) => BRUSH_PX.filter((b) => Math.abs(b * k - Math.round(b * k)) < 1e-9 && b * k >= 1);
 
 type Tool = "pencil" | "hand";
 
-/** `w` × `h` are the parcel's pixels; the canvas is `scale` times finer: every pixel holds scale × scale dots, a 0.5 px brush paints one. */
+/** `w` × `h` are the parcel's pixels; the canvas is `scale` times finer: every pixel holds scale × scale dots (up to 10 × 10), the finest brush paints one. */
 export function DrawBoard({ token, w: parcelW, h: parcelH, scale, baseAssetId }: { token: string; w: number; h: number; scale: number; baseAssetId: string | null }) {
   const t = useTranslations("draw");
   const f = useFormatter();
@@ -220,8 +221,8 @@ export function DrawBoard({ token, w: parcelW, h: parcelH, scale, baseAssetId }:
           <div className="mt-2 flex items-center gap-2">
             <input type="color" aria-label={t("customColor")} value={color} onChange={(e) => { setColor(e.target.value); setTool("pencil"); }} className="h-9 w-12 cursor-pointer rounded-md border-0 bg-transparent p-0" />
             <label className="label !mb-0 flex-1" htmlFor="dr-brush">{t("brush")}</label>
-            <select id="dr-brush" className="field !min-h-9 !w-20 !py-1" value={brush} onChange={(e) => setBrush(Number(e.target.value))}>
-              {BRUSHES.map((b) => <option key={b} value={b}>{f.number(b)} px</option>)}
+            <select id="dr-brush" className="field !min-h-9 !w-28 !py-1" value={brush} onChange={(e) => setBrush(Number(e.target.value))}>
+              {brushesFor(scale).map((b) => <option key={b} value={b}>{f.number(b)} px</option>)}
             </select>
           </div>
         </section>

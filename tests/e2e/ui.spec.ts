@@ -170,19 +170,56 @@ test.describe("editor", () => {
     const dialog = page.getByRole("dialog");
     const canvas = dialog.locator("canvas").first();
     const box = (await canvas.boundingBox())!;
-    // the canvas has two dots per pixel of the parcel (half-pixel precision), scaled up for editing
-    expect(await canvas.evaluate((c: HTMLCanvasElement) => [c.width, c.height])).toEqual([40, 40]);
+    // the canvas has ten dots per pixel of the parcel (a tenth of a pixel), scaled up for editing
+    expect(await canvas.evaluate((c: HTMLCanvasElement) => [c.width, c.height])).toEqual([200, 200]);
     await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.5);
     await dialog.getByRole("button", { name: "Preview on the map" }).click();
     await expect(page.getByText("Previewing on the map")).toBeVisible();
     await expect.poll(() => page.evaluate(() => Boolean((window.__pxEngine as unknown as { previewImage: unknown }).previewImage))).toBe(true);
     await page.getByRole("button", { name: "Back to the editor" }).click();
     await expect(dialog.getByTestId("to-review")).toBeEnabled(); // the drawing survived the round trip
-    // the exported image has the parcel's dimensions × 2 (the parcel itself stays 20 × 20 pixels)
+    // the exported image has the parcel's dimensions × 10 (the parcel itself stays 20 × 20 pixels)
     await dialog.getByTestId("to-review").click();
     const img = dialog.getByRole("img", { name: "Final render, pixel for pixel" });
     await expect(img).toBeVisible();
-    expect(await img.evaluate((i: HTMLImageElement) => [i.naturalWidth, i.naturalHeight])).toEqual([40, 40]);
+    expect(await img.evaluate((i: HTMLImageElement) => [i.naturalWidth, i.naturalHeight])).toEqual([200, 200]);
+    await ctx.close();
+  });
+
+  test("the finest brush paints a tenth of a pixel, a bigger one paints what it says, and the view can be zoomed to reach them", async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 } });
+    await ctx.request.post("/api/dev/login", { data: { email: "fine@example.test" } });
+    const page = await ctx.newPage();
+    await page.goto("/map?bx=26300&by=11000&bw=20&bh=20");
+    await expect(page.getByTestId("buy-status")).toContainText(/free/i);
+    await page.getByTestId("buy-continue").click();
+    const dialog = page.getByRole("dialog");
+    const canvas = dialog.locator("canvas").first();
+    const dots = () => canvas.evaluate((c: HTMLCanvasElement) => {
+      const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+      let n = 0;
+      for (let i = 0; i < d.length; i += 4) if (d[i] !== 255 || d[i + 1] !== 255 || d[i + 2] !== 255) n++;
+      return n;
+    });
+    expect(await dots()).toBe(0);
+    // zoom in/out changes the size of the view, not the drawing
+    const zoomText = dialog.getByTestId("editor-zoom");
+    const z0 = Number((await zoomText.innerText()).replace("×", ""));
+    await dialog.getByRole("button", { name: "Zoom in" }).click();
+    expect(Number((await zoomText.innerText()).replace("×", ""))).toBeGreaterThan(z0);
+    expect(await canvas.evaluate((c: HTMLCanvasElement) => [c.width, c.height])).toEqual([200, 200]);
+    // 0.1 px = exactly one dot
+    await dialog.locator("#ed-brush").selectOption("0.1");
+    const box = (await canvas.boundingBox())!;
+    await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.5);
+    expect(await dots()).toBe(1);
+    // 0.5 px = 5 × 5 dots, 1 px = 10 × 10 dots (away from the first dot and from each other)
+    await dialog.locator("#ed-brush").selectOption("0.5");
+    await page.mouse.click(box.x + box.width * 0.2, box.y + box.height * 0.2);
+    expect(await dots()).toBe(1 + 25);
+    await dialog.locator("#ed-brush").selectOption("1");
+    await page.mouse.click(box.x + box.width * 0.8, box.y + box.height * 0.8);
+    expect(await dots()).toBe(1 + 25 + 100);
     await ctx.close();
   });
 
@@ -198,10 +235,10 @@ test.describe("editor", () => {
     await dialog.locator('input[type="file"]').setInputFiles({ name: "wide.png", mimeType: "image/png", buffer: photo });
     await expect(dialog.getByTestId("to-review")).toBeEnabled();
     await expect(dialog.getByRole("radiogroup", { name: "Fit" }).getByRole("radio", { name: "Fill" })).toBeVisible();
-    // the editing canvas keeps the parcel's resolution × 2 whatever the photo size
-    expect(await dialog.locator("canvas").first().evaluate((c: HTMLCanvasElement) => [c.width, c.height])).toEqual([60, 60]);
+    // the editing canvas keeps the parcel's resolution × 10 whatever the photo size
+    expect(await dialog.locator("canvas").first().evaluate((c: HTMLCanvasElement) => [c.width, c.height])).toEqual([300, 300]);
     // the pixels of the composed result come from the photo (cover fit → fully green)
-    const centre = await dialog.locator("canvas").first().evaluate((c: HTMLCanvasElement) => Array.from(c.getContext("2d")!.getImageData(30, 30, 1, 1).data));
+    const centre = await dialog.locator("canvas").first().evaluate((c: HTMLCanvasElement) => Array.from(c.getContext("2d")!.getImageData(150, 150, 1, 1).data));
     expect(centre).toEqual([18, 184, 134, 255]);
     // a disguised SVG is refused before any upload happens
     await dialog.locator('input[type="file"]').setInputFiles({ name: "evil.png", mimeType: "image/svg+xml", buffer: Buffer.from("<svg xmlns='http://www.w3.org/2000/svg'/>") });

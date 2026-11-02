@@ -56,12 +56,24 @@ export const PRESET_SIZES = [
 ] as const;
 
 /**
- * Drawing precision. A parcel still has exactly w × h pixels — that is what is sold, counted and priced — but a creation
- * is drawn at TWICE that resolution: every pixel holds 2 × 2 dots, so the finest brush is half a pixel (0.5 px).
- * Images of the parcel's own size (scale 1: older creations, simple uploads) stay valid; the editor produces scale 2.
+ * Drawing precision. A parcel is exactly w × h pixels — that is what is sold, counted and priced — but a creation is
+ * drawn finer: every pixel holds k × k dots, so the finest brush is 1/k of a pixel (0.1 px at k = 10).
+ *
+ * Finer images are bigger images, so the precision is capped by the image's size: at most CREATION_MAX_DOTS dots in total.
+ * Small and medium parcels get the full 10 × 10 dots per pixel; a very large parcel gets fewer (a 500 × 500 pixel parcel:
+ * 4 × 4, i.e. 0.25 px). An image of ANY whole scale from 1 (the parcel's own resolution: older creations, simple uploads)
+ * up to the parcel's maximum is valid.
  */
-export const CREATION_SCALE = 2;
-export const CREATION_SCALES = [1, CREATION_SCALE] as const;
+export const CREATION_MAX_SCALE = 10;
+export const CREATION_MAX_DOTS = 4_000_000;
+
+/** Dots per pixel side for a parcel of w × h pixels: the largest k ≤ 10 with k² · w · h ≤ 4 000 000 (integer arithmetic, same as px_dot_scale in SQL). */
+export function creationScale(w: number, h: number): number {
+  const area = w * h;
+  let k = CREATION_MAX_SCALE;
+  while (k > 1 && k * k * area > CREATION_MAX_DOTS) k--;
+  return k;
+}
 
 /** Default price: €0.50 per pixel, in minor units (cents). */
 export const DEFAULT_UNIT_PRICE_CENTS = 50;

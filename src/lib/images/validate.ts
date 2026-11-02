@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
 import sharp, { type OutputInfo } from "sharp";
 
-import { CREATION_SCALES, HARD_MAX_AREA } from "@/lib/grid/constants";
+import { CREATION_MAX_DOTS, creationScale } from "@/lib/grid/constants";
 
-/** Hard limits for uploaded creations. The raster is the parcel's size, or twice it (see CREATION_SCALE). */
+/** Hard limits for uploaded creations. The raster is the parcel's size times a whole scale (see creationScale). */
 export const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
-const MAX_INPUT_PIXELS = Math.max(...CREATION_SCALES) ** 2 * HARD_MAX_AREA;
+const MAX_INPUT_PIXELS = CREATION_MAX_DOTS;
 
 export class ImageError extends Error {
   constructor(public code:
@@ -78,7 +78,7 @@ async function averageColor(png: Buffer): Promise<string> {
  * Validates an uploaded creation and returns a canonical PNG.
  *  - size cap, content sniffing (SVG and executables are always refused), decompression-bomb guard
  *  - the pixels are decoded and RE-ENCODED: metadata, embedded payloads and trailing bytes are dropped
- *  - dimensions must match the parcel EXACTLY: its own size, or twice it (half-pixel precision)
+ *  - dimensions must match the parcel EXACTLY: its own size times a whole scale, up to 10 (a tenth of a pixel), capped at 4 M dots
  *  - NO transparency: the editor never produces any, and a file that has some (a PNG cut-out, a WebP with alpha) is
  *    flattened onto white here, so the stored creation is always fully opaque
  */
@@ -101,8 +101,9 @@ export async function processCreation(input: Buffer, expected: { w: number; h: n
     throw new ImageError("corrupt");
   }
   const { width, height } = decoded.info;
-  if (!CREATION_SCALES.some((k) => width === expected.w * k && height === expected.h * k)) {
-    throw new ImageError("bad_dimensions", `${width}x${height} ≠ ${expected.w}x${expected.h} (or ${CREATION_SCALES.map((k) => `${expected.w * k}x${expected.h * k}`).join(" / ")})`);
+  const k = width / expected.w;
+  if (!Number.isInteger(k) || k < 1 || k > creationScale(expected.w, expected.h) || height !== expected.h * k) {
+    throw new ImageError("bad_dimensions", `${width}x${height} ≠ ${expected.w}x${expected.h} × a whole scale from 1 to ${creationScale(expected.w, expected.h)}`);
   }
 
   const png = await sharp(decoded.data, { raw: { width, height, channels: 3 } })

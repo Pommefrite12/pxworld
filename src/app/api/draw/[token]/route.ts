@@ -1,5 +1,5 @@
 import { collabDelta, openCollab } from "@/lib/collab";
-import { CREATION_SCALE } from "@/lib/grid/constants";
+import { creationScale } from "@/lib/grid/constants";
 import { HttpError, json } from "@/lib/http/errors";
 import { intParam, route } from "@/lib/http/route";
 import { LIMITS, enforceRateLimit } from "@/lib/rate-limit";
@@ -17,7 +17,7 @@ export const GET = route(async (req, ctx: { params: Promise<{ token: string }> }
   const since = intParam(new URL(req.url).searchParams.get("since") ?? "0", 0, Number.MAX_SAFE_INTEGER) ?? 0;
   const delta = await collabDelta(info, since);
   return json(
-    { w: info.w, h: info.h, scale: CREATION_SCALE, baseAssetId: info.baseAssetId, title: info.title, owner: info.owner, ...delta },
+    { w: info.w, h: info.h, scale: creationScale(info.w, info.h), baseAssetId: info.baseAssetId, title: info.title, owner: info.owner, ...delta },
     { cache: "no-store" },
   );
 });

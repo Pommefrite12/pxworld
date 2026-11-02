@@ -5,7 +5,7 @@ import { HttpError } from "@/lib/http/errors";
 import { objectStore } from "@/lib/storage";
 import { processCreation } from "@/lib/images/validate";
 import { storeCreation } from "@/lib/creations";
-import { CREATION_SCALE } from "@/lib/grid/constants";
+import { creationScale } from "@/lib/grid/constants";
 import { TITLE_MAX, isValidTitle } from "@/lib/security/text";
 
 /**
@@ -49,7 +49,7 @@ export async function openCollab(token: string): Promise<OpenCollab | null> {
 }
 
 export interface CollabDelta {
-  /** Flat `[x, y, rgb, x, y, rgb, …]`; x and y count DOTS (CREATION_SCALE per pixel), from the parcel's top-left corner. */
+  /** Flat `[x, y, rgb, x, y, rgb, …]`; x and y count DOTS (`creationScale(w, h)` per pixel side), from the parcel's top-left corner. */
   p: number[];
   /** Ask next time for changes after this version. */
   version: number;
@@ -114,10 +114,11 @@ export async function ownerCollab(parcelId: string): Promise<OwnerCollab | null>
 
 /**
  * The owner publishes what the community drew: the approved creation (or white) with the overlay on top, submitted as a
- * NEW VERSION of the creation, at the full dot resolution. It replaces the pending version if there is one and waits for a moderator like any edit.
+ * NEW VERSION of the creation, at the parcel's full dot resolution. It replaces the pending version if there is one and waits for a moderator like any edit.
  */
 export async function publishSnapshot(userId: string, parcel: { id: string; w: number; h: number }) {
-  const w = parcel.w * CREATION_SCALE, h = parcel.h * CREATION_SCALE; // in dots, like the overlay
+  const k = creationScale(parcel.w, parcel.h);
+  const w = parcel.w * k, h = parcel.h * k; // in dots, like the overlay
   const overlay = await query<{ x: number; y: number; rgb: number }>("select x, y, rgb from public.parcel_collab_pixels where parcel_id = $1", [parcel.id]);
   if (overlay.length === 0) throw new HttpError(409, "collab_empty");
 
@@ -127,7 +128,7 @@ export async function publishSnapshot(userId: string, parcel: { id: string; w: n
   let raw = Buffer.alloc(w * h * 3, 255); // white
   const bytes = base ? await objectStore().get(base.storage_path) : null;
   if (bytes) {
-    // an older creation is at the parcel's own resolution: its pixels become 2 × 2 dots (nearest, nothing invented)
+    // an older (coarser) creation: each of its dots becomes several (nearest-neighbour, nothing invented)
     const decoded = await sharp(bytes).flatten({ background: "#ffffff" }).resize(w, h, { fit: "fill", kernel: "nearest" }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
     raw = decoded.data;
   }

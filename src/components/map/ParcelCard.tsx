@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { assetUrl } from "@/lib/images/sizes";
 import { hostOf } from "@/lib/security/url";
 
 /** Integer upscale (crisp pixels) up to `box` px; downscale smoothly beyond. */
@@ -66,7 +67,7 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
         <>
           <div className="checker grid place-items-center border-b border-line p-3" style={{ minHeight: 120 }}>
             {info.creation ? (
-              <img src={`/api/assets/${info.creation.assetId}`} alt={info.creation.title ?? t("untitled")}
+              <img src={assetUrl(info.creation.assetId, 440)} alt={info.creation.title ?? t("untitled")}
                 className="pixelated max-w-full" style={{ imageRendering: "pixelated", ...fitSize(info.w, info.h, 208) }} loading="lazy" />
             ) : (
               <p className="px-4 py-6 text-center text-sm text-ink-soft">{info.hidden ? t("hidden") : t("pending")}</p>

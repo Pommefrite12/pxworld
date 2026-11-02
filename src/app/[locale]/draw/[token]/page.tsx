@@ -4,7 +4,7 @@ import { DrawBoard } from "@/components/draw/DrawBoard";
 import { PageShell } from "@/components/layout/PageShell";
 import { Link } from "@/i18n/navigation";
 import { openCollab } from "@/lib/collab";
-import { CREATION_SCALE } from "@/lib/grid/constants";
+import { creationScale } from "@/lib/grid/constants";
 
 export const dynamic = "force-dynamic";
 // the link is a secret: never indexed, never sent along as a referrer to anything the page links to
@@ -32,7 +32,7 @@ export default async function DrawPage({ params }: { params: Promise<{ locale: s
       <p className="mt-1 text-ink-soft">{info.title ? t("leadTitled", { title: info.title, owner: info.owner }) : t("lead", { owner: info.owner })}</p>
       <p className="mt-1 text-sm text-ink-faint">{t("rule")}</p>
       <div className="mt-6 pb-10">
-        <DrawBoard token={token} w={info.w} h={info.h} scale={CREATION_SCALE} baseAssetId={info.baseAssetId} />
+        <DrawBoard token={token} w={info.w} h={info.h} scale={creationScale(info.w, info.h)} baseAssetId={info.baseAssetId} />
       </div>
     </PageShell>
   );

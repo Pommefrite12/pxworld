@@ -146,3 +146,22 @@ describe("pricing", () => {
     expect(formatMoney(10_000, "fr").replace(/\s/g, " ")).toBe("100 €");
   });
 });
+
+describe("drawing precision (dots per pixel)", () => {
+  it("is up to 10 × 10 dots per pixel, fewer on very large parcels so that an image never exceeds 4 million dots", async () => {
+    const { CREATION_MAX_DOTS, CREATION_MAX_SCALE, creationScale } = await import("@/lib/grid/constants");
+    expect([CREATION_MAX_SCALE, CREATION_MAX_DOTS]).toEqual([10, 4_000_000]);
+    expect(creationScale(10, 10)).toBe(10); // 0.1 px
+    expect(creationScale(20, 20)).toBe(10);
+    expect(creationScale(200, 200)).toBe(10); // 2 000 × 2 000 = exactly 4 M dots
+    expect(creationScale(201, 200)).toBe(9);
+    expect(creationScale(500, 500)).toBe(4); // 250 000 px (the default maximum area): 0.25 px
+    expect(creationScale(1000, 1000)).toBe(2); // 1 000 000 px (the hard maximum): half a pixel
+    expect(creationScale(1000, 250)).toBe(4);
+    for (const [w, h] of [[10, 10], [37, 91], [300, 300], [999, 1000], [1000, 1000]] as const) {
+      const k = creationScale(w, h);
+      expect(k * k * w * h).toBeLessThanOrEqual(CREATION_MAX_DOTS); // never over the cap…
+      if (k < CREATION_MAX_SCALE) expect((k + 1) ** 2 * w * h).toBeGreaterThan(CREATION_MAX_DOTS); // …and as fine as the cap allows
+    }
+  });
+});

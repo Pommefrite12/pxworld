@@ -184,7 +184,7 @@
   },
   "editor": {
     "canvasLabel": "Éditeur de parcelle, {w} sur {h} pixels",
-    "exactRes": "pixels de votre parcelle. Chacun contient 4 points : le pinceau le plus fin fait un demi-pixel.",
+    "exactRes": "pixels de votre parcelle, chacun dessiné avec {k} × {k} points : le pinceau le plus fin fait 1/{k} de pixel.",
     "image": "Image",
     "upload": "Importer une image",
     "uploadHint": "PNG, JPEG ou WebP, jusqu'à 10 Mo. Elle est adaptée à votre parcelle.",
@@ -203,8 +203,12 @@
       "eraser": "Gomme",
       "fill": "Remplir",
       "move": "Déplacer l'image",
-      "text": "Déplacer le texte"
+      "text": "Déplacer le texte",
+      "hand": "Déplacer la vue"
     },
+    "viewZoom": "Zoom de la vue",
+    "zoomIn": "Zoom avant",
+    "zoomOut": "Zoom arrière",
     "palette": "Couleurs",
     "customColor": "Couleur personnalisée",
     "brush": "Taille du pinceau",
@@ -382,7 +386,7 @@
     "leadTitled": "Toutes les personnes ayant ce lien peuvent ajouter des pixels à « {title} » de {owner}.",
     "lead": "Toutes les personnes ayant ce lien peuvent ajouter des pixels à cette parcelle de {owner}.",
     "rule": "Ce que vous peignez s'affiche tout de suite pour tous ceux qui ont le lien. Ce n'est pas sur la carte : le propriétaire choisit quand le publier, et les modérateurs le valident d'abord.",
-    "canvas": "Toile partagée de {w} × {h} pixels, dessinée au demi-pixel. Cliquez ou glissez pour peindre.",
+    "canvas": "Toile partagée de {w} × {h} pixels, dessinée jusqu'à une fraction de pixel. Cliquez ou glissez pour peindre.",
     "palette": "Couleurs",
     "customColor": "Choisir une couleur",
     "brush": "Pinceau",

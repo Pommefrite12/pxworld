@@ -2,16 +2,16 @@
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
-import { CREATION_SCALE as S } from "@/lib/grid/constants";
+import { creationScale } from "@/lib/grid/constants";
 
 export interface ParcelEditorHandle {
-  /** Final raster at the editor's full precision (w·S × h·S, every pixel = S × S dots) — what the server stores, after canonical re-encoding. */
+  /** Final raster at the editor's full precision (w·k × h·k, every pixel = k × k dots) — what the server stores, after canonical re-encoding. */
   exportPng(): Promise<Blob>;
   hasContent(): boolean;
 }
 
 interface Props {
-  /** The parcel's size in PIXELS. The drawing itself is S × finer (half-pixel dots): `exportPng` returns w·S × h·S. */
+  /** The parcel's size in PIXELS. The drawing itself is k × finer (k dots per pixel, up to 10: a tenth of a pixel): `exportPng` returns w·k × h·k. */
   w: number;
   h: number;
   /** Existing creation to start from (editing an owned parcel). */
@@ -19,15 +19,21 @@ interface Props {
   onChange?: (hasContent: boolean) => void;
 }
 
-type Tool = "move" | "pencil" | "eraser" | "fill" | "text";
+type Tool = "move" | "pencil" | "eraser" | "fill" | "text" | "hand";
 type Fit = "cover" | "contain" | "stretch";
 
 const PALETTE = ["#17151f", "#ffffff", "#ff4d2e", "#ff9f1c", "#ffd23f", "#12b886", "#0b7a5a", "#2b35e0", "#5bc0eb", "#9b5de5", "#f15bb5", "#8d6e63", "#c9c1ae", "#6b6b78", "#fbf5e6", "#c9dfe8"];
 const MAX_FILE = 10 * 1024 * 1024;
-/** Brush thickness in PIXELS; half a pixel is one dot. */
-const BRUSHES = [0.5, 1, 2, 3, 5, 8];
-/** A very detailed picture can outgrow the upload limit at full precision: it is then sent at the parcel's own resolution. */
+/** Brush thickness in PIXELS, among the sizes that are a whole number of dots at this precision (0.1 px is one dot when k = 10). */
+const BRUSH_PX = [0.1, 0.2, 0.5, 1, 2, 3, 5, 8];
+const brushesFor = (k: number) => BRUSH_PX.filter((b) => Math.abs(b * k - Math.round(b * k)) < 1e-9 && b * k >= 1);
+/** On-screen size of one dot, in screen pixels: zoom steps of the editing canvas. */
+const ZOOMS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32];
+/** A very detailed picture can outgrow the upload limit at full precision: it is then sent at a lower precision. */
 const MAX_PNG_BYTES = 2.8 * 1024 * 1024;
+/** Undo snapshots are full copies of the canvas: keep their total memory bounded whatever the precision. */
+const UNDO_BUDGET_BYTES = 96 * 1024 * 1024;
+const toBlob = (c: HTMLCanvasElement) => new Promise<Blob>((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error("export failed"))), "image/png"));
 
 interface Photo { bitmap: ImageBitmap; fit: Fit; zoom: number; ox: number; oy: number; smooth: boolean }
 interface TextLayer { value: string; size: number; color: string; x: number; y: number; bold: boolean }
@@ -37,20 +43,25 @@ const hexToRgba = (hex: string): [number, number, number, number] => [parseInt(h
 export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function ParcelEditor({ w: pw, h: ph, initialImageUrl, onChange }, ref) {
   const t = useTranslations("editor");
   const f = useFormatter();
+  const S = creationScale(pw, ph); // dots per pixel side
   const w = pw * S, h = ph * S; // everything below works in dots
+  const brushes = useMemo(() => brushesFor(S), [S]);
+  const outer = useRef<HTMLDivElement>(null);
+  const holder = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(1);
   const view = useRef<HTMLCanvasElement>(null);
   const paint = useRef<HTMLCanvasElement | null>(null);
   const undo = useRef<ImageData[]>([]);
   const [tool, setTool] = useState<Tool>("pencil");
   const [color, setColor] = useState(PALETTE[2]!);
-  const [brush, setBrush] = useState(1); // px
+  const [brush, setBrush] = useState(1); // px (1 px is a whole number of dots at every precision)
   const [bg, setBg] = useState("#ffffff"); // always an opaque colour: a creation has no transparent pixel
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [text, setText] = useState<TextLayer | null>(null);
   const [painted, setPainted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [undoCount, setUndoCount] = useState(0);
-  const drag = useRef<{ kind: "paint" | "photo" | "text"; lx: number; ly: number; sx: number; sy: number; base: { ox: number; oy: number } } | null>(null);
+  const drag = useRef<{ kind: "paint" | "photo" | "text" | "pan"; lx: number; ly: number; sx: number; sy: number; base: { ox: number; oy: number } } | null>(null);
 
   const hasContent = Boolean(photo || painted || text?.value);
   useEffect(() => onChange?.(hasContent), [hasContent, onChange]);
@@ -108,24 +119,27 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
 
   useImperativeHandle(ref, () => ({
     hasContent: () => hasContent,
-    exportPng: () => new Promise<Blob>((resolve, reject) => {
+    exportPng: async () => {
       const c = document.createElement("canvas"); c.width = w; c.height = h;
       compose(c.getContext("2d")!);
-      c.toBlob((b) => {
-        if (!b) { reject(new Error("export failed")); return; }
-        if (b.size <= MAX_PNG_BYTES) { resolve(b); return; }
-        const small = document.createElement("canvas"); small.width = pw; small.height = ph; // too heavy: the parcel's own resolution
+      let blob = await toBlob(c);
+      // a very detailed picture can outgrow the upload limit: send it at a lower precision (half the dots, then half again…)
+      for (let k = Math.floor(S / 2); blob.size > MAX_PNG_BYTES && k >= 1; k = Math.floor(k / 2)) {
+        const small = document.createElement("canvas"); small.width = pw * k; small.height = ph * k;
         const sc = small.getContext("2d")!; sc.imageSmoothingEnabled = true; sc.imageSmoothingQuality = "high";
-        sc.drawImage(c, 0, 0, pw, ph);
-        small.toBlob((s) => (s ? resolve(s) : reject(new Error("export failed"))), "image/png");
-      }, "image/png");
-    }),
-  }), [compose, hasContent, w, h, pw, ph]);
+        sc.drawImage(c, 0, 0, small.width, small.height);
+        blob = await toBlob(small);
+        if (k === 1) break;
+      }
+      return blob;
+    },
+  }), [compose, hasContent, w, h, pw, ph, S]);
 
   const pushUndo = () => {
     const p = ensurePaint();
     undo.current.push(p.getContext("2d")!.getImageData(0, 0, w, h));
-    if (undo.current.length > 30) undo.current.shift();
+    const keep = Math.max(3, Math.min(30, Math.floor(UNDO_BUDGET_BYTES / (w * h * 4)))); // every snapshot is a full copy of the canvas
+    while (undo.current.length > keep) undo.current.shift();
     setUndoCount(undo.current.length);
   };
   const doUndo = () => {
@@ -163,26 +177,32 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
   const floodFill = (x: number, y: number) => {
     const ctx = ensurePaint().getContext("2d")!;
     const img = ctx.getImageData(0, 0, w, h), d = img.data;
-    const idx = (px: number, py: number) => (py * w + px) * 4;
-    const i0 = idx(x, y);
-    const target = [d[i0]!, d[i0 + 1]!, d[i0 + 2]!, d[i0 + 3]!];
-    const fill = hexToRgba(color);
-    if (target.every((v, i) => v === fill[i])) return;
-    const same = (i: number) => d[i] === target[0] && d[i + 1] === target[1] && d[i + 2] === target[2] && d[i + 3] === target[3];
-    const stack = [[x, y]] as [number, number][];
-    while (stack.length) {
-      const [px, py] = stack.pop()!;
-      if (px < 0 || py < 0 || px >= w || py >= h) continue;
-      const i = idx(px, py);
-      if (!same(i)) continue;
-      d[i] = fill[0]; d[i + 1] = fill[1]; d[i + 2] = fill[2]; d[i + 3] = 255;
-      stack.push([px + 1, py], [px - 1, py], [px, py + 1], [px, py - 1]);
+    const i0 = (y * w + x) * 4;
+    const t0 = d[i0]!, t1 = d[i0 + 1]!, t2 = d[i0 + 2]!, t3 = d[i0 + 3]!;
+    const [f0, f1, f2] = hexToRgba(color);
+    if (t0 === f0 && t1 === f1 && t2 === f2 && t3 === 255) return;
+    // typed arrays: a canvas can hold millions of dots, an array of [x, y] pairs would not survive that
+    const seen = new Uint8Array(w * h);
+    const stack = new Int32Array(w * h);
+    let top = 0;
+    stack[top++] = y * w + x; seen[y * w + x] = 1;
+    while (top > 0) {
+      const p = stack[--top]!;
+      const o = p * 4;
+      if (d[o] !== t0 || d[o + 1] !== t1 || d[o + 2] !== t2 || d[o + 3] !== t3) continue;
+      d[o] = f0; d[o + 1] = f1; d[o + 2] = f2; d[o + 3] = 255;
+      const px = p % w, py = (p - px) / w;
+      if (px + 1 < w && !seen[p + 1]) { seen[p + 1] = 1; stack[top++] = p + 1; }
+      if (px > 0 && !seen[p - 1]) { seen[p - 1] = 1; stack[top++] = p - 1; }
+      if (py + 1 < h && !seen[p + w]) { seen[p + w] = 1; stack[top++] = p + w; }
+      if (py > 0 && !seen[p - w]) { seen[p - w] = 1; stack[top++] = p - w; }
     }
     ctx.putImageData(img, 0, 0);
   };
 
   const onDown = (e: React.PointerEvent) => {
     e.currentTarget.setPointerCapture(e.pointerId);
+    if (tool === "hand") { drag.current = { kind: "pan", lx: e.clientX, ly: e.clientY, sx: holder.current!.scrollLeft, sy: holder.current!.scrollTop, base: { ox: 0, oy: 0 } }; return; }
     const { x, y } = pos(e);
     if (tool === "pencil" || tool === "eraser") {
       pushUndo(); stamp(x, y); setPainted(true); setUndoCount(undo.current.length);
@@ -199,6 +219,7 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
   const onMove = (e: React.PointerEvent) => {
     const d = drag.current;
     if (!d) return;
+    if (d.kind === "pan") { holder.current!.scrollLeft = d.sx - (e.clientX - d.lx); holder.current!.scrollTop = d.sy - (e.clientY - d.ly); return; }
     const { x, y } = pos(e);
     if (d.kind === "paint") { line(d.lx, d.ly, x, y); d.lx = x; d.ly = y; setUndoCount((n) => n); const ctx = view.current!.getContext("2d")!; compose(ctx); }
     else if (d.kind === "photo" && photo) setPhoto({ ...photo, ox: d.base.ox + (x - d.sx), oy: d.base.oy + (y - d.sy) });
@@ -230,27 +251,50 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
     return () => window.removeEventListener("keydown", k);
   });
 
-  const zoomPx = useMemo(() => Math.max(1, Math.min(16, Math.floor(480 / Math.max(w, h)))), [w, h]);
+  // Start at a zoom that fits the space (the editor often opens inside a dialog that is not displayed yet, so the width is
+  // watched until the first real measure); the finest brushes need more, which the buttons (and the pan tool) give.
+  const userZoomed = useRef(false);
+  useEffect(() => {
+    const el = outer.current;
+    if (!el) return;
+    const fit = () => {
+      if (userZoomed.current || el.clientWidth === 0) return;
+      const room = Math.min(el.clientWidth, 640);
+      setZoom([...ZOOMS].reverse().find((z) => z * w <= room && z * h <= 560) ?? 1);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [w, h]);
+  const zi = ZOOMS.indexOf(zoom);
+  const zoomTo = (z: number) => { userZoomed.current = true; setZoom(z); };
   const tools: { id: Tool; label: string; icon: string; disabled?: boolean }[] = [
     { id: "pencil", label: t("tools.pencil"), icon: "✎" },
     { id: "eraser", label: t("tools.eraser"), icon: "⌫" },
     { id: "fill", label: t("tools.fill"), icon: "▨" },
     { id: "move", label: t("tools.move"), icon: "✥", disabled: !photo },
     { id: "text", label: t("tools.text"), icon: "T", disabled: !text },
+    { id: "hand", label: t("tools.hand"), icon: "✋" },
   ];
 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div>
-        <div className="relative mx-auto overflow-hidden rounded-xl bg-white shadow-[0_0_0_1.5px_var(--color-line)]" style={{ width: "100%", maxWidth: w * zoomPx, aspectRatio: `${w} / ${h}` }}>
+      <div ref={outer}>
+        <div ref={holder} className="mx-auto max-h-[70vh] overflow-auto rounded-xl bg-white shadow-[0_0_0_1.5px_var(--color-line)]" style={{ maxWidth: w * zoom }} data-testid="editor-holder">
           <canvas
             ref={view} width={w} height={h} aria-label={t("canvasLabel", { w: pw, h: ph })}
-            className="pixelated block h-full w-full touch-none"
-            style={{ cursor: tool === "move" ? "move" : tool === "text" ? "grab" : "crosshair" }}
+            className="pixelated block touch-none"
+            style={{ width: w * zoom, height: h * zoom, cursor: tool === "hand" || tool === "text" ? "grab" : tool === "move" ? "move" : "crosshair" }}
             onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
           />
         </div>
-        <p className="mt-2 text-center text-xs text-ink-soft"><span className="pixel-num">{pw} × {ph}</span> — {t("exactRes")}</p>
+        <div className="mt-2 flex items-center justify-center gap-2">
+          <button type="button" className="btn btn-ghost btn-icon btn-sm" aria-label={t("zoomOut")} disabled={zi <= 0} onClick={() => zoomTo(ZOOMS[zi - 1]!)}>−</button>
+          <span className="pixel-num w-12 text-center text-sm" data-testid="editor-zoom" aria-label={t("viewZoom")}>{zoom}×</span>
+          <button type="button" className="btn btn-ghost btn-icon btn-sm" aria-label={t("zoomIn")} disabled={zi >= ZOOMS.length - 1} onClick={() => zoomTo(ZOOMS[zi + 1]!)}>+</button>
+        </div>
+        <p className="mt-2 text-center text-xs text-ink-soft"><span className="pixel-num">{pw} × {ph}</span> — {t("exactRes", { k: S })}</p>
       </div>
 
       <div className="space-y-4 text-sm">
@@ -278,7 +322,7 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
         </section>
 
         <section aria-label={t("tools.label")}>
-          <div role="radiogroup" aria-label={t("tools.label")} className="grid grid-cols-5 gap-1">
+          <div role="radiogroup" aria-label={t("tools.label")} className="grid grid-cols-6 gap-1">
             {tools.map((x) => (
               <button key={x.id} role="radio" aria-checked={tool === x.id} disabled={x.disabled} title={x.label} aria-label={x.label} onClick={() => setTool(x.id)}
                 className={`btn btn-sm !px-0 text-base btn-ghost`}>{x.icon}</button>
@@ -293,8 +337,8 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
           <div className="mt-2 flex items-center gap-2">
             <input type="color" aria-label={t("customColor")} value={color} onChange={(e) => { setColor(e.target.value); if (text) setText({ ...text, color: e.target.value }); }} className="h-9 w-12 cursor-pointer rounded-md border-0 bg-transparent p-0" />
             <label className="label !mb-0 flex-1" htmlFor="ed-brush">{t("brush")}</label>
-            <select id="ed-brush" className="field !min-h-9 !w-20 !py-1" value={brush} onChange={(e) => setBrush(Number(e.target.value))}>
-              {BRUSHES.map((b) => <option key={b} value={b}>{f.number(b)} px</option>)}
+            <select id="ed-brush" className="field !min-h-9 !w-28 !py-1" value={brush} onChange={(e) => setBrush(Number(e.target.value))}>
+              {brushes.map((b) => <option key={b} value={b}>{f.number(b)} px</option>)}
             </select>
           </div>
         </section>
@@ -305,7 +349,7 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
               <input className="field" value={text.value} maxLength={40} aria-label={t("text.label")} onChange={(e) => setText({ ...text, value: e.target.value })} placeholder={t("text.placeholder")} />
               <div className="flex items-center gap-2">
                 <label className="label !mb-0" htmlFor="ed-ts">{t("text.size")}</label>
-                <input id="ed-ts" type="range" min={6} max={Math.max(12, Math.min(192, h))} value={text.size} onChange={(e) => setText({ ...text, size: Number(e.target.value) })} className="flex-1 accent-signal" />
+                <input id="ed-ts" type="range" min={Math.max(6, S)} max={Math.max(12, Math.min(400, h))} value={text.size} onChange={(e) => setText({ ...text, size: Number(e.target.value) })} className="flex-1 accent-signal" />
                 <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={text.bold} onChange={(e) => setText({ ...text, bold: e.target.checked })} />B</label>
               </div>
               <p className="text-xs text-ink-faint">{t("text.hint")}</p>

@@ -84,8 +84,8 @@ describe("painting", () => {
     const token = await enable(owner, parcel);
     const bad = (xs: unknown, ys: unknown, rgb: unknown, code: string) =>
       expectPgError(pool.query(`select public.px_collab_paint($1, $2::int[], $3::int[], $4::int[])`, [token, xs, ys, rgb]), code);
-    await bad([20], [0], [1], "px_collab_out_of_bounds"); // x = 2w: the overlay is made of dots, two per pixel
-    await bad([0], [20], [1], "px_collab_out_of_bounds"); // y = 2h
+    await bad([100], [0], [1], "px_collab_out_of_bounds"); // x = 10w: the overlay is made of dots, ten per pixel on this parcel
+    await bad([0], [100], [1], "px_collab_out_of_bounds"); // y = 10h
     await bad([-1], [0], [1], "px_collab_out_of_bounds");
     await bad([0], [0], [16777216], "px_collab_out_of_bounds");
     await bad([0], [0], [-1], "px_collab_out_of_bounds");
@@ -94,8 +94,8 @@ describe("painting", () => {
     await bad([0, 1], [0], [1], "px_collab_bad_batch");
     await bad(Array(2001).fill(0), Array(2001).fill(0), Array(2001).fill(1), "px_collab_bad_batch");
     // a good pixel next to a bad one is not applied either
-    await bad([0, 99], [0, 0], [1, 1], "px_collab_out_of_bounds");
-    await paint(token, [[19, 19, 1]]); // the last dot of a 10 × 10 pixel parcel is inside
+    await bad([0, 100], [0, 0], [1, 1], "px_collab_out_of_bounds");
+    await paint(token, [[99, 99, 1]]); // the last dot of a 10 × 10 pixel parcel is inside
     await pool.query(`delete from public.parcel_collab_pixels`);
     await pool.query(`update public.parcel_collab set version = 0`);
     expect(await pixels(parcel)).toHaveLength(0);
