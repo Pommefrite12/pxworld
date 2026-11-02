@@ -5,6 +5,7 @@ import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { assetUrl } from "@/lib/images/sizes";
 import { hostOf } from "@/lib/security/url";
+import { CommentsPanel, useComments } from "./Comments";
 
 /** Integer upscale (crisp pixels) up to `box` px; downscale smoothly beyond. */
 export function fitSize(w: number, h: number, box: number) {
@@ -33,6 +34,8 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
   const [liked, setLiked] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
+  const [commenting, setCommenting] = useState(false);
+  const comments = useComments(code);
 
   useEffect(() => {
     let alive = true;
@@ -59,7 +62,7 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
   };
 
   return (
-    <article className={`card pointer-events-auto relative w-full max-w-sm overflow-hidden ${className}`} aria-label={t("label")}>
+    <article className={`card pointer-events-auto relative max-h-[calc(100dvh-7rem)] w-full max-w-sm overflow-y-auto ${className}`} aria-label={t("label")}>
       <button onClick={onClose} className="btn btn-ghost btn-icon btn-sm absolute right-2 top-2 z-10 text-lg shadow-float" aria-label={t("close")}>×</button>
       {info === null && <div className="p-6 text-sm text-ink-soft" aria-busy>…</div>}
       {info === "error" && <div className="p-6 text-sm text-ink-soft">{t("notFound")}</div>}
@@ -94,9 +97,12 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
             <div className="flex flex-wrap gap-2 pt-1">
               <button className="btn btn-ink btn-sm" onClick={share}>{t("share")}</button>
               <button className="btn btn-ghost btn-sm" onClick={like} aria-pressed={liked}>{liked ? "♥" : "♡"} {likes}</button>
-              <Link className="btn btn-ghost btn-sm" href={`/p/${code}`}>{t("openPage")}</Link>
+              <button className="btn btn-ghost btn-sm" onClick={() => setCommenting((v) => !v)} aria-expanded={commenting} data-testid="comment-button">
+                {t("comment")}{comments.total > 0 && <span className="pixel-num" data-testid="comment-count"> · {comments.total}</span>}
+              </button>
               <button className="btn btn-ghost btn-sm" onClick={() => setReporting((v) => !v)} aria-expanded={reporting}>{t("report")}</button>
             </div>
+            {commenting && <CommentsPanel code={code} signedIn={signedIn} comments={comments} />}
             {reporting && (
               <div role="group" aria-label={t("reportReason")} className="grid gap-1 rounded-xl bg-paper-2 p-2 text-sm">
                 {["copyright", "hate", "sexual", "scam", "illegal_ad", "violence", "other"].map((r) => (

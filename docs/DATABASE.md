@@ -36,6 +36,7 @@ erDiagram
 | `moderation_reports` | user reports with an **evidence snapshot** (what was displayed, hash, texts, link, owner) |
 | `moderation_actions`, `audit_logs` | append-only (triggers forbid UPDATE/DELETE) journals of staff and payment events |
 | `parcel_likes`, `parcel_features` | popularity (likes in the last 30 days) and editorial selection |
+| `parcel_comments` | comments under a parcel (server-only; removed ones are kept, marked) |
 | `rate_limits`, `map_state` | shared rate-limit counters; the map version used to bust caches |
 
 ## Overlap protection (the critical invariant)
@@ -102,6 +103,10 @@ See [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
 ## Drawing together (migration 9)
 
 `parcel_collab` (one row per shared parcel: secret `token` of 40 hex characters, `enabled`, a `version` counter, `reset_version`) and `parcel_collab_pixels` (`parcel_id, x, y, rgb, version`; x/y in dots, relative to the parcel). Both are server-only (RLS on, nothing granted to `anon`/`authenticated`). `px_collab_enable(user, parcel, rotate)`, `px_collab_disable`, `px_collab_reset` are owner-only and journalled; `px_collab_paint(token, xs[], ys[], rgb[])` is the one write open to the holder of a token: all-or-nothing, ≤ 2 000 pixels, bounds-checked, last write wins, and serialised per parcel by a row lock so that versions follow commit order (`tests/db/collab.test.ts`, including 40 concurrent writers).
+
+## Comments (migration 13)
+
+`parcel_comments` (`parcel_id`, `author_id`, `body` 1–500 characters and trimmed, `status` `visible`/`removed`, who removed it and in which capacity). Server-only like the other non-public tables (RLS on, nothing granted to `anon`/`authenticated`), so the browser only ever sees what `/api/comments` chooses to show: the visible comments of an active, visible parcel whose author is an active account. `px_comment_add(user, code, body)` checks the account, the parcel, the length and refuses the same words from the same person on the same parcel twice within ten minutes (`px_comment_duplicate`); `px_comment_remove(actor, comment, reason)` lets the **author, the parcel's owner or staff** remove a comment (anybody else: `px_forbidden`) and journals the removal in `audit_logs` (`comment.remove`) unless the author took back their own words. Comments are never edited. They go with their author's account. (`tests/db/comments.test.ts`, `tests/e2e/parcel-comments.spec.ts`.)
 
 ## Default price (migrations 7 and 8)
 

@@ -46,6 +46,31 @@
     "open": "Ouvrir {title}",
     "untitled": "création sans titre"
   },
+  "comments": {
+    "title": "Commentaires",
+    "label": "Votre commentaire",
+    "placeholder": "Écrire un commentaire…",
+    "publish": "Publier",
+    "signIn": "Se connecter pour commenter",
+    "empty": "Aucun commentaire pour l'instant. Soyez le premier !",
+    "remove": "Supprimer",
+    "report": "Signaler",
+    "reportReason": "Motif du signalement",
+    "reported": "Merci, les modérateurs vont l'examiner.",
+    "more": "Voir les commentaires plus anciens",
+    "tooFast": "Doucement : réessayez dans quelques minutes.",
+    "duplicate": "Vous venez de dire exactement la même chose.",
+    "invalid": "Un commentaire fait de 1 à 500 caractères.",
+    "signInAgain": "Reconnectez-vous pour commenter.",
+    "failed": "Le commentaire n'a pas pu être envoyé. Réessayez.",
+    "reasons": {
+      "hate": "Haineux ou harcelant",
+      "sexual": "Contenu sexuel",
+      "scam": "Arnaque ou spam",
+      "violence": "Violence",
+      "other": "Autre"
+    }
+  },
   "search": {
     "label": "Rechercher un lieu",
     "placeholder": "Rechercher un pays, un département, une ville, x,y ou 48,85, 2,35",
@@ -72,7 +97,6 @@
     "published": "Publiée le",
     "share": "Partager",
     "copied": "Lien copié",
-    "openPage": "Ouvrir la page",
     "report": "Signaler",
     "reportReason": "Pourquoi signalez-vous cette création ?",
     "reported": "Merci. Nos modérateurs vont examiner ce signalement.",
@@ -87,7 +111,8 @@
       "violence": "Violence ou contenu dangereux",
       "other": "Autre"
     },
-    "shareDescription": "Une création de {w}×{h} pixels ({area} pixels) par {owner} sur Pixel World, le planisphère collaboratif d'un milliard de pixels."
+    "shareDescription": "Une création de {w}×{h} pixels ({area} pixels) par {owner} sur Pixel World, le planisphère collaboratif d'un milliard de pixels.",
+    "comment": "Commenter"
   },
   "buy": {
     "title": "Réservez vos pixels",
@@ -754,7 +779,9 @@
       "markActioned": "Marquer comme traité",
       "dismiss": "Classer sans suite",
       "suspendOwner": "Suspendre le propriétaire",
-      "confirmSuspend": "Suspendre ce compte ?"
+      "confirmSuspend": "Suspendre ce compte ?",
+      "aboutComment": "Commentaire signalé",
+      "removeComment": "Supprimer le commentaire"
     },
     "parcels": {
       "title": "Parcelles",

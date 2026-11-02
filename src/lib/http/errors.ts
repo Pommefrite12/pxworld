@@ -26,6 +26,8 @@ const PX_STATUS: Record<string, number> = {
   px_parcel_not_active: 409,
   px_bad_decision: 400,
   px_bad_setting: 400,
+  px_comment_invalid: 400,
+  px_comment_duplicate: 409,
 };
 
 export function statusForPx(code: string): number {

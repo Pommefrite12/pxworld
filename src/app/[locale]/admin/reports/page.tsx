@@ -18,7 +18,7 @@ export default async function Reports({ params, searchParams }: { params: Promis
       {reports.length === 0 ? <p className="card mt-6 p-8 text-center text-ink-soft" data-testid="reports-empty">{t("empty")}</p> : (
         <ul className="mt-6 space-y-4">
           {reports.map((r) => {
-            const ev = r.evidence as { title?: string; link_url?: string; content_hash?: string; captured_at?: string; asset_id?: string };
+            const ev = r.evidence as { title?: string; link_url?: string; content_hash?: string; captured_at?: string; asset_id?: string; comment?: { id: string; author: string; body: string } };
             return (
               <li key={r.id} className="card space-y-2 p-4" data-testid="report-item">
                 <div className="flex flex-wrap items-center gap-2">
@@ -29,6 +29,7 @@ export default async function Reports({ params, searchParams }: { params: Promis
                   <span className="ml-auto text-xs text-ink-faint">{f.dateTime(r.created_at, { dateStyle: "medium", timeStyle: "short" })}</span>
                 </div>
                 <p className="text-sm">{t("parcelOf")} <Link className="font-semibold underline" href={`/p/${r.code}`}>{r.code}</Link> · {t("owner")} <span className="font-semibold">{r.owner}</span> · {t("reporter")} {r.reporter ?? "—"}</p>
+                {ev.comment && <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">{t("aboutComment")}</p>}
                 {r.details && <p className="rounded-lg bg-paper-2 px-3 py-2 text-sm">{r.details}</p>}
                 <details className="text-xs text-ink-soft">
                   <summary className="cursor-pointer font-semibold">{t("evidence")}</summary>
@@ -39,6 +40,7 @@ export default async function Reports({ params, searchParams }: { params: Promis
                 {r.resolution_note && <p className="text-xs text-ink-soft">{t("note")}: {r.resolution_note}</p>}
                 {(r.status === "open" || r.status === "reviewing") && (
                   <div className="flex flex-wrap items-center gap-2 pt-1">
+                    {ev.comment && <AdminButton payload={{ action: "remove_comment", commentId: ev.comment.id }} label={t("removeComment")} tone="danger" askReason testId="report-remove-comment" />}
                     {!r.hidden && <AdminButton payload={{ action: "hide_parcel", parcelId: r.parcel_id, hidden: true }} label={t("hide")} tone="danger" askReason testId="report-hide" />}
                     <AdminButton payload={{ action: "resolve_report", reportId: r.id, resolution: "actioned" }} label={t("markActioned")} tone="ink" askReason testId="report-actioned" />
                     <AdminButton payload={{ action: "resolve_report", reportId: r.id, resolution: "dismissed" }} label={t("dismiss")} askReason testId="report-dismiss" />

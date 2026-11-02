@@ -15,7 +15,7 @@ export const POST = route(async (req) => {
   assertSameOrigin(req);
   const viewer = await requireViewer();
   await enforceRateLimit(req, LIMITS.report, viewer.user.id);
-  const body = (await req.json().catch(() => null)) as { code?: string; reason?: string; details?: string } | null;
+  const body = (await req.json().catch(() => null)) as { code?: string; reason?: string; details?: string; commentId?: string } | null;
   if (!body || typeof body.code !== "string" || !REASONS.includes(body.reason as (typeof REASONS)[number])) throw new HttpError(400, "invalid_report");
   const target = await queryOne<{ id: string; owner_id: string; asset_id: string | null; hash: string | null; title: string | null; description: string | null; link_url: string | null; x: number; y: number; w: number; h: number }>(
     `select p.id, p.owner_id, a.id as asset_id, a.content_hash as hash, a.title, a.description, a.link_url, p.x, p.y, p.w, p.h
@@ -24,15 +24,30 @@ export const POST = route(async (req) => {
     [body.code],
   );
   if (!target) throw new HttpError(404, "not_found");
-  const dup = await queryOne("select 1 from public.moderation_reports where reporter_id = $1 and parcel_id = $2 and status in ('open','reviewing')", [viewer.user.id, target.id]);
+  // a report may be about one comment under the parcel: the words are snapshotted too, so it can be handled even if the author deletes them
+  let comment: { id: string; author_id: string; author: string; body: string } | null = null;
+  if (body.commentId !== undefined) {
+    if (typeof body.commentId !== "string" || !/^[0-9a-f-]{36}$/.test(body.commentId)) throw new HttpError(400, "invalid_report");
+    comment = await queryOne<{ id: string; author_id: string; author: string; body: string }>(
+      `select c.id, c.author_id, u.username as author, c.body from public.parcel_comments c join public.profiles u on u.id = c.author_id
+        where c.id = $1 and c.parcel_id = $2 and c.status = 'visible'`,
+      [body.commentId, target.id],
+    );
+    if (!comment) throw new HttpError(404, "not_found");
+  }
+  const dup = await queryOne(
+    `select 1 from public.moderation_reports where reporter_id = $1 and parcel_id = $2 and status in ('open','reviewing') and coalesce(evidence->'comment'->>'id', '') = $3`,
+    [viewer.user.id, target.id, comment?.id ?? ""],
+  );
   if (dup) return json({ ok: true, duplicate: true }, { cache: "no-store" });
   const evidence = {
+    ...(comment ? { comment: { id: comment.id, author_id: comment.author_id, author: comment.author, body: comment.body } } : {}),
     captured_at: new Date().toISOString(), parcel: { x: target.x, y: target.y, w: target.w, h: target.h }, owner_id: target.owner_id,
     asset_id: target.asset_id, content_hash: target.hash, title: target.title, description: target.description, link_url: target.link_url,
   };
   await query(
     `insert into public.moderation_reports (reporter_id, parcel_id, asset_id, reason, details, evidence, reporter_ip_hash) values ($1, $2, $3, $4, $5, $6::jsonb, $7)`,
-    [viewer.user.id, target.id, target.asset_id, body.reason, cleanText(body.details, 1000), JSON.stringify(evidence), ipHash(req)],
+    [viewer.user.id, target.id, target.asset_id, body.reason, cleanText(comment ? `${comment.author}: ${comment.body}` : body.details, 1000), JSON.stringify(evidence), ipHash(req)],
   );
   return json({ ok: true }, { status: 201, cache: "no-store" });
 });

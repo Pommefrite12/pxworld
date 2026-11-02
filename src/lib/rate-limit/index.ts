@@ -40,6 +40,9 @@ export const LIMITS = {
   report: { name: "report", windowSeconds: 3600, max: 10 },
   like: { name: "like", windowSeconds: 600, max: 60 },
   availability: { name: "availability", windowSeconds: 60, max: 120 },
+  /** Comments under a parcel: reading is public (per address), writing needs an account and is slow on purpose. */
+  commentRead: { name: "comment-read", windowSeconds: 60, max: 180 },
+  comment: { name: "comment", windowSeconds: 600, max: 10 },
   auth: { name: "auth", windowSeconds: 600, max: 30 },
   profile: { name: "profile", windowSeconds: 3600, max: 30 },
   /** Drawing together (public links): per address, and per link so one popular link cannot swamp the database. */

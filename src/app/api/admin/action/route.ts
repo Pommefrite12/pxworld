@@ -17,6 +17,7 @@ const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("revoke_parcel"), parcelId: uuid, reason: z.string().min(3).max(500) }),
   z.object({ action: z.literal("suspend_user"), userId: uuid, suspended: z.boolean(), reason }),
   z.object({ action: z.literal("resolve_report"), reportId: uuid, resolution: z.enum(["actioned", "dismissed", "reviewing"]), note: reason }),
+  z.object({ action: z.literal("remove_comment"), commentId: uuid, reason }),
   z.object({ action: z.literal("feature_parcel"), parcelId: uuid, featured: z.boolean(), note: z.string().max(140).optional() }),
   z.object({ action: z.literal("set_setting"), key: z.string().max(60), value: z.union([z.number(), z.boolean()]) }),
   z.object({ action: z.literal("refund_order"), orderId: uuid, reason: z.string().min(3).max(300) }),
@@ -48,6 +49,9 @@ export const POST = route(async (req) => {
       break;
     case "suspend_user":
       await query("select public.px_set_user_suspended($1, $2, $3, $4)", [actor, a.userId, a.suspended, clean(a.reason)]);
+      break;
+    case "remove_comment":
+      await query("select public.px_comment_remove($1, $2, $3)", [actor, a.commentId, clean(a.reason)]);
       break;
     case "resolve_report":
       await query("select public.px_resolve_report($1, $2, $3, $4)", [actor, a.reportId, a.resolution, clean(a.note)]);

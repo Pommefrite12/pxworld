@@ -46,6 +46,31 @@
     "open": "Open {title}",
     "untitled": "untitled creation"
   },
+  "comments": {
+    "title": "Comments",
+    "label": "Your comment",
+    "placeholder": "Write a comment…",
+    "publish": "Post",
+    "signIn": "Sign in to comment",
+    "empty": "No comment yet. Be the first!",
+    "remove": "Delete",
+    "report": "Report",
+    "reportReason": "Reason for the report",
+    "reported": "Thanks, the moderators will look at it.",
+    "more": "Show older comments",
+    "tooFast": "Slow down a little: try again in a few minutes.",
+    "duplicate": "You already said exactly that a moment ago.",
+    "invalid": "A comment is 1 to 500 characters.",
+    "signInAgain": "Please sign in again to comment.",
+    "failed": "The comment could not be sent. Try again.",
+    "reasons": {
+      "hate": "Hateful or harassing",
+      "sexual": "Sexual content",
+      "scam": "Scam or spam",
+      "violence": "Violence",
+      "other": "Other"
+    }
+  },
   "search": {
     "label": "Search a place",
     "placeholder": "Search a country, a département, a city, x,y or 48.85, 2.35",
@@ -72,7 +97,6 @@
     "published": "Published",
     "share": "Share",
     "copied": "Link copied",
-    "openPage": "Open page",
     "report": "Report",
     "reportReason": "Why are you reporting this creation?",
     "reported": "Thank you. Our moderators will review this report.",
@@ -87,7 +111,8 @@
       "violence": "Violence or dangerous content",
       "other": "Something else"
     },
-    "shareDescription": "A {w}×{h} pixel creation ({area} pixels) by {owner} on Pixel World, the collaborative world map of one billion pixels."
+    "shareDescription": "A {w}×{h} pixel creation ({area} pixels) by {owner} on Pixel World, the collaborative world map of one billion pixels.",
+    "comment": "Comment"
   },
   "buy": {
     "title": "Claim your pixels",
@@ -754,7 +779,9 @@
       "markActioned": "Mark as actioned",
       "dismiss": "Dismiss",
       "suspendOwner": "Suspend owner",
-      "confirmSuspend": "Suspend this account?"
+      "confirmSuspend": "Suspend this account?",
+      "aboutComment": "Reported comment",
+      "removeComment": "Delete the comment"
     },
     "parcels": {
       "title": "Parcels",
