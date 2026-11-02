@@ -593,13 +593,13 @@ export class MapEngine {
       this.offX = c * W; // draw the world copy that covers this stretch of the screen
       const x0 = (this.offX - cam.x) * s + w / 2, ww = W * s;
       this.drawGeography(s);
-      this.drawDots(s, x0, y0, ww, hh);
+      this.onLand(s, () => this.drawDots(s, x0, y0, ww, hh)); // the pixel field only exists on land: the sea is not for sale
       if (this.mode === "buy") { ctx.fillStyle = `rgba(${COLORS.free},0.13)`; ctx.fillRect(x0, y0, ww, hh); }
       // zoomed in, place names sit UNDER the parcels (owners cover the map); zoomed out, parcels are specks and names stay readable on top
       if (s >= RASTER_BELOW) this.drawLabels(s);
       this.drawParcels(s);
       if (s < RASTER_BELOW) this.drawLabels(s);
-      this.drawGrid(s);
+      this.onLand(s, () => this.drawGrid(s)); // same for the pixel grid
       this.drawOverlays(s);
     }
     this.offX = 0;
@@ -722,6 +722,42 @@ export class MapEngine {
   }
 
   /** The "pixel field": a dot matrix over the whole planet at far zoom, which melts into the pixel grid as you zoom in. */
+  /** Land (grid px) around the view at the current level of detail, kept while the camera stays inside it. */
+  private landCache: { lod: Lod; ver: number; complete: boolean; rect: { x0: number; y0: number; x1: number; y1: number }; path: Path2D } | null = null;
+
+  private landPath(s: number): Path2D | null {
+    const geo = this.geo;
+    if (!geo) return null;
+    const v = this.visibleWorld();
+    let lod = this.lodFor(Math.ceil(Math.log2(s * this.dpr)));
+    const c = this.landCache;
+    if (c && c.lod === lod && c.ver === geo.version && c.rect.x0 <= v.x0 && c.rect.y0 <= v.y0 && c.rect.x1 >= v.x1 && c.rect.y1 >= v.y1) return c.path;
+    // a region twice the size of the view, snapped to a power-of-two grid so panning rarely rebuilds it
+    const span = Math.max(256, 2 ** Math.ceil(Math.log2(Math.max(v.x1 - v.x0, v.y1 - v.y0))));
+    const rect = {
+      x0: Math.max(0, Math.floor((v.x0 - span / 2) / span) * span), y0: Math.max(0, Math.floor((v.y0 - span / 2) / span) * span),
+      x1: Math.min(W, Math.ceil((v.x1 + span / 2) / span) * span), y1: Math.min(H, Math.ceil((v.y1 + span / 2) / span) * span),
+    };
+    const want = lod;
+    let t = geo.tilePaths(lod, rect, false);
+    if (!t.complete && lod === "10") { lod = "50"; t = geo.tilePaths(lod, rect, false); } // cells still downloading: the coarser coast meanwhile
+    this.landCache = { lod: want, ver: geo.version, complete: t.complete, rect, path: t.fill };
+    return t.fill;
+  }
+
+  /** Runs `draw` clipped to the land: grid lines and dots stop at the coast instead of covering oceans and seas. */
+  private onLand(s: number, draw: () => void) {
+    const path = this.landPath(s);
+    if (!path) return; // geography not loaded yet: nothing to draw yet
+    const { ctx, dpr, cam, w, h } = this;
+    ctx.save();
+    ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * ((this.offX - cam.x) * s + w / 2), dpr * (h / 2 - cam.y * s)); // grid → device px
+    ctx.clip(path, "evenodd");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+    ctx.restore();
+  }
+
   private drawDots(s: number, x0: number, y0: number, ww: number, hh: number) {
     const alpha = clamp((1.2 - s) / 1.0, 0, 1) * 0.5;
     if (alpha <= 0.01) return;
