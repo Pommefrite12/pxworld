@@ -2,7 +2,9 @@
 
 import { useMemo } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { metersPerPixel, pixelToLonLat } from "@/lib/grid/geometry";
+import { assetUrl } from "@/lib/images/sizes";
 import type { Camera } from "./engine";
 import type { PublicStats } from "@/lib/data/map";
 
@@ -11,6 +13,8 @@ export function StatsCard({ stats, compact }: { stats: PublicStats; compact: boo
   const t = useTranslations("stats");
   const f = useFormatter();
   const pct = stats.fillPercent;
+  // the share of the land sold, with enough digits to never read "0 %" once something is sold: 0.015 %, 2.5 %, 40 %
+  const pctLabel = f.number(pct / 100, { style: "percent", ...(pct < 1 ? { maximumSignificantDigits: 2 } : { maximumFractionDigits: 1 }) });
   return (
     <section aria-label={t("label")} className={`card pointer-events-auto w-full max-w-[22rem] ${compact ? "p-3" : "p-4"}`}>
       <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">{t("sold")}</p>
@@ -18,9 +22,12 @@ export function StatsCard({ stats, compact }: { stats: PublicStats; compact: boo
         <span className="pixel-display text-[2.7rem] text-signal" data-testid="sold-pixels">{f.number(stats.soldPixels)}</span>
         <span className="pixel-num text-sm text-ink-faint">/ {f.number(stats.totalPixels)}</span>
       </p>
-      <div className="mt-2.5 h-2.5 overflow-hidden rounded-[3px] bg-paper-2 shadow-[inset_0_0_0_1.5px_var(--color-line)]" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct * 10000) / 10000} aria-label={t("filled")}>
-        {/* the bar is at least 2px wide as soon as one pixel is sold, so progress is always visible */}
-        <div className="h-full rounded-[2px] bg-signal" style={{ width: stats.soldPixels > 0 ? `max(3px, ${pct}%)` : 0 }} />
+      <div className="mt-2.5 flex items-center gap-2.5">
+        <div className="h-2.5 flex-1 overflow-hidden rounded-[3px] bg-paper-2 shadow-[inset_0_0_0_1.5px_var(--color-line)]" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct * 10000) / 10000} aria-valuetext={pctLabel} aria-label={t("filled")}>
+          {/* the bar is at least 3px wide as soon as one pixel is sold, so progress is always visible */}
+          <div className="h-full rounded-[2px] bg-signal" style={{ width: stats.soldPixels > 0 ? `max(3px, ${pct}%)` : 0 }} />
+        </div>
+        <span className="pixel-num shrink-0 text-xs font-bold text-ink-soft" data-testid="sold-percent">{pctLabel}</span>
       </div>
       {!compact && (
         <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
@@ -29,7 +36,42 @@ export function StatsCard({ stats, compact }: { stats: PublicStats; compact: boo
           <div><dt className="text-ink-faint">{t("creations")}</dt><dd className="pixel-num text-sm">{f.number(stats.publishedCreations)}</dd></div>
         </dl>
       )}
-      {!compact && <p className="mt-2 text-xs text-ink-faint">{t("filledPct", { pct: f.number(pct, { maximumFractionDigits: pct < 0.01 ? 6 : 4 }) })}</p>}
+    </section>
+  );
+}
+
+/** What the "latest creations" tile needs of a published parcel (all of it public). */
+export interface LatestCreation { code: string; x: number; y: number; w: number; h: number; assetId: string; title: string | null }
+
+/** The newest published creations, as small pictures: click one to fly to it, the arrow opens the whole gallery. Real data only. */
+export function LatestTile({ items, onPick }: { items: LatestCreation[]; onPick: (c: LatestCreation) => void }) {
+  const t = useTranslations("latest");
+  return (
+    // not on phones (the map needs the room) nor on very short screens
+    <section aria-label={t("title")} className="card pointer-events-auto w-full max-w-[22rem] p-4 max-sm:hidden [@media(max-height:639px)]:hidden" data-testid="latest-tile">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-lg font-extrabold leading-tight">{t("title")}</h2>
+        <Link href="/discover" className="btn btn-ghost btn-icon btn-sm" aria-label={t("all")} title={t("all")} data-testid="latest-all">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M9 5l7 7-7 7" /></svg>
+        </Link>
+      </div>
+      {items.length === 0 ? (
+        <p className="mt-2 text-sm text-ink-soft" data-testid="latest-empty">{t("empty")}</p>
+      ) : (
+        <ul className="mt-3 flex gap-2.5">
+          {items.map((c) => {
+            const label = t("open", { title: c.title ?? t("untitled") });
+            return (
+              <li key={c.code}>
+                <button type="button" onClick={() => onPick(c)} aria-label={label} title={label} data-testid="latest-item"
+                  className="block h-14 w-14 overflow-hidden rounded-[6px] bg-paper-2 shadow-[inset_0_0_0_1.5px_var(--color-line)] transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cobalt">
+                  <img src={assetUrl(c.assetId, 128)} alt="" className="h-full w-full object-contain" style={{ imageRendering: "pixelated" }} loading="lazy" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }

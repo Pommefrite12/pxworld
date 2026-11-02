@@ -91,3 +91,43 @@ test("a parcel on the coast keeps its rectangle, but its drawing is cut along th
   expect(sea, "the sea part of the rectangle shows the sea").toBeGreaterThan(0.3);
   await Promise.all([api.dispose(), admin.dispose()]);
 });
+
+test("the latest-creations tile shows real published creations; one click flies to the parcel and opens its card; the bar shows the % sold", async ({ page }) => {
+  const SPOT2 = { x: 27_200, y: 11_200, w: 30, h: 30 };
+  const TITLE = "Latest tile test";
+  const api = await pwRequest.newContext({ baseURL: BASE, extraHTTPHeaders: { "x-forwarded-for": "203.0.113.204" } });
+  const admin = await pwRequest.newContext({ baseURL: BASE, extraHTTPHeaders: { "x-forwarded-for": "203.0.113.205" } });
+  expect((await api.post("/api/dev/login", { data: { email: "latestowner@example.test" } })).ok()).toBeTruthy();
+  expect((await admin.post("/api/dev/login", { data: { email: "admin.latest@example.test", role: "admin" } })).ok()).toBeTruthy();
+  const image = await sharp({ create: { width: SPOT2.w, height: SPOT2.h, channels: 3, background: "#d12b2b" } }).png().toBuffer();
+  const r = await api.post("/api/checkout", { multipart: { x: String(SPOT2.x), y: String(SPOT2.y), w: String(SPOT2.w), h: String(SPOT2.h), title: TITLE, image: { name: "c.png", mimeType: "image/png", buffer: image } } });
+  expect(r.status(), await r.text()).toBe(200);
+  const { orderId } = await r.json();
+  expect((await (await api.post("/api/dev/pay", { data: { orderId, outcome: "paid" } })).json()).outcome).toBe("processed");
+  const db = new pg.Client({ connectionString: (process.env.TEST_PG_ADMIN_URL ?? "postgres://pixel:pixel@127.0.0.1:54329/postgres").replace(/\/[^/]*$/, "/pixelworld_e2e") });
+  await db.connect();
+  const { rows } = await db.query(`select a.id from public.parcel_assets a join public.parcels p on p.id = a.parcel_id where p.x = $1 and p.y = $2 and a.status = 'pending'`, [SPOT2.x, SPOT2.y]);
+  await db.end();
+  expect((await admin.post("/api/admin/action", { data: { action: "review_asset", assetId: rows[0]!.id, decision: "approve" } })).status()).toBe(200);
+
+  await page.setViewportSize({ width: 1360, height: 860 });
+  await page.goto("/");
+  // the % is the real share: what has been sold so far (this and the other tests' parcels) over the land total, never rounded to 0
+  const stats = await (await api.get("/api/stats")).json();
+  expect(stats.soldPixels).toBeGreaterThan(0);
+  const label = await page.getByTestId("sold-percent").innerText();
+  expect(label).toMatch(/^0[.,]\d+\s?%$/);
+  const shown = Number(label.replace(",", ".").replace(/[^\d.]/g, "")), real = (stats.soldPixels / stats.totalPixels) * 100;
+  expect(Math.abs(shown - real) / real, `${label} vs ${real}`).toBeLessThan(0.06); // two significant digits
+  // the newest creation is the first one of the tile, and the arrow leads to the whole gallery
+  const tile = page.getByTestId("latest-tile");
+  await expect(tile.getByTestId("latest-item").first()).toBeVisible();
+  await expect(tile.getByTestId("latest-item").first()).toHaveAttribute("aria-label", `Open ${TITLE}`);
+  expect(await tile.getByTestId("latest-item").count()).toBeLessThanOrEqual(4);
+  await expect(tile.getByTestId("latest-all")).toHaveAttribute("href", /\/discover$/);
+  // …a click flies to that parcel and opens its card (title, owner)
+  await tile.getByTestId("latest-item").first().click();
+  await expect(page.getByRole("article").getByRole("heading", { name: TITLE })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => { const e = (window as unknown as { __pxEngine?: { cam: { x: number; y: number; scale: number } } }).__pxEngine; return e ? Math.round(e.cam.x) : 0; }), { timeout: 10_000 }).toBe(SPOT2.x + SPOT2.w / 2);
+  await Promise.all([api.dispose(), admin.dispose()]);
+});

@@ -31,6 +31,10 @@ test.describe.serial("buy → pay → moderate → publish", () => {
   test("the counter is real: nothing is sold at the start", async ({ page, request }) => {
     await page.goto("/");
     await expect(page.getByTestId("sold-pixels")).toHaveText("0");
+    await expect(page.getByTestId("sold-percent")).toHaveText(/^0\s?%$/); // the share of the land sold sits on the progress bar
+    await page.setViewportSize({ width: 1360, height: 860 });
+    await expect(page.getByTestId("latest-empty"), "no creation yet: the tile says so instead of showing made-up ones").toBeVisible();
+    await expect(page.getByTestId("latest-item")).toHaveCount(0);
     const stats = await (await request.get("/api/stats")).json();
     expect(stats).toMatchObject({ totalPixels: LAND_PIXELS, soldPixels: 0, owners: 0, parcels: 0, publishedCreations: 0 });
     // the map canvas is there and has been painted

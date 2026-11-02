@@ -37,8 +37,14 @@
     "filled": "Part des terres acquises",
     "available": "Disponibles",
     "owners": "Propriétaires",
-    "creations": "Créations",
-    "filledPct": "{pct} % des terres sont réservées"
+    "creations": "Créations"
+  },
+  "latest": {
+    "title": "Dernières créations",
+    "all": "Voir toutes les créations",
+    "empty": "Les premières créations apparaîtront ici.",
+    "open": "Ouvrir {title}",
+    "untitled": "création sans titre"
   },
   "search": {
     "label": "Rechercher un lieu",

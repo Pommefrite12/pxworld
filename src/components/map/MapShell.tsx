@@ -12,12 +12,14 @@ import { centeredRect, clampToGrid, pixelToLonLat, type Rect } from "@/lib/grid/
 import type { PublicStats } from "@/lib/data/map";
 import { MapView, type MapViewHandle } from "./MapView";
 import type { Camera, MapParcel, Mode, SelectionState } from "./engine";
-import { CursorReadout, MapControls, StatsCard } from "./Hud";
+import { CursorReadout, LatestTile, MapControls, StatsCard, type LatestCreation } from "./Hud";
 import { ParcelCard } from "./ParcelCard";
 import { SearchBox, type SearchTarget } from "./SearchBox";
 
 export interface MapShellProps {
   stats: PublicStats | null;
+  /** The newest published creations (public data), for the tile next to the counter. */
+  latest?: LatestCreation[];
   pricing: Pricing;
   viewer: HeaderViewer | null;
   initial: { camera: Camera | null; parcelCode: string | null; buy: Rect | null; startBuy?: boolean };
@@ -25,7 +27,7 @@ export interface MapShellProps {
 
 const DEFAULT_SIZE = { w: 20, h: 20 };
 
-export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapShellProps) {
+export function MapShell({ stats: initialStats, latest = [], pricing, viewer, initial }: MapShellProps) {
   const t = useTranslations("map");
   const tc = useTranslations("common");
   const locale = useLocale();
@@ -153,6 +155,15 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
     engine()?.setHighlight(p?.code ?? null);
   }, []);
 
+  // a click on a creation of the "latest" tile: fly to its parcel and open its card
+  const pickLatest = useCallback((c: LatestCreation) => {
+    const e = engine();
+    if (!e) return;
+    e.fitRect({ x: c.x, y: c.y, w: c.w, h: c.h }, { padding: 130, maxScale: 12 });
+    setParcelCode(c.code);
+    e.setHighlight(c.code);
+  }, []);
+
   const zoomed = cam.scale >= 0.25;
   const fullStats = mode === "explore" && !parcelCode && !zoomed; // full counter card when zoomed out, compact one when zoomed in
 
@@ -186,6 +197,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
         {/* live counter (bottom) */}
         <div className="pointer-events-none absolute inset-3 z-10 flex flex-col justify-end sm:inset-5">
           <div className="flex max-w-[calc(100%-4.5rem)] flex-col items-start gap-2 sm:max-w-none">
+            {mode === "explore" && <LatestTile items={latest} onPick={pickLatest} />}
             {stats ? <StatsCard stats={stats} compact={!fullStats} /> : <p className="card pointer-events-auto px-4 py-3 text-sm text-ink-soft">{t("statsUnavailable")}</p>}
             {cursor && <CursorReadout x={cursor.x} y={cursor.y} />}
             <p className="pointer-events-auto badge-px px-3 py-1 text-[0.65rem] text-ink-faint">

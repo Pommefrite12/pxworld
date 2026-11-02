@@ -37,8 +37,14 @@
     "filled": "Share of the land sold",
     "available": "Available",
     "owners": "Owners",
-    "creations": "Creations",
-    "filledPct": "{pct}% of the land is claimed"
+    "creations": "Creations"
+  },
+  "latest": {
+    "title": "Latest creations",
+    "all": "See all creations",
+    "empty": "The first creations will appear here.",
+    "open": "Open {title}",
+    "untitled": "untitled creation"
   },
   "search": {
     "label": "Search a place",
