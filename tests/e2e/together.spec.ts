@@ -189,6 +189,45 @@ test.describe.serial("drawing together", () => {
     expect((await (await owner.get(`/api/parcels/${code}`)).json()).creation.title).toBe("Chat canvas");
   });
 
+  test("a multicolour stroke on the shared canvas runs through the chosen colours, one brush width of each", async ({ page }) => {
+    const [RED, GREEN, PURPLE] = ["#ff4d2e", "#12b886", "#9b5de5"];
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`/draw/${token}`);
+    const canvas = page.getByTestId("draw-canvas");
+    await expect(canvas).toHaveAttribute("data-ready", "true", { timeout: 20_000 });
+    await page.getByTestId("multi-toggle").check();
+    await page.getByRole("button", { name: GREEN, exact: true }).click();
+    await page.getByRole("button", { name: PURPLE, exact: true }).click();
+    await expect(page.getByTestId("mix-rank")).toHaveCount(3); // red (in hand) 1, green 2, purple 3
+    await expect(page.getByRole("button", { name: PURPLE, exact: true }).getByTestId("mix-rank")).toHaveText("3");
+    await page.locator("#dr-brush").selectOption("1"); // 1 px = 10 dots per colour
+    const box = (await canvas.boundingBox())!;
+    const dot = box.width / (SPOT.w * 10);
+    const y = box.y + 120.5 * dot;
+    await page.mouse.move(box.x + 40 * dot, y);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 200 * dot, y, { steps: 10 });
+    await page.mouse.up();
+    const runs = await canvas.evaluate((c: HTMLCanvasElement) => {
+      const wanted = [[0xff, 0x4d, 0x2e], [0x12, 0xb8, 0x86], [0x9b, 0x5d, 0xe5]];
+      const d = c.getContext("2d")!.getImageData(0, 120, c.width, 1).data;
+      const out: { colour: number; length: number }[] = [];
+      for (let x = 0; x < c.width; x++) {
+        const j = wanted.findIndex((w) => d[x * 4] === w[0] && d[x * 4 + 1] === w[1] && d[x * 4 + 2] === w[2]);
+        if (j < 0) continue;
+        const last = out[out.length - 1];
+        if (last && last.colour === j) last.length++; else out.push({ colour: j, length: 1 });
+      }
+      return out;
+    });
+    expect(runs.map((r) => r.colour).slice(0, 7)).toEqual([0, 1, 2, 0, 1, 2, 0]);
+    expect(runs.slice(1, -1).every((r) => r.length === 10), JSON.stringify(runs.map((r) => r.length))).toBe(true);
+    // the other visitors get exactly what was painted (every dot of the stroke is stored with its own colour)
+    // (strokes are sent in small batches a moment after they are painted)
+    await expect.poll(async () => (await sql<{ rgb: number }>("select distinct rgb from public.parcel_collab_pixels where parcel_id = $1 and y = 120 and x between 35 and 204 order by rgb", [parcelId])).map((r) => r.rgb), { timeout: 15_000 })
+      .toEqual([0x12b886, 0x9b5de5, 0xff4d2e]);
+  });
+
   test("an empty drawing cannot be published; resetting wipes it for everybody and makes viewers reload", async () => {
     const ctx = await visitor();
     const before = await state(ctx, token);

@@ -244,7 +244,9 @@
       "placeholder": "Your message",
       "size": "Size",
       "hint": "Drag on the canvas to position the text.",
-      "remove": "Remove the text"
+      "remove": "Remove the text",
+      "color": "Text colour",
+      "customColor": "Pick any text colour"
     },
     "background": "Background",
     "undo": "Undo",
@@ -253,7 +255,9 @@
       "type": "Only PNG, JPEG and WebP images are accepted.",
       "size": "This image is larger than 10 MB.",
       "read": "This image could not be read."
-    }
+    },
+    "multi": "Multicolour brush",
+    "multiHint": "Click colours to add or remove them: the stroke runs through them in the order shown."
   },
   "common": {
     "loading": "Loading…",
@@ -425,7 +429,9 @@
     "slow": "A lot of people are painting — slowing down for a moment.",
     "closedTitle": "This drawing link is no longer active",
     "closedLead": "The owner may have switched it off or replaced it. Ask them for the current link.",
-    "home": "Back to Pixel World"
+    "home": "Back to Pixel World",
+    "multi": "Multicolour brush",
+    "multiHint": "Click colours to add or remove them: the stroke runs through them in the order shown."
   },
   "collab": {
     "title": "Draw together",

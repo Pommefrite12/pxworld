@@ -244,7 +244,9 @@
       "placeholder": "Votre message",
       "size": "Taille",
       "hint": "Glissez sur le canevas pour positionner le texte.",
-      "remove": "Retirer le texte"
+      "remove": "Retirer le texte",
+      "color": "Couleur du texte",
+      "customColor": "Choisir une couleur de texte"
     },
     "background": "Arrière-plan",
     "undo": "Annuler",
@@ -253,7 +255,9 @@
       "type": "Seules les images PNG, JPEG et WebP sont acceptées.",
       "size": "Cette image dépasse 10 Mo.",
       "read": "Cette image n'a pas pu être lue."
-    }
+    },
+    "multi": "Pinceau multicolore",
+    "multiHint": "Cliquez des couleurs pour les ajouter ou les retirer : le trait les parcourt dans l'ordre indiqué."
   },
   "common": {
     "loading": "Chargement…",
@@ -425,7 +429,9 @@
     "slow": "Beaucoup de monde peint en ce moment — on ralentit un instant.",
     "closedTitle": "Ce lien de dessin n'est plus actif",
     "closedLead": "Le propriétaire l'a peut-être coupé ou remplacé. Demandez-lui le lien actuel.",
-    "home": "Retour à Pixel World"
+    "home": "Retour à Pixel World",
+    "multi": "Pinceau multicolore",
+    "multiHint": "Cliquez des couleurs pour les ajouter ou les retirer : le trait les parcourt dans l'ordre indiqué."
   },
   "collab": {
     "title": "Dessiner ensemble",

@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { clampLevel, fitScale, formatLevel, levelsFor } from "@/lib/editor/zoom";
+import { PALETTE, hexToInt, mixColor, strokeRun } from "@/lib/editor/colors";
+import { Palette } from "@/components/editor/Palette";
 
 /**
  * The shared canvas of a parcel. Everything the people holding the link paint is sent to the server in small batches and
  * everyone else's strokes are fetched back by polling ("what changed after version N"), so any number of browsers see the
  * same drawing a moment later. No account, no WebSocket: plain requests, easy to scale and to limit.
  */
-const PALETTE = ["#17151f", "#ffffff", "#ff4d2e", "#ff9f1c", "#ffd23f", "#12b886", "#0b7a5a", "#2b35e0", "#5bc0eb", "#9b5de5", "#f15bb5", "#8d6e63", "#c9c1ae", "#6b6b78", "#fbf5e6", "#c9dfe8"];
 const POLL_MS = 2000;
 const FLUSH_MS = 350;
 const BATCH = 2000;
@@ -43,6 +44,8 @@ export function DrawBoard({ token, w: parcelW, h: parcelH, scale, baseAssetId }:
   const [slow, setSlow] = useState(false);
   const [n, setN] = useState(0);
   const [color, setColor] = useState(PALETTE[2]!);
+  const [multi, setMulti] = useState(false); // multicolour brush: the stroke runs through `mix`, one brush width of each colour at a time
+  const [mix, setMix] = useState<string[]>([PALETTE[2]!]);
   const [brush, setBrush] = useState(1); // px
   const [tool, setTool] = useState<Tool>("pencil");
   // View zoom: 1× = the whole canvas in the available space; `fit` is the size of a dot (screen px) at 1×, `level` the multiple
@@ -52,7 +55,7 @@ export function DrawBoard({ token, w: parcelW, h: parcelH, scale, baseAssetId }:
   const zoom = clampLevel(level, levels);
   const dotPx = fit * zoom;
   const keepCentre = useRef<{ fx: number; fy: number } | null>(null);
-  const drag = useRef<{ x: number; y: number; sx: number; sy: number } | null>(null);
+  const drag = useRef<{ x: number; y: number; sx: number; sy: number; n: number } | null>(null);
 
   const draw = useCallback((x: number, y: number, w1 = 1, h1 = 1) => {
     const c = view.current?.getContext("2d");
@@ -148,44 +151,46 @@ export function DrawBoard({ token, w: parcelW, h: parcelH, scale, baseAssetId }:
   }, [ready, token, w]);
 
   /* ---------- painting ---------- */
-  const rgbInt = useMemo(() => parseInt(color.slice(1), 16), [color]);
+  const brushDots = Math.max(1, Math.round(brush * scale));
+  const colourAt = (n: number) => hexToInt(multi ? mixColor(mix, n, strokeRun(brushDots, scale)) : color);
   const at = (e: React.PointerEvent) => {
     const r = view.current!.getBoundingClientRect();
     return { x: Math.floor(((e.clientX - r.left) / r.width) * w), y: Math.floor(((e.clientY - r.top) / r.height) * h) };
   };
-  const stamp = (cx: number, cy: number) => {
-    const size = Math.max(1, Math.round(brush * scale)); // dots
+  const stamp = (cx: number, cy: number, rgb: number) => {
+    const size = brushDots; // dots
     const o = Math.floor(size / 2);
     const x0 = Math.max(0, cx - o), y0 = Math.max(0, cy - o), x1 = Math.min(w, cx - o + size), y1 = Math.min(h, cy - o + size);
-    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { setPixel(y * w + x, rgbInt, true); pending.current.set(y * w + x, rgbInt); }
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { setPixel(y * w + x, rgb, true); pending.current.set(y * w + x, rgb); }
     if (x1 > x0 && y1 > y0) draw(x0, y0, x1 - x0, y1 - y0);
   };
-  const line = (x0: number, y0: number, x1: number, y1: number) => { // Bresenham: no gaps in a fast stroke
+  /** Bresenham: no gaps in a fast stroke. The start point was painted already; every further dot counts towards the colour. */
+  const line = (x0: number, y0: number, x1: number, y1: number, d: { n: number }) => {
     const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
     let err = dx + dy;
-    for (;;) {
-      stamp(x0, y0);
-      if (x0 === x1 && y0 === y1) break;
+    while (x0 !== x1 || y0 !== y1) {
       const e2 = 2 * err;
       if (e2 >= dy) { err += dy; x0 += sx; }
       if (e2 <= dx) { err += dx; y0 += sy; }
+      stamp(x0, y0, colourAt(d.n));
+      d.n++;
     }
   };
   const onDown = (e: React.PointerEvent) => {
     if (!ready || closed) return;
     e.currentTarget.setPointerCapture(e.pointerId);
-    if (tool === "hand") { drag.current = { x: e.clientX, y: e.clientY, sx: holder.current!.scrollLeft, sy: holder.current!.scrollTop }; return; }
+    if (tool === "hand") { drag.current = { x: e.clientX, y: e.clientY, sx: holder.current!.scrollLeft, sy: holder.current!.scrollTop, n: 0 }; return; }
     const p = at(e);
-    stamp(p.x, p.y);
+    stamp(p.x, p.y, colourAt(0));
     setN(count.current);
-    drag.current = { x: p.x, y: p.y, sx: 0, sy: 0 };
+    drag.current = { x: p.x, y: p.y, sx: 0, sy: 0, n: 1 };
   };
   const onMove = (e: React.PointerEvent) => {
     const d = drag.current;
     if (!d) return;
     if (tool === "hand") { holder.current!.scrollLeft = d.sx - (e.clientX - d.x); holder.current!.scrollTop = d.sy - (e.clientY - d.y); return; }
     const p = at(e);
-    line(d.x, d.y, p.x, p.y);
+    line(d.x, d.y, p.x, p.y, d);
     d.x = p.x; d.y = p.y;
     setN(count.current);
   };
@@ -235,19 +240,16 @@ export function DrawBoard({ token, w: parcelW, h: parcelH, scale, baseAssetId }:
 
       <div className="space-y-4 text-sm">
         <section aria-label={t("palette")}>
-          <div className="grid grid-cols-8 gap-1.5 lg:grid-cols-4" role="group">
-            {PALETTE.map((c) => (
-              <button key={c} aria-label={c} aria-pressed={color === c} onClick={() => { setColor(c); setTool("pencil"); }}
-                className="aspect-square rounded-[3px] shadow-[inset_0_0_0_1px_rgb(0_0_0/0.15),0_2px_0_rgb(31_37_64/0.12)]" style={{ background: c, outline: color === c ? "3px solid var(--color-cobalt)" : "none", outlineOffset: 1 }} />
-            ))}
-          </div>
-          <div className="mt-2 flex items-center gap-2">
-            <input type="color" aria-label={t("customColor")} value={color} onChange={(e) => { setColor(e.target.value); setTool("pencil"); }} className="h-9 w-12 cursor-pointer rounded-md border-0 bg-transparent p-0" />
+          <Palette
+            color={color} onColor={(c) => { setColor(c); setTool("pencil"); }}
+            multi={multi} onMulti={setMulti} mix={mix} onMix={setMix}
+            labels={{ palette: t("palette"), customColor: t("customColor"), multi: t("multi"), multiHint: t("multiHint") }}
+          >
             <label className="label !mb-0 flex-1" htmlFor="dr-brush">{t("brush")}</label>
             <select id="dr-brush" className="field !min-h-9 !w-28 !py-1" value={brush} onChange={(e) => setBrush(Number(e.target.value))}>
               {brushesFor(scale).map((b) => <option key={b} value={b}>{f.number(b)} px</option>)}
             </select>
-          </div>
+          </Palette>
         </section>
 
         <section className="space-y-2">

@@ -4,6 +4,8 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffec
 import { useFormatter, useTranslations } from "next-intl";
 import { clampLevel, fitScale, formatLevel, levelsFor } from "@/lib/editor/zoom";
 import { creationScale } from "@/lib/grid/constants";
+import { PALETTE, mixColor, strokeRun } from "@/lib/editor/colors";
+import { Palette, Swatches } from "./Palette";
 
 export interface ParcelEditorHandle {
   /** Final raster at the editor's full precision (w·k × h·k, every pixel = k × k dots) — what the server stores, after canonical re-encoding. */
@@ -23,7 +25,6 @@ interface Props {
 type Tool = "move" | "pencil" | "eraser" | "fill" | "text" | "hand";
 type Fit = "cover" | "contain" | "stretch";
 
-const PALETTE = ["#17151f", "#ffffff", "#ff4d2e", "#ff9f1c", "#ffd23f", "#12b886", "#0b7a5a", "#2b35e0", "#5bc0eb", "#9b5de5", "#f15bb5", "#8d6e63", "#c9c1ae", "#6b6b78", "#fbf5e6", "#c9dfe8"];
 const MAX_FILE = 10 * 1024 * 1024;
 /** Brush thickness in PIXELS, among the sizes that are a whole number of dots at this precision (0.1 px is one dot when k = 10). */
 const BRUSH_PX = [0.1, 0.2, 0.5, 1, 2, 3, 5, 8];
@@ -59,6 +60,9 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
   const undo = useRef<ImageData[]>([]);
   const [tool, setTool] = useState<Tool>("pencil");
   const [color, setColor] = useState(PALETTE[2]!);
+  // multicolour brush: the stroke runs through `mix`, one brush width of each colour at a time (the text has its own colour)
+  const [multi, setMulti] = useState(false);
+  const [mix, setMix] = useState<string[]>([PALETTE[2]!]);
   const [brush, setBrush] = useState(1); // px (1 px is a whole number of dots at every precision)
   const [bg, setBg] = useState("#ffffff"); // always an opaque colour: a creation has no transparent pixel
   const [photo, setPhoto] = useState<Photo | null>(null);
@@ -66,7 +70,7 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
   const [painted, setPainted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [undoCount, setUndoCount] = useState(0);
-  const drag = useRef<{ kind: "paint" | "photo" | "text" | "pan"; lx: number; ly: number; sx: number; sy: number; base: { ox: number; oy: number } } | null>(null);
+  const drag = useRef<{ kind: "paint" | "photo" | "text" | "pan"; lx: number; ly: number; sx: number; sy: number; base: { ox: number; oy: number }; /** dots painted so far in this stroke (decides the colour of a multicolour one) */ n?: number } | null>(null);
 
   const hasContent = Boolean(photo || painted || text?.value);
   useEffect(() => onChange?.(hasContent), [hasContent, onChange]);
@@ -160,22 +164,26 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
     return { x: Math.floor(((e.clientX - r.left) / r.width) * w), y: Math.floor(((e.clientY - r.top) / r.height) * h) };
   };
 
-  const stamp = (x: number, y: number) => {
+  const brushDots = Math.max(1, Math.round(brush * S));
+  /** Colour of the n-th dot of a stroke: the colour, or the next one of the mix every brush width. */
+  const colourAt = (n: number) => (multi ? mixColor(mix, n, strokeRun(brushDots, S)) : color);
+  const stamp = (x: number, y: number, colour: string) => {
     const ctx = ensurePaint().getContext("2d")!;
-    const size = Math.max(1, Math.round(brush * S)); // dots
+    const size = brushDots; // dots
     const o = Math.floor(size / 2);
     if (tool === "eraser") ctx.clearRect(x - o, y - o, size, size);
-    else { ctx.fillStyle = color; ctx.fillRect(x - o, y - o, size, size); }
+    else { ctx.fillStyle = colour; ctx.fillRect(x - o, y - o, size, size); }
   };
-  const line = (x0: number, y0: number, x1: number, y1: number) => { // Bresenham: no gaps in fast strokes
+  /** Bresenham: no gaps in fast strokes. The start point was painted already; every further dot counts towards the colour. */
+  const line = (x0: number, y0: number, x1: number, y1: number, d: { n?: number }) => {
     const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
     let err = dx + dy;
-    for (;;) {
-      stamp(x0, y0);
-      if (x0 === x1 && y0 === y1) break;
+    while (x0 !== x1 || y0 !== y1) {
       const e2 = 2 * err;
       if (e2 >= dy) { err += dy; x0 += sx; }
       if (e2 <= dx) { err += dx; y0 += sy; }
+      stamp(x0, y0, colourAt(d.n ?? 0));
+      d.n = (d.n ?? 0) + 1;
     }
   };
 
@@ -210,8 +218,8 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
     if (tool === "hand") { drag.current = { kind: "pan", lx: e.clientX, ly: e.clientY, sx: holder.current!.scrollLeft, sy: holder.current!.scrollTop, base: { ox: 0, oy: 0 } }; return; }
     const { x, y } = pos(e);
     if (tool === "pencil" || tool === "eraser") {
-      pushUndo(); stamp(x, y); setPainted(true); setUndoCount(undo.current.length);
-      drag.current = { kind: "paint", lx: x, ly: y, sx: x, sy: y, base: { ox: 0, oy: 0 } };
+      pushUndo(); stamp(x, y, colourAt(0)); setPainted(true); setUndoCount(undo.current.length);
+      drag.current = { kind: "paint", lx: x, ly: y, sx: x, sy: y, base: { ox: 0, oy: 0 }, n: 1 };
     } else if (tool === "fill") {
       pushUndo(); floodFill(x, y); setPainted(true);
     } else if (tool === "move" && photo) {
@@ -226,7 +234,7 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
     if (!d) return;
     if (d.kind === "pan") { holder.current!.scrollLeft = d.sx - (e.clientX - d.lx); holder.current!.scrollTop = d.sy - (e.clientY - d.ly); return; }
     const { x, y } = pos(e);
-    if (d.kind === "paint") { line(d.lx, d.ly, x, y); d.lx = x; d.ly = y; setUndoCount((n) => n); const ctx = view.current!.getContext("2d")!; compose(ctx); }
+    if (d.kind === "paint") { line(d.lx, d.ly, x, y, d); d.lx = x; d.ly = y; setUndoCount((n) => n); const ctx = view.current!.getContext("2d")!; compose(ctx); }
     else if (d.kind === "photo" && photo) setPhoto({ ...photo, ox: d.base.ox + (x - d.sx), oy: d.base.oy + (y - d.sy) });
     else if (d.kind === "text" && text) setText({ ...text, x: d.base.ox + (x - d.sx), y: d.base.oy + (y - d.sy) });
   };
@@ -344,19 +352,16 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
                 className={`btn btn-sm !px-0 text-base btn-ghost`}>{x.icon}</button>
             ))}
           </div>
-          <div className="mt-3 grid grid-cols-8 gap-1.5" role="group" aria-label={t("palette")}>
-            {PALETTE.map((c) => (
-              <button key={c} aria-label={c} aria-pressed={color === c} onClick={() => { setColor(c); if (tool === "eraser" || tool === "move") setTool("pencil"); if (text) setText({ ...text, color: c }); }}
-                className="aspect-square rounded-[3px] shadow-[inset_0_0_0_1px_rgb(0_0_0/0.15),0_2px_0_rgb(31_37_64/0.12)]" style={{ background: c, outline: color === c ? "3px solid var(--color-cobalt)" : "none", outlineOffset: 1 }} />
-            ))}
-          </div>
-          <div className="mt-2 flex items-center gap-2">
-            <input type="color" aria-label={t("customColor")} value={color} onChange={(e) => { setColor(e.target.value); if (text) setText({ ...text, color: e.target.value }); }} className="h-9 w-12 cursor-pointer rounded-md border-0 bg-transparent p-0" />
+          <Palette
+            color={color} onColor={(c) => { setColor(c); if (tool === "eraser" || tool === "move" || tool === "text") setTool("pencil"); }}
+            multi={multi} onMulti={setMulti} mix={mix} onMix={setMix}
+            labels={{ palette: t("palette"), customColor: t("customColor"), multi: t("multi"), multiHint: t("multiHint") }}
+          >
             <label className="label !mb-0 flex-1" htmlFor="ed-brush">{t("brush")}</label>
             <select id="ed-brush" className="field !min-h-9 !w-28 !py-1" value={brush} onChange={(e) => setBrush(Number(e.target.value))}>
               {brushes.map((b) => <option key={b} value={b}>{f.number(b)} px</option>)}
             </select>
-          </div>
+          </Palette>
         </section>
 
         <section aria-label={t("text.label")}>
@@ -367,6 +372,11 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
                 <label className="label !mb-0" htmlFor="ed-ts">{t("text.size")}</label>
                 <input id="ed-ts" type="range" min={Math.max(6, S)} max={Math.max(12, Math.min(400, h))} value={text.size} onChange={(e) => setText({ ...text, size: Number(e.target.value) })} className="flex-1 accent-signal" />
                 <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={text.bold} onChange={(e) => setText({ ...text, bold: e.target.checked })} />B</label>
+              </div>
+              <div>
+                <p className="label">{t("text.color")}</p>
+                <Swatches selected={[text.color]} onPick={(c) => setText({ ...text, color: c })} label={t("text.color")} name={(c) => `${t("text.color")} ${c}`} />
+                <input type="color" aria-label={t("text.customColor")} value={text.color} onChange={(e) => setText({ ...text, color: e.target.value })} className="mt-2 h-9 w-12 cursor-pointer rounded-md border-0 bg-transparent p-0" />
               </div>
               <p className="text-xs text-ink-faint">{t("text.hint")}</p>
               <button className="text-xs font-semibold text-danger underline" onClick={() => setText(null)}>{t("text.remove")}</button>
