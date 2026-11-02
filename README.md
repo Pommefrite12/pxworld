@@ -35,6 +35,8 @@ In this local mode sign-in needs only an email (a clearly-labelled development f
 payments are simulated through the *same* handler that processes real Stripe webhooks. Use an email starting with
 `admin` (e.g. `admin@example.test`) to get the admin role.
 
+**After a `git pull`** just restart the site (`npm run dev`): it first brings a local database up to date (`scripts/dev-migrate.mjs`, local databases only; a remote one is never touched).
+
 To run against real services, fill the variables documented in [`.env.example`](.env.example):
 Supabase (Auth + Storage), Stripe **test** keys, and `CRON_SECRET`. Step-by-step: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 

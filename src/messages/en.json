@@ -155,6 +155,7 @@
       "network": "Network error. Please check your connection and try again.",
       "px_parcel_unavailable": "Sorry, someone just took this spot. Pick another one.",
       "px_invalid_rect": "This parcel size or position is not valid.",
+      "px_bad_dimensions": "This image does not match the size of your parcel. Reload the page and try again.",
       "px_sales_closed": "Sales are temporarily closed.",
       "px_account_suspended": "Your account is suspended.",
       "px_too_many_reservations": "You already have several unpaid reservations. Finish or cancel one first.",

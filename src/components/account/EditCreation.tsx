@@ -31,7 +31,7 @@ export function EditCreation({ code, w, h, current }: { code: string; w: number;
     const j = await r.json().catch(() => ({}));
     setBusy(false);
     if (r.ok) { setMsg({ ok: true, text: t("submitted") }); router.refresh(); }
-    else setMsg({ ok: false, text: tb.has(`errors.${j.error}`) ? tb(`errors.${j.error}`) : tb("errors.generic") });
+    else setMsg({ ok: false, text: tb.has(`errors.${j.error}`) ? tb(`errors.${j.error}`) : `${tb("errors.generic")} (${j.error ?? r.status})` });
   };
 
   return (

@@ -77,7 +77,8 @@ export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOn
       const code = String(j.error ?? (r.status === 401 ? "unauthenticated" : "internal_error"));
       if (code === "px_parcel_unavailable") onUnavailable();
       if (code === "unauthenticated") { window.location.assign(`/auth/sign-in?next=${encodeURIComponent("/")}`); return; }
-      setError(t.has(`errors.${code}`) ? t(`errors.${code}`) : t("errors.generic"));
+      // an error nobody anticipated keeps its code, so that it can be reported (and found in the logs)
+      setError(t.has(`errors.${code}`) ? t(`errors.${code}`) : `${t("errors.generic")} (${code})`);
     } catch { setError(t("errors.network")); }
     setBusy(false);
   };
