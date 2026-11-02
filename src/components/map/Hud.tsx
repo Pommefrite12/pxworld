@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { metersPerPixel, pixelToLonLat } from "@/lib/grid/geometry";
-import { TOTAL_PIXELS } from "@/lib/grid/constants";
 import type { Camera } from "./engine";
 import type { PublicStats } from "@/lib/data/map";
 
@@ -18,7 +17,7 @@ export function StatsCard({ stats, compact }: { stats: PublicStats; compact: boo
       <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">{t("sold")}</p>
       <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2 leading-none">
         <span className="pixel-display text-[2.7rem] text-signal" data-testid="sold-pixels">{f.number(stats.soldPixels)}</span>
-        <span className="pixel-num text-sm text-ink-faint">/ {f.number(TOTAL_PIXELS)}</span>
+        <span className="pixel-num text-sm text-ink-faint">/ {f.number(stats.totalPixels)}</span>
       </p>
       <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-paper-2" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct * 10000) / 10000} aria-label={t("filled")}>
         {/* the bar is at least 2px wide as soon as one pixel is sold, so progress is always visible */}

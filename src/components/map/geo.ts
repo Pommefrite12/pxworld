@@ -1,4 +1,5 @@
 import { clipPolygonToRect, clipPolylineToRect, outlineWithoutClipEdges, type Rect4 } from "@/lib/geo/clip";
+import { cellWindows, landPixelsInWindow, type CellRect } from "@/lib/geo/landmask";
 import { SEAM_X } from "@/lib/grid/projection";
 
 /**
@@ -95,7 +96,7 @@ function addLines(path: Path2D, rings: Ring[], wide: Rect4) {
 type AdminRow = [number, number, number, string, string, string, 0 | 1];
 const toAdmin = ([x, y, s, en, fr, cc, dep]: AdminRow): AdminLabel => ({ x, y, s, en, fr, cc, dep: dep === 1 });
 
-interface Chunk { fill: Ring[]; coast: Ring[]; borders: Ring[]; admin: Ring[] }
+interface Chunk { fill: Ring[]; rings: Float64Array[]; coast: Ring[]; borders: Ring[]; admin: Ring[] }
 interface Slot<T> { state: "loading" | "ready" | "error"; data: T | null; used: number }
 
 const FETCH_MAX = 6;
@@ -183,7 +184,7 @@ export class Geo {
     return this.slot(this.chunks, `${cx}-${cy}`, `/data/geo/g-${cx}-${cy}.json`, (raw: ChunkFile): Chunk => {
       const fill = (raw.land ?? []).map((r) => decodeRing(r, q));
       const coast = coastOf(fill, rect, this.seamX);
-      return { fill, coast, borders: (raw.borders ?? []).map((r) => decodeRing(r, q)), admin: (raw.admin ?? []).map((r) => decodeRing(r, q)) };
+      return { fill, rings: fill.map((r) => r.pts), coast, borders: (raw.borders ?? []).map((r) => decodeRing(r, q)), admin: (raw.admin ?? []).map((r) => decodeRing(r, q)) };
     }, CHUNK_MAX);
   }
 
@@ -246,6 +247,21 @@ export class Geo {
       if (!this.adminLo) complete = false; else addLines(adminPath, this.adminLo, wide);
     }
     return out();
+  }
+
+  /**
+   * How many pixels of a rectangle are land (same scan conversion and same data as the server's purchase check).
+   * `pending` is true while a cell the rectangle touches is still downloading: the answer is not final yet.
+   */
+  landIn(rect: CellRect): { land: number; pending: boolean } {
+    let land = 0, pending = false;
+    for (const w of cellWindows(rect, this.index.cell)) {
+      if (!this.cells.g.has(`${w.cx}-${w.cy}`)) continue; // open sea
+      const s = this.chunk(w.cx, w.cy);
+      if (s.state === "ready" && s.data) land += landPixelsInWindow(s.data.rings, w.x, w.y, w.w, w.h);
+      else pending = true; // loading, or failed and about to be retried
+    }
+    return { land, pending };
   }
 
   /* ------------------------------------------------------------------ cities and admin names */

@@ -1,4 +1,5 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { LAND_PIXELS } from "../../src/lib/geo/landPixels";
 
 /**
  * The main user journey, end to end, against a real PostgreSQL and the real Next.js server.
@@ -30,7 +31,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await page.goto("/");
     await expect(page.getByTestId("sold-pixels")).toHaveText("0");
     const stats = await (await request.get("/api/stats")).json();
-    expect(stats).toMatchObject({ totalPixels: 1_000_000_000, soldPixels: 0, owners: 0, parcels: 0, publishedCreations: 0 });
+    expect(stats).toMatchObject({ totalPixels: LAND_PIXELS, soldPixels: 0, owners: 0, parcels: 0, publishedCreations: 0 });
     // the map canvas is there and has been painted
     await expect(page.getByRole("application")).toBeVisible();
   });

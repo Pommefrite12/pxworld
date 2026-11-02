@@ -35,11 +35,11 @@
   "stats": {
     "label": "Statistiques en direct",
     "sold": "Pixels vendus",
-    "filled": "Part de la carte vendue",
+    "filled": "Part des terres vendues",
     "available": "Disponibles",
     "owners": "Propriétaires",
     "creations": "Créations",
-    "filledPct": "{pct} % de la planète est réservée"
+    "filledPct": "{pct} % des terres sont réservées"
   },
   "search": {
     "label": "Rechercher un lieu",
@@ -107,7 +107,8 @@
       "reserved": "Quelqu'un réserve actuellement une partie de cette zone. Réessayez dans quelques minutes ou choisissez un autre emplacement.",
       "out": "La parcelle doit rester dans la carte.",
       "checking": "Vérification de la disponibilité…",
-      "closed": "Les ventes sont momentanément fermées."
+      "closed": "Les ventes sont momentanément fermées.",
+      "water": "Cet emplacement n'est pas entièrement sur la terre ferme. Les océans et les mers ne s'achètent pas : déplacez-le vers l'intérieur des terres."
     },
     "sizeError": {
       "not_integer": "Les dimensions doivent être des nombres entiers.",
@@ -170,7 +171,8 @@
       "image_too_many_pixels": "L'image est trop grande.",
       "invalid_link": "Le lien doit être une adresse https valide.",
       "rate_limited": "Trop de tentatives. Patientez un peu.",
-      "payments_not_configured": "Les paiements ne sont pas encore disponibles."
+      "payments_not_configured": "Les paiements ne sont pas encore disponibles.",
+      "px_not_on_land": "Cette parcelle n'est pas entièrement sur la terre ferme. Les océans et les mers ne sont pas à vendre : choisissez un emplacement sur terre."
     },
     "fineTune": "Ajuster la position"
   },
@@ -472,7 +474,8 @@
           "h": "Ce que vous achetez",
           "p": [
             "La carte est une grille virtuelle de 1 000 000 000 de pixels (40 000 × 25 000). Une parcelle est un rectangle d'au moins 100 pixels. L'achat d'une parcelle vous donne le droit exclusif d'y afficher une création sur ce rectangle de la carte, selon les présentes conditions.",
-            "Une parcelle est un emplacement virtuel. Ce n'est ni un bien immobilier, ni un droit géographique, territorial ou de propriété intellectuelle, et elle ne vous donne aucun droit sur les lieux représentés par la carte."
+            "Une parcelle est un emplacement virtuel. Ce n'est ni un bien immobilier, ni un droit géographique, territorial ou de propriété intellectuelle, et elle ne vous donne aucun droit sur les lieux représentés par la carte.",
+            "Seules les terres sont à vendre : une parcelle doit se trouver entièrement sur la terre ferme. Les océans et les mers ne s'achètent pas, donc une parcelle qui touche la côte doit être placée assez loin à l'intérieur. Les compteurs de la carte ne comptent que les pixels de terre."
           ]
         },
         {

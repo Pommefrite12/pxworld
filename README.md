@@ -56,6 +56,7 @@ Supabase (Auth + Storage), Stripe **test** keys, and `CRON_SECRET`. Step-by-step
   drawn with the **Web Mercator** projection (56.7°S → 83.8°N, ≈ 1 km per pixel at the equator), so countries keep their
   familiar shape and none is cut (the map's edge is in the Bering Strait). Zoom reveals more detail: borders,
   départements/states, commune boundaries (France), then cities and towns. The map wraps around horizontally. The home page is a 3D globe; zooming in hands over to the flat map (`/map`), where pixels are bought and drawn, and zooming out of the flat map comes back to the globe.
+* **Only land is for sale** (308 046 591 of the 10⁹ pixels, 30.8 %): a parcel must be entirely on land, checked in the browser and — authoritatively — on the server; the counters count land pixels.
 * **Nothing scales with a billion.** Only purchased rectangles exist (rows in PostgreSQL). The map renders from a static
   vector layer + server-composited raster tiles when zoomed out + per-viewport JSON tiles and the parcels' own PNGs when
   zoomed in. A custom Canvas 2D engine (≈ 700 lines) gives pixel-exact zoom, touch support and 60 fps.

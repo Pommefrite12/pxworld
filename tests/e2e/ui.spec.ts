@@ -140,7 +140,7 @@ test.describe("map interaction", () => {
   });
 
   test("buy mode: clicking the map places a parcel, collisions and bounds are reported", async ({ page }) => {
-    await page.goto("/map");
+    await page.goto("/map?x=26000&y=11000&z=0.6"); // Kazakhstan: dry land all around
     await page.getByTestId("find-your-spot").click();
     await page.waitForTimeout(1200);
     const box = (await page.getByRole("application").boundingBox())!;
@@ -164,7 +164,7 @@ test.describe("editor", () => {
     const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 } });
     expect((await ctx.request.post("/api/dev/login", { data: { email: "preview@example.test" } })).ok()).toBeTruthy();
     const page = await ctx.newPage();
-    await page.goto("/map?bx=30000&by=3000&bw=20&bh=20");
+    await page.goto("/map?bx=26000&by=11000&bw=20&bh=20");
     await expect(page.getByTestId("buy-status")).toContainText(/free/i);
     await page.getByTestId("buy-continue").click();
     const dialog = page.getByRole("dialog");
@@ -190,7 +190,7 @@ test.describe("editor", () => {
     const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 } });
     await ctx.request.post("/api/dev/login", { data: { email: "uploader@example.test" } });
     const page = await ctx.newPage();
-    await page.goto("/map?bx=31000&by=3000&bw=30&bh=30");
+    await page.goto("/map?bx=26100&by=11000&bw=30&bh=30");
     await expect(page.getByTestId("buy-status")).toContainText(/free/i);
     await page.getByTestId("buy-continue").click();
     const dialog = page.getByRole("dialog");
@@ -206,6 +206,40 @@ test.describe("editor", () => {
     // a disguised SVG is refused before any upload happens
     await dialog.locator('input[type="file"]').setInputFiles({ name: "evil.png", mimeType: "image/svg+xml", buffer: Buffer.from("<svg xmlns='http://www.w3.org/2000/svg'/>") });
     await expect(dialog.getByRole("alert")).toContainText(/PNG, JPEG and WebP/);
+    await ctx.close();
+  });
+});
+
+test.describe("only land is for sale", () => {
+  const SEA = { x: 15389, y: 14350, w: 20, h: 20 }; // mid-Atlantic
+  const COAST = { x: 18167, y: 11839, w: 60, h: 60 }; // Pointe du Raz: part land, part sea
+  const LAND = { x: 26000, y: 11000, w: 20, h: 20 }; // Kazakhstan
+
+  test("the buy panel says so for the sea and for a coastal spot, and lets a land spot through", async ({ page }) => {
+    for (const r of [SEA, COAST]) {
+      await page.goto(`/map?bx=${r.x}&by=${r.y}&bw=${r.w}&bh=${r.h}`);
+      await expect(page.getByTestId("buy-status")).toContainText(/not entirely on land/i, { timeout: 15_000 });
+      await expect(page.getByTestId("buy-continue")).toBeDisabled();
+    }
+    await page.goto(`/map?bx=${LAND.x}&by=${LAND.y}&bw=${LAND.w}&bh=${LAND.h}`);
+    await expect(page.getByTestId("buy-status")).toContainText(/free/i, { timeout: 15_000 });
+    await expect(page.getByTestId("buy-continue")).toBeEnabled();
+  });
+
+  test("the server refuses a sea or coastal parcel on its own, whatever the browser says", async ({ browser }) => {
+    const ctx = await browser.newContext();
+    expect((await ctx.request.post("/api/dev/login", { data: { email: "sea@example.test" } })).ok()).toBeTruthy();
+    const png = await sharp({ create: { width: 20, height: 20, channels: 3, background: "#12b886" } }).png().toBuffer();
+    const post = (r: { x: number; y: number; w: number; h: number }) => ctx.request.post("/api/checkout", { multipart: { x: String(r.x), y: String(r.y), w: String(r.w), h: String(r.h), image: { name: "c.png", mimeType: "image/png", buffer: png } } });
+    for (const r of [SEA, COAST]) {
+      const res = await post(r);
+      expect(res.status()).toBe(422);
+      expect((await res.json()).error).toBe("px_not_on_land");
+    }
+    // the availability probe agrees, and tells the two reasons apart
+    const probe = async (r: { x: number; y: number; w: number; h: number }) => (await ctx.request.get(`/api/availability?x=${r.x}&y=${r.y}&w=${r.w}&h=${r.h}`)).json();
+    expect(await probe(SEA)).toMatchObject({ free: false, onLand: false });
+    expect(await probe(LAND)).toMatchObject({ free: true, onLand: true });
     await ctx.close();
   });
 });

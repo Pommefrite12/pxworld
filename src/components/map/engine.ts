@@ -21,7 +21,7 @@ import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
 
 export interface Camera { x: number; y: number; scale: number }
 export interface MapParcel { code: string; x: number; y: number; w: number; h: number; assetId: string | null; color: string | null }
-export type SelectionState = "ok" | "blocked" | "checking" | "out";
+export type SelectionState = "ok" | "blocked" | "checking" | "out" | "water";
 export type Mode = "explore" | "buy";
 
 export interface EngineCallbacks {
@@ -100,6 +100,7 @@ export class MapEngine {
   private selectionState: SelectionState | null = null;
   private brush: { w: number; h: number } | null = null;
   private ghost: Rect | null = null;
+  private ghostWater: { key: string; ver: number; water: boolean } | null = null;
   private highlight: string | null = null;
   private hovered: MapParcel | null = null;
   private pulse = 0;
@@ -119,7 +120,7 @@ export class MapEngine {
     if (!ctx) throw new Error("Canvas 2D unavailable");
     this.ctx = ctx;
     this.bindEvents();
-    void loadGeo().then((g) => { this.geo = g; g.onUpdate = () => this.invalidate(); this.invalidate(); });
+    void loadGeo().then((g) => { this.geo = g; g.onUpdate = () => { if (this.selection) this.updateSelectionState(); this.invalidate(); }; this.updateSelectionState(); this.invalidate(); });
     void loadPlaces().then((p) => { this.places = p; this.invalidate(); });
     void document.fonts?.ready.then(() => this.invalidate());
   }
@@ -322,6 +323,11 @@ export class MapEngine {
       else {
         const hits = this.parcelsIn(r);
         s = hits === null ? "checking" : hits.length ? "blocked" : "ok";
+        if (s === "ok") {
+          // only land is for sale: every pixel of the parcel must be on land
+          const land = this.geo?.landIn(r);
+          s = !land || land.pending ? "checking" : land.land < r.w * r.h ? "water" : "ok";
+        }
       }
     }
     if (s !== this.selectionState) { this.selectionState = s; if (s) this.cb.onSelectionState?.(s); }
@@ -571,6 +577,11 @@ export class MapEngine {
     ctx.fillRect(0, y0 + 6, w, hh);
     ctx.fillStyle = COLORS.ocean;
     ctx.fillRect(0, y0, w, hh);
+    if (this.mode === "buy") {
+      // while buying, the sea is hatched: land tiles are drawn over it, so only water shows the stripes — "not for sale"
+      ctx.fillStyle = this.seaHatch() ?? COLORS.ocean;
+      ctx.fillRect(0, y0, w, hh);
+    }
 
     ctx.save();
     ctx.beginPath();
@@ -822,6 +833,17 @@ export class MapEngine {
     ctx.restore();
   }
 
+  private seaPattern: CanvasPattern | null = null;
+  private seaHatch() {
+    if (this.seaPattern) return this.seaPattern;
+    const c = document.createElement("canvas");
+    c.width = c.height = 10;
+    const g = c.getContext("2d")!;
+    g.strokeStyle = `rgba(${COLORS.ink},0.13)`; g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(-1, 11); g.lineTo(11, -1); g.moveTo(-1, 1); g.lineTo(1, -1); g.moveTo(9, 11); g.lineTo(11, 9); g.stroke();
+    return (this.seaPattern = this.ctx.createPattern(c, "repeat"));
+  }
+
   private hatchPattern() {
     if (this.hatch) return this.hatch;
     const c = document.createElement("canvas");
@@ -938,7 +960,7 @@ export class MapEngine {
     }
     const draw = (rect: Rect, state: SelectionState | null, ghost: boolean) => {
       const r = rectPath(rect);
-      const bad = state === "blocked" || state === "out";
+      const bad = state === "blocked" || state === "out" || state === "water";
       const col = bad ? COLORS.danger : COLORS.free;
       if (!ghost && this.previewImage) {
         ctx.imageSmoothingEnabled = false;
@@ -954,7 +976,15 @@ export class MapEngine {
       ctx.setLineDash([]);
       if (r.w < 28 || r.h < 28) this.marker(r.x + r.w / 2, r.y + r.h / 2, col, !ghost);
     };
-    if (this.ghost && !this.selection) draw(this.ghost, null, true);
+    if (this.ghost && !this.selection) {
+      // the dashed ghost already turns red over the sea (cached per position and per data version)
+      const g = this.ghost, key = `${g.x},${g.y},${g.w},${g.h}`, ver = this.geo?.version ?? -1;
+      if (this.ghostWater?.key !== key || this.ghostWater.ver !== ver) {
+        const l = this.geo?.landIn(g);
+        this.ghostWater = { key, ver, water: Boolean(l && !l.pending && l.land < g.w * g.h) };
+      }
+      draw(g, this.ghostWater.water ? "water" : null, true);
+    }
     if (this.selection) draw(this.selection, this.selectionState, false);
   }
 

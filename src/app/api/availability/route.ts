@@ -1,4 +1,5 @@
 import { getPricing, isAreaFree } from "@/lib/data/map";
+import { isRectOnLand } from "@/lib/geo/landServer";
 import { json } from "@/lib/http/errors";
 import { intParam, route } from "@/lib/http/route";
 import { LIMITS, enforceRateLimit } from "@/lib/rate-limit";
@@ -14,6 +15,7 @@ export const GET = route(async (req) => {
   const pricing = await getPricing();
   const err = validateRect(rect as { x: number; y: number; w: number; h: number }, { minArea: pricing.minArea, maxArea: pricing.maxArea });
   if (err) return json({ error: "px_invalid_rect", reason: err }, { status: 400 });
-  const free = await isAreaFree(rect.x, rect.y, rect.w, rect.h);
-  return json({ free, price: quote(rect as { w: number; h: number }, pricing.unitPriceCents) }, { cache: "no-store" });
+  const onLand = await isRectOnLand(rect as { x: number; y: number; w: number; h: number });
+  const free = onLand && (await isAreaFree(rect.x, rect.y, rect.w, rect.h));
+  return json({ free, onLand, price: quote(rect as { w: number; h: number }, pricing.unitPriceCents) }, { cache: "no-store" });
 });

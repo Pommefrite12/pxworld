@@ -7,6 +7,7 @@ import { LIMITS, enforceRateLimit } from "@/lib/rate-limit";
 import { validateRect } from "@/lib/grid/geometry";
 import { createCheckoutSession, type OrderForCheckout } from "@/lib/stripe/checkout";
 import { stripeConfigured } from "@/lib/stripe/client";
+import { isRectOnLand } from "@/lib/geo/landServer";
 import { parseCreationMeta, readCreationImage, storeCreation } from "@/lib/creations";
 
 export const maxDuration = 30;
@@ -31,6 +32,7 @@ export const POST = route(async (req) => {
   const pricing = await getPricing();
   if (!pricing.salesOpen) throw new HttpError(503, "px_sales_closed");
   if (validateRect(r, { minArea: pricing.minArea, maxArea: pricing.maxArea })) throw new HttpError(400, "px_invalid_rect");
+  if (!(await isRectOnLand(r))) throw new HttpError(422, "px_not_on_land"); // only land is for sale: no sea, no ocean
   const locale = form.get("locale") === "fr" ? "fr" : "en";
 
   const meta = parseCreationMeta(form);

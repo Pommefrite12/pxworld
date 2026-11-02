@@ -35,11 +35,11 @@
   "stats": {
     "label": "Live statistics",
     "sold": "Pixels sold",
-    "filled": "Share of the map sold",
+    "filled": "Share of the land sold",
     "available": "Available",
     "owners": "Owners",
     "creations": "Creations",
-    "filledPct": "{pct}% of the planet is claimed"
+    "filledPct": "{pct}% of the land is claimed"
   },
   "search": {
     "label": "Search a place",
@@ -107,7 +107,8 @@
       "reserved": "Someone is currently reserving part of this area. Try again in a few minutes or pick another spot.",
       "out": "The parcel must stay inside the map.",
       "checking": "Checking availability…",
-      "closed": "Sales are temporarily closed."
+      "closed": "Sales are temporarily closed.",
+      "water": "This area is not entirely on land. Oceans and seas cannot be bought: move it inland."
     },
     "sizeError": {
       "not_integer": "Sizes must be whole numbers.",
@@ -170,7 +171,8 @@
       "image_too_many_pixels": "The image is too large.",
       "invalid_link": "The link must be a valid https address.",
       "rate_limited": "Too many attempts. Please wait a little.",
-      "payments_not_configured": "Payments are not available yet."
+      "payments_not_configured": "Payments are not available yet.",
+      "px_not_on_land": "This parcel is not entirely on land. Oceans and seas are not for sale: pick a spot on land."
     },
     "fineTune": "Fine-tune position"
   },
@@ -472,7 +474,8 @@
           "h": "What you buy",
           "p": [
             "The map is a virtual grid of 1,000,000,000 pixels (40,000 × 25,000). A parcel is a rectangle of at least 100 pixels. Buying a parcel gives you the exclusive right to display one creation on that rectangle of the map, according to these terms.",
-            "A parcel is a virtual placement. It is not real-estate, nor a geographic, territorial or intellectual property right, and it gives you no right over the places the map depicts."
+            "A parcel is a virtual placement. It is not real-estate, nor a geographic, territorial or intellectual property right, and it gives you no right over the places the map depicts.",
+            "Only land is for sale: a parcel must lie entirely on land. Oceans and seas cannot be bought, so a parcel that touches the coast has to be placed far enough inland. The counters on the map count land pixels only."
           ]
         },
         {

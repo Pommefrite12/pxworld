@@ -18,6 +18,8 @@ const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   serverExternalPackages: ["sharp", "pg"],
+  // the purchase checks read the map's land data files at runtime: make sure serverless bundles carry them
+  outputFileTracingIncludes: { "/api/checkout": ["./public/data/geo/**/*"], "/api/availability": ["./public/data/geo/**/*"] },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

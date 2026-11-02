@@ -1,7 +1,8 @@
 import "server-only";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { query, queryOne } from "@/lib/db/pool";
-import { GRID_HEIGHT, GRID_WIDTH, TOTAL_PIXELS } from "@/lib/grid/constants";
+import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
+import { LAND_PIXELS } from "@/lib/geo/landPixels";
 
 export const TILE_SIZE = 1000; // virtual pixels per JSON metadata tile (40 × 25 tiles)
 export const TILES_X = GRID_WIDTH / TILE_SIZE;
@@ -43,10 +44,11 @@ async function computeStats(): Promise<PublicStats> {
   );
   const sold = r?.sold_pixels ?? 0;
   return {
-    totalPixels: TOTAL_PIXELS,
+    // only land can be bought: the counters are about the pixels that exist for sale, not the whole 10⁹-pixel grid
+    totalPixels: LAND_PIXELS,
     soldPixels: sold,
-    availablePixels: TOTAL_PIXELS - sold,
-    fillPercent: (sold / TOTAL_PIXELS) * 100,
+    availablePixels: Math.max(0, LAND_PIXELS - sold),
+    fillPercent: (sold / LAND_PIXELS) * 100,
     owners: r?.owners ?? 0,
     parcels: r?.parcels ?? 0,
     publishedCreations: r?.published_creations ?? 0,

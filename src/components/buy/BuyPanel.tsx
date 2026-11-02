@@ -33,13 +33,14 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, onMoveSelec
   const [fine, setFine] = useState(false); // mobile: position fine-tuning is folded away to keep the map visible
   const sizeErr = validateRect({ x: 0, y: 0, ...size }, { minArea: pricing.minArea, maxArea: pricing.maxArea });
   const q = size.w > 0 && size.h > 0 ? quote(size, pricing.unitPriceCents) : null;
-  const blocked = state === "blocked" || state === "out" || serverFree === false;
+  const blocked = state === "blocked" || state === "out" || state === "water" || serverFree === false;
   const ready = Boolean(selection && !sizeErr && !blocked && state === "ok" && serverFree !== "checking" && pricing.salesOpen);
 
   const status = !pricing.salesOpen ? { tone: "bad", text: t("status.closed") }
     : sizeErr ? { tone: "bad", text: t(`sizeError.${sizeErr}`, { min: f.number(pricing.minArea), max: f.number(pricing.maxArea), side: MAX_SIDE }) }
     : !selection ? { tone: "info", text: t("status.place") }
     : state === "out" ? { tone: "bad", text: t("status.out") }
+    : state === "water" ? { tone: "bad", text: t("status.water") }
     : state === "blocked" ? { tone: "bad", text: t("status.blocked") }
     : serverFree === false ? { tone: "bad", text: t("status.reserved") }
     : state === "checking" || serverFree === "checking" ? { tone: "info", text: t("status.checking") }
