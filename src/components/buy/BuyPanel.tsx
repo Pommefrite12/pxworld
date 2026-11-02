@@ -68,7 +68,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, land
               return (
                 <button key={`${p.w}x${p.h}`} aria-pressed={on} onClick={() => onSize(p.w, p.h)}
                   className={`rounded-xl px-1 py-2 text-center transition ${on ? "bg-ink text-white" : "bg-paper-2 hover:bg-line"}`}>
-                  <span className="pixel-num block text-[0.95rem] leading-none">{p.w}²</span>
+                  <span className="pixel-num block whitespace-nowrap text-[0.8rem] leading-none">{p.w}×{p.h}</span>
                   <span className={`mt-1 block text-[0.65rem] ${on ? "text-white/70" : "text-ink-faint"}`}>{formatMoney(p.w * p.h * pricing.unitPriceCents, locale, pricing.currency)}</span>
                 </button>
               );
