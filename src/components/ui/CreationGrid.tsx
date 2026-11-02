@@ -1,9 +1,9 @@
-import { getFormatter, getLocale } from "next-intl/server";
+import { getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Card } from "@/lib/data/parcels";
+import { areaKm2, formatKm2 } from "@/lib/grid/surface";
 
 export async function CreationGrid({ items, empty }: { items: Card[]; empty: string }) {
-  const f = await getFormatter();
   const locale = await getLocale();
   if (items.length === 0) return <p className="card p-6 text-sm text-ink-soft">{empty}</p>;
   const region = new Intl.DisplayNames([locale], { type: "region" });
@@ -18,7 +18,7 @@ export async function CreationGrid({ items, empty }: { items: Card[]; empty: str
             <div className="p-3">
               <p className="truncate text-sm font-bold">{c.title ?? "—"}</p>
               <p className="truncate text-xs text-ink-soft">{c.username}{c.country ? ` · ${region.of(c.country) ?? c.country}` : ""}</p>
-              <p className="pixel-num mt-0.5 text-xs text-ink-faint">{c.w}×{c.h} · {f.number(c.area)} px{c.score ? ` · ♥ ${c.score}` : ""}</p>
+              <p className="pixel-num mt-0.5 text-xs text-ink-faint">{formatKm2(areaKm2(c), locale)} km² · {c.w}×{c.h} px{c.score ? ` · ♥ ${c.score}` : ""}</p>
               {c.note && <p className="mt-1 text-xs italic text-ink-soft">“{c.note}”</p>}
             </div>
           </Link>

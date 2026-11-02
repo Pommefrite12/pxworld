@@ -185,14 +185,15 @@ test.describe.serial("moderation & protection", () => {
 
   test("the unit price is configurable by admins for FUTURE orders only", async () => {
     const before = await (await carol.get("/api/availability?x=26000&y=11000&w=20&h=20")).json();
-    expect(before.price.totalCents).toBe(40_000);
+    expect(before.price).toMatchObject({ unitPriceCents: 10, totalCents: 4_000 }); // €0.10 per pixel by default
     expect((await admin.post("/api/admin/action", { data: { action: "set_setting", key: "price_unit_cents", value: 250 } })).status()).toBe(200);
     const after = await (await carol.get("/api/availability?x=26000&y=11000&w=20&h=20")).json();
     expect(after.price).toMatchObject({ unitPriceCents: 250, totalCents: 100_000 });
     // an existing order keeps its price
     const mine = await (await carol.get("/account/orders")).text();
-    expect(mine).toContain("€900"); // 30×30 pixels bought at €1 each, price unchanged by the later increase
-    expect((await admin.post("/api/admin/action", { data: { action: "set_setting", key: "price_unit_cents", value: 100 } })).status()).toBe(200);
+    expect(mine).toMatch(/€90(?![\d.,])/); // 30×30 pixels bought at €0.10 each, price unchanged by the later increase
+    expect(mine).toMatch(/km²/); // the surface is shown in km²
+    expect((await admin.post("/api/admin/action", { data: { action: "set_setting", key: "price_unit_cents", value: 10 } })).status()).toBe(200);
   });
 
   test("rate limiting protects sensitive endpoints", async () => {

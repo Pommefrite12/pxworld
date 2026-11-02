@@ -4,6 +4,7 @@ import { PageShell } from "@/components/layout/PageShell";
 import { Link } from "@/i18n/navigation";
 import { requirePageViewer } from "@/lib/auth/guards";
 import { getParcelsOf, getUserStats } from "@/lib/data/parcels";
+import { areaKm2, formatKm2 } from "@/lib/grid/surface";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { robots: { index: false } };
@@ -39,7 +40,7 @@ export default async function MyParcels({ params }: { params: Promise<{ locale: 
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-bold">{p.title ?? t("untitled")}</p>
-                  <p className="pixel-num text-xs text-ink-soft">{p.w}×{p.h} · {f.number(p.area)} px · @{p.x},{p.y}</p>
+                  <p className="pixel-num text-xs text-ink-soft">{formatKm2(areaKm2(p), locale)} km² · {p.w}×{p.h} px · @{p.x},{p.y}</p>
                   <span className={`chip mt-1.5 ${tone}`}>{t(`status.${status}`)}</span>
                   {p.last_rejection && !p.pending_asset_id && !p.published_asset_id && <p className="mt-1 text-xs text-danger">{t("rejectedBecause", { reason: p.last_rejection })}</p>}
                   <div className="mt-2.5 flex flex-wrap gap-2">

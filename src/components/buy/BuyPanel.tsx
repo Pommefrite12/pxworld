@@ -6,6 +6,8 @@ import { Link } from "@/i18n/navigation";
 import { PRESET_SIZES, GRID_HEIGHT, GRID_WIDTH, MAX_SIDE } from "@/lib/grid/constants";
 import { validateRect, type Rect } from "@/lib/grid/geometry";
 import { formatMoney, quote, type Pricing } from "@/lib/grid/pricing";
+import { pixelToLonLat } from "@/lib/grid/projection";
+import { areaKm2, areaKm2At, formatKm2 } from "@/lib/grid/surface";
 import type { SelectionState } from "@/components/map/engine";
 
 export type { Pricing };
@@ -21,6 +23,8 @@ interface Props {
   state: SelectionState | null;
   /** Land pixels inside the selection (null while unknown): the sea part of a coastal parcel is discounted. */
   landPixels: number | null;
+  /** Grid row the map is centred on: the latitude used to express sizes in km² while no spot is chosen. */
+  refY: number;
   serverFree: ServerFree;
   signedIn: boolean;
   onContinue: () => void;
@@ -29,12 +33,15 @@ interface Props {
 
 const num = (v: string) => (v === "" ? 0 : Math.max(0, Math.min(99999, Math.floor(Number(v)) || 0)));
 
-export function BuyPanel({ pricing, locale, size, onSize, selection, onMoveSelection, state, landPixels, serverFree, signedIn, onContinue, onClose }: Props) {
+export function BuyPanel({ pricing, locale, size, onSize, selection, onMoveSelection, state, landPixels, refY, serverFree, signedIn, onContinue, onClose }: Props) {
   const t = useTranslations("buy");
   const f = useFormatter();
   const [fine, setFine] = useState(false); // mobile: position fine-tuning is folded away to keep the map visible
   const sizeErr = validateRect({ x: 0, y: 0, ...size }, { minArea: pricing.minArea, maxArea: pricing.maxArea });
   const q = size.w > 0 && size.h > 0 ? quote(size, pricing.unitPriceCents, { landPixels: selection ? landPixels : null, seaPercent: pricing.seaPercent }) : null;
+  // Surface in km²: exact for a placed parcel (its rows' latitudes), indicative before (the latitude the map is centred on).
+  const refLat = pixelToLonLat(0, selection ? selection.y + selection.h / 2 : refY).lat;
+  const km2 = q ? (selection ? areaKm2(selection) : areaKm2At(size.w, size.h, refLat)) : 0;
   const blocked = state === "blocked" || state === "out" || state === "water" || serverFree === false;
   const ready = Boolean(selection && !sizeErr && !blocked && state === "ok" && serverFree !== "checking" && pricing.salesOpen);
 
@@ -70,8 +77,10 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, onMoveSelec
               const on = size.w === p.w && size.h === p.h;
               return (
                 <button key={`${p.w}x${p.h}`} aria-pressed={on} onClick={() => onSize(p.w, p.h)}
+                  aria-label={`${p.w}×${p.h} px · ${formatKm2(areaKm2At(p.w, p.h, refLat), locale)} km² · ${formatMoney(p.w * p.h * pricing.unitPriceCents, locale, pricing.currency)}`}
                   className={`rounded-xl px-1 py-2 text-center transition ${on ? "bg-ink text-white" : "bg-paper-2 hover:bg-line"}`}>
-                  <span className="pixel-num block text-[0.95rem] leading-none">{p.w}²</span>
+                  <span className="pixel-num block text-[0.95rem] leading-none">{formatKm2(areaKm2At(p.w, p.h, refLat), locale, { compact: true })}<span className={`ml-0.5 text-[0.6rem] ${on ? "text-white/70" : "text-ink-faint"}`}>km²</span></span>
+                  <span className={`mt-1 block text-[0.6rem] leading-none ${on ? "text-white/70" : "text-ink-faint"}`}>{p.w}×{p.h}</span>
                   <span className={`mt-1 block text-[0.65rem] ${on ? "text-white/70" : "text-ink-faint"}`}>{formatMoney(p.w * p.h * pricing.unitPriceCents, locale, pricing.currency)}</span>
                 </button>
               );
@@ -105,7 +114,11 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, onMoveSelec
         <div className="mt-3 rounded-2xl bg-paper-2 p-3 md:mt-4 md:p-3.5" aria-live="polite">
           <div className="flex items-baseline justify-between">
             <span className="text-sm text-ink-soft">{t("area")}</span>
-            <span className="pixel-num text-base md:text-lg" data-testid="buy-area">{q ? f.number(q.area) : "—"} <span className="text-xs text-ink-faint">px</span></span>
+            <span className="pixel-num text-base md:text-lg" data-testid="buy-area">{q ? formatKm2(km2, locale) : "—"} <span className="text-xs text-ink-faint">km²</span></span>
+          </div>
+          <div className="flex items-baseline justify-between text-xs text-ink-faint">
+            <span>{t("pixelsBought")}</span>
+            <span className="pixel-num" data-testid="buy-px">{q ? f.number(q.area) : "—"} px</span>
           </div>
           <div className="mt-0.5 flex items-baseline justify-between">
             <span className="text-sm text-ink-soft">{t("price")}</span>
@@ -116,7 +129,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, onMoveSelec
               {pricing.seaPercent === 0 ? t("seaFree", { land: f.number(q.landPixels), sea: f.number(q.seaPixels) }) : t("seaDiscount", { land: f.number(q.landPixels), sea: f.number(q.seaPixels), pct: pricing.seaPercent })}
             </p>
           )}
-          <p className="mt-1 hidden text-[0.7rem] text-ink-faint md:block">{t("taxNote")}</p>
+          <p className="mt-1 hidden text-[0.7rem] text-ink-faint md:block">{t("surfaceNote")} {t("taxNote")}</p>
         </div>
       </div>
 

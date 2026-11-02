@@ -33,6 +33,12 @@ Layers, by zoom (`scale` = screen px per grid px, 0.029 … 48):
 | Hit-testing, collisions | the same JSON tiles | client-side convenience only; the database decides |
 | Overlays | selection, preview of the buyer's creation, highlight | |
 
+### Price per pixel, surface in km²
+
+The unit of sale is the **pixel** (default **€0.10**, `app_settings.price_unit_cents = 10`, admin-editable; migration 7 lowers the old factory default of 100 cents and leaves any price an admin chose alone). The interface shows what a parcel stands for in the real world, **in km²**, with the pixel count as the secondary figure.
+
+A pixel is not a fixed ground area on a Mercator map: at latitude φ it covers `R² · cos²φ / (PROJ_R · PROJ_RY)` km² (R = 6 378.137 km) — ≈ 1.05 km² on the equator, ≈ 0.5 km² at 47°N, ≈ 0.26 km² at 60°N. `src/lib/grid/surface.ts` sums a parcel's rows, each at the latitude of its centre (`areaKm2`), and a unit test checks the whole grid against the closed-form area of that latitude band of the sphere (within 1 %). The km² are informative: the price never depends on them, only on the pixels (so two parcels of the same size cost the same wherever they are).
+
 ### Only land is for sale — coastal parcels pay for their land
 
 Oceans and seas cannot be bought on their own, but a rectangle along a coast may include some sea (otherwise coastal land would stay unsold). Two admin settings (`app_settings`, editable in the back office) define the deal:

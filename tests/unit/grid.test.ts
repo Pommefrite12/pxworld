@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  GEO, GRID_HEIGHT, GRID_WIDTH, MIN_AREA, PRESET_SIZES, TOTAL_PIXELS,
+  DEFAULT_UNIT_PRICE_CENTS, GEO, GRID_HEIGHT, GRID_WIDTH, MIN_AREA, PRESET_SIZES, TOTAL_PIXELS,
 } from "@/lib/grid/constants";
 import {
   area, centeredRect, clampToGrid, findCollision, formatRectCode, intersects, lonLatToPixel, pixelToLonLat, validateRect,
 } from "@/lib/grid/geometry";
 import { LAT_MAX } from "@/lib/grid/projection";
-import { enoughLand, formatMoney, quote } from "@/lib/grid/pricing";
+import { DEFAULT_PRICING, enoughLand, formatMoney, quote } from "@/lib/grid/pricing";
 
 describe("grid", () => {
   it("contains exactly one billion pixels", () => {
@@ -124,10 +124,12 @@ describe("coastal pricing: land at full price, sea at a percentage", () => {
 });
 
 describe("pricing", () => {
-  it("charges 1 € per pixel by default", () => {
-    expect(quote({ w: 10, h: 10 }).totalCents).toBe(10_000);
-    expect(quote({ w: 20, h: 20 }).totalCents).toBe(40_000);
-    expect(quote({ w: 200, h: 200 }).totalCents).toBe(4_000_000);
+  it("charges €0.10 per pixel by default", () => {
+    expect(DEFAULT_UNIT_PRICE_CENTS).toBe(10);
+    expect(DEFAULT_PRICING.unitPriceCents).toBe(10);
+    expect(quote({ w: 10, h: 10 }).totalCents).toBe(1_000); // €10
+    expect(quote({ w: 20, h: 20 }).totalCents).toBe(4_000); // €40
+    expect(quote({ w: 200, h: 200 }).totalCents).toBe(400_000); // €4,000
   });
   it("follows the configured unit price", () => {
     expect(quote({ w: 10, h: 10 }, 250).totalCents).toBe(25_000);
@@ -139,6 +141,8 @@ describe("pricing", () => {
   it("formats money per locale", () => {
     expect(formatMoney(10_000, "en")).toBe("€100");
     expect(formatMoney(10_050, "en")).toBe("€100.50");
+    expect(formatMoney(10, "en")).toBe("€0.10"); // the unit price itself
+    expect(formatMoney(10, "fr").replace(/\s/g, " ")).toBe("0,10 €");
     expect(formatMoney(10_000, "fr").replace(/\s/g, " ")).toBe("100 €");
   });
 });

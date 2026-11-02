@@ -1,7 +1,7 @@
 import "server-only";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { query, queryOne } from "@/lib/db/pool";
-import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
+import { DEFAULT_UNIT_PRICE_CENTS, GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { LAND_PIXELS } from "@/lib/geo/landPixels";
 import type { Pricing } from "@/lib/grid/pricing";
 
@@ -75,7 +75,7 @@ export async function getPricing(): Promise<Pricing> {
   );
   const m = Object.fromEntries(rows.map((r) => [r.key, r.value]));
   return {
-    unitPriceCents: Number(m.price_unit_cents ?? 100),
+    unitPriceCents: Number(m.price_unit_cents ?? DEFAULT_UNIT_PRICE_CENTS),
     currency: String(m.currency ?? "eur"),
     minArea: Number(m.min_area ?? 100),
     maxArea: Number(m.max_area ?? 250_000),

@@ -227,7 +227,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
           <BuyPanel
             pricing={pricing} locale={locale} size={size} onSize={changeSize} selection={selection}
             onMoveSelection={(r) => { const c = clampToGrid(r); applySelection(c); }}
-            state={selState} landPixels={selLand} serverFree={serverFree} signedIn={Boolean(viewer)} onContinue={continueBuy} onClose={stopBuy}
+            state={selState} landPixels={selLand} refY={cam.y} serverFree={serverFree} signedIn={Boolean(viewer)} onContinue={continueBuy} onClose={stopBuy}
           />
         )}
 

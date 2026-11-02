@@ -26,7 +26,7 @@ export interface Pricing {
   seaPercent: number;
 }
 
-export const DEFAULT_PRICING: Pricing = { unitPriceCents: 100, currency: "eur", minArea: 100, maxArea: 250_000, salesOpen: false, minLandPercent: 50, seaPercent: 0 };
+export const DEFAULT_PRICING: Pricing = { unitPriceCents: DEFAULT_UNIT_PRICE_CENTS, currency: "eur", minArea: 100, maxArea: 250_000, salesOpen: false, minLandPercent: 50, seaPercent: 0 };
 
 /** Same arithmetic as `px_start_order`: at least `minLandPercent` % of the pixels (and at least one) must be land. */
 export function enoughLand(landPixels: number, areaPixels: number, minLandPercent: number): boolean {

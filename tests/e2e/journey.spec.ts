@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { LAND_PIXELS } from "../../src/lib/geo/landPixels";
+import { areaKm2, formatKm2 } from "../../src/lib/grid/surface";
 
 /**
  * The main user journey, end to end, against a real PostgreSQL and the real Next.js server.
@@ -41,8 +42,14 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     const panel = page.getByTestId("buy-panel");
     await expect(panel).toBeVisible();
     await expect(page.getByTestId("buy-status")).toContainText(/free/i);
-    await expect(page.getByTestId("buy-price")).toHaveText("€400");
-    await expect(page.getByTestId("buy-area")).toContainText("400");
+    await expect(page.getByTestId("buy-price")).toHaveText("€40"); // 400 pixels at €0.10
+    await expect(page.getByTestId("buy-px")).toHaveText("400 px");
+    // the surface is shown in km²: this spot is at 58.5°N, where a pixel covers ≈ 0.29 km² (1.05 at the equator),
+    // so 20×20 pixels are about 115 km² — the figure is independent of the price
+    await expect(page.getByTestId("buy-area")).toHaveText(`${formatKm2(areaKm2(SPOT), "en")} km²`);
+    const km2 = areaKm2(SPOT);
+    expect(km2).toBeGreaterThan(105);
+    expect(km2).toBeLessThan(125);
     await page.getByTestId("buy-continue").click(); // "Sign in to continue"
     await page.waitForURL(/\/auth\/sign-in/);
     await page.getByTestId("auth-email").fill("alice@example.test");
@@ -72,7 +79,8 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await dialog.getByTestId("to-review").click();
 
     await dialog.getByTestId("co-title").fill("Hello world");
-    await expect(dialog.getByTestId("co-total")).toHaveText("€400");
+    await expect(dialog.getByTestId("co-total")).toHaveText("€40");
+    await expect(dialog.getByTestId("co-area")).toHaveText(`${formatKm2(areaKm2(SPOT), "en")} km² · 400 px`);
     await expect(dialog.getByTestId("co-pay")).toBeDisabled(); // terms not accepted yet
     await dialog.getByTestId("co-accept").check();
     await dialog.getByTestId("co-pay").click();

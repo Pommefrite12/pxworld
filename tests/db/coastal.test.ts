@@ -4,6 +4,8 @@ import { closeDb, createUser, expectPgError, fulfill, pool, resetData, startOrde
 afterAll(closeDb);
 beforeEach(resetData);
 
+/** The default price the tests start from (helpers.resetData): €0.10 per pixel. */
+const UNIT = 10;
 const setting = (key: string, value: number) => pool.query(`update public.app_settings set value = $2::jsonb where key = $1`, [key, JSON.stringify(value)]);
 const parcelRow = async (id: string) => (await pool.query(`select land_px, area from public.parcels where id = $1`, [id])).rows[0];
 const orderRow = async (id: string) => (await pool.query(`select land_px, area, amount_cents from public.orders where id = $1`, [id])).rows[0];
@@ -13,7 +15,7 @@ describe("coastal parcels: land at the unit price, sea at a percentage (default:
   it("a parcel without a land count is all land, exactly as before", async () => {
     const u = await createUser();
     const o = await startOrder(u, { x: 100, y: 100, w: 20, h: 20 });
-    expect(Number(o.amount_cents)).toBe(400 * 100);
+    expect(Number(o.amount_cents)).toBe(400 * UNIT);
     expect((await orderRow(o.order_id)).land_px).toBe(400);
     expect((await parcelRow(o.parcel_id)).land_px).toBe(400);
   });
@@ -21,8 +23,8 @@ describe("coastal parcels: land at the unit price, sea at a percentage (default:
   it("the buyer pays for the land only; the land count is stored with the order and the parcel", async () => {
     const u = await createUser();
     const o = await startOrder(u, { x: 100, y: 100, w: 20, h: 20 }, 300);
-    expect(Number(o.amount_cents)).toBe(300 * 100);
-    expect(await orderRow(o.order_id)).toMatchObject({ land_px: 300, area: 400, amount_cents: "30000" });
+    expect(Number(o.amount_cents)).toBe(300 * UNIT);
+    expect(await orderRow(o.order_id)).toMatchObject({ land_px: 300, area: 400, amount_cents: String(300 * UNIT) });
     expect(await parcelRow(o.parcel_id)).toMatchObject({ land_px: 300, area: 400 });
   });
 
@@ -30,10 +32,10 @@ describe("coastal parcels: land at the unit price, sea at a percentage (default:
     await setting("sea_price_percent", 50);
     const u = await createUser();
     const o = await startOrder(u, { x: 100, y: 100, w: 20, h: 20 }, 300);
-    expect(Number(o.amount_cents)).toBe(300 * 100 + (100 * 100 * 50) / 100);
+    expect(Number(o.amount_cents)).toBe(300 * UNIT + (100 * UNIT * 50) / 100);
     await setting("sea_price_percent", 33);
     const o2 = await startOrder(u, { x: 200, y: 100, w: 10, h: 10 }, 93);
-    expect(Number(o2.amount_cents)).toBe(93 * 100 + Math.floor((7 * 100 * 33) / 100));
+    expect(Number(o2.amount_cents)).toBe(93 * UNIT + Math.floor((7 * UNIT * 33) / 100));
   });
 
   it("a parcel must be at least min_land_percent land, never all sea, and the count cannot exceed the area", async () => {
@@ -41,18 +43,18 @@ describe("coastal parcels: land at the unit price, sea at a percentage (default:
     await expectPgError(startOrder(u, { x: 100, y: 100, w: 20, h: 20 }, 199), "px_not_on_land"); // 49.75 % < 50 %
     await expectPgError(startOrder(u, { x: 100, y: 100, w: 20, h: 20 }, 0), "px_not_on_land");
     await expectPgError(startOrder(u, { x: 100, y: 100, w: 20, h: 20 }, 401), "px_not_on_land");
-    expect(Number((await startOrder(u, { x: 100, y: 100, w: 20, h: 20 }, 200)).amount_cents)).toBe(200 * 100); // exactly 50 %
+    expect(Number((await startOrder(u, { x: 100, y: 100, w: 20, h: 20 }, 200)).amount_cents)).toBe(200 * UNIT); // exactly 50 %
     // nothing was held by the refused attempts: the same area is bookable by someone else once released
     expect((await pool.query(`select count(*)::int n from public.parcels where status = 'reserved'`)).rows[0].n).toBe(1);
     await setting("min_land_percent", 100);
     await expectPgError(startOrder(u, { x: 300, y: 100, w: 20, h: 20 }, 399), "px_not_on_land");
-    expect(Number((await startOrder(u, { x: 300, y: 100, w: 20, h: 20 }, 400)).amount_cents)).toBe(400 * 100);
+    expect(Number((await startOrder(u, { x: 300, y: 100, w: 20, h: 20 }, 400)).amount_cents)).toBe(400 * UNIT);
   });
 
   it("the payment must match the land-based price, and the public counters count land pixels sold", async () => {
     const u = await createUser();
     const o = await startOrder(u, { x: 100, y: 100, w: 20, h: 20 }, 300);
-    expect(await fulfill(o.order_id, { subtotal: 400 * 100 })).toBe("refund_required"); // paid for the whole area: not the server price
+    expect(await fulfill(o.order_id, { subtotal: 400 * UNIT })).toBe("refund_required"); // paid for the whole area: not the server price
     const o2 = await startOrder(u, { x: 200, y: 100, w: 20, h: 20 }, 300);
     expect(await sold()).toBe(0);
     expect(await fulfill(o2.order_id)).toBe("fulfilled");

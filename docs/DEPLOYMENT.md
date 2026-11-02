@@ -5,8 +5,8 @@ Everything below uses **test credentials first**. Nothing here activates real pa
 ## 1. Supabase
 
 1. Create a project (choose a region close to your Vercel region).
-2. **Database**: `supabase link --project-ref <ref>` then `supabase db push` (applies `supabase/migrations/*`), *or* paste the four
-   migration files in the SQL editor in order.
+2. **Database**: `supabase link --project-ref <ref>` then `supabase db push` (applies `supabase/migrations/*`), *or* paste the
+   migration files (`supabase/migrations/`, oldest first) in the SQL editor in order.
 3. **Storage**: run `supabase/storage.sql` once (creates the private `pixel-world-creations` bucket, no public policies).
 4. **Auth** → URL configuration: Site URL = your production URL; add `https://<domain>/auth/callback` to redirect URLs.
    Providers → Google: add OAuth client id/secret (Google Cloud Console → OAuth consent + credentials; authorised redirect URI shown by Supabase).

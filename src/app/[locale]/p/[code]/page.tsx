@@ -6,6 +6,7 @@ import { MapShell } from "@/components/map/MapShell";
 import { getHeaderViewer } from "@/lib/auth/session";
 import { getPricing, getPublicStats } from "@/lib/data/map";
 import { getPublicParcel } from "@/lib/data/parcels";
+import { areaKm2, formatKm2 } from "@/lib/grid/surface";
 import { siteUrl } from "@/lib/env";
 import { locales } from "@/i18n/routing";
 
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const t = await getTranslations({ locale, namespace: "parcel" });
   const f = await getFormatter({ locale });
   const title = p.creation?.title ?? t("untitled");
-  const description = p.creation?.description ?? t("shareDescription", { owner: p.owner.username, w: p.w, h: p.h, area: f.number(p.area) });
+  const description = p.creation?.description ?? t("shareDescription", { owner: p.owner.username, w: p.w, h: p.h, area: f.number(p.area), km2: formatKm2(areaKm2(p), locale) });
   const url = `${siteUrl()}${path(locale, code)}`;
   const image = `${siteUrl()}/api/og/parcel/${code}`;
   return {

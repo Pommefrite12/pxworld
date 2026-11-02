@@ -6,6 +6,7 @@ import { ParcelEditor, type ParcelEditorHandle } from "@/components/editor/Parce
 import { Link } from "@/i18n/navigation";
 import { fitSize } from "@/components/map/ParcelCard";
 import { formatMoney, quote } from "@/lib/grid/pricing";
+import { areaKm2, formatKm2 } from "@/lib/grid/surface";
 import type { Rect } from "@/lib/grid/geometry";
 import type { Pricing } from "./BuyPanel";
 
@@ -39,6 +40,7 @@ export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOn
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const q = quote(rect, pricing.unitPriceCents, { landPixels, seaPercent: pricing.seaPercent });
+  const km2 = areaKm2(rect);
   const onChange = useCallback((v: boolean) => setHas(v), []);
 
   useEffect(() => {
@@ -88,7 +90,7 @@ export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOn
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-paper/95 px-5 py-3 backdrop-blur">
           <div>
             <h2 id="co-title" className="text-lg font-extrabold">{step === "design" ? t("designTitle") : t("reviewTitle")}</h2>
-            <p className="pixel-num text-xs text-ink-soft">{rect.w}×{rect.h} · {f.number(q.area)} px · {formatMoney(q.totalCents, locale, pricing.currency)}</p>
+            <p className="pixel-num text-xs text-ink-soft">{formatKm2(km2, locale)} km² · {rect.w}×{rect.h} px · {formatMoney(q.totalCents, locale, pricing.currency)}</p>
           </div>
           <div className="flex items-center gap-2">
             <ol className="hidden items-center gap-1 text-xs font-semibold text-ink-faint sm:flex" aria-label={t("steps")}>
@@ -129,7 +131,7 @@ export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOn
                 <div className="rounded-2xl bg-paper-2 p-4">
                   <dl className="space-y-1 text-sm">
                     <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.parcel")}</dt><dd className="pixel-num">{rect.w}×{rect.h} @ {rect.x},{rect.y}</dd></div>
-                    <div className="flex justify-between"><dt className="text-ink-soft">{t("area")}</dt><dd className="pixel-num">{f.number(q.area)} px</dd></div>
+                    <div className="flex justify-between"><dt className="text-ink-soft">{t("area")}</dt><dd className="pixel-num" data-testid="co-area">{formatKm2(km2, locale)} km² · {f.number(q.area)} px</dd></div>
                     {q.seaPixels > 0 && (
                       <>
                         <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.land")}</dt><dd className="pixel-num">{f.number(q.landPixels)} px · {formatMoney(q.landPixels * q.unitPriceCents, locale, pricing.currency)}</dd></div>

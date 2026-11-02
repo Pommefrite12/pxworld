@@ -35,7 +35,7 @@ export async function createUser(name?: string, opts: { role?: "moderator" | "ad
 
 export async function resetData() {
   await pool.query(`truncate public.parcels, public.rate_limits, public.stripe_events, public.audit_logs, public.moderation_actions restart identity cascade`);
-  await pool.query(`update public.app_settings set value = '100'::jsonb where key = 'price_unit_cents'`);
+  await pool.query(`update public.app_settings set value = '10'::jsonb where key = 'price_unit_cents'`);
   await pool.query(`update public.app_settings set value = 'true'::jsonb where key = 'sales_open'`);
   await pool.query(`update public.app_settings set value = '0'::jsonb where key = 'sea_price_percent'`);
   await pool.query(`update public.app_settings set value = '50'::jsonb where key = 'min_land_percent'`);

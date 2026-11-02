@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import sharp from "sharp";
 import { getPublicParcel } from "@/lib/data/parcels";
 import { queryOne } from "@/lib/db/pool";
+import { areaKm2, formatKm2 } from "@/lib/grid/surface";
 import { objectStore } from "@/lib/storage";
 
 /** Share image (1200×630) for a parcel: the creation, pixel-exact, next to its title and owner. */
@@ -45,7 +46,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ code: string }
             <div style={{ display: "flex", fontSize: 34, marginTop: 20, color: "#5a5766" }}>by {p.owner.username}</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", fontSize: 28, color: "#8d8a98" }}>{p.w}×{p.h} px · {p.area.toLocaleString("en")} pixels</div>
+            <div style={{ display: "flex", fontSize: 28, color: "#8d8a98" }}>{formatKm2(areaKm2(p), "en")} km² · {p.w}×{p.h} px</div>
             <div style={{ display: "flex", fontSize: 30, fontWeight: 700, marginTop: 10, color: "#e8401f" }}>One planet. One billion pixels. Your mark.</div>
           </div>
         </div>
