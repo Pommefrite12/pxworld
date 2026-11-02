@@ -184,10 +184,10 @@ test.describe.serial("moderation & protection", () => {
   });
 
   test("the unit price is configurable by admins for FUTURE orders only", async () => {
-    const before = await (await carol.get("/api/availability?x=1000&y=1000&w=20&h=20")).json();
+    const before = await (await carol.get("/api/availability?x=26000&y=11000&w=20&h=20")).json();
     expect(before.price.totalCents).toBe(40_000);
     expect((await admin.post("/api/admin/action", { data: { action: "set_setting", key: "price_unit_cents", value: 250 } })).status()).toBe(200);
-    const after = await (await carol.get("/api/availability?x=1000&y=1000&w=20&h=20")).json();
+    const after = await (await carol.get("/api/availability?x=26000&y=11000&w=20&h=20")).json();
     expect(after.price).toMatchObject({ unitPriceCents: 250, totalCents: 100_000 });
     // an existing order keeps its price
     const mine = await (await carol.get("/account/orders")).text();
