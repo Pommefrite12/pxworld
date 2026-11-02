@@ -121,7 +121,6 @@
       "area_too_large": "La surface maximale est de {max} pixels."
     },
     "continue": "Créer ma parcelle",
-    "signInToContinue": "Connectez-vous pour continuer",
     "legal": "Emplacement virtuel sur la carte — aucun droit de propriété immobilière, géographique ou intellectuelle.",
     "terms": "Conditions",
     "rules": "Règles de la communauté",
@@ -144,7 +143,9 @@
       "description": "Courte description (facultatif)",
       "link": "Lien (facultatif)",
       "linkHint": "https uniquement. Les liens externes affichent leur domaine et sont marqués nofollow.",
-      "commercial": "Cette création est une publicité (elle sera signalée comme telle)."
+      "commercial": "Cette création est une publicité (elle sera signalée comme telle).",
+      "email": "Votre adresse e-mail",
+      "emailHint": "C'est tout ce qu'il nous faut : pas de compte, pas de mot de passe. Après le paiement, nous vous envoyons un lien pour modifier votre création plus tard. Votre adresse n'est jamais affichée publiquement."
     },
     "summary": {
       "parcel": "Parcelle",
@@ -155,6 +156,7 @@
     },
     "accept": "J'accepte les <terms>conditions</terms> et les <rules>règles de la communauté</rules>, et je comprends que ma création est publiée après modération.",
     "pay": "Payer {price}",
+    "signInInstead": "Connectez-vous pour acheter avec elle.",
     "redirecting": "Redirection vers le paiement sécurisé…",
     "securePayment": "Paiement sécurisé par Stripe. Votre parcelle est réservée pour vous pendant 35 minutes.",
     "errors": {
@@ -176,6 +178,9 @@
       "image_too_many_pixels": "L'image est trop grande.",
       "invalid_link": "Le lien doit être une adresse https valide.",
       "rate_limited": "Trop de tentatives. Patientez un peu.",
+      "invalid_email": "Saisissez une adresse e-mail valide.",
+      "account_exists": "Cette adresse e-mail a déjà un compte.",
+      "guest_checkout_unavailable": "L'achat sans compte n'est pas encore disponible sur ce serveur.",
       "payments_not_configured": "Les paiements ne sont pas encore disponibles.",
       "px_not_on_land": "Cette parcelle n'a pas assez de terre. Les océans et les mers ne s'achètent pas seuls : choisissez un emplacement avec plus de terre."
     },
@@ -263,6 +268,8 @@
     "backToSignIn": "Retour à la connexion",
     "checkEmail": "Consultez votre boîte mail : nous vous avons envoyé un lien de confirmation.",
     "resetSent": "Si un compte existe pour cette adresse, un lien de réinitialisation est en route.",
+    "sendLink": "Recevoir plutôt un lien de connexion par e-mail",
+    "linkSent": "Si un compte existe pour cette adresse, un lien de connexion est en route. Aucun mot de passe n'est nécessaire.",
     "devBanner": "Mode développement : aucun mot de passe requis. Ce formulaire n'existe pas en production.",
     "sign-in": {
       "title": "Connexion",
@@ -287,6 +294,7 @@
     "errors": {
       "generic": "Une erreur est survenue. Veuillez réessayer.",
       "invalidCredentials": "E-mail ou mot de passe incorrect.",
+      "enterEmail": "Saisissez d'abord votre adresse e-mail.",
       "weakPassword": "Votre mot de passe doit contenir au moins 10 caractères.",
       "exists": "Un compte existe déjà pour cet e-mail.",
       "notConfigured": "L'authentification n'est pas configurée sur ce serveur."
@@ -380,6 +388,10 @@
     "confirmingLead": "Nous attendons la confirmation du prestataire de paiement. Cela prend en général quelques secondes.",
     "paidTitle": "Elle est à vous !",
     "paidLead": "Votre parcelle vous est attribuée. Votre création apparaîtra sur la carte dès qu'elle aura été modérée.",
+    "guestTitle": "Consultez votre boîte mail",
+    "guestLead": "Nous avons envoyé un lien à {email}. Ouvrez-le quand vous voulez modifier votre création ou revoir votre parcelle : aucun mot de passe n'est nécessaire.",
+    "guestDev": "Développement : aucun e-mail n'est envoyé.",
+    "guestDevOpen": "Ouvrir mon compte",
     "viewParcel": "Voir ma parcelle",
     "myParcels": "Mes parcelles",
     "slowTitle": "Confirmation toujours en attente",

@@ -51,6 +51,14 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
     }
   };
 
+  /** Passwordless sign-in: for buyers who never set a password (they bought without an account) and for forgetful ones. */
+  const sendLink = async () => {
+    if (!email.trim()) return fail(t("errors.enterEmail"));
+    setBusy(true); setError(null); setInfo(null);
+    await browserSupabase().auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: false, emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(dest)}` } });
+    setInfo(t("linkSent")); setBusy(false); // same answer whether or not the address has an account
+  };
+
   const google = async () => {
     setBusy(true);
     const { error } = await browserSupabase().auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(dest)}` } });
@@ -76,6 +84,9 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
       {error && <p role="alert" className="rounded-xl bg-danger/10 px-3 py-2 text-sm font-semibold text-danger">{error}</p>}
       {info && <p role="status" className="rounded-xl bg-mint/12 px-3 py-2 text-sm font-semibold text-[#0b7a5a]">{info}</p>}
       <button className="btn btn-primary w-full" disabled={busy} type="submit" data-testid="auth-submit">{t(`${mode}.submit`)}</button>
+      {mode === "sign-in" && supabaseEnabled() && (
+        <button type="button" className="btn btn-ghost w-full" onClick={sendLink} disabled={busy} data-testid="auth-send-link">{t("sendLink")}</button>
+      )}
       {(mode === "sign-in" || mode === "sign-up") && supabaseEnabled() && (
         <>
           <div className="flex items-center gap-3 text-xs text-ink-faint"><span className="h-px flex-1 bg-line" />{t("or")}<span className="h-px flex-1 bg-line" /></div>

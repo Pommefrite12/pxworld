@@ -29,6 +29,9 @@ const schema = z.object({
   DEV_AUTH: z.enum(["true", "false"]).default("false"),
   DEV_AUTH_SECRET: z.string().default("dev-only-secret-change-me"),
 
+  /** Signs the link a guest buyer gets to follow their own order (no account). Falls back to another server secret. */
+  ORDER_TOKEN_SECRET: z.string().optional(),
+
   CRON_SECRET: z.string().optional(),
   RATE_LIMIT_SALT: z.string().default("pixel-world-dev-salt"),
   LOCAL_STORAGE_DIR: z.string().default(".data/storage"),

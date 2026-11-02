@@ -15,6 +15,8 @@ interface Props {
   pricing: Pricing;
   /** Land pixels of the parcel (from the map data); the rest is sea, offered or discounted. */
   landPixels: number | null;
+  /** A signed-in buyer buys as themselves; anyone else only gives an e-mail address (no account, no password). */
+  signedIn: boolean;
   onClose: () => void;
   /** Show (blob) or clear (null) the creation inside the selection on the map; the dialog hides itself meanwhile. */
   onPreviewOnMap: (img: ImageBitmap | null) => void;
@@ -22,7 +24,7 @@ interface Props {
   onUnavailable: () => void;
 }
 
-export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOnMap, onUnavailable }: Props) {
+export function CheckoutDialog({ rect, pricing, landPixels, signedIn, onClose, onPreviewOnMap, onUnavailable }: Props) {
   const t = useTranslations("buy");
   const locale = useLocale();
   const f = useFormatter();
@@ -37,6 +39,9 @@ export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOn
   const [link, setLink] = useState("");
   const [commercial, setCommercial] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const [email, setEmail] = useState("");
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+  const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const q = quote(rect, pricing.unitPriceCents, { landPixels, seaPercent: pricing.seaPercent });
@@ -65,19 +70,20 @@ export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOn
   const backFromPreview = () => { onPreviewOnMap(null); setPreviewing(false); dlg.current?.showModal(); };
 
   const pay = async () => {
-    setBusy(true); setError(null);
+    setBusy(true); setError(null); setErrorCode(null);
     try {
       const blob = await editor.current!.exportPng();
       const fd = new FormData();
       fd.set("x", String(rect.x)); fd.set("y", String(rect.y)); fd.set("w", String(rect.w)); fd.set("h", String(rect.h));
       fd.set("image", new File([blob], "creation.png", { type: "image/png" }));
+      if (!signedIn) fd.set("email", email.trim());
       fd.set("title", title); fd.set("description", description); fd.set("link", link); fd.set("commercial", String(commercial)); fd.set("locale", locale);
       const r = await fetch("/api/checkout", { method: "POST", body: fd });
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.url) { window.location.assign(j.url); return; }
       const code = String(j.error ?? (r.status === 401 ? "unauthenticated" : "internal_error"));
       if (code === "px_parcel_unavailable") onUnavailable();
-      if (code === "unauthenticated") { window.location.assign(`/auth/sign-in?next=${encodeURIComponent("/")}`); return; }
+      setErrorCode(code);
       setError(t.has(`errors.${code}`) ? t(`errors.${code}`) : t("errors.generic"));
     } catch { setError(t("errors.network")); }
     setBusy(false);
@@ -124,6 +130,14 @@ export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOn
                 <p className="mt-3 text-xs text-ink-soft">{t("moderationNote")}</p>
               </div>
               <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void pay(); }}>
+                {!signedIn && (
+                  <div>
+                    <label className="label" htmlFor="co-email">{t("fields.email")}</label>
+                    <input id="co-email" className="field" type="email" inputMode="email" autoComplete="email" required maxLength={254} placeholder="name@example.com"
+                      value={email} onChange={(e) => setEmail(e.target.value)} data-testid="co-email" />
+                    <p className="mt-1 text-xs text-ink-faint">{t("fields.emailHint")}</p>
+                  </div>
+                )}
                 <div><label className="label" htmlFor="co-title-in">{t("fields.title")}</label><input id="co-title-in" className="field" maxLength={80} value={title} onChange={(e) => setTitle(e.target.value)} data-testid="co-title" /></div>
                 <div><label className="label" htmlFor="co-desc">{t("fields.description")}</label><textarea id="co-desc" className="field !min-h-20" maxLength={280} rows={3} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
                 <div><label className="label" htmlFor="co-link">{t("fields.link")}</label><input id="co-link" className="field" type="url" inputMode="url" placeholder="https://" maxLength={500} value={link} onChange={(e) => setLink(e.target.value)} /><p className="mt-1 text-xs text-ink-faint">{t("fields.linkHint")}</p></div>
@@ -144,8 +158,12 @@ export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOn
                 </div>
                 <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} data-testid="co-accept" />
                   <span>{t.rich("accept", { terms: (c) => <Link href="/terms" target="_blank" className="underline">{c}</Link>, rules: (c) => <Link href="/rules" target="_blank" className="underline">{c}</Link> })}</span></label>
-                {error && <p role="alert" className="rounded-xl bg-danger/10 px-3 py-2 text-sm font-semibold text-danger" data-testid="co-error">{error}</p>}
-                <button className="btn btn-primary w-full" type="submit" disabled={busy || !accepted} data-testid="co-pay">{busy ? t("redirecting") : t("pay", { price: formatMoney(q.totalCents, locale, pricing.currency) })}</button>
+                {error && (
+                  <p role="alert" className="rounded-xl bg-danger/10 px-3 py-2 text-sm font-semibold text-danger" data-testid="co-error">
+                    {error}{errorCode === "account_exists" && <> <Link href="/auth/sign-in?next=%2F" className="underline">{t("signInInstead")}</Link></>}
+                  </p>
+                )}
+                <button className="btn btn-primary w-full" type="submit" disabled={busy || !accepted || (!signedIn && !emailOk)} data-testid="co-pay">{busy ? t("redirecting") : t("pay", { price: formatMoney(q.totalCents, locale, pricing.currency) })}</button>
                 <p className="text-center text-xs text-ink-faint">{t("securePayment")}</p>
               </form>
             </div>

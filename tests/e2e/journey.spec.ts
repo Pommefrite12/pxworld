@@ -37,7 +37,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await expect(page.getByRole("application")).toBeVisible();
   });
 
-  test("an anonymous visitor can explore and is sent to sign in before buying; the spot is kept", async ({ page }) => {
+  test("an anonymous visitor can explore and go straight to designing a parcel: no sign-in, the spot is kept", async ({ page }) => {
     await page.goto(`/map?bx=${SPOT.x}&by=${SPOT.y}&bw=${SPOT.w}&bh=${SPOT.h}`);
     const panel = page.getByTestId("buy-panel");
     await expect(panel).toBeVisible();
@@ -50,13 +50,12 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     const km2 = areaKm2(SPOT);
     expect(km2).toBeGreaterThan(105);
     expect(km2).toBeLessThan(125);
-    await page.getByTestId("buy-continue").click(); // "Sign in to continue"
-    await page.waitForURL(/\/auth\/sign-in/);
-    await page.getByTestId("auth-email").fill("alice@example.test");
-    await page.getByTestId("auth-submit").click();
-    // back on the map with the same selection restored
-    await page.waitForURL(/bx=25000/);
-    await expect(page.getByTestId("buy-status")).toContainText(/free/i);
+    // no sign-in, no sign-up: the design step opens at once, on the same spot
+    await expect(page.getByTestId("buy-continue")).toHaveText("Design my parcel");
+    await page.getByTestId("buy-continue").click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page).not.toHaveURL(/\/auth\//);
+    await expect(page.getByRole("dialog").getByTestId("to-review")).toBeDisabled(); // nothing designed yet
   });
 
   test("alice designs, pays and receives the parcel only after the (mock) webhook", async ({ browser }) => {
@@ -87,7 +86,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
 
     // redirected to the (mock) payment page: nothing is attributed yet
     await page.waitForURL(/\/dev\/checkout\//);
-    const orderId = page.url().split("/").pop()!;
+    const orderId = new URL(page.url()).pathname.split("/").pop()!;
     const before = await page.request.get(`/api/orders/${orderId}`);
     expect((await before.json()).status).toBe("pending");
     const statsBefore = await (await page.request.get("/api/stats")).json();
@@ -149,7 +148,9 @@ test.describe.serial("buy → pay → moderate → publish", () => {
   });
 
   test("security: anonymous and non-staff users cannot use protected endpoints", async ({ browser, request }) => {
-    expect((await request.post("/api/checkout", { multipart: { x: "1", y: "1", w: "10", h: "10" } })).status()).toBe(401);
+    // an order is private to its buyer: without a session or the signed link it does not even appear to exist
+    expect((await request.get("/api/orders/00000000-0000-4000-8000-000000000000")).status()).toBe(404);
+    expect((await request.delete("/api/orders/00000000-0000-4000-8000-000000000000")).status()).toBe(404);
     expect((await request.post("/api/admin/action", { data: { action: "hide_parcel", parcelId: "00000000-0000-0000-0000-000000000000", hidden: true } })).status()).toBe(401);
     const { ctx, page } = await newUser(browser, "mallory@example.test");
     const r = await page.request.post("/api/admin/action", { data: { action: "suspend_user", userId: "00000000-0000-0000-0000-000000000000", suspended: true } });

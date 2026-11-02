@@ -31,7 +31,8 @@ cp .env.example .env.local   # already configured for local development: dev sig
 npm run dev               # http://localhost:3000
 ```
 
-In this local mode sign-in needs only an email (a clearly-labelled development form that cannot exist in production) and
+Buying needs **no account**: a visitor picks a spot, draws, gives an e-mail address and pays (see
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#buying-without-an-account)). In this local mode sign-in needs only an email (a clearly-labelled development form that cannot exist in production) and
 payments are simulated through the *same* handler that processes real Stripe webhooks. Use an email starting with
 `admin` (e.g. `admin@example.test`) to get the admin role.
 

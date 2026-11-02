@@ -26,14 +26,13 @@ interface Props {
   /** Grid row the map is centred on: the latitude used to express sizes in km² while no spot is chosen. */
   refY: number;
   serverFree: ServerFree;
-  signedIn: boolean;
   onContinue: () => void;
   onClose: () => void;
 }
 
 const num = (v: string) => (v === "" ? 0 : Math.max(0, Math.min(99999, Math.floor(Number(v)) || 0)));
 
-export function BuyPanel({ pricing, locale, size, onSize, selection, onMoveSelection, state, landPixels, refY, serverFree, signedIn, onContinue, onClose }: Props) {
+export function BuyPanel({ pricing, locale, size, onSize, selection, onMoveSelection, state, landPixels, refY, serverFree, onContinue, onClose }: Props) {
   const t = useTranslations("buy");
   const f = useFormatter();
   const [fine, setFine] = useState(false); // mobile: position fine-tuning is folded away to keep the map visible
@@ -136,7 +135,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, onMoveSelec
       <div className="shrink-0 pt-3">
         <p role="status" data-testid="buy-status" className={`rounded-xl px-3 py-2 text-sm font-semibold ${tone}`}>{status.text}</p>
         <button className="btn btn-primary mt-2.5 w-full" disabled={!ready} onClick={onContinue} data-testid="buy-continue">
-          {signedIn ? t("continue") : t("signInToContinue")}
+          {t("continue")}
         </button>
         <p className="mt-2 hidden text-[0.7rem] leading-snug text-ink-faint md:block">
           {t("legal")} <Link href="/terms" className="underline">{t("terms")}</Link> · <Link href="/rules" className="underline">{t("rules")}</Link>

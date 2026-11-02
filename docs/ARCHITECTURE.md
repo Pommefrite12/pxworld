@@ -102,11 +102,34 @@ browser                       Next.js (server)                         PostgreSQ
 The browser's return from Stripe is **never** proof of payment. The only paths that attribute a parcel are the verified
 webhook and the server-side reconciliation (which asks Stripe's API).
 
+### Buying without an account
+
+Nobody has to sign up to buy. A visitor who is not signed in types **an e-mail address and nothing else** in the payment step;
+the rest of the flow above is unchanged because the parcel still needs an owner:
+
+1. `POST /api/checkout` validates everything first (rectangle, land share, image) and only then turns the address into a
+   **guest account** (`src/lib/auth/guest.ts`): a real user flagged `raw_user_meta_data.guest`, with a neutral public name
+   (`pixel-3fa91c` — the address never appears publicly), no password and **no session**. The same address buys again into the same
+   account.
+2. An address that already belongs to a *regular* account (password, Google) is refused with `409 account_exists`: that person must
+   sign in, otherwise a stranger could attach purchases and content to somebody's profile.
+3. The buyer has no session, so the return URLs given to Stripe carry a **signed token** (`src/lib/stripe/orderToken.ts`, an HMAC of
+   the order id). `/api/orders/:id` and the success/cancel pages accept it in place of a session — for that one order, status and
+   cancellation only. Anyone else gets a 404.
+4. After the verified webhook attributes the parcel, `sendManageLink` asks Supabase Auth to e-mail the buyer a one-time sign-in link
+   (Supabase's own templates and SMTP, see LAUNCH_CHECKLIST). Following it proves the address is theirs and signs them in; that is how
+   they edit the creation later (`/auth/callback` accepts both the PKCE `code` and a cross-device `token_hash`). The sign-in page also
+   offers "e-mail me a sign-in link" for returning buyers.
+
+Typing an address never signs anybody in (that would let a stranger take over an account by typing its owner's address). Abuse limits:
+per address, 8 guest checkout attempts and 6 new guest accounts per hour, plus the usual per-account limits. In development there is no
+mailbox: the success page shows a clearly-labelled "open my account" button instead of the e-mail.
+
 ## 4. Modules
 
 * `lib/grid` — pure geometry/pricing shared by client and server (tested exhaustively).
 * `lib/db` — `pg` pool, transactions with deadlock retry. All business writes call `px_*` SQL functions.
-* `lib/auth` — Supabase SSR session (production) or a signed dev cookie (development only, impossible in production).
+* `lib/auth` — Supabase SSR session (production) or a signed dev cookie (development only, impossible in production); `guest.ts` — buying without an account.
 * `lib/stripe` — checkout creation, event handling (idempotency ledger), reconciliation, auto-refund.
 * `lib/images` — content sniffing, decompression-bomb guard, canonical PNG re-encode, average colour, hash.
 * `lib/storage` — private object store: Supabase Storage in production, local files in development.

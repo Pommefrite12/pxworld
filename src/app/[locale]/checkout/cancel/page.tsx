@@ -5,9 +5,10 @@ import { PageShell } from "@/components/layout/PageShell";
 
 export const metadata: Metadata = { robots: { index: false } };
 
-export default async function Page({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ order?: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ order?: string; t?: string }> }) {
   setRequestLocale((await params).locale);
-  const { order } = await searchParams;
+  const { order, t } = await searchParams;
+  const token = typeof t === "string" && /^[0-9a-f]{32}$/.test(t) ? t : null;
   const valid = typeof order === "string" && /^[0-9a-f-]{36}$/.test(order);
-  return <PageShell width="max-w-2xl">{valid ? <CheckoutCancel orderId={order} /> : null}</PageShell>;
+  return <PageShell width="max-w-2xl">{valid ? <CheckoutCancel orderId={order} token={token} /> : null}</PageShell>;
 }

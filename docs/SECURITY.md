@@ -4,6 +4,7 @@
 |---|---|
 | **Integrity of the map** | exclusion constraint, CHECKs, advisory locks, transactional functions (see DATABASE.md); server is the only authority |
 | **Authentication** | Supabase Auth (email+password ≥ 10 chars, Google, reset). Server code always re-verifies the JWT with `auth.getUser()`; sessions refreshed in `src/proxy.ts` |
+| **Buying without an account** | an e-mail address only. It creates a *guest account* (no password, **no session**: typing an address proves nothing, so nobody is signed in by it, which rules out pre-hijacking). An address with a regular account must sign in (`409 account_exists`). The order is followed with an HMAC-signed link (`orderToken`, status/cancel of that single order); the parcel is managed through the one-time sign-in link e-mailed after payment. Guest public names are neutral (`pixel-xxxxxx`); addresses are masked in responses (`ab•••@ex•••.com`). Limits per address: 8 attempts and 6 new accounts per hour |
 | **Authorisation** | roles in `admin_roles` (never a client-editable flag), re-read from the DB on every admin request, **and** re-checked inside every staff SQL function; admin pages and `/api/admin/action` both enforce it; suspended users are blocked in SQL |
 | **RLS** | enabled everywhere, grants revoked then re-granted per column; tested (`permissions.test.ts`) |
 | **Payments** | server-priced, verified webhooks (raw-body signature), idempotency ledger, amount/currency verification, live keys refused by default |

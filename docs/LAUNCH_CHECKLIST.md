@@ -10,6 +10,7 @@ Items marked **(approval)** need an explicit decision from the project owner bef
 
 ## Technical
 - [ ] Supabase project (PITR on), migrations applied, bucket created, admin role granted, SMTP configured, Google OAuth configured.
+- [ ] **Buying without an account** — Supabase → Authentication → Email Templates: set the **Magic Link** *and* **Confirm signup** templates' link to `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email&next=/account/parcels` (works on any device; guests are created unconfirmed, so Supabase uses the *Confirm signup* template for their first link). Set `SUPABASE_SERVICE_ROLE_KEY` (creates the guest accounts), `ORDER_TOKEN_SECRET` (long random value), and keep SMTP configured: a buyer who does not get the e-mail cannot edit their creation until they use "e-mail me a sign-in link". Test once with a real address: buy → e-mail arrives → link opens `/account/parcels`.
 - [ ] Vercel env vars set (no dev variables), cron running, domain + HTTPS, Stripe webhook pointing at production.
 - [ ] CI green: `npm run lint && npm run typecheck && npm test && npm run build && npm run test:e2e`.
 - [ ] Restore drill performed once (docs/BACKUP_RESTORE.md).
