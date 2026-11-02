@@ -19,9 +19,9 @@ export function StatsCard({ stats, compact }: { stats: PublicStats; compact: boo
         <span className="pixel-display text-[2.7rem] text-signal" data-testid="sold-pixels">{f.number(stats.soldPixels)}</span>
         <span className="pixel-num text-sm text-ink-faint">/ {f.number(stats.totalPixels)}</span>
       </p>
-      <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-paper-2" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct * 10000) / 10000} aria-label={t("filled")}>
+      <div className="mt-2.5 h-2.5 overflow-hidden rounded-[3px] bg-paper-2 shadow-[inset_0_0_0_1.5px_var(--color-line)]" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct * 10000) / 10000} aria-label={t("filled")}>
         {/* the bar is at least 2px wide as soon as one pixel is sold, so progress is always visible */}
-        <div className="h-full rounded-full bg-signal" style={{ width: stats.soldPixels > 0 ? `max(3px, ${pct}%)` : 0 }} />
+        <div className="h-full rounded-[2px] bg-signal" style={{ width: stats.soldPixels > 0 ? `max(3px, ${pct}%)` : 0 }} />
       </div>
       {!compact && (
         <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
@@ -49,18 +49,18 @@ export function MapControls({ cam, onZoomIn, onZoomOut, onFit, className = "" }:
   const bar = useMemo(() => scaleBar(cam.scale), [cam.scale]);
   // Mercator: the ground size of a pixel shrinks with cos(latitude), so the scale bar follows the latitude of the view centre
   const km = (bar.len * metersPerPixel(pixelToLonLat(cam.x, cam.y).lat)) / 1000;
-  const btn = "btn btn-ghost !bg-white !min-h-11 !w-11 !px-0 text-lg shadow-float";
+  const btn = "btn btn-ghost btn-icon !min-h-11 !min-w-11 text-lg";
   const centre = pixelToLonLat(cam.x, cam.y);
   return (
     <div className={`pointer-events-none flex items-end gap-3 ${className}`}>
-      <div className="pointer-events-auto hidden rounded-full bg-white/90 px-3 py-1.5 text-[0.7rem] shadow-float sm:block" aria-hidden>
+      <div className="pointer-events-auto hidden badge-px px-3 py-1.5 text-[0.7rem] sm:block" aria-hidden>
         <div className="flex items-center gap-2">
           <div className="h-1.5 border-x-2 border-b-2 border-ink" style={{ width: bar.px }} />
           <span className="pixel-num whitespace-nowrap">{f.number(bar.len)} px ≈ {km >= 1 ? `${f.number(km, { maximumFractionDigits: 0 })} km` : `${f.number(km * 1000, { maximumFractionDigits: 0 })} m`}</span>
         </div>
       </div>
       <div className="pointer-events-auto flex flex-col gap-1.5">
-        <div className="rounded-full bg-white/90 px-2.5 py-1 text-center text-xs shadow-float" role="status" aria-label={t("zoomLevel")}>
+        <div className="badge-px px-2.5 py-1 text-center text-xs" role="status" aria-label={t("zoomLevel")}>
           <span className="pixel-num" data-testid="zoom-level">{cam.scale >= 10 ? Math.round(cam.scale) : cam.scale >= 1 ? cam.scale.toFixed(1) : cam.scale.toFixed(2)}×</span>
         </div>
         <button className={btn} onClick={onZoomIn} aria-label={t("zoomIn")} title={t("zoomIn")}>+</button>
@@ -83,7 +83,7 @@ export function CursorReadout({ x, y }: { x: number; y: number }) {
   const dir = (v: number, pos: string, neg: string) => `${Math.abs(v).toFixed(3)}°${v >= 0 ? pos : neg}`;
   void locale;
   return (
-    <p className="pixel-num pointer-events-none hidden rounded-full bg-white/90 px-3 py-1 text-[0.7rem] shadow-float md:block" aria-hidden data-testid="cursor-readout">
+    <p className="pixel-num pointer-events-none hidden badge-px px-3 py-1 text-[0.7rem] md:block" aria-hidden data-testid="cursor-readout">
       x {f.number(Math.floor(x))} · y {f.number(Math.floor(y))} <span className="text-ink-faint">| {dir(lat, "N", "S")} {dir(lon, "E", "W")}</span>
     </p>
   );

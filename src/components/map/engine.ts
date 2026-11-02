@@ -53,12 +53,12 @@ const RASTER_BELOW = 1; // below this zoom the server-composited rasters are sho
 const JSON_ABOVE = 0.1; // below this zoom parcels are sub-2px: no metadata needed
 
 const COLORS = {
-  paper: "#fbf8f2",
+  paper: "#fcf9f2",
   ocean: "#c9dfe8",
   land: "#fbf5e6",
-  ink: "23,21,31",
+  ink: "31,37,64",
   free: "18,184,134",
-  accent: "232,64,31",
+  accent: "240,67,22",
   danger: "217,45,32",
 };
 

@@ -47,7 +47,7 @@ export function GlobeStats({ initial }: { initial: PublicStats | null }) {
     <div className="pointer-events-none absolute inset-3 z-10 flex flex-col items-start justify-end gap-2 sm:inset-5">
       <div className="flex max-w-[calc(100%-4.5rem)] flex-col items-start gap-2 sm:max-w-none">
         {stats ? <StatsCard stats={stats} compact={false} /> : <p className="card pointer-events-auto px-4 py-3 text-sm text-ink-soft">{t("statsUnavailable")}</p>}
-        <p className="pointer-events-auto rounded-full bg-white/85 px-3 py-1 text-[0.65rem] text-ink-faint shadow-float">
+        <p className="pointer-events-auto badge-px px-3 py-1 text-[0.65rem] text-ink-faint">
           © Natural Earth · GeoNames · <Link href="/credits" className="underline">{t("credits")}</Link>
         </p>
       </div>

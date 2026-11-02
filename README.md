@@ -81,7 +81,7 @@ src/lib/stripe            checkout, webhook processing, reconciliation
 src/messages              en.json, fr.json
 supabase/migrations       schema, business functions, RLS, admin extras
 tests/{unit,db,e2e}       test suites
-docs/                     architecture, database, payments, security, deployment, backup, launch checklist
+docs/                     architecture, design system, database, payments, security, deployment, backup, launch checklist
 ```
 
 ## What is verified, and what needs your credentials

@@ -15,13 +15,13 @@ function LocaleSwitch() {
   const pathname = usePathname();
   const t = useTranslations("nav");
   return (
-    <label className="relative">
+    <label className="btn btn-ghost btn-sm relative !gap-1 !pl-3 !pr-2">
       <span className="sr-only">{t("language")}</span>
       <select value={locale} onChange={(e) => router.replace(pathname + (typeof window !== "undefined" ? window.location.search : ""), { locale: e.target.value as Locale })}
-        className="h-9 cursor-pointer appearance-none rounded-full bg-paper-2 py-0 pl-3 pr-7 text-sm font-semibold hover:bg-line" aria-label={t("language")}>
+        className="cursor-pointer appearance-none bg-transparent pr-1 text-sm font-bold text-ink outline-none" aria-label={t("language")}>
         {locales.map((l) => <option key={l} value={l}>{l.toUpperCase()}</option>)}
       </select>
-      <svg aria-hidden viewBox="0 0 24 24" className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="m6 9 6 6 6-6" /></svg>
+      <svg aria-hidden viewBox="0 0 24 24" className="pointer-events-none h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="m6 9 6 6 6-6" /></svg>
       <span className="hidden">{localeNames[locale]}</span>
     </label>
   );
@@ -37,10 +37,10 @@ function AccountMenu({ viewer }: { viewer: HeaderViewer }) {
     document.addEventListener("pointerdown", away); document.addEventListener("keydown", esc);
     return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", esc); };
   }, []);
-  const item = "block rounded-lg px-3 py-2 text-sm font-medium hover:bg-paper-2";
+  const item = "block rounded-lg px-3 py-2 text-sm font-semibold hover:bg-sky";
   return (
     <div ref={ref} className="relative">
-      <button className="flex h-9 items-center gap-2 rounded-full bg-paper-2 py-0 pl-1 pr-3 text-sm font-semibold hover:bg-line" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)} data-testid="account-menu">
+      <button className="btn btn-ghost btn-sm !gap-2 !pl-1.5 !pr-3" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)} data-testid="account-menu">
         {viewer.avatarId
           ? <img src={`/api/avatar/${viewer.avatarId}`} alt="" className="h-7 w-7 rounded-full" />
           : <span className="grid h-7 w-7 place-items-center rounded-full bg-cobalt text-xs font-bold text-white">{viewer.username.slice(0, 1).toUpperCase()}</span>}
@@ -67,10 +67,10 @@ export function SiteHeader({ viewer, center, cta, className = "" }: { viewer: He
         <Link href="/" aria-label={t("home")} className="shrink-0"><Logo /></Link>
         <div className="mx-auto hidden w-full max-w-md md:block">{center}</div>
         <nav className="ml-auto flex items-center gap-1.5 sm:gap-2" aria-label={t("main")}>
-          <Link href="/discover" className="hidden h-9 items-center rounded-full px-3 text-sm font-semibold hover:bg-paper-2 sm:inline-flex">{t("discover")}</Link>
+          <Link href="/discover" className="btn btn-nav btn-sm hidden sm:inline-flex">{t("discover")} <span aria-hidden>›</span></Link>
           {cta}
           <LocaleSwitch />
-          {viewer ? <AccountMenu viewer={viewer} /> : <Link href="/auth/sign-in" className="btn btn-ghost btn-sm" data-testid="sign-in-link">{t("signIn")}</Link>}
+          {viewer ? <AccountMenu viewer={viewer} /> : <Link href="/auth/sign-in" className="btn btn-secondary btn-sm" data-testid="sign-in-link">{t("signIn")}</Link>}
         </nav>
       </div>
       {center && <div className="px-3 pb-2 md:hidden">{center}</div>}

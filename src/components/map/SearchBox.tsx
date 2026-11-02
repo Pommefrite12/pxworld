@@ -111,7 +111,7 @@ export function SearchBox({ onGo, className = "" }: { onGo: (t: SearchTarget) =>
         <input
           role="combobox" aria-expanded={open && results.length > 0} aria-controls={`${id}-list`} aria-autocomplete="list" aria-label={t("label")}
           aria-activedescendant={results[active] ? `${id}-${active}` : undefined}
-          className="field !min-h-10 !rounded-full !pl-10 text-[0.95rem]" placeholder={t("placeholder")} value={q} autoComplete="off" spellCheck={false}
+          className="field !min-h-10 !pl-10 text-[0.95rem]" placeholder={t("placeholder")} value={q} autoComplete="off" spellCheck={false}
           onChange={(e) => { setQ(e.target.value); setOpen(true); setActive(0); }}
           onFocus={() => setOpen(true)}
           onKeyDown={(e) => {

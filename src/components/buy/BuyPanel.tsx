@@ -56,7 +56,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, land
           <h2 className="text-lg font-extrabold leading-tight md:text-xl">{t("title")}</h2>
           <p className="mt-0.5 text-xs text-ink-soft">{t("unitPrice", { price: formatMoney(pricing.unitPriceCents, locale, pricing.currency) })}</p>
         </div>
-        <button className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-paper-2 text-lg" onClick={onClose} aria-label={t("close")}>×</button>
+        <button className="btn btn-ghost btn-icon btn-sm shrink-0 text-lg" onClick={onClose} aria-label={t("close")}>×</button>
       </div>
 
       <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-0.5">
@@ -67,9 +67,9 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, land
               const on = size.w === p.w && size.h === p.h;
               return (
                 <button key={`${p.w}x${p.h}`} aria-pressed={on} onClick={() => onSize(p.w, p.h)}
-                  className={`rounded-xl px-1 py-2 text-center transition ${on ? "bg-ink text-white" : "bg-paper-2 hover:bg-line"}`}>
+                  className="btn btn-secondary !min-h-14 !flex-col !gap-0 !px-1 text-center">
                   <span className="pixel-num block whitespace-nowrap text-[0.8rem] leading-none">{p.w}×{p.h}</span>
-                  <span className={`mt-1 block text-[0.65rem] ${on ? "text-white/70" : "text-ink-faint"}`}>{formatMoney(p.w * p.h * pricing.unitPriceCents, locale, pricing.currency)}</span>
+                  <span className="mt-1 block text-[0.65rem] font-semibold text-ink-soft">{formatMoney(p.w * p.h * pricing.unitPriceCents, locale, pricing.currency)}</span>
                 </button>
               );
             })}
@@ -102,7 +102,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, land
       </div>
 
       <div className="shrink-0 pt-3">
-        <p role="status" data-testid="buy-status" className={`rounded-xl px-3 py-2 text-sm font-semibold ${tone}`}>{status.text}</p>
+        <p role="status" data-testid="buy-status" className={`rounded-[8px] px-3 py-2 text-sm font-semibold ${tone}`}>{status.text}</p>
         <button className="btn btn-primary mt-2.5 w-full" disabled={!ready} onClick={onContinue} data-testid="buy-continue">
           {t("continue")}
         </button>

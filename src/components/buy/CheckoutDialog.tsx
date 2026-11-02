@@ -101,7 +101,7 @@ export function CheckoutDialog({ rect, pricing, landPixels, signedIn, onClose, o
             <ol className="hidden items-center gap-1 text-xs font-semibold text-ink-faint sm:flex" aria-label={t("steps")}>
               <li className={step === "design" ? "text-ink" : ""}>1 · {t("stepDesign")}</li><li aria-hidden>→</li><li className={step === "review" ? "text-ink" : ""}>2 · {t("stepPay")}</li>
             </ol>
-            <button className="grid h-9 w-9 place-items-center rounded-full bg-paper-2 text-lg" aria-label={t("close")} onClick={() => { if (!has || confirm(t("discardConfirm"))) onClose(); }}>×</button>
+            <button className="btn btn-ghost btn-icon btn-sm text-lg" aria-label={t("close")} onClick={() => { if (!has || confirm(t("discardConfirm"))) onClose(); }}>×</button>
           </div>
         </div>
 

@@ -214,7 +214,7 @@ export function DrawBoard({ token, w: parcelW, h: parcelH, scale, baseAssetId }:
           <div className="grid grid-cols-8 gap-1.5 lg:grid-cols-4" role="group">
             {PALETTE.map((c) => (
               <button key={c} aria-label={c} aria-pressed={color === c} onClick={() => { setColor(c); setTool("pencil"); }}
-                className="aspect-square rounded-md shadow-[inset_0_0_0_1px_rgb(0_0_0/0.15)]" style={{ background: c, outline: color === c ? "3px solid var(--color-cobalt)" : "none", outlineOffset: 1 }} />
+                className="aspect-square rounded-[3px] shadow-[inset_0_0_0_1px_rgb(0_0_0/0.15),0_2px_0_rgb(31_37_64/0.12)]" style={{ background: c, outline: color === c ? "3px solid var(--color-cobalt)" : "none", outlineOffset: 1 }} />
             ))}
           </div>
           <div className="mt-2 flex items-center gap-2">
@@ -228,8 +228,8 @@ export function DrawBoard({ token, w: parcelW, h: parcelH, scale, baseAssetId }:
 
         <section className="space-y-2">
           <div role="radiogroup" aria-label="tool" className="grid grid-cols-2 gap-1">
-            <button role="radio" aria-checked={tool === "pencil"} onClick={() => setTool("pencil")} className={`btn btn-sm ${tool === "pencil" ? "btn-ink" : "btn-ghost"}`}>✎ {t("pencil")}</button>
-            <button role="radio" aria-checked={tool === "hand"} onClick={() => setTool("hand")} className={`btn btn-sm ${tool === "hand" ? "btn-ink" : "btn-ghost"}`}>✥ {t("hand")}</button>
+            <button role="radio" aria-checked={tool === "pencil"} onClick={() => setTool("pencil")} className={`btn btn-sm btn-ghost`}>✎ {t("pencil")}</button>
+            <button role="radio" aria-checked={tool === "hand"} onClick={() => setTool("hand")} className={`btn btn-sm btn-ghost`}>✥ {t("hand")}</button>
           </div>
           <div className="flex items-center gap-2">
             <span className="label !mb-0 flex-1">{t("zoom")}</span>

@@ -207,7 +207,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
           <div className="flex max-w-[calc(100%-4.5rem)] flex-col items-start gap-2 sm:max-w-none">
             {stats ? <StatsCard stats={stats} compact={!fullStats} /> : <p className="card pointer-events-auto px-4 py-3 text-sm text-ink-soft">{t("statsUnavailable")}</p>}
             {cursor && <CursorReadout x={cursor.x} y={cursor.y} />}
-            <p className="pointer-events-auto rounded-full bg-white/85 px-3 py-1 text-[0.65rem] text-ink-faint shadow-float">
+            <p className="pointer-events-auto badge-px px-3 py-1 text-[0.65rem] text-ink-faint">
               © Natural Earth · GeoNames · <Link href="/credits" className="underline">{t("credits")}</Link>
             </p>
           </div>
@@ -232,7 +232,7 @@ export function MapShell({ stats: initialStats, pricing, viewer, initial }: MapS
         )}
 
         {toast && (
-          <div role="status" className="pointer-events-auto absolute left-1/2 top-4 z-50 -translate-x-1/2 rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-white shadow-float">
+          <div role="status" className="pointer-events-auto absolute left-1/2 top-4 z-50 -translate-x-1/2 rounded-[8px] bg-ink px-4 py-2.5 text-sm font-semibold text-white shadow-float">
             {toast}
             <button className="ml-3 underline" onClick={() => setToast(null)}>{tc("ok")}</button>
           </div>

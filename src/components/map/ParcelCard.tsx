@@ -59,7 +59,7 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
 
   return (
     <article className={`card pointer-events-auto relative w-full max-w-sm overflow-hidden ${className}`} aria-label={t("label")}>
-      <button onClick={onClose} className="absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-lg shadow-float" aria-label={t("close")}>×</button>
+      <button onClick={onClose} className="btn btn-ghost btn-icon btn-sm absolute right-2 top-2 z-10 text-lg shadow-float" aria-label={t("close")}>×</button>
       {info === null && <div className="p-6 text-sm text-ink-soft" aria-busy>…</div>}
       {info === "error" && <div className="p-6 text-sm text-ink-soft">{t("notFound")}</div>}
       {info && info !== "error" && (

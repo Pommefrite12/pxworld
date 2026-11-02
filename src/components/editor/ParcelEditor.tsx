@@ -266,7 +266,7 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
               <div role="radiogroup" aria-label={t("fit.label")} className="flex gap-1">
                 {(["cover", "contain", "stretch"] as Fit[]).map((f) => (
                   <button key={f} role="radio" aria-checked={photo.fit === f} onClick={() => setPhoto({ ...photo, fit: f, ox: 0, oy: 0, zoom: 1 })}
-                    className={`btn btn-sm flex-1 ${photo.fit === f ? "btn-ink" : "btn-ghost"}`}>{t(`fit.${f}`)}</button>
+                    className={`btn btn-sm flex-1 btn-ghost`}>{t(`fit.${f}`)}</button>
                 ))}
               </div>
               <label className="label" htmlFor="ed-zoom">{t("zoom")}</label>
@@ -281,13 +281,13 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
           <div role="radiogroup" aria-label={t("tools.label")} className="grid grid-cols-5 gap-1">
             {tools.map((x) => (
               <button key={x.id} role="radio" aria-checked={tool === x.id} disabled={x.disabled} title={x.label} aria-label={x.label} onClick={() => setTool(x.id)}
-                className={`btn btn-sm !px-0 text-base ${tool === x.id ? "btn-ink" : "btn-ghost"}`}>{x.icon}</button>
+                className={`btn btn-sm !px-0 text-base btn-ghost`}>{x.icon}</button>
             ))}
           </div>
           <div className="mt-3 grid grid-cols-8 gap-1.5" role="group" aria-label={t("palette")}>
             {PALETTE.map((c) => (
               <button key={c} aria-label={c} aria-pressed={color === c} onClick={() => { setColor(c); if (tool === "eraser" || tool === "move") setTool("pencil"); if (text) setText({ ...text, color: c }); }}
-                className="aspect-square rounded-md shadow-[inset_0_0_0_1px_rgb(0_0_0/0.15)]" style={{ background: c, outline: color === c ? "3px solid var(--color-cobalt)" : "none", outlineOffset: 1 }} />
+                className="aspect-square rounded-[3px] shadow-[inset_0_0_0_1px_rgb(0_0_0/0.15),0_2px_0_rgb(31_37_64/0.12)]" style={{ background: c, outline: color === c ? "3px solid var(--color-cobalt)" : "none", outlineOffset: 1 }} />
             ))}
           </div>
           <div className="mt-2 flex items-center gap-2">

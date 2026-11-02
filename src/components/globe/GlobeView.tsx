@@ -401,7 +401,7 @@ export function GlobeView({ initial }: { initial: { lon: number; lat: number; sp
       <canvas ref={glRef} role="application" aria-label={t("canvasLabel")} tabIndex={0} className="absolute inset-0 block h-full w-full touch-none select-none outline-offset-[-3px]" style={{ cursor: "grab" }} />
       <canvas ref={labelsRef} aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" />
 
-      <p className="pixel-num pointer-events-none absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[0.7rem] shadow-float sm:left-5 sm:top-5" data-testid="globe-readout">
+      <p className="pixel-num pointer-events-none absolute left-3 top-3 badge-px px-3 py-1 text-[0.7rem] sm:left-5 sm:top-5" data-testid="globe-readout">
         {fmt(info.lat, "N", "S")} {fmt(info.lon, "E", "W")} · {info.zoom.toFixed(1)}×
       </p>
 
