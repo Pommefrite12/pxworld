@@ -1,7 +1,7 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { gridAlpha } from "@/lib/map/pixelGrid";
 import { cellDevicePx, cellLook, damage, field, hash2, levelAlpha, makeRanker, tearOffset, GLITCH } from "@/lib/doom/corruption";
-import { finaleAt, frontX, type FinaleFrame } from "@/lib/doom/finale";
+import { finaleAt, frontX, labelPlan, shakeOffset, shakeZoom, type FinaleFrame } from "@/lib/doom/finale";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
 import { enoughLand } from "@/lib/grid/pricing";
 import { ASSET_SIZES, assetSizeFor, assetUrl } from "@/lib/images/sizes";
@@ -716,10 +716,13 @@ export class MapEngine {
     if (f.waiting) {
       if ((this.geoMissing === 0 && this.finTiles.size > 0) || this.finaleNow() - f.waitedSince > 2000) { f.start = this.finaleNow(); f.waiting = false; } else return;
     }
-    const t = (this.finaleNow() - f.start) / 1000, frame = finaleAt(t);
+    const t = (this.finaleNow() - f.start) / 1000, frame = finaleAt(t, f.reduced);
     if (frame.done) { this.completeFinale(); return; }
     this.fin = { frame, front: frontX(frame.sweep, this.w), reduced: f.reduced, t };
-    this.canvas.style.transform = frame.shake > 0 && !f.reduced ? `translate(${Math.round((hash2(Math.floor(t * 30), 1) - 0.5) * 2 * 4 * frame.shake)}px, ${Math.round((hash2(Math.floor(t * 30), 2) - 0.5) * 2 * 3 * frame.shake)}px)` : "";
+    if (frame.shake > 0 && !f.reduced) { // the whole picture is thrown about (scaled up a little so that its edges never show)
+      const o = shakeOffset(t, frame.shake, Math.min(this.w, this.h));
+      this.canvas.style.transform = `translate(${o.x.toFixed(1)}px, ${o.y.toFixed(1)}px) rotate(${o.rot.toFixed(3)}deg) scale(${shakeZoom(o, this.w, this.h).toFixed(4)})`;
+    } else this.canvas.style.transform = "";
   }
 
   /** The sweep is over: the end-state tiles become the map's tiles for good (nothing is redrawn), and the story is at its end. */
@@ -734,34 +737,63 @@ export class MapEngine {
     this.cb.onFinaleEnd?.();
   }
 
-  /** What the sweep leaves on the screen: its front (cyan and magenta blocks), the flash. */
+  /**
+   * What the sweep leaves on the screen: a dim shadow ahead of the front (the wave is coming), the front itself (a wide band of
+   * cyan, magenta and white blocks, a storm of pixels), debris falling behind it, and the flash.
+   */
   private drawFinaleFront() {
     const fin = this.fin;
     if (!fin) return;
     const { ctx, w, h } = this;
     if (!fin.reduced && fin.frame.sweep > 0 && fin.frame.sweep < 1) {
-      const x = Math.round(fin.front), bucket = Math.floor(fin.t * 12);
+      const x = Math.round(fin.front), bucket = Math.floor(fin.t * 14), power = 1 + 2 * fin.frame.shake;
+      // ahead: the light goes out, and thin scanlines creep over what is about to go
+      const ahead = ctx.createLinearGradient(x, 0, x + 260, 0);
+      ahead.addColorStop(0, "rgba(31,37,64,0.30)"); ahead.addColorStop(1, "rgba(31,37,64,0)");
+      ctx.fillStyle = ahead; ctx.fillRect(x, 0, Math.min(260, w - x), h);
+      ctx.fillStyle = "rgba(106,76,255,0.16)";
+      for (let y = bucket & 1; y < h; y += 4) ctx.fillRect(x, y, Math.min(70, w - x), 1);
+      // the front: a band of blocks of three sizes, thick at its centre and thinning out behind it
       for (let row = 0; row * 4 < h; row++) {
-        const dx = Math.round((hash2(row, bucket) - 0.5) * 12);
+        const dx = Math.round((hash2(row, bucket) - 0.5) * 18 * power);
         ctx.fillStyle = hash2(row, bucket + 7) < 0.5 ? GLITCH.cyan : GLITCH.magenta;
-        ctx.fillRect(x + dx, row * 4, 4, 4);
-        if (hash2(row, bucket + 3) < 0.3) { ctx.fillStyle = GLITCH.white; ctx.fillRect(x + dx + 4, row * 4, 4, 4); }
+        ctx.fillRect(x + dx, row * 4, 4 + Math.round(hash2(row, bucket + 9) * 8), 4);
+        if (hash2(row, bucket + 3) < 0.35) { ctx.fillStyle = GLITCH.white; ctx.fillRect(x + dx + 6, row * 4, 4, 4); }
       }
-      ctx.fillStyle = GLITCH.cyan; ctx.fillRect(x - 2, 0, 1, h);
-      ctx.fillStyle = GLITCH.magenta; ctx.fillRect(x + 2, 0, 1, h);
+      const storm = Math.min(260, Math.round(h / 3));
+      for (let i = 0; i < storm; i++) {
+        const behind = Math.pow(hash2(i, bucket, 11), 2) * 150, size = [4, 8, 12][Math.floor(hash2(i, bucket, 12) * 3)]!;
+        ctx.fillStyle = [GLITCH.cyan, GLITCH.magenta, GLITCH.white, GLITCH.lav, GLITCH.orange][Math.floor(hash2(i, bucket, 13) * 5)]!;
+        ctx.fillRect(x - behind - size / 2, Math.round(hash2(i, bucket, 14) * h), size, size);
+      }
+      ctx.fillStyle = GLITCH.cyan; ctx.fillRect(x - 3, 0, 2, h);
+      ctx.fillStyle = GLITCH.magenta; ctx.fillRect(x + 2, 0, 2, h);
+      // debris: bits of the world falling away behind the front, drifting down as they go
+      for (let i = 0; i < 220; i++) {
+        const px = hash2(i, 1, 21) * (w + 160) - 80, age = x - px; // how far behind the front it came apart
+        if (age < 0 || age > 300) continue;
+        const k = age / 300, size = 3 + Math.floor(hash2(i, 2, 21) * 4) * 2;
+        ctx.globalAlpha = 1 - k;
+        ctx.fillStyle = [GLITCH.cyan, GLITCH.magenta, GLITCH.white, GLITCH.lav2][i & 3]!;
+        ctx.fillRect(Math.round(px + age * 0.15), Math.round(hash2(i, 3, 21) * h + age * (0.4 + hash2(i, 4, 21) * 0.9)), size, size);
+        ctx.globalAlpha = 1;
+      }
     }
-    if (!fin.reduced && fin.frame.flash > 0) { ctx.fillStyle = `rgba(255,255,255,${0.85 * fin.frame.flash})`; ctx.fillRect(0, 0, w, h); }
+    if (!fin.reduced && fin.frame.flash > 0) { ctx.fillStyle = `rgba(255,255,255,${0.9 * fin.frame.flash})`; ctx.fillRect(0, 0, w, h); }
   }
 
-  /** Bands of the land just behind the front slide sideways, a few at a time: the world tearing as it goes. */
+  /** Bands of the land just behind the front slide sideways, a few at a time: the world tearing as it goes (harder at each impact). */
   private tearBehindFront() {
     const fin = this.fin;
     if (!fin || fin.reduced || fin.frame.sweep <= 0 || fin.frame.sweep >= 1) return;
-    const { ctx, canvas, dpr, h } = this, bucket = Math.floor(fin.t * 5), x1 = Math.round(fin.front) - 8, x0 = Math.max(0, x1 - 140);
+    const { ctx, canvas, dpr, h } = this, bucket = Math.floor(fin.t * 6), x1 = Math.round(fin.front) - 8, x0 = Math.max(0, x1 - 240), power = 1 + 3 * fin.frame.shake;
     if (x1 <= 0) return;
-    for (let q = 0; q < 10; q++) {
-      const y = Math.round(hash2(bucket, q + 20) * h), bh = Math.round(6 + hash2(bucket, q + 40) * 18), dx = Math.round((hash2(bucket, q + 60) - 0.5) * 30);
+    for (let q = 0; q < 18; q++) {
+      const y = Math.round(hash2(bucket, q + 20) * h), bh = Math.round(6 + hash2(bucket, q + 40) * 26), dx = Math.round((hash2(bucket, q + 60) - 0.5) * 60 * power);
       ctx.drawImage(canvas, x0 * dpr, y * dpr, (x1 - x0) * dpr, bh * dpr, x0 + dx, y, x1 - x0, bh);
+      // the colours slip apart at the edge of a torn band
+      ctx.fillStyle = GLITCH.cyan; ctx.fillRect(x0 + dx, y, 2, bh);
+      ctx.fillStyle = GLITCH.magenta; ctx.fillRect(x1 + dx - 2, y, 2, bh);
     }
   }
 
@@ -1116,7 +1148,10 @@ export class MapEngine {
    */
   private drawLabels(s: number) {
     if (!this.places || !this.geo || s < 0.025) return;
+    if (this.story && this.story.step >= 200 && !this.finale) return; // the end state: every name has been erased, for good
     const { ctx, w, h } = this;
+    // during the final sequence the sweep erases the names as it passes: whole ahead of its front, tearing away just behind it
+    const fin = this.fin, plan = fin ? labelPlan(fin.frame.sweep, fin.front, w, fin.reduced) : null, front = plan?.whole ? plan.whole[0] : 0, tearFrom = plan?.tearing ? plan.tearing[0] : 0;
     const v = this.visibleWorld();
     const lang = document.documentElement.lang === "fr" ? "fr" : "en";
     const FONT = `"Instrument Sans Variable", system-ui, sans-serif`;
@@ -1125,6 +1160,13 @@ export class MapEngine {
     ctx.lineJoin = "round";
     ctx.lineWidth = 3;
     const placed: { x0: number; y0: number; x1: number; y1: number }[] = [];
+    const put = (text: string, x: number, y: number, a: number, ink: number) => {
+      ctx.strokeStyle = `rgba(251,245,230,${0.85 * a})`;
+      ctx.strokeText(text, x, y);
+      ctx.fillStyle = `rgba(${COLORS.ink},${ink * a})`;
+      ctx.fillText(text, x, y);
+    };
+    const clipped = (x0: number, x1: number, draw: () => void) => { ctx.save(); ctx.beginPath(); ctx.rect(x0, 0, x1 - x0, h); ctx.clip(); draw(); ctx.restore(); };
     const label = (text: string, x: number, y: number, a: number, align: CanvasTextAlign = "center", ink = 0.55) => {
       const tw = ctx.measureText(text).width, th = 13;
       const x0 = align === "left" ? x : x - tw / 2;
@@ -1132,15 +1174,25 @@ export class MapEngine {
       if (placed.some((b) => box.x0 < b.x1 && b.x0 < box.x1 && box.y0 < b.y1 && b.y0 < box.y1)) return false; // collision: skip
       placed.push(box);
       ctx.textAlign = align;
-      ctx.strokeStyle = `rgba(251,245,230,${0.85 * a})`;
-      ctx.strokeText(text, x, y);
-      ctx.fillStyle = `rgba(${COLORS.ink},${ink * a})`;
-      ctx.fillText(text, x, y);
+      if (!plan) { put(text, x, y, a, ink); return true; }
+      if (!plan.tearing) { put(text, x, y, a * plan.alpha, ink); return true; } // before the front arrives (or fading, for reduced motion)
+      if (box.x0 >= front) { put(text, x, y, a, ink); return true; } // ahead of the front: untouched
+      if (box.x1 > front) clipped(front, w, () => put(text, x, y, a, ink)); // the front is crossing this name: the part ahead stays
+      if (box.x1 > tearFrom) { // what is left of it tears away: cyan and magenta ghosts, thrown sideways, fading with the distance
+        const f = clamp((box.x1 - tearFrom) / (front - tearFrom), 0, 1), jitter = Math.round((hash2(Math.floor((fin?.t ?? 0) * 14) + Math.round(y), Math.round(x)) - 0.5) * 70 * (1 - f)) + 3;
+        clipped(0, front, () => {
+          ctx.globalAlpha = 0.7 * f * a;
+          ctx.fillStyle = GLITCH.cyan; ctx.fillText(text, x + jitter - 2, y);
+          ctx.fillStyle = GLITCH.magenta; ctx.fillText(text, x + jitter + 2, y);
+          ctx.globalAlpha = 1;
+        });
+      }
       return true;
     };
     const onScreen = (p: { x: number; y: number }, m: number) => p.x > -m && p.y > -m && p.x < w + m && p.y < h + m;
     const dot = (p: { x: number; y: number }, size: number, a: number) => {
-      ctx.fillStyle = `rgba(${COLORS.ink},${0.7 * a})`;
+      if (plan?.tearing && p.x < front) return; // the sweep has taken this one
+      ctx.fillStyle = `rgba(${COLORS.ink},${0.7 * a * (plan && !plan.tearing ? plan.alpha : 1)})`;
       ctx.fillRect(Math.round(p.x - size / 2), Math.round(p.y - size / 2), size, size);
     };
 

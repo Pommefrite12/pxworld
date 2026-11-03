@@ -111,7 +111,7 @@ test("the survivors: a parcel stays intact and framed among the corrupted land, 
 });
 
 /* ------------------------------------------------------------------ the final sequence */
-type FinEng = Eng & { finale: { start: number; waiting: boolean } | null; finaleNow: () => number; canvas: HTMLCanvasElement };
+type FinEng = Eng & { finale: { start: number; waiting: boolean } | null; fin: { front: number } | null; finaleNow: () => number; canvas: HTMLCanvasElement };
 
 /** The corrupted share of the land within a band of the screen (fractions of its width). */
 const bandShare = (page: Page, from: number, to: number) => page.getByRole("application").evaluate((c: HTMLCanvasElement, [a, b]) => {
@@ -136,6 +136,29 @@ const hasFront = (page: Page) => page.getByRole("application").evaluate((c: HTML
   return false;
 });
 
+/** The average brightness of the screen (0 to 255): a white flash makes it jump. */
+const brightness = (page: Page) => page.getByRole("application").evaluate((c: HTMLCanvasElement) => {
+  const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+  let sum = 0, n = 0;
+  for (let i = 0; i < d.length; i += 4 * 16) { sum += (d[i]! + d[i + 1]! + d[i + 2]!) / 3; n++; }
+  return sum / n;
+});
+
+/** Every name the map draws goes through fillText: keep what was drawn (where, in which colour) so that a test can tell what the sweep has erased. */
+const recordNames = (page: Page) => page.evaluate(() => {
+  const w = window as unknown as { __names?: { x: number; ink: boolean; ghost: boolean; front: number | null }[]; __pxEngine?: { fin: { front: number } | null } };
+  if (w.__names) return;
+  w.__names = [];
+  const orig = CanvasRenderingContext2D.prototype.fillText;
+  CanvasRenderingContext2D.prototype.fillText = function (this: CanvasRenderingContext2D, ...args: Parameters<typeof orig>) {
+    const style = String(this.fillStyle).replace(/\s/g, "").toLowerCase();
+    // `front`: where the sweep was when this name was drawn (null: not sweeping), so that a frame drawn just before the test moved the clock cannot be mistaken for a late one
+    w.__names!.push({ x: args[1], ink: style.startsWith("rgba(31,37,64"), ghost: style === "#19d3ff" || style === "#ff2e93", front: w.__pxEngine?.fin?.front ?? null });
+    return orig.apply(this, args);
+  };
+});
+const takeNames = (page: Page) => page.evaluate(() => { const w = window as unknown as { __names: { x: number; ink: boolean; ghost: boolean; front: number | null }[] }; const n = w.__names; w.__names = []; return n; });
+
 /** Opens the end state, plays "Replay the destruction", and lets the test set the clock of the sequence. */
 async function replay(page: Page) {
   await page.goto("/?preview=0");
@@ -154,36 +177,83 @@ test("the final sequence: a front sweeps the screen from west to east, the land 
   const at = await replay(page);
   expect(await page.getByTestId("doom-message").innerText()).toMatch(/^ERROR 0x064/); // the interface says what is happening
   await expect(page.locator('[data-testid="doom-replay"]')).toHaveCount(0); // nothing to replay while it plays
+  const transform = () => page.getByRole("application").evaluate((c: HTMLCanvasElement) => c.style.transform);
   await at(0.1);
-  expect(await page.getByRole("application").evaluate((c: HTMLCanvasElement) => c.style.transform), "the screen shakes at the start").not.toBe("");
+  expect(await transform(), "the screen shakes at the start").not.toBe("");
   expect(await hasFront(page), "the front is still off the left edge").toBe(false);
-  await at(2);
-  expect(await page.getByRole("application").evaluate((c: HTMLCanvasElement) => c.style.transform), "and stops shaking").toBe("");
+  const white = await brightness(page);
+  await at(0.3);
+  const fading = await brightness(page);
+  await at(0.8); // the flash is over
+  const plain = await brightness(page);
+  expect(white, "the flash: the whole screen goes white").toBeGreaterThan(230);
+  expect(white).toBeGreaterThan(fading);
+  expect(fading, "and it takes a moment to fade").toBeGreaterThan(plain + 5);
+  expect(await transform(), "the shake goes on after the flash").not.toBe("");
+  await at(3);
   expect(await hasFront(page), "the front is on the screen").toBe(true);
-  await at(3.6); // the front is in the middle of the screen
+  await at(7.25); // the front is in the middle of the screen
   const west = await bandShare(page, 0.02, 0.3), east = await bandShare(page, 0.7, 0.98);
   expect(west, "behind the front: the end state").toBeGreaterThan(0.9);
   expect(east, "ahead of it: the world as it was before the end").toBeLessThan(west - 0.2);
-  await at(5.5);
+  await at(10.5);
   expect(await bandShare(page, 0.02, 0.5)).toBeGreaterThan(0.9);
-  await at(7.2); // over: the end state is permanent and nothing is left of the sequence
+  await at(13.6); // over: the end state is permanent and nothing is left of the sequence
   await expect.poll(() => page.evaluate(() => (window as unknown as { __pxEngine: FinEng }).__pxEngine.finale), { timeout: 5000 }).toBeNull();
   expect(await hasFront(page)).toBe(false);
   expect((await corruptedShare(page)).share).toBeGreaterThan(0.9);
   expect(await page.getByRole("application").evaluate((c: HTMLCanvasElement) => c.style.transform)).toBe("");
 });
 
+test("the sweep erases the names as it passes, and the end state has none", async ({ page }) => {
+  const at = await replay(page);
+  await recordNames(page); // (a new page load wipes the recorder: it goes in after the replay is started)
+  const front = () => page.evaluate(() => (window as unknown as { __pxEngine: FinEng }).__pxEngine.fin?.front ?? null);
+  await takeNames(page);
+  await at(0.8); // before the sweep: every name is there
+  const before = (await takeNames(page)).filter((n) => n.ink);
+  expect(before.length, "the map has its names").toBeGreaterThan(5);
+  expect(before.some((n) => n.x < 400) && before.some((n) => n.x > 900), "on both sides of the screen").toBe(true);
+  await at(7.25); // the front is in the middle
+  const x = (await front())!;
+  expect(x).toBeGreaterThan(500);
+  expect(x).toBeLessThan(900);
+  const sweeping = (await takeNames(page)).filter((n) => n.front !== null && n.front > 400 && n.front < 1000); // only what was drawn while the front was in the middle
+  const ink = sweeping.filter((n) => n.ink);
+  expect(ink.length, "names are still drawn ahead of the front").toBeGreaterThan(2);
+  expect(ink.filter((n) => n.x < n.front! - 260), "none is left far behind the front").toHaveLength(0);
+  expect(ink.some((n) => n.x > n.front! + 60), "the ones ahead are untouched").toBe(true);
+  await at(13.6);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __pxEngine: FinEng }).__pxEngine.finale), { timeout: 5000 }).toBeNull();
+  await takeNames(page);
+  await page.waitForTimeout(600);
+  expect((await takeNames(page)).filter((n) => n.ink), "no name is drawn once it is over").toHaveLength(0);
+  // …for good: still none after the page is reloaded in the end state
+  await page.goto("/?preview=0");
+  await ready(page);
+  await recordNames(page);
+  await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
+  await takeNames(page);
+  await page.waitForTimeout(600);
+  expect((await takeNames(page)).filter((n) => n.ink)).toHaveLength(0);
+});
+
 test("someone who asked for fewer animations gets the end state fading in: no shake, no front, no flash", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   const at = await replay(page);
-  for (const t of [0.1, 3.6]) {
+  await recordNames(page);
+  for (const t of [0.1, 1.8]) {
     await at(t);
     expect(await page.getByRole("application").evaluate((c: HTMLCanvasElement) => c.style.transform), `t=${t}: no shake`).toBe("");
     expect(await hasFront(page), `t=${t}: no front`).toBe(false);
+    expect(await brightness(page), `t=${t}: no flash`).toBeLessThan(235);
   }
-  await at(7.2);
+  await at(4);
   await expect.poll(() => page.evaluate(() => (window as unknown as { __pxEngine: FinEng }).__pxEngine.finale), { timeout: 5000 }).toBeNull();
   expect((await corruptedShare(page)).share).toBeGreaterThan(0.9);
+  await takeNames(page);
+  await page.waitForTimeout(600);
+  expect((await takeNames(page)).filter((n) => n.ink), "and the names are gone").toHaveLength(0);
 });
 
 test("the sequence plays by itself when the countdown reaches zero in front of the visitor, then the world is gone for good", async ({ page }) => {
@@ -197,8 +267,8 @@ test("the sequence plays by itself when the countdown reaches zero in front of t
   await expect(page.getByTestId("doom-message")).toHaveText("ERROR 0x064 — DELETION IN PROGRESS", { timeout: 15_000 });
   await expect(plate).toContainText("WORLD DELETED");
   await expect(page.locator('[data-testid="doom-replay"]')).toHaveCount(0);
-  // about seven seconds later: the end, for good
-  await expect(page.getByTestId("doom-message")).toHaveText(/^The world has been deleted\. (No plot survived\.|\d+ plots? survived\.)$/, { timeout: 20_000 });
+  // about fourteen seconds later: the end, for good
+  await expect(page.getByTestId("doom-message")).toHaveText(/^The world has been deleted\. (No plot survived\.|\d+ plots? survived\.)$/, { timeout: 30_000 });
   await expect(page.getByTestId("find-your-spot")).toHaveText("Join the survivors");
   await expect(page.locator('[data-testid="doom-replay"]:visible')).toHaveCount(1);
   await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 15_000 }).toBeGreaterThan(0.9);
