@@ -82,6 +82,17 @@ describe("demonstration data for a test site", () => {
     expect(Number((await pool.query("select count(*) from public.parcels")).rows[0].count)).toBe(0);
   });
 
+  it("can add more parcels on the sea afterwards, and leaves what is there alone", async () => {
+    await seedDemo(ports(), { count: 10, seed: 2, emailDomain: DOMAIN });
+    const before = Number((await pool.query(`select count(*) from public.parcels where kind = 'water'`)).rows[0].count);
+    const r = await seedDemo(ports(), { count: 10, water: 6, seed: 2, emailDomain: DOMAIN });
+    expect(r.failed).toEqual([]);
+    expect([r.usersCreated, r.usersFound, r.parcelsCreated, r.parcelsSkipped]).toEqual([6, 10, 6, 10]);
+    expect(Number((await pool.query(`select count(*) from public.parcels where kind = 'water'`)).rows[0].count)).toBe(before + 6);
+    const { rows } = await pool.query(`select count(*)::int as n from public.parcels where kind = 'water' and owned_px >= 0.85 * w * h`);
+    expect(rows[0].n).toBe(before + 6); // every one of them is really on the water
+  });
+
   it("is safe to run twice: nothing is doubled", async () => {
     await seedDemo(ports(), { count: 10, seed: 2, emailDomain: DOMAIN });
     const again = await seedDemo(ports(), { count: 10, seed: 2, emailDomain: DOMAIN });

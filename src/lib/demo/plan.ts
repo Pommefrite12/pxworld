@@ -29,6 +29,9 @@ export const SEAS: readonly { name: string; lat: number; lon: number }[] = [
   { name: "Golfe du Mexique", lat: 25, lon: -90 }, { name: "Pacifique est", lat: 0, lon: -140 }, { name: "Pacifique nord", lat: 35, lon: -160 }, { name: "Océan Indien", lat: -15, lon: 75 },
   { name: "Mer d'Arabie", lat: 15, lon: 65 }, { name: "Mer de Chine méridionale", lat: 12, lon: 114 }, { name: "Mer du Japon", lat: 40, lon: 135 }, { name: "Mer de Corail", lat: -18, lon: 155 },
   { name: "Mer de Tasman", lat: -40, lon: 160 }, { name: "Golfe du Bengale", lat: 14, lon: 88 }, { name: "Mer Rouge", lat: 20, lon: 38 }, { name: "Golfe de Guinée", lat: 0, lon: 0 },
+  { name: "Mer de Norvège", lat: 67, lon: 2 }, { name: "Mer d'Irlande", lat: 53.6, lon: -5 }, { name: "Golfe de Gascogne", lat: 45, lon: -5 }, { name: "Mer Égée", lat: 38.4, lon: 25 },
+  { name: "Mer de Chine orientale", lat: 28, lon: 125 }, { name: "Mer d'Okhotsk", lat: 55, lon: 150 }, { name: "Golfe d'Oman", lat: 24, lon: 58 }, { name: "Mer des Philippines", lat: 15, lon: 130 },
+  { name: "Atlantique centre", lat: 10, lon: -35 }, { name: "Pacifique sud", lat: -25, lon: -120 }, { name: "Océan Indien sud", lat: -40, lon: 85 }, { name: "Mer du Labrador", lat: 58, lon: -52 },
 ];
 
 const WORDS = ["lucie", "mathis", "chloe", "hugo", "emma", "louis", "jade", "noah", "lea", "adam", "alice", "tom", "zoe", "leo", "nina", "paul", "ines", "theo", "mila", "ryan",
@@ -66,13 +69,16 @@ export interface DemoItem {
 
 function mulberry(seed: number) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
-/** `count` demonstration accounts with their parcel, picture and place. Parcels are big enough to be seen on a world map. */
-export function demoPlan(count: number, seed = 1): DemoItem[] {
+/**
+ * `count` demonstration accounts with their parcel, picture and place, then `water` MORE accounts whose parcel is on the sea (so that the seas can be
+ * filled without touching the first ones: with the same seed the first `count` items are the same whatever `water` is). Parcels are big enough to be seen on a world map.
+ */
+export function demoPlan(count: number, seed = 1, water = 0): DemoItem[] {
   const next = mulberry(seed * 7919 + 13);
   const int = (lo: number, hi: number) => lo + Math.floor(next() * (hi - lo + 1));
   const order = [...WORDS].sort(() => next() - 0.5);
   const titles = [...TITLES].sort(() => next() - 0.5);
-  return Array.from({ length: count }, (_, i) => {
+  return Array.from({ length: count + water }, (_, i) => {
     const word = order[i % order.length]!, lap = Math.floor(i / order.length);
     const username = `demo_${word}${lap ? lap + 1 : ""}`.slice(0, 24);
     const roll = next();
@@ -80,7 +86,9 @@ export function demoPlan(count: number, seed = 1): DemoItem[] {
     const ratio = 0.7 + next() * 0.6;
     const w = Math.max(60, Math.min(400, Math.round(base * ratio))), h = Math.max(60, Math.min(400, Math.round(base / ratio)));
     const title = titles[i % titles.length]! + (i >= titles.length ? ` ${Math.floor(i / titles.length) + 1}` : "");
-    const water = i % 5 === 4, anchor = ANCHORS[i % ANCHORS.length]!;
+    const onSea = i >= count || i % 5 === 4, anchor = ANCHORS[i % ANCHORS.length]!;
+    // the seas of the first accounts are used in order (one in five); the extra ones continue where those stop, then wrap
+    const sea = SEAS[(i >= count ? Math.floor(count / 5) + (i - count) : Math.floor(i / 5)) % SEAS.length]!;
     return {
       index: i,
       username,
@@ -88,10 +96,10 @@ export function demoPlan(count: number, seed = 1): DemoItem[] {
       title,
       description: DESCRIPTIONS[i % DESCRIPTIONS.length]!,
       style: ART_STYLES[i % ART_STYLES.length]!,
-      kind: water ? "water" : "land",
-      w: water ? Math.max(180, w) : w, h: water ? Math.max(180, h) : h,
+      kind: onSea ? "water" : "land",
+      w: onSea ? Math.max(180, w) : w, h: onSea ? Math.max(180, h) : h,
       anchor,
-      spot: water ? SEAS[Math.floor(i / 5) % SEAS.length]! : anchor,
+      spot: onSea ? sea : anchor,
       seed: seed * 1000 + i,
       ageHours: Math.round(next() * 14 * 24),
     };

@@ -29,6 +29,18 @@ describe("the plan of the demonstration data", () => {
     expect(new Set(plan.map((p) => p.anchor.country)).size).toBeGreaterThan(15);
     expect(ANCHORS.every((a) => Math.abs(a.lat) < 80 && Math.abs(a.lon) <= 180 && /^[A-Z]{2}$/.test(a.country))).toBe(true);
   });
+  it("adds MORE accounts on the sea after the first ones, which stay exactly the same", () => {
+    const more = demoPlan(50, 1, 20);
+    expect(more).toHaveLength(70);
+    expect(more.slice(0, 50)).toEqual(plan); // the first fifty are untouched: seeding again only completes
+    const extra = more.slice(50);
+    expect(extra.every((p) => p.kind === "water")).toBe(true);
+    expect(plan.filter((p) => p.kind === "water")).toHaveLength(10); // one in five of the first fifty
+    expect(new Set(more.map((p) => p.username)).size).toBe(70);
+    expect(new Set(more.map((p) => p.emailLocal)).size).toBe(70);
+    expect(new Set(extra.map((p) => p.spot.name)).size).toBeGreaterThanOrEqual(10); // spread over the seas
+    for (const p of extra) { expect(p.w).toBeGreaterThanOrEqual(180); expect(p.h).toBeGreaterThanOrEqual(180); expect(Math.abs(p.spot.lat)).toBeLessThan(80); }
+  });
   it("is deterministic, and another seed gives another plan", () => {
     expect(demoPlan(50, 1)).toEqual(plan);
     expect(demoPlan(50, 2).map((p) => p.title)).not.toEqual(plan.map((p) => p.title));

@@ -1,6 +1,7 @@
 // Fills a TEST site with made-up accounts and parcels, so that it does not look empty — and takes them away again.
 //
-//   npm run demo:seed   -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id> [--count 50]
+//   npm run demo:seed   -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id> [--count 50] [--water 20]
+//     --water N adds N MORE accounts, each with a parcel on the sea (what is already there is left alone: running it again completes, never doubles)
 //   npm run demo:status -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id>
 //   npm run demo:clear  -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id> --yes
 //
@@ -97,8 +98,10 @@ try {
   if (command === "seed") {
     const count = Number(opt("count") ?? 50);
     if (!Number.isInteger(count) || count < 1 || count > 500) die("--count must be a whole number from 1 to 500");
-    console.log(`Filling ${target} with ${count} demonstration accounts and parcels (pictures: ${bucket ? `Supabase bucket ${env.SUPABASE_PUBLIC_BUCKET || "pixel-world-creations"}` : "local folder"})…`);
-    const r = await seedDemo(ports, { count, seed: Number(opt("seed") ?? 1), emailDomain });
+    const water = Number(opt("water") ?? 0);
+    if (!Number.isInteger(water) || water < 0 || water > 200) die("--water must be a whole number from 0 to 200");
+    console.log(`Filling ${target} with ${count} demonstration accounts and parcels${water ? `, then ${water} more on the sea` : ""} (pictures: ${bucket ? `Supabase bucket ${env.SUPABASE_PUBLIC_BUCKET || "pixel-world-creations"}` : "local folder"})…`);
+    const r = await seedDemo(ports, { count, water, seed: Number(opt("seed") ?? 1), emailDomain });
     console.log(`\nDone: ${r.usersCreated} accounts created (${r.usersFound} already there), ${r.parcelsCreated} parcels created (${r.parcelsSkipped} already there).`);
     if (r.failed.length) { console.log(`${r.failed.length} could not be made:\n${r.failed.map((f) => `  - ${f}`).join("\n")}`); process.exitCode = 1; }
   } else if (command === "clear") {

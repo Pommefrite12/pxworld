@@ -431,6 +431,11 @@ la base contient déjà un paiement réel ; ou l'identifiant du projet Supabase 
    npm run demo:seed -- --env .env.production.local --i-know-this-is-a-test-site --project VOTRE_ID_PROJET
    ```
    Résultat attendu à la fin : `Done: 50 accounts created … 50 parcels created`. Relancer la commande ne double rien (elle ne complète que ce qui manque).
+   **Pour ajouter des parcelles d'eau EN PLUS** (sans toucher à celles qui existent : la commande ne fait que compléter), par exemple 20 comptes de plus, chacun avec une parcelle en pleine mer, dans les océans et les mers du monde :
+   ```bash
+   npm run demo:seed -- --env .env.production.local --i-know-this-is-a-test-site --project VOTRE_ID_PROJET --water 20
+   ```
+   Résultat attendu : `Done: 20 accounts created (50 already there), 20 parcels created (50 already there).`
 5. Rechargez le site avec **Ctrl+Maj+R** : sous une minute, la carte montre les parcelles habillées, et les compteurs affichent les chiffres de démonstration. Zoomez sur Paris, Londres, New York, Tokyo… : c'est là qu'elles se concentrent.
 6. **Pour tout retirer** (comptes, parcelles, images, y compris dans le dossier privé de Supabase) :
    ```bash

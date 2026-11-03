@@ -30,7 +30,7 @@ export interface DemoPorts {
   log(message: string): void;
 }
 
-export interface SeedOptions { count: number; seed?: number; emailDomain: string; now?: number }
+export interface SeedOptions { count: number; /** MORE accounts, each with a parcel on the sea, after the `count` first ones. */ water?: number; seed?: number; emailDomain: string; now?: number }
 export interface SeedReport { usersCreated: number; usersFound: number; parcelsCreated: number; parcelsSkipped: number; failed: string[] }
 
 const MIN_LAND_SHARE = 0.85;
@@ -39,7 +39,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 const sqlLike = (domain: string) => `demo-%@${domain}`;
 
 export async function seedDemo(p: DemoPorts, opts: SeedOptions): Promise<SeedReport> {
-  const now = opts.now ?? Date.now(), plan = demoPlan(opts.count, opts.seed ?? 1);
+  const now = opts.now ?? Date.now(), plan = demoPlan(opts.count, opts.seed ?? 1, opts.water ?? 0);
   const report: SeedReport = { usersCreated: 0, usersFound: 0, parcelsCreated: 0, parcelsSkipped: 0, failed: [] };
   const known = new Map((await p.query<{ id: string; email: string }>("select id, email from auth.users where email like $1", [sqlLike(opts.emailDomain)])).map((r) => [r.email, r.id]));
   const placed: Rect[] = (await p.query<Rect>("select x, y, w, h from public.parcels where status in ('reserved', 'active')")).map((r) => ({ x: Number(r.x), y: Number(r.y), w: Number(r.w), h: Number(r.h) }));
