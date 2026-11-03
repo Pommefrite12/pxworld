@@ -4,7 +4,7 @@
  * tests can check it. An `error` means a feature of the live site will not work (or is unsafe); a `warn` means "look at this".
  * Nothing here ever prints a value of a secret: only the name of the variable.
  */
-import { parseEnd } from "@/lib/doom/clock";
+import { parseEnd, previewEnd } from "@/lib/doom/clock";
 
 export interface ConfigProblem { level: "error" | "warn"; key: string; message: string }
 type Vars = Record<string, string | undefined>;
@@ -85,6 +85,13 @@ export function configProblems(v: Vars, now: number = Date.now()): ConfigProblem
     else if (end <= now) add("warn", "NEXT_PUBLIC_WORLD_END_AT", "is in the past: the world is deleted and NOTHING CAN BE BOUGHT");
   }
 
+  if (has("NEXT_PUBLIC_STORY_PREVIEW")) {
+    const p = previewEnd(v.NEXT_PUBLIC_STORY_PREVIEW, now);
+    if (p === null) add("error", "NEXT_PUBLIC_STORY_PREVIEW", "is not a moment of the story (J-40, 30, T-10…): nothing would be shown");
+    else if (p <= now) add("warn", "NEXT_PUBLIC_STORY_PREVIEW", "shows the world as already deleted to every visitor while purchases stay open: pick a moment before the end (J-40)");
+    else add("warn", "NEXT_PUBLIC_STORY_PREVIEW", "shows the story to every visitor as a simulation (labelled PREVIEW; the real shop is not affected): fine for a test site, remove it for a real launch");
+  }
+  if (has("NEXT_PUBLIC_STORY_PREVIEW") && has("NEXT_PUBLIC_WORLD_END_AT")) add("warn", "NEXT_PUBLIC_STORY_PREVIEW", "is set next to a real end date: the simulation hides the real countdown, remove one of the two");
   if (has("TEST_COUNTRY")) {
     if (key.startsWith("sk_live_")) add("error", "TEST_COUNTRY", "is set next to a LIVE Stripe key (it is ignored there, but remove it: every visitor would otherwise be taken for one from that country in test mode)");
     else add("warn", "TEST_COUNTRY", "makes every visitor 'be' in that country (a way to test the dollar price): remove it when the test is done");

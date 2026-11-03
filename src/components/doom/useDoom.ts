@@ -2,6 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { parseEnd, phaseOf, previewEnd, remaining, type DoomPhase, type Remaining } from "@/lib/doom/clock";
+import { previewStorage, resolvePreview } from "@/lib/doom/preview";
 import { startFinale } from "./finaleStore";
 
 /**
@@ -10,14 +11,14 @@ import { startFinale } from "./finaleStore";
  */
 const CONFIGURED_END = parseEnd(process.env.NEXT_PUBLIC_WORLD_END_AT);
 const STORE_KEY = "pw-doom-preview";
+/** A deployment can show the story to every visitor as a simulation (no real date, so the shop never closes): `NEXT_PUBLIC_STORY_PREVIEW=J-40`. */
+const DEFAULT_PREVIEW = (process.env.NEXT_PUBLIC_STORY_PREVIEW ?? "").trim();
 
 /* ---- ?preview=J-9 : look at a chapter of the story without touching the real date (kept for the tab, `?preview=off` forgets it) ---- */
 const readPreview = (): string => {
   try {
-    const q = new URLSearchParams(window.location.search).get("preview");
-    if (q !== null) return q;
-    return sessionStorage.getItem(STORE_KEY) ?? "";
-  } catch { return ""; }
+    return resolvePreview(new URLSearchParams(window.location.search).get("preview"), sessionStorage.getItem(STORE_KEY), DEFAULT_PREVIEW);
+  } catch { return DEFAULT_PREVIEW; }
 };
 const subscribePreview = (cb: () => void) => { window.addEventListener("popstate", cb); return () => window.removeEventListener("popstate", cb); };
 // a preview counts down in real time from where it was first opened: the anchor is fixed per value
@@ -74,9 +75,9 @@ export function useDoom(): Doom | null {
   const nowS = useSyncExternalStore(subscribeClock, nowSecond, () => 0);
   useEffect(() => {
     try {
-      const q = new URLSearchParams(window.location.search).get("preview");
-      if (q === null) return;
-      if (q === "" || q.toLowerCase() === "off") sessionStorage.removeItem(STORE_KEY); else sessionStorage.setItem(STORE_KEY, q);
+      const todo = previewStorage(new URLSearchParams(window.location.search).get("preview"), DEFAULT_PREVIEW);
+      if (todo.action === "set") sessionStorage.setItem(STORE_KEY, todo.value);
+      else if (todo.action === "forget") sessionStorage.removeItem(STORE_KEY);
     } catch { /* private mode: the preview just lasts for this page */ }
   }, [preview]);
   if (nowS === 0) return null; // server render and first paint: nothing until the clock is mounted

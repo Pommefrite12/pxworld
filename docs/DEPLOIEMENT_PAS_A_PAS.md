@@ -386,6 +386,23 @@ Sans cela, le lien de confirmation reçu par e-mail ne ramènerait pas vers votr
 
 ---
 
+## Étape 8 : afficher la nouvelle DA sur le site de test, sans date de fin
+
+La nouvelle direction artistique « Glitch » (bandeau, compte à rebours, terre corrompue) est celle de l'histoire des 100 jours. Elle ne s'allume d'elle-même que si une
+**date de fin** est configurée, et cette date **ferme la boutique**. Pour la montrer à tous les visiteurs du site de test **sans fixer de date** : une variable de simulation.
+
+1. Vercel → projet → **Settings → Environment Variables** → bouton d'ajout.
+2. **Key** : `NEXT_PUBLIC_STORY_PREVIEW`. **Value** : `J-40` (le moment de l'histoire à montrer : `J-40` = chapitre 2, 21 % de terre corrompue ; `J-9` = 48 % ; `J-90` = presque rien).
+3. **Type** : **Config** (variable `NEXT_PUBLIC_`). **Environments** : « Production and Preview ». **Save**.
+4. **Deployments → ⋯ → Redeploy**, puis patientez 3 à 5 minutes. Ouvrez le site dans un nouvel onglet, **Ctrl + Maj + R**.
+
+Ce qui change et ce qui ne change pas :
+- Tout le monde voit l'histoire, **avec la mention « APERÇU »** sur le compte à rebours (c'est une simulation, elle l'indique). Elle repart de J-40 à chaque nouvelle visite.
+- **La boutique ne se ferme jamais** : aucune date réelle n'existe. Le prix, les achats, Stripe : rien ne change.
+- `?preview=off` (à la fin de l'adresse) coupe l'histoire pour **un onglet** ; `?preview=default` la remet ; `?preview=J-3` ou `?preview=0` montrent d'autres moments.
+- Pour revenir au site ordinaire : supprimez la variable (**⋯ → Remove**) et **Redeploy**.
+- Pour le vrai lancement : supprimez cette variable et configurez la vraie date de fin (`NEXT_PUBLIC_WORLD_END_AT`).
+
 ## Quand c'est fait
 
 - **Ne partagez pas encore l'adresse publiquement** : c'est un site de test (paiements fictifs).

@@ -95,4 +95,13 @@ describe("the production configuration check", () => {
     expect(configProblems({ ...GOOD, SUPABASE_SERVICE_ROLE_KEY: "sb_publishable_abc" }, NOW).map((p) => [p.level, p.key])).toEqual([["error", "SUPABASE_SERVICE_ROLE_KEY"]]);
     expect(configProblems({ ...GOOD, NEXT_PUBLIC_SUPABASE_URL: "https://shop.example.com" }, NOW).map((p) => [p.level, p.key])).toEqual([["warn", "NEXT_PUBLIC_SUPABASE_URL"]]);
   });
+  it("tells that the story is shown to everybody as a simulation, and refuses a moment that does not exist", () => {
+    expect(configProblems({ ...GOOD, NEXT_PUBLIC_STORY_PREVIEW: "J-40" }, NOW).map((p) => [p.level, p.key])).toEqual([["warn", "NEXT_PUBLIC_STORY_PREVIEW"]]);
+    expect(configProblems({ ...GOOD, NEXT_PUBLIC_STORY_PREVIEW: "next spring" }, NOW).map((p) => [p.level, p.key])).toEqual([["error", "NEXT_PUBLIC_STORY_PREVIEW"]]);
+    const over = configProblems({ ...GOOD, NEXT_PUBLIC_STORY_PREVIEW: "0" }, NOW);
+    expect(over).toHaveLength(1);
+    expect(over[0]!.message).toContain("purchases stay open");
+    const both = configProblems({ ...GOOD, NEXT_PUBLIC_STORY_PREVIEW: "J-40", NEXT_PUBLIC_WORLD_END_AT: "2027-02-11T12:00:00+01:00" }, NOW);
+    expect(both.some((p) => p.message.includes("real end date"))).toBe(true);
+  });
 });
