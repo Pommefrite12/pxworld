@@ -39,9 +39,11 @@ function LocaleSwitch() {
   };
   return (
     <div ref={ref} className="relative">
-      <button ref={button} type="button" className="btn btn-ghost btn-sm !gap-1 !pl-3 !pr-2" aria-haspopup="menu" aria-expanded={open} aria-label={`${t("language")}: ${localeNames[locale]}`}
+      <button ref={button} type="button" className="btn btn-ghost btn-sm !gap-1 !pl-3 !pr-2" aria-haspopup="menu" aria-expanded={open}
         onClick={() => setOpen((v) => !v)} onKeyDown={(e) => { if (e.key === "ArrowDown" && !open) { e.preventDefault(); setOpen(true); } }} data-testid="locale-switch">
-        <span aria-hidden className="text-sm font-bold">{locale.toUpperCase()}</span>
+        {/* the accessible name must CONTAIN the visible text ("EN": WCAG 2.5.3, label in name): "EN, Language: English" */}
+        <span className="text-sm font-bold">{locale.toUpperCase()}</span>
+        <span className="sr-only">, {t("language")}: {localeNames[locale]}</span>
         <svg aria-hidden viewBox="0 0 24 24" className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.6"><path d="m6 9 6 6 6-6" /></svg>
       </button>
       {open && (
