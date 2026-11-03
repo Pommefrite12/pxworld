@@ -89,6 +89,15 @@ A story laid over the site, chosen among three mock-ups: a countdown to the (fic
 
 * **Still to build** (next steps, in `NEXT_STEPS.md`): a pass on a real phone.
 
+### Demonstration data for a test site (never for a real launch)
+
+`npm run demo:seed | demo:status | demo:clear` (`scripts/seed-demo.mts`) fills a TEST site with 50 marked accounts (`demo-001@demo.invalid`, username `demo_<word>`, bio "demonstration account") and one parcel each, so that the map is not empty.
+`lib/demo/plan.ts` is the plan (deterministic from a seed: anchor city, size 60–400 px, style, title) and the **guards** (`demoGuard`): refuses without `--i-know-this-is-a-test-site`, with a live/restricted-live Stripe key, with `PAYMENTS_LIVE_ENABLED`,
+with any `livemode=true` event in the database, and — in Supabase mode — without `--project <id>` matching `NEXT_PUBLIC_SUPABASE_URL` (a database that is not on this machine is refused when no project is configured to check it against). The script applies them before touching anything.
+`lib/demo/art.ts` generates the pictures (pure, deterministic RGB rasters: invaders, plasma, emblems, stripes, mosaic, landscapes, icons, words; 5×7 pixel font); `lib/demo/seed.ts` orchestrates through `DemoPorts` (database, account creation, files, land count) so that the tests run it on a scratch database
+(`tests/db/demo.test.ts`) and the script on the real one. Parcels are placed around big cities on **land** (≥ 85 % land pixels, counted by the same function as purchases), clear of every existing parcel; pictures go through `processCreation` like real uploads.
+It creates **no order, payment or moderation action** (no fake revenue or audit trail) and is idempotent; `clear` deletes only `demo-%@<domain>` accounts with their parcels, creations and files. The public counters show these numbers while they exist: **`demo:clear` before the real launch**.
+
 ### The home page is the flat map (2D only)
 
 Routes: `/` and `/map` are the same page (`src/app/[locale]/page.tsx` re-exports `map/page.tsx`): the flat map where pixels are bought and drawn (deep links: `?x&y&z`, `?bx&by&bw&bh`, `?p=code`, `?buy=1`). `/globe` only redirects to `/`. There is **no 3D globe**: it was removed on purpose, so zooming out stops at the whole-world floor (the world fits the screen; the map still wraps horizontally) and nothing switches to another page or renderer. No WebGL is used anywhere.

@@ -12,6 +12,8 @@ Also done: **the final sequence** at zero (a flash, a hard shake, then a slow 12
 Also done: **a chromatic fringe (cyan/magenta) along the coasts of the destroyed land**, a plain progress bar in the counter card, a smaller countdown, and no "D-87" next to the logo any more. Also done: **the share image follows the story** (ordinary, countdown with the real days left, the end with the real number of survivors; pixel font) and a **"Share" button** after the end. Next: a real-device pass on a phone (the sequence draws a few hundred bands of pixels per frame).
 For the test site: `NEXT_PUBLIC_STORY_PREVIEW=J-40` shows the story to every visitor without any real date (the shop never closes); remove it for the real launch. Needs the owner: the date and time zone of the end (**owner**), whether the names should come back at close zoom in the end state so that people can still find where to buy (today: none at all), and a read of the English and French wording.
 
+Also for the test site: **demonstration data** (`npm run demo:seed` / `demo:status` / `demo:clear`, step 9 of `DEPLOIEMENT_PAS_A_PAS.md`): 50 marked accounts, one generated picture-parcel each, no order and no payment, refuses anything but a confirmed test site; **`demo:clear` is a launch blocker** (the public counters would show made-up numbers).
+
 ## 1. Look at what changed today (owner, ~20 min, before anything else)
 
 A lot went in on one day. Pull the branch, restart (`npm run dev`: the comments migration 13 applies by itself) and go through:

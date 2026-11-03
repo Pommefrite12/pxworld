@@ -1,0 +1,104 @@
+// Fills a TEST site with made-up accounts and parcels, so that it does not look empty — and takes them away again.
+//
+//   npm run demo:seed   -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id> [--count 50]
+//   npm run demo:status -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id>
+//   npm run demo:clear  -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id> --yes
+//
+// What it makes: `demo_…` accounts (e-mail demo-001@demo.invalid…), a big parcel each on land around the big cities, a generated picture each.
+// What it does NOT make: any order, payment or moderation action (so no fake revenue, no fake audit trail). `clear` deletes all of it.
+// The public counters of the site WILL show these numbers while they exist: remove them (`demo:clear`) before a real launch.
+//
+// It refuses to run unless: you say it is a test site, the environment holds no live Stripe key and the database no live payment, and
+// (with Supabase) you give the project id the environment points to. On a local development database no project id is needed.
+import fs from "node:fs";
+import { randomBytes } from "node:crypto";
+import pg from "pg";
+import { createClient } from "@supabase/supabase-js";
+import { shouldUseSsl } from "../src/lib/db/ssl";
+import { demoGuard } from "../src/lib/demo/plan";
+import { clearDemo, demoStatus, seedDemo, type DemoPorts } from "../src/lib/demo/seed";
+
+const args = process.argv.slice(2);
+const command = args[0];
+const flag = (name: string) => args.includes(`--${name}`);
+const opt = (name: string) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : undefined; };
+const die = (message: string, code = 1): never => { console.error(message); process.exit(code); };
+
+if (!["seed", "clear", "status"].includes(command ?? "")) die("Usage: seed | clear | status  (see the top of scripts/seed-demo.mts)", 2);
+
+// the environment of the site to fill: a file of NAME=value lines (never printed)
+const envFile = opt("env");
+if (envFile) {
+  for (const line of fs.readFileSync(envFile, "utf8").split(/\r?\n/)) {
+    const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/.exec(line);
+    if (m && !line.trimStart().startsWith("#")) process.env[m[1]!] = m[2]!.replace(/^(['"])(.*)\1$/, "$2");
+  }
+}
+const env = process.env;
+const databaseUrl = env.DATABASE_URL ?? "postgres://pixel:pixel@127.0.0.1:54329/pixelworld";
+const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL ?? "", serviceKey = env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const mode: "supabase" | "local" = supabaseUrl && serviceKey ? "supabase" : "local";
+const emailDomain = opt("email-domain") ?? "demo.invalid";
+
+const pool = new pg.Pool({ connectionString: databaseUrl, ssl: shouldUseSsl(databaseUrl, env.DATABASE_SSL) ? { rejectUnauthorized: false } : false, max: 4, connectionTimeoutMillis: 10_000 });
+const query = async <T = Record<string, unknown>>(sql: string, params: unknown[] = []) => (await pool.query(sql, params)).rows as T[];
+
+try {
+  // 1. the guards, before anything else happens: first the ones that need no connection (nothing is contacted if one refuses)…
+  const guardInput = {
+    mode, dbHost: new URL(databaseUrl).hostname, stripeKey: env.STRIPE_SECRET_KEY, paymentsLive: env.PAYMENTS_LIVE_ENABLED, confirmed: flag("i-know-this-is-a-test-site"),
+    supabaseUrl, project: opt("project"), liveEvents: 0,
+  };
+  const ask = (reasons: string[]) => {
+    if (command === "clear" && !flag("yes")) reasons.push("add --yes to confirm the deletion of every demonstration account and parcel");
+    if (reasons.length) die(`Refused (nothing was touched):\n${reasons.map((w) => `  - ${w}`).join("\n")}`);
+  };
+  ask(demoGuard(guardInput));
+  // …then the one that looks at the database: has real money ever moved through it?
+  const liveEvents = Number((await query<{ n: string }>("select count(*) as n from public.stripe_events where payload->>'livemode' = 'true'"))[0]?.n ?? 0);
+  ask(demoGuard({ ...guardInput, liveEvents }));
+
+  // 2. the doors to the outside: accounts, files, the land map
+  const [{ objectStore }, { landPixelsIn }] = await Promise.all([import("../src/lib/storage"), import("../src/lib/geo/landServer")]);
+  const admin = mode === "supabase" ? createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } }) : null;
+  const ports: DemoPorts = {
+    query,
+    async createUser(email, username) {
+      if (admin) {
+        const { data, error } = await admin.auth.admin.createUser({ email, email_confirm: true, password: randomBytes(24).toString("base64url"), user_metadata: { username } });
+        if (error || !data.user) throw new Error(`Supabase refused the account ${email}: ${error?.message ?? "no user"}${/invalid/i.test(error?.message ?? "") ? " (try --email-domain with another address)" : ""}`);
+        return data.user.id;
+      }
+      const [row] = await query<{ id: string }>("insert into auth.users (email, raw_user_meta_data) values ($1, jsonb_build_object('username', $2::text)) returning id", [email, username]);
+      return row!.id;
+    },
+    async deleteUser(id) {
+      if (admin) { const { error } = await admin.auth.admin.deleteUser(id); if (error) throw new Error(`Supabase refused to delete ${id}: ${error.message}`); }
+      else await query("delete from auth.users where id = $1", [id]);
+    },
+    putObject: (key, bytes) => objectStore().put(key, bytes, "image/png"),
+    removeObject: (key) => objectStore().remove(key),
+    landPixels: (r) => landPixelsIn(r),
+    log: (m) => console.log(m),
+  };
+
+  const target = mode === "supabase" ? `Supabase project ${new URL(supabaseUrl).hostname.split(".")[0]}` : `local database ${new URL(databaseUrl).hostname}`;
+  if (command === "seed") {
+    const count = Number(opt("count") ?? 50);
+    if (!Number.isInteger(count) || count < 1 || count > 500) die("--count must be a whole number from 1 to 500");
+    console.log(`Filling ${target} with ${count} demonstration accounts and parcels…`);
+    const r = await seedDemo(ports, { count, seed: Number(opt("seed") ?? 1), emailDomain });
+    console.log(`\nDone: ${r.usersCreated} accounts created (${r.usersFound} already there), ${r.parcelsCreated} parcels created (${r.parcelsSkipped} already there).`);
+    if (r.failed.length) { console.log(`${r.failed.length} could not be made:\n${r.failed.map((f) => `  - ${f}`).join("\n")}`); process.exitCode = 1; }
+  } else if (command === "clear") {
+    console.log(`Removing every demonstration account from ${target}…`);
+    const r = await clearDemo(ports, { emailDomain });
+    console.log(`Done: ${r.users} accounts, ${r.parcels} parcels and ${r.files} files removed.`);
+  }
+  const s = await demoStatus(ports, { emailDomain });
+  console.log(`\n${target}: ${s.users} demonstration accounts, ${s.parcels} demonstration parcels.`);
+  console.log(`Public counters now: ${s.publicCounters.soldPixels.toLocaleString("en")} pixels sold, ${s.publicCounters.parcels} parcels, ${s.publicCounters.owners} owners, ${s.publicCounters.creations} creations.`);
+  if (command === "seed") console.log("The site shows them within a minute (reload with Ctrl+Shift+R). Remove them before a real launch: npm run demo:clear.");
+} finally {
+  await pool.end();
+}

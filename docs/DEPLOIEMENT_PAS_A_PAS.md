@@ -403,6 +403,41 @@ Ce qui change et ce qui ne change pas :
 - Pour revenir au site ordinaire : supprimez la variable (**⋯ → Remove**) et **Redeploy**.
 - Pour le vrai lancement : supprimez cette variable et configurez la vraie date de fin (`NEXT_PUBLIC_WORLD_END_AT`).
 
+## Étape 9 : habiller le site de test avec des comptes et des parcelles de démonstration (10 min)
+
+Un site de test vide est triste à regarder. Un outil fabrique **50 comptes fictifs** (`demo_…`, adresses `demo-001@demo.invalid`…) et **une parcelle chacun**, grande et placée sur la terre autour des grandes villes,
+avec **une image générée** (invaders en pixel art, plasmas, logos, rayures, mosaïques, paysages, icônes, mots). Il tourne dans le Codespace, jamais depuis le site.
+
+**Ce que l'outil ne fait pas :** aucune commande, aucun paiement, aucune action de modération (donc ni faux chiffre d'affaires, ni faux historique). Les comptes n'ont pas de mot de passe connu : personne ne peut s'y connecter.
+**Ce qu'il fait voir :** les compteurs publics du site (pixels acquis, parcelles, propriétaires, créations) **afficheront ces chiffres de démonstration** tant qu'ils existent.
+
+**Il refuse de tourner (et ne touche à rien)** si : vous n'avez pas écrit `--i-know-this-is-a-test-site` ; l'environnement contient une clé Stripe **réelle** (`sk_live_…`, `rk_live_…`) ou `PAYMENTS_LIVE_ENABLED` ;
+la base contient déjà un paiement réel ; ou l'identifiant du projet Supabase donné ne correspond pas à l'adresse du fichier d'environnement (protection contre le mauvais projet).
+
+1. Dans le Codespace, ouvrez un **nouveau terminal**, puis mettez le code à jour : `git pull origin claude/funny-bell-k7v5xf`.
+2. Créez le fichier `.env.production.local` comme à l'étape 3D (les mêmes lignes `NOM=valeur`, sans guillemets), s'il n'existe plus. Il faut au minimum ces trois lignes : `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` et `DATABASE_URL` (l'adresse Session pooler `:5432` convient).
+3. Regardez d'abord où vous en êtes (rien n'est écrit) en remplaçant `VOTRE_ID_PROJET` par la ligne 5 de vos notes :
+   ```bash
+   npm run demo:status -- --env .env.production.local --i-know-this-is-a-test-site --project VOTRE_ID_PROJET
+   ```
+   Résultat attendu : `0 demonstration accounts, 0 demonstration parcels`.
+4. Fabriquez les 50 comptes et parcelles (1 à 3 minutes ; chaque ligne affichée est une parcelle créée) :
+   ```bash
+   npm run demo:seed -- --env .env.production.local --i-know-this-is-a-test-site --project VOTRE_ID_PROJET
+   ```
+   Résultat attendu à la fin : `Done: 50 accounts created … 50 parcels created`. Relancer la commande ne double rien (elle ne complète que ce qui manque).
+5. Rechargez le site avec **Ctrl+Maj+R** : sous une minute, la carte montre les parcelles habillées, et les compteurs affichent les chiffres de démonstration. Zoomez sur Paris, Londres, New York, Tokyo… : c'est là qu'elles se concentrent.
+6. **Pour tout retirer** (comptes, parcelles, images, y compris dans le dossier privé de Supabase) :
+   ```bash
+   npm run demo:clear -- --env .env.production.local --i-know-this-is-a-test-site --project VOTRE_ID_PROJET --yes
+   ```
+   Cela ne touche **jamais** aux vrais comptes ni aux vraies parcelles (seules les adresses `demo-…@demo.invalid` sont visées).
+7. Supprimez le fichier d'environnement quand vous avez fini : `rm .env.production.local`.
+
+> **À faire absolument avant le vrai lancement :** `npm run demo:clear` (étape 6), puis vérifier que `npm run demo:status` indique 0, pour que les compteurs publics ne montrent que de vrais chiffres.
+> Je n'ai pu essayer la création de comptes par l'API d'administration de Supabase que sur une base locale, pas sur un vrai projet : si Supabase refuse un compte, le message est affiché tel quel (collez-le moi).
+> Si c'est l'adresse `…@demo.invalid` qui est refusée, ajoutez `--email-domain exemple.test` (même option pour `demo:clear`).
+
 ## Quand c'est fait
 
 - **Ne partagez pas encore l'adresse publiquement** : c'est un site de test (paiements fictifs).
@@ -425,4 +460,5 @@ Ce qui change et ce qui ne change pas :
 | Le paiement réussit mais la commande reste « en attente » | étape 6 : webhook absent, mauvais événements, ou `STRIPE_WEBHOOK_SECRET` faux (puis **Redeploy**) |
 | `migrate.mjs` : « password authentication failed » | le mot de passe de la base est faux (ou contient des symboles non protégés) |
 | `migrate.mjs` : « ENOTFOUND » / « timeout » | prenez bien l'adresse **Session pooler** (pas « Direct connection ») |
+| `demo:seed` affiche `Refused (nothing was touched)` | lisez les raisons listées : drapeau de confirmation oublié, identifiant de projet faux, clé Stripe réelle présente… (c'est voulu) |
 | Rien ne s'affiche sur la carte | attendez 10 secondes (le premier chargement est plus long) ; sinon regardez **Logs** |
