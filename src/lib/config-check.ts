@@ -12,6 +12,19 @@ type Vars = Record<string, string | undefined>;
 const PLACEHOLDER_SALTS = new Set(["change-me", "pixel-world-dev-salt", "changeme", "secret", "salt"]);
 const isLocalHost = (h: string) => /^(localhost|127\.|0\.0\.0\.0|\[::1\]|[^.]+$)/.test(h);
 
+/** The AWS region a Supabase pooler address says (`aws-1-eu-central-1.pooler.supabase.com`) and the Vercel region next to it, when known. */
+export function vercelRegionOfDatabase(url: string | undefined): { aws: string; vercel: string } | null {
+  const m = /@aws-\d+-([a-z]+-[a-z]+-\d)\.pooler\.supabase\.com/.exec(url ?? "");
+  if (!m) return null;
+  const NEXT_TO: Record<string, string> = {
+    "eu-central-1": "fra1", "eu-west-1": "dub1", "eu-west-2": "lhr1", "eu-west-3": "cdg1", "eu-north-1": "arn1",
+    "us-east-1": "iad1", "us-east-2": "cle1", "us-west-1": "sfo1", "us-west-2": "pdx1",
+    "ap-southeast-1": "sin1", "ap-southeast-2": "syd1", "ap-northeast-1": "hnd1", "ap-northeast-2": "icn1", "ap-south-1": "bom1", "sa-east-1": "gru1",
+  };
+  const vercel = NEXT_TO[m[1]!];
+  return vercel ? { aws: m[1]!, vercel } : null;
+}
+
 export function configProblems(v: Vars, now: number = Date.now()): ConfigProblem[] {
   const out: ConfigProblem[] = [];
   const add = (level: ConfigProblem["level"], key: string, message: string) => out.push({ level, key, message });
@@ -52,6 +65,9 @@ export function configProblems(v: Vars, now: number = Date.now()): ConfigProblem
   if (has("NEXT_PUBLIC_SUPABASE_ANON_KEY") && /^(sb_secret_|eyJ.*service)/.test(v.NEXT_PUBLIC_SUPABASE_ANON_KEY!.trim())) add("error", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "holds a SECRET key: this one is sent to every browser. Use the publishable (anon) key here");
   if (has("SUPABASE_SERVICE_ROLE_KEY") && v.SUPABASE_SERVICE_ROLE_KEY!.trim().startsWith("sb_publishable_")) add("error", "SUPABASE_SERVICE_ROLE_KEY", "holds the PUBLISHABLE key: the server needs the secret key here (sb_secret_…)");
   if (has("DATABASE_URL") && /pooler\.supabase\.com:5432\//.test(v.DATABASE_URL!)) add("warn", "DATABASE_URL", "uses the Session pooler (port 5432): on Vercel use the Transaction pooler (port 6543), which copes with many short-lived server instances");
+  // Every request of the map is a trip to the database: a function in Washington and a database in Frankfurt lose ~100 ms per trip.
+  const region = vercelRegionOfDatabase(v.DATABASE_URL);
+  if (region && has("VERCEL_REGION") && v.VERCEL_REGION!.trim() !== region.vercel) add("warn", "VERCEL_REGION", `the functions run in ${v.VERCEL_REGION!.trim()} but the database is in ${region.aws}, next to ${region.vercel}: set "regions": ["${region.vercel}"] in vercel.json (or Settings → Functions → Region) — every map request loses ~100 ms otherwise`);
   if (!has("NEXT_PUBLIC_SUPABASE_URL") || !has("NEXT_PUBLIC_SUPABASE_ANON_KEY")) add("error", "NEXT_PUBLIC_SUPABASE_URL", "Supabase is not configured: nobody can sign in on a production build (the development sign-in is impossible there)");
   if (!has("SUPABASE_SERVICE_ROLE_KEY")) add("error", "SUPABASE_SERVICE_ROLE_KEY", "missing: creations cannot be stored and read (private storage bucket)");
 

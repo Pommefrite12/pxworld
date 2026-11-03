@@ -320,6 +320,10 @@ C'est le moyen d'éviter un aller-retour de 5 minutes avec Vercel à chaque faut
 5. Si cette adresse **n'est pas exactement** celle de `NEXT_PUBLIC_SITE_URL` : **Settings → Environment Variables**, cliquez sur les trois points de `NEXT_PUBLIC_SITE_URL` → **Edit**, corrigez, **Save** ; puis **Deployments**, les trois points du dernier déploiement → **Redeploy** → **Redeploy**. Attendez 3 minutes.
 6. Cliquez sur **Visit** : la carte du monde doit s'afficher (10 secondes la première fois).
 
+### Région des fonctions Vercel (déjà réglée)
+
+Chaque affichage de la carte fait des allers-retours entre les fonctions Vercel et votre base Supabase. Si les deux sont sur des continents différents, chacun coûte ~100 ms de plus. Votre base est à **Francfort** (`aws-1-eu-central-1` dans l'adresse), donc `vercel.json` demande les fonctions à Francfort : `"regions": ["fra1"]`. Si un jour votre projet Supabase est ailleurs, remplacez `fra1` par la région Vercel voisine (par exemple `iad1` pour `us-east-1`, `lhr1` pour `eu-west-2`, `cdg1` pour `eu-west-3`). Le site écrit un avertissement `VERCEL_REGION` dans les journaux au démarrage si les deux sont éloignés.
+
 ### 3F. Version de Node.js
 
 1. **Settings → General**, descendez jusqu'à **Node.js Version**.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { configProblems } from "@/lib/config-check";
+import { configProblems, vercelRegionOfDatabase } from "@/lib/config-check";
 
 const NOW = Date.UTC(2026, 10, 3);
 const GOOD = {
@@ -103,5 +103,25 @@ describe("the production configuration check", () => {
     expect(over[0]!.message).toContain("purchases stay open");
     const both = configProblems({ ...GOOD, NEXT_PUBLIC_STORY_PREVIEW: "J-40", NEXT_PUBLIC_WORLD_END_AT: "2027-02-11T12:00:00+01:00" }, NOW);
     expect(both.some((p) => p.message.includes("real end date"))).toBe(true);
+  });
+});
+
+describe("the region of the functions", () => {
+  const db = "postgresql://postgres.abcd:pw@aws-1-eu-central-1.pooler.supabase.com:6543/postgres";
+  it("knows the Vercel region that sits next to a Supabase region", () => {
+    expect(vercelRegionOfDatabase(db)).toEqual({ aws: "eu-central-1", vercel: "fra1" });
+    expect(vercelRegionOfDatabase("postgresql://u:p@aws-0-us-east-1.pooler.supabase.com:6543/postgres")?.vercel).toBe("iad1");
+    expect(vercelRegionOfDatabase("postgres://u:p@db.example:6543/postgres")).toBeNull();
+    expect(vercelRegionOfDatabase(undefined)).toBeNull();
+  });
+  it("warns when the functions run far from the database, and says what to do", () => {
+    const far = configProblems({ ...GOOD, DATABASE_URL: db, VERCEL_REGION: "iad1" }, NOW).find((p) => p.key === "VERCEL_REGION");
+    expect(far?.level).toBe("warn");
+    expect(far?.message).toContain('"regions": ["fra1"]');
+  });
+  it("says nothing when they are next to it, when the region is unknown (a local machine) or the database is elsewhere", () => {
+    expect(configProblems({ ...GOOD, DATABASE_URL: db, VERCEL_REGION: "fra1" }, NOW).some((p) => p.key === "VERCEL_REGION")).toBe(false);
+    expect(configProblems({ ...GOOD, DATABASE_URL: db }, NOW).some((p) => p.key === "VERCEL_REGION")).toBe(false);
+    expect(configProblems({ ...GOOD, VERCEL_REGION: "iad1" }, NOW).some((p) => p.key === "VERCEL_REGION")).toBe(false);
   });
 });
