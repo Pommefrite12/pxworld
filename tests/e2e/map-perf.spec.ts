@@ -165,3 +165,72 @@ test("the water layer of the raster tiles is only asked for where there is water
   expect(await (await page.request.get("/api/map/water")).json()).toEqual({ cell: 512, c: [] });
   expect(asked, "no water parcel yet: the world view must not ask for a second layer of tiles").toEqual([]);
 });
+
+/* ------------------------------------------------------------------ a modest PC */
+type SlowEng = Eng & { slowUntil: number; zoomBy: (f: number) => void; cb: { onCamera?: (c: unknown) => void }; anim: unknown; geoMissing: number };
+
+test("a slow machine makes no new tile while the camera moves, and makes the sharp ones as soon as it stops", async ({ page }) => {
+  await page.goto("/map?x=18983&y=11739&z=0.3");
+  await engine(page);
+  await page.waitForTimeout(1200);
+  // the machine has just shown that it struggles (a long frame), and the visitor zooms in: one level further needs new tiles
+  const during = await page.evaluate(async () => {
+    const e = (window as unknown as { __pxEngine: SlowEng }).__pxEngine;
+    let baked = 0, frames = 0;
+    const orig = e.renderGeoTile.bind(e);
+    e.renderGeoTile = (...a: Parameters<typeof orig>) => { baked++; return orig(...a); };
+    e.slowUntil = performance.now() + 60_000;
+    e.flyTo({ x: e.cam.x, y: e.cam.y, scale: e.cam.scale * 4 }, 600);
+    const t0 = performance.now();
+    while (performance.now() - t0 < 560) { await new Promise((r) => requestAnimationFrame(r)); frames++; }
+    return { baked, frames, stillMoving: e.anim !== null };
+  });
+  expect(during.stillMoving, "the test looked while the zoom was running").toBe(true);
+  expect(during.baked, "no tile is made during the movement").toBe(0);
+  // once it stops, the sharp tiles come
+  await expect.poll(() => page.evaluate(() => {
+    const e = (window as unknown as { __pxEngine: SlowEng }).__pxEngine;
+    const k = Math.ceil(Math.log2(e.cam.scale * e.dpr)); // the level of the view: its tiles are there
+    return e.anim === null && !e.geoPending && [...e.geoTiles.keys()].filter((key) => key.startsWith(`${k}/`)).length >= 2;
+  }), { timeout: 30_000 }).toBe(true);
+});
+
+test("a fast machine is not made to wait: it makes tiles while the camera moves", async ({ page }) => {
+  await page.goto("/map?x=18983&y=11739&z=0.3");
+  await engine(page);
+  await page.waitForTimeout(1200);
+  const baked = await page.evaluate(async () => {
+    const e = (window as unknown as { __pxEngine: SlowEng }).__pxEngine;
+    let n = 0;
+    const orig = e.renderGeoTile.bind(e);
+    e.renderGeoTile = (...a: Parameters<typeof orig>) => { n++; return orig(...a); };
+    e.slowUntil = 0; // nothing slow was ever seen
+    e.flyTo({ x: e.cam.x, y: e.cam.y, scale: e.cam.scale * 4 }, 600);
+    const t0 = performance.now();
+    while (performance.now() - t0 < 560) await new Promise((r) => requestAnimationFrame(r));
+    return n;
+  });
+  expect(baked, "tiles are made as usual").toBeGreaterThan(0);
+});
+
+test("the page hears about the camera a few times a second while it moves, and always about its last position", async ({ page }) => {
+  await page.goto("/map?x=18983&y=11739&z=0.3");
+  await engine(page);
+  await page.waitForTimeout(800);
+  await page.evaluate(() => {
+    const e = (window as unknown as { __pxEngine: SlowEng & { cb: { onCamera: (c: { scale: number }) => void } } }).__pxEngine;
+    const w = window as unknown as { __heard: { scale: number }[] };
+    w.__heard = [];
+    const orig = e.cb.onCamera!.bind(e.cb);
+    e.cb.onCamera = (c) => { w.__heard.push(c as { scale: number }); return orig(c); };
+  });
+  await page.evaluate(() => { // forty notches in one go, as a free-spinning wheel delivers them
+    const c = document.querySelector("canvas[role=application]")!;
+    for (let i = 0; i < 40; i++) c.dispatchEvent(new WheelEvent("wheel", { deltaY: -60, clientX: 680, clientY: 430, bubbles: true, cancelable: true }));
+  });
+  await page.waitForTimeout(600);
+  const r = await page.evaluate(() => { const w = window as unknown as { __heard: { scale: number }[]; __pxEngine: SlowEng }; return { heard: w.__heard.length, last: w.__heard[w.__heard.length - 1]?.scale, real: w.__pxEngine.cam.scale }; });
+  expect(r.heard, "not once per notch").toBeLessThanOrEqual(4);
+  expect(r.heard).toBeGreaterThan(0);
+  expect(r.last, "the last position is always delivered").toBeCloseTo(r.real, 6);
+});

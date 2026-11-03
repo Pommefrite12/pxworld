@@ -69,6 +69,16 @@ const MAX_Z = 8;
 /** What a water parcel shows while nothing better is known: the medium blue. */
 const WATER_FILL = "#2f8fd8";
 const BAKE_BUDGET_MS = 10;
+/**
+ * A machine that struggles is recognised by its own frames: one that takes longer than `SLOW_FRAME_MS` marks it as slow for
+ * `SLOW_MEMORY_MS`. While the camera moves (and for `SETTLE_MS` after), such a machine makes no new tiles: the coarser ones already
+ * in memory stand in (a little soft), and the sharp ones are made the moment the movement stops. A fast machine never waits.
+ */
+const SLOW_FRAME_MS = 45;
+const SLOW_MEMORY_MS = 8000;
+const SETTLE_MS = 140;
+/** The page (React) hears about the camera at most this often while it moves: the map itself is redrawn at every frame. */
+const CAMERA_NOTIFY_MS = 120;
 const MAX_IMAGES_IN_FLIGHT = 20; // over HTTP/2 (every host that matters) requests share one connection: more at once is faster, not slower
 const MAX_SCALE = 48;
 const RASTER_BELOW = 1; // below this zoom the server-composited rasters are shown; above it, parcels are drawn individually
@@ -284,6 +294,7 @@ export class MapEngine {
     this.cancelWarm();
     cancelAnimationFrame(this.raf);
     this.stopGlitch();
+    if (this.camTimer) clearTimeout(this.camTimer);
     this.cleanup.forEach((f) => f());
   }
 
@@ -298,7 +309,29 @@ export class MapEngine {
     return { x, y, scale: c.scale };
   }
   private constrain() { this.cam = this.constrained({ ...this.cam, scale: clamp(this.cam.scale, this.minScale, MAX_SCALE) }); }
-  private afterCameraChange() { this.cb.onCamera?.({ ...this.cam }); this.invalidate(); }
+  private afterCameraChange() { this.lastMoveAt = performance.now(); this.notifyCamera(); this.invalidate(); }
+
+  private camNotified = 0;
+  private camTimer = 0;
+  /** Tells the page where the camera is: at once when it has been still, then at most every `CAMERA_NOTIFY_MS` (and always the last position). */
+  private notifyCamera() {
+    const wait = CAMERA_NOTIFY_MS - (performance.now() - this.camNotified);
+    if (wait <= 0) { this.emitCamera(); return; }
+    if (!this.camTimer) this.camTimer = window.setTimeout(() => { this.camTimer = 0; this.emitCamera(); }, wait);
+  }
+  private emitCamera() {
+    if (this.camTimer) { clearTimeout(this.camTimer); this.camTimer = 0; }
+    this.camNotified = performance.now();
+    this.cb.onCamera?.({ ...this.cam });
+  }
+
+  private lastMoveAt = 0;
+  private slowUntil = 0;
+  /** Should tiles not be made right now? (The machine is slow and the camera is moving.) */
+  private deferBaking(): boolean {
+    const now = performance.now();
+    return now < this.slowUntil && (this.anim !== null || this.velocity.x !== 0 || this.velocity.y !== 0 || now - this.lastMoveAt < SETTLE_MS);
+  }
 
   /* ------------------------------------------------------------------ data */
 
@@ -657,14 +690,14 @@ export class MapEngine {
       const scale = from.scale * (to.scale / from.scale) ** e;
       // interpolate the *screen-space* focus so the zoom feels anchored rather than swooping
       this.cam = { scale, x: wrapX(from.x + (to.x - from.x) * e), y: from.y + (to.y - from.y) * e };
-      this.cb.onCamera?.({ ...this.cam });
-      if (k >= 1) this.anim = null; else again = true;
+      this.lastMoveAt = performance.now();
+      if (k >= 1) { this.anim = null; this.emitCamera(); } else { this.notifyCamera(); again = true; }
     } else if (this.velocity.x || this.velocity.y) {
       this.cam = this.constrained({ ...this.cam, x: this.cam.x - (this.velocity.x * dt) / this.cam.scale, y: this.cam.y - (this.velocity.y * dt) / this.cam.scale });
       const decay = Math.exp(-dt / 325);
       this.velocity = { x: this.velocity.x * decay, y: this.velocity.y * decay };
-      if (Math.hypot(this.velocity.x, this.velocity.y) < 0.02) this.velocity = { x: 0, y: 0 }; else again = true;
-      this.cb.onCamera?.({ ...this.cam });
+      this.lastMoveAt = performance.now();
+      if (Math.hypot(this.velocity.x, this.velocity.y) < 0.02) { this.velocity = { x: 0, y: 0 }; this.emitCamera(); } else { this.notifyCamera(); again = true; }
     }
 
     const sr = this.selectionScreenRect();
@@ -688,9 +721,45 @@ export class MapEngine {
   private frameStart = 0;
 
   private draw() {
+    this.frameStart = performance.now();
+    try { this.drawFrame(); } finally {
+      const took = performance.now() - this.frameStart;
+      if (took > SLOW_FRAME_MS) this.slowUntil = this.frameStart + SLOW_MEMORY_MS;
+      this.drawMs = this.drawMs ? this.drawMs * 0.9 + took * 0.1 : took;
+      if (this.hud) { this.hudDraws.push(this.frameStart); while (this.hudDraws.length && this.frameStart - this.hudDraws[0]! > 1000) this.hudDraws.shift(); }
+    }
+  }
+
+  /* ------------------------------------------------------------------ diagnostics: `?hud` in the address */
+  private hud = false;
+  private drawMs = 0;
+  private hudDraws: number[] = [];
+  private bakedNow = 0;
+  private bakedLast = 0;
+  private bakedAt = 0;
+  /** Shows, in a corner of the map, how long a frame really takes on this machine (for a visitor who reports that the map is slow). */
+  setHud(on: boolean) { this.hud = on; this.invalidate(); }
+  private drawHud() {
+    const { ctx } = this, now = performance.now();
+    if (now - this.bakedAt > 1000) { this.bakedLast = this.bakedNow; this.bakedNow = 0; this.bakedAt = now; }
+    const nav = navigator as { deviceMemory?: number; hardwareConcurrency?: number };
+    const lines = [
+      `${this.drawMs.toFixed(0)} ms / image · ${this.hudDraws.length} images/s`,
+      `tuiles faites : ${this.bakedLast}/s · ${now < this.slowUntil ? "machine lente (tuiles différées pendant le mouvement)" : "machine rapide"}`,
+      `écran ${this.w}×${this.h} · densité ${this.dpr} · ${nav.hardwareConcurrency ?? "?"} cœurs · ${nav.deviceMemory ?? "?"} Go`,
+    ];
+    ctx.save();
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx.font = "12px ui-monospace, monospace";
+    ctx.fillStyle = "rgba(20,20,40,0.82)"; ctx.fillRect(8, 8, 392, 56);
+    ctx.fillStyle = "#fff"; ctx.textBaseline = "top";
+    lines.forEach((l, i) => ctx.fillText(l, 14, 14 + i * 16));
+    ctx.restore();
+  }
+
+  private drawFrame() {
     const { ctx, w, h, dpr, cam } = this;
     const s = cam.scale;
-    this.frameStart = performance.now();
     this.updateFinale();
     this.geo?.tick(this.frameNo);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -748,6 +817,7 @@ export class MapEngine {
     ctx.moveTo(0, y0 - 0.75); ctx.lineTo(w, y0 - 0.75);
     ctx.moveTo(0, y0 + hh + 0.75); ctx.lineTo(w, y0 + hh + 0.75);
     ctx.stroke();
+    if (this.hud) this.drawHud();
   }
 
   private visibleWorld() {
@@ -1059,7 +1129,8 @@ export class MapEngine {
       const t = this.seaTiles.get(`${k}/${tx}/${ty}`);
       if (!t || t.step !== step) missing.push({ tx, ty, d: Math.hypot((tx + 0.5) * size - this.cam.x, (ty + 0.5) * size - this.cam.y) });
     }
-    if (missing.length) { // a few per frame, the nearest to the middle of the view first (as for the land)
+    if (missing.length && this.deferBaking()) this.geoPending = true; // as for the land: not while a slow machine moves the camera
+    else if (missing.length) { // a few per frame, the nearest to the middle of the view first (as for the land)
       missing.sort((a, b) => a.d - b.d);
       let made = 0;
       for (const m of missing) {
@@ -1157,6 +1228,7 @@ export class MapEngine {
    */
   private renderGeoTile(k: number, tx: number, ty: number, strict = false, fillOnly = false, stepOverride?: number): { c: HTMLCanvasElement; complete: boolean; glitch?: GeoGlitch } | null {
     if (!this.geo) return null;
+    this.bakedNow++;
     const scale = 2 ** k, size = GEO_TILE_PX / scale;
     const rect = { x0: tx * size, y0: ty * size, x1: (tx + 1) * size, y1: (ty + 1) * size };
     const admin = k >= -3; // départements / states / provinces appear once a country spans a few hundred screen pixels
@@ -1348,7 +1420,9 @@ export class MapEngine {
     if (missing.length) {
       // as many as the frame can afford, the nearest to the middle first (at least one, so that the view always makes progress)
       missing.sort((a, b) => a.d - b.d);
-      for (let i = 0; i < Math.min(missing.length, 6); i++) {
+      const defer = this.deferBaking(); // a slow machine, camera moving: the coarser tiles stand in, the sharp ones come when it stops
+      if (defer) this.geoPending = true;
+      for (let i = 0; i < Math.min(missing.length, defer ? 0 : 6); i++) {
         if (i > 0 && performance.now() - this.frameStart > BAKE_BUDGET_MS) break;
         const m = missing[i]!, r = this.renderGeoTile(k, m.tx, m.ty);
         if (r) this.geoTiles.set(`${k}/${m.tx}/${m.ty}`, { c: r.c, used: 0, complete: r.complete, ver: this.geo.version, step, glitch: r.glitch });
