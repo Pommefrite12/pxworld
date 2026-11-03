@@ -61,6 +61,7 @@ try {
   // 2. the doors to the outside: accounts, files, the land map
   const [{ objectStore }, { landPixelsIn }] = await Promise.all([import("../src/lib/storage"), import("../src/lib/geo/landServer")]);
   const admin = mode === "supabase" ? createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } }) : null;
+  const bucket = admin ? admin.storage.from(env.SUPABASE_PUBLIC_BUCKET || "pixel-world-creations") : null;
   const ports: DemoPorts = {
     query,
     async createUser(email, username) {
@@ -76,8 +77,18 @@ try {
       if (admin) { const { error } = await admin.auth.admin.deleteUser(id); if (error) throw new Error(`Supabase refused to delete ${id}: ${error.message}`); }
       else await query("delete from auth.users where id = $1", [id]);
     },
-    putObject: (key, bytes) => objectStore().put(key, bytes, "image/png"),
-    removeObject: (key) => objectStore().remove(key),
+    // with Supabase the files go to the bucket of the project whatever else is in the environment (the site's own store would fall back to
+    // the local disk when the public key is missing from the file, and the pictures would never reach the site)
+    async putObject(key, bytes) {
+      if (!bucket) return objectStore().put(key, bytes, "image/png");
+      const { error } = await bucket.upload(key, bytes, { contentType: "image/png", upsert: false });
+      if (error) throw new Error(`storage upload failed: ${error.message}`);
+    },
+    async removeObject(key) {
+      if (!bucket) return objectStore().remove(key);
+      const { error } = await bucket.remove([key]);
+      if (error) throw new Error(`storage removal failed: ${error.message}`);
+    },
     landPixels: (r) => landPixelsIn(r),
     log: (m) => console.log(m),
   };
@@ -86,7 +97,7 @@ try {
   if (command === "seed") {
     const count = Number(opt("count") ?? 50);
     if (!Number.isInteger(count) || count < 1 || count > 500) die("--count must be a whole number from 1 to 500");
-    console.log(`Filling ${target} with ${count} demonstration accounts and parcels…`);
+    console.log(`Filling ${target} with ${count} demonstration accounts and parcels (pictures: ${bucket ? `Supabase bucket ${env.SUPABASE_PUBLIC_BUCKET || "pixel-world-creations"}` : "local folder"})…`);
     const r = await seedDemo(ports, { count, seed: Number(opt("seed") ?? 1), emailDomain });
     console.log(`\nDone: ${r.usersCreated} accounts created (${r.usersFound} already there), ${r.parcelsCreated} parcels created (${r.parcelsSkipped} already there).`);
     if (r.failed.length) { console.log(`${r.failed.length} could not be made:\n${r.failed.map((f) => `  - ${f}`).join("\n")}`); process.exitCode = 1; }
