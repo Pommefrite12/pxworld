@@ -650,7 +650,8 @@ export class MapEngine {
     const y0 = (0 - cam.y) * s + h / 2, hh = H * s;
     ctx.fillStyle = `rgba(${COLORS.ink},0.07)`;
     ctx.fillRect(0, y0 + 6, w, hh);
-    ctx.fillStyle = COLORS.ocean;
+    const swapped = this.mode === "buy" && this.buyKind === "water"; // buying water: the colours are swapped, so that nobody mistakes land for water
+    ctx.fillStyle = swapped ? COLORS.land : COLORS.ocean;
     ctx.fillRect(0, y0, w, hh);
     if (this.mode === "buy" && this.buyKind === "land") {
       // while buying land, the sea is hatched: land tiles are drawn over it, so only water shows the stripes — "not for sale" (as land)
@@ -670,9 +671,12 @@ export class MapEngine {
       this.drawSea(s); // the story: the destroyed seas
       this.drawParcels(s, true); // the water parcels: over the sea, under the land (the coast cuts them)
       this.drawGeography(s);
-      if (this.mode === "buy" && this.buyKind === "water") { // while buying water, it is the land that is hatched
+      if (swapped) { // while buying water, the land takes the colour of the sea and is hatched (the water, cream, is what is for sale)
         const hatch = this.seaHatch();
-        if (hatch) this.onLand(s, () => { ctx.fillStyle = hatch; ctx.fillRect(x0, y0, ww, hh); });
+        this.onLand(s, () => {
+          ctx.globalAlpha = 0.82; ctx.fillStyle = COLORS.ocean; ctx.fillRect(x0, y0, ww, hh); ctx.globalAlpha = 1;
+          if (hatch) { ctx.fillStyle = hatch; ctx.fillRect(x0, y0, ww, hh); }
+        });
       }
       if (this.mode === "buy") { ctx.fillStyle = `rgba(${COLORS.free},0.13)`; ctx.fillRect(x0, y0, ww, hh); }
       // zoomed in, place names sit UNDER the parcels (owners cover the map); zoomed out, parcels are specks and names stay readable on top
@@ -862,7 +866,8 @@ export class MapEngine {
   }
 
   /**
-   * Paints the corruption into a geography tile, inside the land only (`fill` is the tile's land): big square cells (a few screen
+   * Paints the corruption into a geography tile, inside the land only (`fill` is the tile's land; for the SEA, `sea`, it is the whole tile
+   * and the look is the plain lavender field — the error colours stay on the land): big square cells (a few screen
    * pixels whatever the zoom) of scanlined lavender with stray blocks of error colour, colours slipping at the edge of the
    * destroyed area, and bands that have slid sideways. The cells of a level have a fixed size in device pixels, so a tile
    * holds a whole number of them and they never leave seams. Returns where the land is destroyed (for the fringe of the coasts), or
@@ -892,8 +897,9 @@ export class MapEngine {
         for (let r = 0; r < B; r++) {
           const cy = by * B + r, iy = ty * n + cy;
           g.fillStyle = iy & 1 ? GLITCH.lav2 : GLITCH.lav;
-          g.fillRect(bx * B * cs + tearOffset(iy >> 1, k) * cs, cy * cs, B * cs, cs);
+          g.fillRect(bx * B * cs + (sea ? 0 : tearOffset(iy >> 1, k) * cs), cy * cs, B * cs, cs);
         }
+        if (sea) continue; // the destroyed sea is the lavender field alone: the error colours (magenta, cyan…) belong to the land
         const bseed = (ty * blocks + by) * 7919 + tx * blocks + bx, count = Math.floor(B * B * 0.016 + hash2(bseed, 300 + k));
         for (let q = 0; q < count; q++) {
           g.fillStyle = [GLITCH.magenta, GLITCH.cyan, GLITCH.orange, GLITCH.ink, GLITCH.white, GLITCH.violet][Math.floor(hash2(bseed, 340 + q) * 6)]!;
@@ -908,6 +914,10 @@ export class MapEngine {
           const r = (lattice[b]! * (1 - fx) + lattice[b + 1]! * fx) * (1 - fy) + (lattice[b + R + 1]! * (1 - fx) + lattice[b + R + 2]! * fx) * fy;
           const d = damage(r, I);
           if (d <= 0) continue;
+          if (sea) { // the same field, with a clean edge: no colours slipping, no sparks, no sliding band
+            if (d >= 0.5) { g.fillStyle = iy & 1 ? GLITCH.lav2 : GLITCH.lav; g.fillRect(cx * cs, cy * cs, cs, cs); }
+            continue;
+          }
           const look = cellLook(d, hash2(tx * n + cx, iy, 100 + k), iy);
           const px = cx * cs + (d >= 0.6 ? off * cs : 0), py = cy * cs;
           if (look.fill) { g.fillStyle = look.fill; g.fillRect(px, py, cs, cs); }
