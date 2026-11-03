@@ -64,6 +64,10 @@ export function configProblems(v: Vars, now: number = Date.now()): ConfigProblem
     else if (end <= now) add("warn", "NEXT_PUBLIC_WORLD_END_AT", "is in the past: the world is deleted and NOTHING CAN BE BOUGHT");
   }
 
+  if (has("TEST_COUNTRY")) {
+    if (key.startsWith("sk_live_")) add("error", "TEST_COUNTRY", "is set next to a LIVE Stripe key (it is ignored there, but remove it: every visitor would otherwise be taken for one from that country in test mode)");
+    else add("warn", "TEST_COUNTRY", "makes every visitor 'be' in that country (a way to test the dollar price): remove it when the test is done");
+  }
   if (has("ALERT_WEBHOOK_URL") && !/^https:\/\//.test(v.ALERT_WEBHOOK_URL!)) add("error", "ALERT_WEBHOOK_URL", "must be an https address: alerts would never be sent");
   return out;
 }

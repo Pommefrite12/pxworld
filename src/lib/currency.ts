@@ -31,3 +31,14 @@ export function countryOfRequest(headers: { get(name: string): string | null }):
 export const currencyOfRequest = (headers: { get(name: string): string | null }): SaleCurrency => currencyForCountry(countryOfRequest(headers));
 
 export const isSaleCurrency = (v: unknown): v is SaleCurrency => v === "eur" || v === "usd";
+
+/**
+ * For testing the dollar price on a deployed TEST site without a VPN: `TEST_COUNTRY=US` makes every visitor "be" in that country.
+ * It only counts while the payments are in test mode (a `sk_test_`/`rk_test_` key, or no key at all: the mock) — with a live key it is
+ * ignored, whatever is set. (`lib/config-check` also warns when it is set.)
+ */
+export function effectiveCountry(headerCountry: string | null, testCountry: string | null | undefined, stripeKey: string | null | undefined): string | null {
+  const t = (testCountry ?? "").trim().toUpperCase();
+  const testMode = !stripeKey || /^(sk|rk)_test_/.test(stripeKey);
+  return testMode && /^[A-Z]{2}$/.test(t) ? t : headerCountry;
+}

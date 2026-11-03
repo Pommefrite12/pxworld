@@ -1,5 +1,7 @@
 # Deployment (Vercel + Supabase + Stripe)
 
+> Step by step, in French, for the owner: [`DEPLOIEMENT_PAS_A_PAS.md`](DEPLOIEMENT_PAS_A_PAS.md). What follows is the reference.
+
 Everything below uses **test credentials first**. Nothing here activates real payments.
 
 ## 1. Supabase
@@ -8,7 +10,7 @@ Everything below uses **test credentials first**. Nothing here activates real pa
 2. **Database**: `supabase link --project-ref <ref>` then `supabase db push` (applies `supabase/migrations/*`), *or* paste the
    migration files (`supabase/migrations/`, oldest first) in the SQL editor in order.
 3. **Storage**: run `supabase/storage.sql` once (creates the private `pixel-world-creations` bucket, no public policies).
-4. **Auth** → URL configuration: Site URL = your production URL; add `https://<domain>/auth/callback` to redirect URLs.
+4. **Auth** → URL configuration: Site URL = your production URL; add `https://<domain>/auth/callback` **and `https://<domain>/**`** to the redirect URLs (the sign-in links carry a `?next=` part that an exact match would refuse).
    Providers → Google: add OAuth client id/secret (Google Cloud Console → OAuth consent + credentials; authorised redirect URI shown by Supabase).
    Policies: minimum password length 10; enable email confirmations; configure SMTP for production-grade emails.
 5. **Grant yourself the admin role** (SQL editor; the only way to create staff — by design):
@@ -30,7 +32,7 @@ See [`PAYMENTS.md`](PAYMENTS.md): API key, payment methods, webhook endpoint + s
    `NEXT_PUBLIC_SITE_URL`, `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
    `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY` (test), `STRIPE_WEBHOOK_SECRET`, `CRON_SECRET`, `RATE_LIMIT_SALT`
    (long random), and the `NEXT_PUBLIC_OPERATOR_*` legal identity variables.
-3. **Cron**: `vercel.json` schedules `/api/cron/maintenance` every 5 minutes (Vercel sends `Authorization: Bearer $CRON_SECRET`).
+3. **Cron**: `vercel.json` schedules `/api/cron/maintenance` once a day (03:00 UTC): the free Hobby plan refuses anything more frequent and the deployment would fail. On a Pro plan, change the schedule to `*/5 * * * *` before the launch (Vercel sends `Authorization: Bearer $CRON_SECRET`).
    Sub-daily schedules need a Pro plan; on Hobby change the schedule to daily — correctness never depends on it
    (reservations are released lazily at purchase time) but late-payment recovery and refund retries do.
 4. Domain, then update the Stripe webhook URL and the Supabase redirect URLs to the final domain.

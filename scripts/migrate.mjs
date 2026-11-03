@@ -13,7 +13,12 @@ const useShim = process.argv.includes("--shim");
 const url = process.env.DATABASE_URL ?? (useShim ? "postgres://pixel:pixel@127.0.0.1:54329/pixelworld" : undefined);
 if (!url) throw new Error("DATABASE_URL is required");
 
-const client = new pg.Client({ connectionString: url });
+// Same rule as the application (src/lib/db/ssl.ts): a managed database (Supabase…) is reached through a public host name and speaks TLS;
+// a local one does not. `DATABASE_SSL=true|false` always wins. Do not put `?sslmode=` in the address.
+const host = new URL(url).hostname;
+const local = host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "[::1]" || !host.includes(".");
+const useSslForUrl = process.env.DATABASE_SSL === "true" ? true : process.env.DATABASE_SSL === "false" ? false : !local;
+const client = new pg.Client({ connectionString: url, ssl: useSslForUrl ? { rejectUnauthorized: false } : false });
 await client.connect();
 try {
   if (useShim) await client.query(fs.readFileSync(path.join(root, "tests/db/supabase-shim.sql"), "utf8"));

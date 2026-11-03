@@ -67,4 +67,9 @@ describe("the production configuration check", () => {
     expect(text).not.toContain("SECRETVALUE");
     expect(text).not.toContain("postgres://");
   });
+  it("reminds that a test country is set, and refuses it next to a live key", () => {
+    expect(configProblems({ ...GOOD, TEST_COUNTRY: "US" }, NOW).map((p) => [p.level, p.key])).toEqual([["warn", "TEST_COUNTRY"]]);
+    const live = configProblems({ ...GOOD, TEST_COUNTRY: "US", STRIPE_SECRET_KEY: "sk_live_1", PAYMENTS_LIVE_ENABLED: "yes-i-have-approval" }, NOW);
+    expect(live.map((p) => [p.level, p.key])).toContainEqual(["error", "TEST_COUNTRY"]);
+  });
 });

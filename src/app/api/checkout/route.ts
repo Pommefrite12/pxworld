@@ -11,7 +11,7 @@ import { landPixelsIn } from "@/lib/geo/landServer";
 import { enoughLand } from "@/lib/grid/pricing";
 import { parseCreationMeta, readCreationImage, storeCreation } from "@/lib/creations";
 import { assertStoryAllowsSales } from "@/lib/doom/sales";
-import { currencyOfRequest } from "@/lib/currency";
+import { requestCurrency } from "@/lib/currency-server";
 
 export const maxDuration = 30;
 
@@ -35,7 +35,7 @@ export const POST = route(async (req) => {
   const r = { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
   // The currency is decided here, from the buyer's country (euros in the euro area, dollars elsewhere). The browser sends the
   // one it displayed: if the two differ (the buyer's connection moved to another country in between), nothing is charged.
-  const currency = currencyOfRequest(req.headers);
+  const currency = requestCurrency(req.headers);
   const shown = form.get("currency");
   if (typeof shown === "string" && shown.toLowerCase() !== currency) throw new HttpError(409, "px_currency_changed");
   const pricing = await getPricing(currency);

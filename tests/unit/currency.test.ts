@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EURO_COUNTRIES, countryOfRequest, currencyForCountry, currencyOfRequest, isSaleCurrency } from "@/lib/currency";
+import { EURO_COUNTRIES, countryOfRequest, currencyForCountry, currencyOfRequest, effectiveCountry, isSaleCurrency } from "@/lib/currency";
 
 const h = (o: Record<string, string>) => ({ get: (n: string) => o[n.toLowerCase()] ?? null });
 
@@ -36,5 +36,15 @@ describe("euros in the euro area, dollars elsewhere", () => {
   it("knows which currencies the shop sells in", () => {
     expect(isSaleCurrency("eur") && isSaleCurrency("usd")).toBe(true);
     for (const c of ["gbp", "EUR", "", null, 3]) expect(isSaleCurrency(c)).toBe(false);
+  });
+  it("lets a test deployment pretend to be abroad, but only while payments are in test mode", () => {
+    expect(effectiveCountry("FR", "us", "sk_test_123")).toBe("US");
+    expect(effectiveCountry("FR", "US", undefined)).toBe("US"); // the mock: no key at all
+    expect(effectiveCountry("FR", "US", "")).toBe("US");
+    expect(effectiveCountry("FR", "US", "sk_live_123")).toBe("FR"); // never with a live key
+    expect(effectiveCountry("FR", "US", "rk_live_123")).toBe("FR");
+    expect(effectiveCountry("FR", "", "sk_test_123")).toBe("FR");
+    expect(effectiveCountry(null, "banana", "sk_test_123")).toBeNull();
+    expect(currencyForCountry(effectiveCountry("FR", "US", "sk_test_1"))).toBe("usd");
   });
 });
