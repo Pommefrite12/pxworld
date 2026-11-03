@@ -305,7 +305,10 @@ Deux avertissements sont normaux tant que Stripe n'est pas configuré : `STRIPE_
 1. Cliquez sur **Deploy**. Vercel construit le site : 3 à 5 minutes, avec un journal qui défile.
 2. Quand l'écran « **Congratulations!** » apparaît, cliquez sur **Continue to Dashboard**.
 3. Si le déploiement échoue (écran rouge, « Build Failed ») : ouvrez **Build Logs**, copiez les **20 dernières lignes** et envoyez-les-moi (elles ne contiennent pas de clé).
-4. **L'adresse réelle du site** : dans le tableau de bord du projet, section **Domains**, repérez l'adresse **courte** qui se termine par `.vercel.app` (par exemple `pixelworld-test.vercel.app`). Ce n'est **pas** celle avec des lettres aléatoires au milieu.
+4. **L'adresse réelle du site. Ne la devinez jamais** : `pixelworld-test.vercel.app` n'est que l'adresse *souhaitée*. Si le nom est déjà pris par quelqu'un d'autre, Vercel ajoute des lettres à la vôtre
+   (et `pixelworld-test.vercel.app` est alors le site d'un inconnu : 404 partout). Cliquez sur **Visit** et **copiez l'adresse affichée dans la barre du navigateur** : c'est elle qu'il faut mettre
+   dans `NEXT_PUBLIC_SITE_URL`, à l'étape 4 (Supabase), dans la commande de contrôle de l'étape 5 et dans le webhook Stripe de l'étape 6. Test rapide : `<votre adresse>/api/stats` doit afficher des chiffres (`{"totalPixels":308046591,…}`).
+   Repérez l'adresse : dans le tableau de bord du projet, section **Domains**, repérez l'adresse **courte** qui se termine par `.vercel.app` (par exemple `pixelworld-test.vercel.app`). Ce n'est **pas** celle avec des lettres aléatoires au milieu.
 5. Si cette adresse **n'est pas exactement** celle de `NEXT_PUBLIC_SITE_URL` : **Settings → Environment Variables**, cliquez sur les trois points de `NEXT_PUBLIC_SITE_URL` → **Edit**, corrigez, **Save** ; puis **Deployments**, les trois points du dernier déploiement → **Redeploy** → **Redeploy**. Attendez 3 minutes.
 6. Cliquez sur **Visit** : la carte du monde doit s'afficher (10 secondes la première fois).
 
@@ -392,6 +395,7 @@ Sans cela, le lien de confirmation reçu par e-mail ne ramènerait pas vers votr
 | Le build Vercel échoue | copiez les dernières lignes du journal et envoyez-les-moi |
 | Le build Vercel échoue avec « Invalid environment configuration … Invalid URL → at NEXT_PUBLIC_SUPABASE_URL » (ou `NEXT_PUBLIC_SITE_URL`) | la valeur n'est pas une adresse valide : il faut **seulement** `https://xxxx.supabase.co` (sans `NEXT_PUBLIC_SUPABASE_URL=` devant, sans guillemets, sans espace). Corrigez-la (Settings → Environment Variables → ⋯ → Edit), puis **Redeploy** |
 | La page affiche une erreur « Invalid environment configuration » | une variable est mal écrite (guillemets, espace, `/` final) |
+| Le contrôle `smoke.mjs` affiche `STOP: … does not answer like the Pixel World site`, ou des 404 partout | ce n'est pas votre site : mauvaise adresse (voir 3E point 4), ou déploiement pas en production |
 | Impossible de se connecter / le lien de l'e-mail mène à une erreur | étape 4 : l'adresse de redirection manque ou ne correspond pas |
 | Le paiement réussit mais la commande reste « en attente » | étape 6 : webhook absent, mauvais événements, ou `STRIPE_WEBHOOK_SECRET` faux (puis **Redeploy**) |
 | `migrate.mjs` : « password authentication failed » | le mot de passe de la base est faux (ou contient des symboles non protégés) |

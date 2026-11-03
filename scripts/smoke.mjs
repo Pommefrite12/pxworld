@@ -12,6 +12,20 @@ const text = (x) => x.body.toString("utf8");
 
 console.log(`Smoke test of ${base}\n`);
 
+// First of all: is this address even the Pixel World site? (Another site, a typo or a deployment that failed answers differently.)
+const probe = await get("/api/stats").catch((e) => ({ status: 0, type: "", body: Buffer.from(String(e?.message ?? e)) }));
+let isOurs = false;
+try { isOurs = Number.isFinite(JSON.parse(text(probe)).totalPixels); } catch { /* not JSON: not our site */ }
+if (!isOurs) {
+  console.log(`STOP: ${base} does not answer like the Pixel World site (/api/stats gave ${probe.status || "no answer"}${probe.body.length ? `: "${text(probe).slice(0, 60).replace(/\s+/g, " ")}"` : ""}).`);
+  console.log("  - Is it the exact address Vercel shows for your project? (Project → Overview → Visit, then copy the address from the browser.)");
+  console.log("  - A name like pixelworld-test.vercel.app may belong to somebody else: Vercel then adds letters to yours.");
+  console.log("  - Open <address>/api/stats in a browser: it must show figures such as {\"totalPixels\":308046591,…}.");
+  console.log("  - If it does and this test still stops, the database is probably not reachable: read the Vercel logs.");
+  process.exit(2);
+}
+
+
 // 1. pages
 for (const path of ["/", "/fr", "/map", "/discover", "/fr/discover", "/rules", "/terms", "/privacy", "/credits", "/contact", "/auth/sign-in", "/auth/sign-up"]) {
   const x = await get(path);
@@ -24,7 +38,7 @@ check("the story is off unless configured (no countdown in the page)", !home.inc
 
 // 2. map and data endpoints
 const stats = await get("/api/stats");
-check("/api/stats answers with real figures", stats.status === 200 && Number.isFinite(JSON.parse(text(stats)).totalPixels), `${stats.status}`);
+check("/api/stats answers with real figures", stats.status === 200 && isOurs, `${stats.status}`);
 check("/api/stats is cacheable by a CDN", /s-maxage=\d+/.test(stats.r.headers.get("cache-control") ?? ""));
 for (const path of ["/api/map/tiles/0/0", "/api/map/beacons", "/api/map/raster/5/0/0", "/api/availability?x=19000&y=11700&w=10&h=10", "/sitemap.xml", "/robots.txt", "/icon.png", "/apple-icon.png"]) {
   const x = await get(path);
@@ -32,7 +46,7 @@ for (const path of ["/api/map/tiles/0/0", "/api/map/beacons", "/api/map/raster/5
 }
 const geo = await get("/data/geo/index.json");
 check("map reference data is served (public/data/geo)", geo.status === 200 || geo.status === 404 /* the index name may differ */, `${geo.status}`);
-const quoteIn = async (country) => JSON.parse(text(await get("/api/availability?x=19000&y=11700&w=10&h=10", { headers: { "x-vercel-ip-country": country } }))).price?.currency;
+const quoteIn = async (country) => { try { return JSON.parse(text(await get("/api/availability?x=19000&y=11700&w=10&h=10", { headers: { "x-vercel-ip-country": country } }))).price?.currency; } catch { return undefined; } };
 const [inUs, inFr] = [await quoteIn("US"), await quoteIn("FR")];
 // Locally, the header says where the visitor is: dollars for the US, euros for France. On Vercel the platform sets that header itself (a
 // forged one is overwritten), so both answers are the currency of the country the request really comes from — also correct, and the proof
