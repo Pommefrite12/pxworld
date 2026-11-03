@@ -193,23 +193,43 @@ test.describe("map interaction", () => {
 });
 
 test.describe("language switch", () => {
-  test("the whole button opens the list, and choosing a language changes the page and keeps the place", async ({ page }) => {
+  test("the language menu is in the site's own look, opens from a click or the keyboard, and choosing a language changes the page and keeps the place", async ({ page }) => {
     await page.goto("/discover");
-    const select = page.getByTestId("locale-switch");
-    const label = select.locator("xpath=..");
-    // the invisible select covers the whole pixel button: a click on its edge, its padding or its arrow all land on it
-    const [sb, lb] = [(await select.boundingBox())!, (await label.boundingBox())!];
-    expect([Math.round(sb.x), Math.round(sb.y), Math.round(sb.width), Math.round(sb.height)]).toEqual([Math.round(lb.x), Math.round(lb.y), Math.round(lb.width), Math.round(lb.height)]);
-    for (const [fx, fy] of [[0.08, 0.5], [0.5, 0.5], [0.92, 0.5], [0.5, 0.15]] as const) {
-      const hit = await page.evaluate(({ x, y }) => (document.elementFromPoint(x, y) as HTMLElement | null)?.getAttribute("data-testid"), { x: lb.x + lb.width * fx, y: lb.y + lb.height * fy });
-      expect(hit, `${fx},${fy}`).toBe("locale-switch");
-    }
-    await expect(label).toContainText("EN");
-    await select.selectOption("fr");
+    const button = page.getByTestId("locale-switch");
+    await expect(button).toContainText("EN");
+    await expect(button).toHaveAttribute("aria-expanded", "false");
+    await expect(page.locator("header select"), "no native list: the menu is the site's own").toHaveCount(0);
+    // a click opens a card with both languages, the current one marked
+    await button.click();
+    const menu = page.getByRole("menu", { name: "Language" });
+    await expect(menu).toBeVisible();
+    await expect(button).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByTestId("locale-option-en")).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByTestId("locale-option-fr")).toHaveAttribute("aria-checked", "false");
+    await expect(page.getByTestId("locale-option-fr")).toHaveText(/Français/);
+    expect(await menu.evaluate((e) => getComputedStyle(e).backgroundColor), "a white card like the account menu").toBe("rgb(255, 255, 255)");
+    // Escape closes it and gives the focus back; so does a click elsewhere
+    await page.keyboard.press("Escape");
+    await expect(menu).toBeHidden();
+    await expect(button).toBeFocused();
+    await button.click();
+    await page.mouse.click(5, 400);
+    await expect(menu).toBeHidden();
+    // from the keyboard: the arrow opens it, the arrows move, Enter chooses
+    await button.focus();
+    await page.keyboard.press("ArrowDown");
+    await expect(menu).toBeVisible();
+    await expect(page.getByTestId("locale-option-en")).toBeFocused(); // the focus starts on the current language
+    await page.keyboard.press("ArrowDown");
+    await expect(page.getByTestId("locale-option-fr")).toBeFocused();
+    await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/fr\/discover/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Découvrir");
-    await expect(page.getByTestId("locale-switch").locator("xpath=..")).toContainText("FR");
-    await page.getByTestId("locale-switch").selectOption("en");
+    await expect(page.getByTestId("locale-switch")).toContainText("FR");
+    await expect(page.getByRole("menu")).toHaveCount(0); // it closed by itself
+    // and with the mouse, back to English
+    await page.getByTestId("locale-switch").click();
+    await page.getByTestId("locale-option-en").click();
     await expect(page).toHaveURL(/\/discover$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Discover");
   });

@@ -23,3 +23,12 @@ export function previewStorage(query: string | null, fallback: string): PreviewS
   if (q === "" || q === "off") return fallback ? { action: "set", value: "off" } : { action: "forget" }; // with a default, "off" must be remembered, or the default would come back
   return { action: "set", value: query.trim() };
 }
+
+/**
+ * Is the moment shown a simulation the VISITOR asked for (`?preview=J-9`)? Then the plate says PREVIEW. When it is the deployment's own
+ * default (`NEXT_PUBLIC_STORY_PREVIEW`), it is simply the site: the plate says "FICTION · 100 DAYS", like the real story would.
+ */
+export function isVisitorPreview(value: string, fallback: string): boolean {
+  const v = value.trim();
+  return v !== "" && v.toLowerCase() !== "off" && v !== fallback.trim();
+}

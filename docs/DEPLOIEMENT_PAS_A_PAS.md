@@ -397,7 +397,7 @@ La nouvelle direction artistique « Glitch » (bandeau, compte à rebours, terre
 4. **Deployments → ⋯ → Redeploy**, puis patientez 3 à 5 minutes. Ouvrez le site dans un nouvel onglet, **Ctrl + Maj + R**.
 
 Ce qui change et ce qui ne change pas :
-- Tout le monde voit l'histoire, **avec la mention « APERÇU »** sur le compte à rebours (c'est une simulation, elle l'indique). Elle repart de J-40 à chaque nouvelle visite.
+- Tout le monde voit l'histoire. Le compte à rebours porte la mention **« FICTION · 100 JOURS »** (comme pour la vraie histoire) ; la mention « APERÇU » n'apparaît que si un visiteur demande lui-même une simulation avec `?preview=…` dans l'adresse. Le compte à rebours repart de J-40 à chaque nouvelle visite.
 - **La boutique ne se ferme jamais** : aucune date réelle n'existe. Le prix, les achats, Stripe : rien ne change.
 - `?preview=off` (à la fin de l'adresse) coupe l'histoire pour **un onglet** ; `?preview=default` la remet ; `?preview=J-3` ou `?preview=0` montrent d'autres moments.
 - Pour revenir au site ordinaire : supprimez la variable (**⋯ → Remove**) et **Redeploy**.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { previewStorage, resolvePreview } from "@/lib/doom/preview";
+import { isVisitorPreview, previewStorage, resolvePreview } from "@/lib/doom/preview";
 
 describe("which moment of the story a page shows", () => {
   it("shows nothing when nothing is asked and nothing is configured", () => {
@@ -26,5 +26,13 @@ describe("which moment of the story a page shows", () => {
     expect(previewStorage("off", "J-40")).toEqual({ action: "set", value: "off" });
     expect(previewStorage("off", "")).toEqual({ action: "forget" });
     expect(previewStorage("", "")).toEqual({ action: "forget" });
+  });
+  it("calls a moment a PREVIEW only when the visitor asked for it, not when it is the deployment's own default", () => {
+    expect(isVisitorPreview("J-9", "")).toBe(true);
+    expect(isVisitorPreview("J-9", "J-40")).toBe(true);
+    expect(isVisitorPreview("J-40", "J-40")).toBe(false); // the site's own default: just the site
+    expect(isVisitorPreview(" J-40 ", "J-40")).toBe(false);
+    expect(isVisitorPreview("off", "J-40")).toBe(false);
+    expect(isVisitorPreview("", "")).toBe(false);
   });
 });

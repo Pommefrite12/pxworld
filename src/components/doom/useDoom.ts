@@ -2,7 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { parseEnd, phaseOf, previewEnd, remaining, type DoomPhase, type Remaining } from "@/lib/doom/clock";
-import { previewStorage, resolvePreview } from "@/lib/doom/preview";
+import { isVisitorPreview, previewStorage, resolvePreview } from "@/lib/doom/preview";
 import { startFinale } from "./finaleStore";
 
 /**
@@ -63,7 +63,7 @@ const nowSecond = () => Math.floor(Date.now() / 1000);
 export interface Doom {
   /** The instant the countdown reads zero. */
   end: number;
-  /** Shown from `?preview=…` (a simulation), not from the real date. */
+  /** Shown from a `?preview=…` the visitor asked for (a simulation), not from the real date nor from the deployment's own default. */
   preview: boolean;
   remaining: Remaining;
   phase: DoomPhase;
@@ -85,5 +85,5 @@ export function useDoom(): Doom | null {
   const end = previewed ?? CONFIGURED_END;
   if (end === null) return null;
   const r = remaining(end, nowS * 1000);
-  return { end, preview: previewed !== null, remaining: r, phase: phaseOf(r) };
+  return { end, preview: previewed !== null && isVisitorPreview(preview, DEFAULT_PREVIEW), remaining: r, phase: phaseOf(r) };
 }

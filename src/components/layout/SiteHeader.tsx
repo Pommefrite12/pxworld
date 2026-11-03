@@ -16,17 +16,49 @@ function LocaleSwitch() {
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("nav");
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const away = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") { setOpen((was) => { if (was) button.current?.focus(); return false; }); } };
+    document.addEventListener("pointerdown", away); document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", esc); };
+  }, []);
+  // opening puts the focus on the current language, so that the arrows, Enter and Escape work at once
+  useEffect(() => { if (open) ref.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus(); }, [open]);
+  const choose = (l: Locale) => {
+    setOpen(false);
+    if (l !== locale) router.replace(pathname + window.location.search, { locale: l });
+  };
+  const move = (e: React.KeyboardEvent) => {
+    const items = [...(ref.current?.querySelectorAll<HTMLElement>('[role="menuitemradio"]') ?? [])];
+    const at = items.indexOf(document.activeElement as HTMLElement);
+    const to = e.key === "ArrowDown" ? (at + 1) % items.length : e.key === "ArrowUp" ? (at - 1 + items.length) % items.length : e.key === "Home" ? 0 : e.key === "End" ? items.length - 1 : -1;
+    if (to >= 0) { e.preventDefault(); items[to]?.focus(); }
+  };
   return (
-    // The visible part is a pixel button; the real <select> is an invisible layer over the WHOLE button, so a click anywhere
-    // on it opens the native list of languages (a small select inside the padding only opened when hit exactly).
-    <label className="btn btn-ghost btn-sm relative !gap-1 !pl-3 !pr-2">
-      <span aria-hidden className="text-sm font-bold">{locale.toUpperCase()}</span>
-      <svg aria-hidden viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="m6 9 6 6 6-6" /></svg>
-      <select value={locale} onChange={(e) => router.replace(pathname + (typeof window !== "undefined" ? window.location.search : ""), { locale: e.target.value as Locale })}
-        className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0" aria-label={t("language")} data-testid="locale-switch">
-        {locales.map((l) => <option key={l} value={l}>{localeNames[l]}</option>)}
-      </select>
-    </label>
+    <div ref={ref} className="relative">
+      <button ref={button} type="button" className="btn btn-ghost btn-sm !gap-1 !pl-3 !pr-2" aria-haspopup="menu" aria-expanded={open} aria-label={`${t("language")}: ${localeNames[locale]}`}
+        onClick={() => setOpen((v) => !v)} onKeyDown={(e) => { if (e.key === "ArrowDown" && !open) { e.preventDefault(); setOpen(true); } }} data-testid="locale-switch">
+        <span aria-hidden className="text-sm font-bold">{locale.toUpperCase()}</span>
+        <svg aria-hidden viewBox="0 0 24 24" className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.6"><path d="m6 9 6 6 6-6" /></svg>
+      </button>
+      {open && (
+        <div role="menu" aria-label={t("language")} className="card absolute right-0 top-11 z-50 w-44 p-1.5" onKeyDown={move}>
+          {locales.map((l) => (
+            <button key={l} type="button" role="menuitemradio" aria-checked={l === locale} lang={l} onClick={() => choose(l)} data-testid={`locale-option-${l}`}
+              className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm font-semibold hover:bg-sky focus-visible:bg-sky focus-visible:outline focus-visible:outline-2 focus-visible:outline-cobalt ${l === locale ? "bg-paper-2" : ""}`}>
+              <span>{localeNames[l]}</span>
+              <span className="flex items-center gap-1.5">
+                <span aria-hidden className="pixel-num text-xs text-ink-faint">{l.toUpperCase()}</span>
+                {l === locale && <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4 text-signal" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5 9-10" /></svg>}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
