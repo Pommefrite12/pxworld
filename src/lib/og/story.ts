@@ -45,7 +45,7 @@ const FR = {
   over: "LE MONDE A ÉTÉ SUPPRIMÉ.",
   survived: (n: number) => (n === 0 ? "AUCUNE PARCELLE N'A SURVÉCU." : n === 1 ? "1 PARCELLE A SURVÉCU." : `${n} PARCELLES ONT SURVÉCU.`),
   onlyOver: "Seules les parcelles acquises ont survécu.",
-  join: "Rejoignez les survivants.",
+  join: "Voir les survivants.",
 };
 const EN = {
   kicker: "100 DAYS TO SAVE THE WORLD",
@@ -54,7 +54,7 @@ const EN = {
   over: "THE WORLD HAS BEEN DELETED.",
   survived: (n: number) => (n === 0 ? "NO PLOT SURVIVED." : n === 1 ? "1 PLOT SURVIVED." : `${n} PLOTS SURVIVED.`),
   onlyOver: "Only claimed plots survived.",
-  join: "Join the survivors.",
+  join: "Meet the survivors.",
 };
 
 /** The words of the image. `survivors` is the real number of parcels (`null`: unknown, then nothing is claimed about it). */

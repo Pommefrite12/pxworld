@@ -39,7 +39,7 @@ export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOn
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const q = quote(rect, pricing.unitPriceCents, { landPixels, seaPercent: pricing.seaPercent });
+  const q = quote(rect, pricing.unitPriceCents, { landPixels, seaPercent: pricing.seaPercent, currency: pricing.currency });
   const onChange = useCallback((v: boolean) => setHas(v), []);
 
   useEffect(() => {
@@ -70,7 +70,7 @@ export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOn
       const fd = new FormData();
       fd.set("x", String(rect.x)); fd.set("y", String(rect.y)); fd.set("w", String(rect.w)); fd.set("h", String(rect.h));
       fd.set("image", new File([blob], "creation.png", { type: "image/png" }));
-      fd.set("title", title); fd.set("description", description); fd.set("link", link); fd.set("commercial", String(commercial)); fd.set("locale", locale);
+      fd.set("title", title); fd.set("description", description); fd.set("link", link); fd.set("commercial", String(commercial)); fd.set("locale", locale); fd.set("currency", pricing.currency);
       const r = await fetch("/api/checkout", { method: "POST", body: fd });
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.url) { window.location.assign(j.url); return; }

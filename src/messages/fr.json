@@ -90,7 +90,7 @@
     "ticker": "LE COMPTE À REBOURS EST LANCÉ ▪ SEULES LES PARCELLES ACQUISES SURVIVRONT ▪ QUELLE PARTIE DU MONDE RESTERA DEBOUT ? ▪ ",
     "tickerOver": "LE MONDE A ÉTÉ SUPPRIMÉ ▪ SEULES LES PARCELLES ACQUISES ONT SURVÉCU ▪ ",
     "cta": "Sauver ma parcelle",
-    "ctaOver": "Rejoindre les survivants",
+    "ctaOver": "Voir les survivants",
     "latest": "Derniers sauvetages",
     "saved": "Monde sauvé",
     "savedLine": "{n, plural, =0 {Aucune parcelle sauvée pour l’instant} one {# parcelle sauvée} other {# parcelles sauvées}} · {danger} encore en danger",
@@ -215,6 +215,9 @@
       "px_invalid_rect": "La taille ou la position de cette parcelle n'est pas valide.",
       "px_bad_dimensions": "Cette image ne correspond pas à la taille de votre parcelle. Rechargez la page et réessayez.",
       "px_sales_closed": "Les ventes sont momentanément fermées.",
+      "px_world_ended": "Le monde a été supprimé : les parcelles ne peuvent plus être achetées.",
+      "px_currency_changed": "Les prix ont changé de devise (votre connexion semble avoir changé de pays). Rechargez la page pour voir le nouveau prix.",
+      "px_bad_currency": "La boutique ne vend qu'en euros et en dollars.",
       "px_account_suspended": "Votre compte est suspendu.",
       "px_too_many_reservations": "Vous avez déjà plusieurs réservations non payées. Terminez-en ou annulez-en une d'abord.",
       "image_required": "Ajoutez une image ou un dessin.",
@@ -603,7 +606,7 @@
         {
           "h": "Prix et paiement",
           "p": [
-            "Le prix initial est de 0,50 € par pixel, calculé automatiquement à partir du nombre de pixels et toujours recalculé par nos serveurs. Nous pouvons modifier le prix des ventes futures ; les parcelles déjà achetées ne sont pas concernées. Les paiements sont traités par Stripe ; nous ne voyons ni ne conservons votre numéro de carte.",
+            "Le prix initial est de 0,50 € par pixel pour les acheteurs de la zone euro et de 0,50 $ par pixel [à confirmer] pour les autres, facturé dans la devise du pays de l'acheteur détecté au moment de la commande, calculé automatiquement à partir du nombre de pixels et toujours recalculé par nos serveurs. Nous pouvons modifier le prix des ventes futures ; les parcelles déjà achetées ne sont pas concernées. Les paiements sont traités par Stripe ; nous ne voyons ni ne conservons votre numéro de carte.",
             "Lorsque vous démarrez un achat, les pixels sont réservés pour vous pour une durée limitée. Si vous ne payez pas dans ce délai, la réservation est libérée. Votre parcelle ne vous est attribuée que lorsque le prestataire de paiement nous a confirmé le paiement."
           ]
         },
@@ -871,8 +874,10 @@
     "settings": {
       "title": "Paramètres",
       "lead": "Les modifications s'appliquent aux commandes futures uniquement. Les commandes existantes conservent leur prix.",
-      "price": "Prix par pixel (en centimes)",
+      "price": "Prix par pixel en euros (en centimes)",
       "priceHint": "Actuellement {price} le pixel.",
+      "priceUsd": "Prix par pixel en dollars (en centimes)",
+      "priceUsdHint": "Facturé hors zone euro : actuellement {price} le pixel.",
       "minArea": "Surface minimale (pixels)",
       "maxArea": "Surface maximale (pixels)",
       "ttl": "Durée de réservation (minutes)",

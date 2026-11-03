@@ -41,6 +41,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
   // (the sweep then turns it into the end state)
   const storyStep = doom ? Math.round((doom.remaining.over && during ? PRE_END_INTENSITY : infection(doom.remaining)) * 200) : null;
   const arming = Boolean(doom && !doom.remaining.over && doom.remaining.ms <= 60_000);
+  const ended = Boolean(doom?.remaining.over); // the countdown has reached zero: the shop is closed
   const locale = useLocale();
   const router = useRouter();
   const mapRef = useRef<MapViewHandle>(null);
@@ -91,7 +92,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
 
   const startBuy = useCallback((preset?: Rect | null) => {
     const e = engine();
-    if (!e) return;
+    if (!e || ended) return; // the story is over: nothing can be bought any more
     setParcelCode(null); e.setHighlight(null);
     setMode("buy"); e.setMode("buy");
     const sz = preset ? { w: preset.w, h: preset.h } : size;
@@ -103,13 +104,19 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
     } else if (e.cam.scale < 0.35) {
       e.flyTo({ x: e.cam.x, y: e.cam.y, scale: 0.6 }, 700);
     }
-  }, [size, applySelection]);
+  }, [size, applySelection, ended]);
 
   const stopBuy = useCallback(() => {
     const e = engine();
     setMode("explore"); e?.setMode("explore"); e?.setBrush(null); e?.setPreviewImage(null);
     applySelection(null); setServerFree(null); setSelState(null); setDialog(false);
   }, [applySelection]);
+
+  // the countdown reaches zero while somebody is choosing a spot: the shop closes under their feet
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- leaves the buy mode when the story ends
+    if (ended && mode === "buy") stopBuy();
+  }, [ended, mode, stopBuy]);
 
   const changeSize = (w: number, h: number) => {
     setSize({ w, h });
@@ -193,8 +200,10 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
       <SiteHeader
         viewer={viewer}
         center={<SearchBox onGo={goTo} />}
-        cta={mode === "explore" ? (
-          <button className={`btn btn-primary btn-sm sm:!min-h-10 sm:!px-5${doom ? " doom-cta" : ""}`} onClick={() => startBuy()} data-testid="find-your-spot">{doom ? (doom.remaining.over && !during ? td("ctaOver") : td("cta")) : t("findYourSpot")}</button>
+        cta={mode === "explore" ? (ended
+          // the world has ended and nothing can be bought any more: the button now leads to the ones who saved a piece of it
+          ? <Link href="/discover" className="btn btn-primary btn-sm doom-cta sm:!min-h-10 sm:!px-5" data-testid="find-your-spot">{td("ctaOver")}</Link>
+          : <button className={`btn btn-primary btn-sm sm:!min-h-10 sm:!px-5${doom ? " doom-cta" : ""}`} onClick={() => startBuy()} data-testid="find-your-spot">{doom ? td("cta") : t("findYourSpot")}</button>
         ) : null}
       />
       <div className="relative min-h-0 flex-1">

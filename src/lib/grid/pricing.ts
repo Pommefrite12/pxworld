@@ -41,7 +41,7 @@ export function enoughLand(landPixels: number, areaPixels: number, minLandPercen
 export function quote(
   size: Pick<Rect, "w" | "h">,
   unitPriceCents: number = DEFAULT_UNIT_PRICE_CENTS,
-  opts: { landPixels?: number | null; seaPercent?: number } = {},
+  opts: { landPixels?: number | null; seaPercent?: number; currency?: string } = {},
 ): PriceQuote {
   if (!Number.isSafeInteger(unitPriceCents) || unitPriceCents < 1) throw new RangeError("invalid unit price");
   const a = area(size);
@@ -50,7 +50,7 @@ export function quote(
   const seaPercent = opts.seaPercent ?? 0;
   const totalCents = land * unitPriceCents + Math.floor((sea * unitPriceCents * seaPercent) / 100);
   if (!Number.isSafeInteger(totalCents)) throw new RangeError("price overflow");
-  return { area: a, landPixels: land, seaPixels: sea, unitPriceCents, seaPercent, totalCents, currency: CURRENCY };
+  return { area: a, landPixels: land, seaPixels: sea, unitPriceCents, seaPercent, totalCents, currency: opts.currency ?? CURRENCY };
 }
 
 export function formatMoney(cents: number, locale: string, currency: string = CURRENCY): string {

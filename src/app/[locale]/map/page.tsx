@@ -7,6 +7,8 @@ import { getPricing, getPublicStats } from "@/lib/data/map";
 import { latestCreations } from "@/lib/data/parcels";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { validateRect } from "@/lib/grid/geometry";
+import { headers } from "next/headers";
+import { currencyOfRequest } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 
@@ -27,8 +29,9 @@ export default async function HomePage({ params, searchParams }: { params: Promi
   const { locale } = await params;
   setRequestLocale(locale);
   const sp = await searchParams;
+  const currency = currencyOfRequest(await headers()); // euros in the euro area, dollars elsewhere
   const startBuy = sp.buy === "1";
-  const [stats, pricing, viewer, latest] = await Promise.all([safe(getPublicStats), safe(getPricing), getHeaderViewer(), safe(() => latestCreations(4))]);
+  const [stats, pricing, viewer, latest] = await Promise.all([safe(getPublicStats), safe(() => getPricing(currency)), getHeaderViewer(), safe(() => latestCreations(4))]);
 
   // Deep links: ?x=&y=&z= (camera) and ?bx=&by=&bw=&bh= (resume a purchase after signing in)
   const x = num(sp.x), y = num(sp.y), z = num(sp.z);

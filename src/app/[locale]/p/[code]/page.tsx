@@ -5,6 +5,8 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import { MapShell } from "@/components/map/MapShell";
 import { getHeaderViewer } from "@/lib/auth/session";
 import { getPricing, getPublicStats } from "@/lib/data/map";
+import { headers } from "next/headers";
+import { currencyOfRequest } from "@/lib/currency";
 import { getPublicParcel } from "@/lib/data/parcels";
 import { siteUrl } from "@/lib/env";
 import { locales } from "@/i18n/routing";
@@ -39,7 +41,8 @@ export default async function ParcelPage({ params }: { params: Promise<{ locale:
   setRequestLocale(locale);
   const p = await getPublicParcel(code);
   if (!p) notFound();
-  const [stats, pricing, viewer, t] = await Promise.all([getPublicStats().catch(() => null), getPricing().catch(() => null), getHeaderViewer(), getTranslations("parcel")]);
+  const currency = currencyOfRequest(await headers()); // euros in the euro area, dollars elsewhere
+  const [stats, pricing, viewer, t] = await Promise.all([getPublicStats().catch(() => null), getPricing(currency).catch(() => null), getHeaderViewer(), getTranslations("parcel")]);
   const scale = Math.max(0.5, Math.min(24, 360 / Math.max(p.w, p.h)));
   return (
     <main id="main">

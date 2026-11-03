@@ -10,7 +10,7 @@ Done: the countdown and the interface that goes with it, **off until `NEXT_PUBLI
 Also done: **the corrupted land on the map** (it follows the countdown: nothing destroyed at J-87, about half of the land at J-9, all of it at the end) and **survivor beacons** (acquired parcels stay intact, framed, and are marked from afar).
 Also done: **the final sequence** at zero (a flash, a hard shake, then a slow 12-second sweep from west to east that corrupts the land and **erases every name** — countries, regions, cities — then the end state for good, without names) and the **"Replay the destruction"** button; try `?preview=T-8` to watch the countdown end live and `?preview=0` for the end state.
 Also done: **a chromatic fringe (cyan/magenta) along the coasts of the destroyed land**, a plain progress bar in the counter card, a smaller countdown, and no "D-87" next to the logo any more. Also done: **the share image follows the story** (ordinary, countdown with the real days left, the end with the real number of survivors; pixel font) and a **"Share" button** after the end. Next: a real-device pass on a phone (the sequence draws a few hundred bands of pixels per frame).
-Needs the owner: the date and time zone of the end (**owner**), whether the names should come back at close zoom in the end state so that people can still find where to buy (today: none at all), whether buying stays open in destroyed zones after zero (proposed: yes, shown as "restored"), and a read of the English and French wording.
+Needs the owner: the date and time zone of the end (**owner**), whether the names should come back at close zoom in the end state so that people can still find where to buy (today: none at all), and a read of the English and French wording.
 
 ## 1. Look at what changed today (owner, ~20 min, before anything else)
 
@@ -26,7 +26,7 @@ Anything that is not as you wanted goes to the top of the list.
 
 ## 2. Decisions that block the launch (owner)
 
-1. **Currency and price**: the price is €0.50 per pixel in euros — confirm it is euros (the "$" was ambiguous) and the final price.
+1. **Price**: decided — euros in the euro area, dollars elsewhere. **Confirm the dollar price** (set to $0.50 per pixel for now, `price_unit_cents_usd`, editable in `/admin/settings`) and the final prices.
 2. **Operator identity**: the legal entity that sells the pixels (name, address, registration number) → `NEXT_PUBLIC_OPERATOR_*`.
 3. **Legal texts** (terms, privacy, community rules, refund/withdrawal policy, VAT treatment): the texts in `src/messages/*.json → pages.*` are drafts with `[bracketed]` gaps. They need a lawyer. **(approval)**
 4. **Moderation**: who reviews creations and reports, and how fast (a new creation or a report waits for a human).

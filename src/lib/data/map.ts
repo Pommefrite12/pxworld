@@ -4,6 +4,8 @@ import { query, queryOne } from "@/lib/db/pool";
 import { DEFAULT_UNIT_PRICE_CENTS, GRID_HEIGHT, GRID_WIDTH, MIN_AREA } from "@/lib/grid/constants";
 import { LAND_PIXELS } from "@/lib/geo/landPixels";
 import type { Pricing } from "@/lib/grid/pricing";
+import { salesClosedByStory } from "@/lib/doom/sales";
+import type { SaleCurrency } from "@/lib/currency";
 
 export const TILE_SIZE = 1000; // virtual pixels per JSON metadata tile (40 × 25 tiles)
 export const TILES_X = GRID_WIDTH / TILE_SIZE;
@@ -69,17 +71,24 @@ export function invalidatePublicStats(): void {
   }
 }
 
-export async function getPricing(): Promise<Pricing> {
+/**
+ * What a buyer pays: the unit price in `currency` (the shop's own, euros, or dollars — see `lib/currency`), and the shop's rules.
+ * Without a currency, the shop's own.
+ */
+export async function getPricing(currency?: SaleCurrency): Promise<Pricing> {
   const rows = await query<{ key: string; value: unknown }>(
-    "select key, value from public.app_settings where key in ('price_unit_cents','currency','min_area','max_area','sales_open','sea_price_percent','min_land_percent')",
+    "select key, value from public.app_settings where key in ('price_unit_cents','price_unit_cents_usd','currency','min_area','max_area','sales_open','sea_price_percent','min_land_percent')",
   );
   const m = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  const base = String(m.currency ?? "eur").toLowerCase();
+  const cur = currency ?? base;
+  const unit = cur === "usd" && base !== "usd" ? Number(m.price_unit_cents_usd ?? DEFAULT_UNIT_PRICE_CENTS) : Number(m.price_unit_cents ?? DEFAULT_UNIT_PRICE_CENTS);
   return {
-    unitPriceCents: Number(m.price_unit_cents ?? DEFAULT_UNIT_PRICE_CENTS),
-    currency: String(m.currency ?? "eur"),
+    unitPriceCents: unit,
+    currency: cur,
     minArea: Number(m.min_area ?? MIN_AREA),
     maxArea: Number(m.max_area ?? 250_000),
-    salesOpen: m.sales_open !== false,
+    salesOpen: m.sales_open !== false && !salesClosedByStory(process.env.NEXT_PUBLIC_WORLD_END_AT, Date.now()), // (and never once the story has ended)
     minLandPercent: Number(m.min_land_percent ?? 50),
     seaPercent: Number(m.sea_price_percent ?? 0),
   };

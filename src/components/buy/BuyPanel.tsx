@@ -34,7 +34,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, land
   const f = useFormatter();
   const [fine, setFine] = useState(false); // mobile: position fine-tuning is folded away to keep the map visible
   const sizeErr = validateRect({ x: 0, y: 0, ...size }, { minArea: pricing.minArea, maxArea: pricing.maxArea });
-  const q = size.w > 0 && size.h > 0 ? quote(size, pricing.unitPriceCents, { landPixels: selection ? landPixels : null, seaPercent: pricing.seaPercent }) : null;
+  const q = size.w > 0 && size.h > 0 ? quote(size, pricing.unitPriceCents, { landPixels: selection ? landPixels : null, seaPercent: pricing.seaPercent, currency: pricing.currency }) : null;
   const blocked = state === "blocked" || state === "out" || state === "water" || serverFree === false;
   const ready = Boolean(selection && !sizeErr && !blocked && state === "ok" && serverFree !== "checking" && pricing.salesOpen);
 

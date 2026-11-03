@@ -10,6 +10,8 @@ import { stripeConfigured } from "@/lib/stripe/client";
 import { landPixelsIn } from "@/lib/geo/landServer";
 import { enoughLand } from "@/lib/grid/pricing";
 import { parseCreationMeta, readCreationImage, storeCreation } from "@/lib/creations";
+import { assertStoryAllowsSales } from "@/lib/doom/sales";
+import { currencyOfRequest } from "@/lib/currency";
 
 export const maxDuration = 30;
 
@@ -20,6 +22,7 @@ export const maxDuration = 30;
  */
 export const POST = route(async (req) => {
   assertSameOrigin(req);
+  assertStoryAllowsSales(); // the world has ended: nothing can be bought any more
   const viewer = await requireActiveViewer();
   await enforceRateLimit(req, LIMITS.checkout, viewer.user.id);
   if (!stripeConfigured()) throw new HttpError(503, "payments_not_configured");
@@ -30,7 +33,12 @@ export const POST = route(async (req) => {
   const rect = { x: intParam(String(form.get("x")), 0, 1e9), y: intParam(String(form.get("y")), 0, 1e9), w: intParam(String(form.get("w")), 1, 1e9), h: intParam(String(form.get("h")), 1, 1e9) };
   if (rect.x === null || rect.y === null || rect.w === null || rect.h === null) throw new HttpError(400, "px_invalid_rect");
   const r = { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
-  const pricing = await getPricing();
+  // The currency is decided here, from the buyer's country (euros in the euro area, dollars elsewhere). The browser sends the
+  // one it displayed: if the two differ (the buyer's connection moved to another country in between), nothing is charged.
+  const currency = currencyOfRequest(req.headers);
+  const shown = form.get("currency");
+  if (typeof shown === "string" && shown.toLowerCase() !== currency) throw new HttpError(409, "px_currency_changed");
+  const pricing = await getPricing(currency);
   if (!pricing.salesOpen) throw new HttpError(503, "px_sales_closed");
   if (validateRect(r, { minArea: pricing.minArea, maxArea: pricing.maxArea })) throw new HttpError(400, "px_invalid_rect");
   // coastal parcels are allowed, never mostly sea: the land count is made HERE, from the server's own map data
@@ -42,8 +50,8 @@ export const POST = route(async (req) => {
   const img = await readCreationImage(form, r); // fail fast, before any pixel is held
 
   const [order] = await query<OrderForCheckout & { reservation_id: string }>(
-    "select order_id as id, parcel_id, $1::uuid as user_id, $2::int as x, $3::int as y, $4::int as w, $5::int as h, ($4 * $5)::int as area, amount_cents, currency, expires_at, reservation_id from public.px_start_order($1, $2, $3, $4, $5, $6)",
-    [viewer.user.id, r.x, r.y, r.w, r.h, landPx],
+    "select order_id as id, parcel_id, $1::uuid as user_id, $2::int as x, $3::int as y, $4::int as w, $5::int as h, ($4 * $5)::int as area, amount_cents, currency, expires_at, reservation_id from public.px_start_order($1, $2, $3, $4, $5, $6, $7)",
+    [viewer.user.id, r.x, r.y, r.w, r.h, landPx, currency],
   );
   if (!order) throw new HttpError(500, "order_not_created");
 

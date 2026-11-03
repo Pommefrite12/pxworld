@@ -317,7 +317,7 @@ test("the sequence plays by itself when the countdown reaches zero in front of t
   await expect(page.locator('[data-testid="doom-replay"]')).toHaveCount(0);
   // about fourteen seconds later: the end, for good
   await expect(page.getByTestId("doom-message")).toHaveText(/^The world has been deleted\. (No plot survived\.|\d+ plots? survived\.)$/, { timeout: 30_000 });
-  await expect(page.getByTestId("find-your-spot")).toHaveText("Join the survivors");
+  await expect(page.getByTestId("find-your-spot")).toHaveText("Meet the survivors");
   await expect(page.locator('[data-testid="doom-replay"]:visible')).toHaveCount(1);
   await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 15_000 }).toBeGreaterThan(0.9);
   expect(await hasFront(page)).toBe(false);

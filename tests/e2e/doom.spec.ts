@@ -73,7 +73,7 @@ test("each chapter of the story says its own sentence, and the end says so", asy
   await expect(plate).toContainText("WORLD DELETED");
   await expect(plate.locator(".doom-n")).toHaveText(["00", "00", "00", "00"]);
   await expect(page.getByTestId("doom-message")).toHaveText(/^The world has been deleted\. (No plot survived\.|\d+ plots? survived\.)$/);
-  await expect(page.getByTestId("find-your-spot")).toHaveText("Join the survivors");
+  await expect(page.getByTestId("find-your-spot")).toHaveText("Meet the survivors");
   await expect(page.getByTestId("doom-ticker")).toHaveAttribute("data-phase", "5");
 });
 
@@ -137,4 +137,33 @@ test("the plate, the sentence and the buttons of the end share one axis, in the 
     for (const p of parts) { const b = (await p.boundingBox())!; centres.push(b.x + b.width / 2); }
     for (const c of centres) expect(Math.abs(c - width / 2), `width ${width}: centres ${centres.join(", ")}`).toBeLessThanOrEqual(1);
   }
+});
+
+test("after zero nothing can be bought: the button leads to the survivors, and no link opens the shop", async ({ page }) => {
+  await page.goto("/fr?preview=0");
+  const cta = page.getByTestId("find-your-spot");
+  await expect(cta).toHaveText("Voir les survivants");
+  await expect(cta).toHaveAttribute("href", /\/discover$/);
+  await cta.click();
+  await expect(page).toHaveURL(/\/fr\/discover/);
+  // the deep links that used to open the shop do not any more
+  for (const url of ["/?preview=0&buy=1", "/?preview=0&bx=19000&by=11700&bw=10&bh=10"]) {
+    await page.goto(url);
+    await expect(page.getByTestId("doom-plate")).toBeVisible();
+    await page.waitForTimeout(1500);
+    await expect(page.getByTestId("buy-status"), url).toHaveCount(0);
+  }
+  // …while before the end the same button still opens it
+  await page.goto("/?preview=J-9");
+  await page.getByTestId("find-your-spot").click();
+  await expect(page.getByTestId("buy-status")).toBeVisible();
+});
+
+test("the countdown reaching zero while somebody chooses a spot closes the shop under their feet", async ({ page }) => {
+  await page.goto("/?preview=T-12");
+  await expect(page.getByTestId("doom-plate")).toBeVisible();
+  await page.getByTestId("find-your-spot").click();
+  await expect(page.getByTestId("buy-status")).toBeVisible();
+  await expect(page.getByTestId("buy-status")).toHaveCount(0, { timeout: 25_000 }); // zero: the panel closes by itself
+  await expect(page.getByTestId("find-your-spot")).toHaveText("Meet the survivors", { timeout: 25_000 });
 });

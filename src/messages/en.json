@@ -90,7 +90,7 @@
     "ticker": "THE COUNTDOWN HAS BEGUN ▪ ONLY CLAIMED PLOTS WILL SURVIVE ▪ HOW MUCH OF THE WORLD WILL BE LEFT STANDING? ▪ ",
     "tickerOver": "THE WORLD HAS BEEN DELETED ▪ ONLY CLAIMED PLOTS SURVIVED ▪ ",
     "cta": "Save my plot",
-    "ctaOver": "Join the survivors",
+    "ctaOver": "Meet the survivors",
     "latest": "Latest rescues",
     "saved": "World saved",
     "savedLine": "{n, plural, =0 {No plot saved yet} one {# plot saved} other {# plots saved}} · {danger} still in danger",
@@ -215,6 +215,9 @@
       "px_invalid_rect": "This parcel size or position is not valid.",
       "px_bad_dimensions": "This image does not match the size of your parcel. Reload the page and try again.",
       "px_sales_closed": "Sales are temporarily closed.",
+      "px_world_ended": "The world has been deleted: plots can no longer be bought.",
+      "px_currency_changed": "The prices have changed currency (your connection seems to have moved to another country). Reload the page to see the new price.",
+      "px_bad_currency": "The shop only sells in euros and in dollars.",
       "px_account_suspended": "Your account is suspended.",
       "px_too_many_reservations": "You already have several unpaid reservations. Finish or cancel one first.",
       "image_required": "Please add an image or a drawing.",
@@ -603,7 +606,7 @@
         {
           "h": "Price and payment",
           "p": [
-            "The initial price is €0.50 per pixel, calculated automatically from the number of pixels and always recomputed on our servers. We may change the price for future sales; parcels already bought are not affected. Payments are processed by Stripe; we never see or store your card number.",
+            "The initial price is €0.50 per pixel for buyers in the euro area and $0.50 per pixel [to be confirmed] for buyers elsewhere, charged in the currency of the buyer's country as detected when the order is placed, calculated automatically from the number of pixels and always recomputed on our servers. We may change the price for future sales; parcels already bought are not affected. Payments are processed by Stripe; we never see or store your card number.",
             "When you start a purchase the pixels are reserved for you for a limited time. If you do not pay within that time the reservation is released. Your parcel is attributed only when the payment provider has confirmed the payment to us."
           ]
         },
@@ -871,8 +874,10 @@
     "settings": {
       "title": "Settings",
       "lead": "Changes apply to future orders only. Existing orders keep the price they were created with.",
-      "price": "Price per pixel (in cents)",
+      "price": "Price per pixel in euros (in cents)",
       "priceHint": "Currently {price} per pixel.",
+      "priceUsd": "Price per pixel in dollars (in cents)",
+      "priceUsdHint": "Charged outside the euro area: currently {price} per pixel.",
       "minArea": "Minimum surface (pixels)",
       "maxArea": "Maximum surface (pixels)",
       "ttl": "Reservation duration (minutes)",

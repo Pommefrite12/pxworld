@@ -5,6 +5,7 @@ import { intParam, route } from "@/lib/http/route";
 import { LIMITS, enforceRateLimit } from "@/lib/rate-limit";
 import { validateRect } from "@/lib/grid/geometry";
 import { enoughLand, quote } from "@/lib/grid/pricing";
+import { currencyOfRequest } from "@/lib/currency";
 
 /** Non-binding availability probe used while the buyer positions and customises a parcel. */
 export const GET = route(async (req) => {
@@ -12,11 +13,11 @@ export const GET = route(async (req) => {
   const q = new URL(req.url).searchParams;
   const rect = { x: intParam(q.get("x"), -1e9, 1e9), y: intParam(q.get("y"), -1e9, 1e9), w: intParam(q.get("w"), 0, 1e9), h: intParam(q.get("h"), 0, 1e9) };
   if (rect.x === null || rect.y === null || rect.w === null || rect.h === null) return json({ error: "px_invalid_rect" }, { status: 400 });
-  const pricing = await getPricing();
+  const pricing = await getPricing(currencyOfRequest(req.headers));
   const err = validateRect(rect as { x: number; y: number; w: number; h: number }, { minArea: pricing.minArea, maxArea: pricing.maxArea });
   if (err) return json({ error: "px_invalid_rect", reason: err }, { status: 400 });
   const landPixels = await landPixelsIn(rect as { x: number; y: number; w: number; h: number });
   const onLand = enoughLand(landPixels, rect.w! * rect.h!, pricing.minLandPercent);
   const free = onLand && (await isAreaFree(rect.x, rect.y, rect.w, rect.h));
-  return json({ free, onLand, landPixels, price: quote(rect as { w: number; h: number }, pricing.unitPriceCents, { landPixels, seaPercent: pricing.seaPercent }) }, { cache: "no-store" });
+  return json({ free, onLand, landPixels, price: quote(rect as { w: number; h: number }, pricing.unitPriceCents, { landPixels, seaPercent: pricing.seaPercent, currency: pricing.currency }) }, { cache: "no-store" });
 });
