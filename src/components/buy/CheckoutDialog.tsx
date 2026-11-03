@@ -5,13 +5,16 @@ import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { ParcelEditor, type ParcelEditorHandle } from "@/components/editor/ParcelEditor";
 import { Link } from "@/i18n/navigation";
 import { fitSize } from "@/components/map/ParcelCard";
-import { formatMoney, quote } from "@/lib/grid/pricing";
+import { formatMoney, quote, type ParcelKind } from "@/lib/grid/pricing";
+import { tintedBlob } from "@/lib/images/waterTintBrowser";
 import type { Rect } from "@/lib/grid/geometry";
 import { TITLE_MAX, TITLE_MIN, isValidTitle } from "@/lib/security/text";
 import type { Pricing } from "./BuyPanel";
 
 interface Props {
   rect: Rect;
+  /** Land or water: what the buyer is acquiring. A water creation is shown in three blues. */
+  kind: ParcelKind;
   pricing: Pricing;
   /** Land pixels of the parcel (from the map data); the rest is sea, offered or discounted. */
   landPixels: number | null;
@@ -22,7 +25,7 @@ interface Props {
   onUnavailable: () => void;
 }
 
-export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOnMap, onUnavailable }: Props) {
+export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPreviewOnMap, onUnavailable }: Props) {
   const t = useTranslations("buy");
   const locale = useLocale();
   const f = useFormatter();
@@ -39,7 +42,8 @@ export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOn
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const q = quote(rect, pricing.unitPriceCents, { landPixels, seaPercent: pricing.seaPercent, currency: pricing.currency });
+  const water = kind === "water";
+  const q = quote(rect, pricing.unitPriceCents, { landPixels: landPixels ?? (water ? 0 : null), kind, seaPercent: pricing.seaPercent, waterPercent: pricing.waterPercent, landCutPercent: pricing.landCutPercent, currency: pricing.currency });
   const onChange = useCallback((v: boolean) => setHas(v), []);
 
   useEffect(() => {
@@ -50,7 +54,7 @@ export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOn
   useEffect(() => () => { if (finalUrl) URL.revokeObjectURL(finalUrl); }, [finalUrl]);
 
   const goReview = async () => {
-    const blob = await editor.current!.exportPng();
+    const blob = water ? await tintedBlob(await editor.current!.exportPng()) : await editor.current!.exportPng(); // the review shows what the public will see
     setFinalUrl((old) => { if (old) URL.revokeObjectURL(old); return URL.createObjectURL(blob); });
     setStep("review");
   };
@@ -68,7 +72,7 @@ export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOn
     try {
       const blob = await editor.current!.exportPng();
       const fd = new FormData();
-      fd.set("x", String(rect.x)); fd.set("y", String(rect.y)); fd.set("w", String(rect.w)); fd.set("h", String(rect.h));
+      fd.set("kind", kind); fd.set("x", String(rect.x)); fd.set("y", String(rect.y)); fd.set("w", String(rect.w)); fd.set("h", String(rect.h));
       fd.set("image", new File([blob], "creation.png", { type: "image/png" }));
       fd.set("title", title); fd.set("description", description); fd.set("link", link); fd.set("commercial", String(commercial)); fd.set("locale", locale); fd.set("currency", pricing.currency);
       const r = await fetch("/api/checkout", { method: "POST", body: fd });
@@ -102,6 +106,7 @@ export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOn
 
         <div className="p-5">
           <div hidden={step !== "design"}>
+            {water && <p className="mb-3 rounded-xl bg-sky px-3 py-2 text-sm font-semibold text-cobalt" data-testid="co-water-note">{t("kind.waterHint")}</p>}
             <ParcelEditor ref={editor} w={rect.w} h={rect.h} onChange={onChange} />
             <div className="mt-6 flex flex-wrap items-center justify-end gap-2 border-t border-line pt-4">
               <p className="mr-auto text-xs text-ink-soft">{has ? t("designReady") : t("designEmpty")}</p>
@@ -132,10 +137,19 @@ export function CheckoutDialog({ rect, pricing, landPixels, onClose, onPreviewOn
                   <dl className="space-y-1 text-sm">
                     <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.parcel")}</dt><dd className="pixel-num">{rect.w}×{rect.h}</dd></div>
                     <div className="flex justify-between"><dt className="text-ink-soft">{t("area")}</dt><dd className="pixel-num" data-testid="co-area">{f.number(q.area)} px</dd></div>
-                    {q.seaPixels > 0 && (
+                    {water && (
+                      <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.kind")}</dt><dd className="font-semibold" data-testid="co-kind">{t("kind.water")}</dd></div>
+                    )}
+                    {q.cutPixels > 0 && !water && (
                       <>
                         <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.land")}</dt><dd className="pixel-num">{f.number(q.landPixels)} px · {formatMoney(q.landPixels * q.unitPriceCents, locale, pricing.currency)}</dd></div>
                         <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.sea")}</dt><dd className="pixel-num" data-testid="co-sea">{f.number(q.seaPixels)} px · {pricing.seaPercent === 0 ? t("summary.seaFree") : formatMoney(q.totalCents - q.landPixels * q.unitPriceCents, locale, pricing.currency)}</dd></div>
+                      </>
+                    )}
+                    {q.cutPixels > 0 && water && (
+                      <>
+                        <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.water")}</dt><dd className="pixel-num">{f.number(q.ownedPixels)} px · {formatMoney(q.totalCents - Math.floor((q.landPixels * q.unitPriceCents * q.seaPercent) / 100), locale, pricing.currency)}</dd></div>
+                        <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.land")}</dt><dd className="pixel-num" data-testid="co-land">{f.number(q.cutPixels)} px · {pricing.landCutPercent === 0 ? t("summary.seaFree") : formatMoney(Math.floor((q.landPixels * q.unitPriceCents * q.seaPercent) / 100), locale, pricing.currency)}</dd></div>
                       </>
                     )}
                     <div className="flex justify-between border-t border-line pt-2"><dt className="font-semibold">{t("summary.total")}</dt><dd className="pixel-display text-4xl text-signal" data-testid="co-total">{formatMoney(q.totalCents, locale, pricing.currency)}</dd></div>

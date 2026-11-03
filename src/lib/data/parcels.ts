@@ -6,6 +6,8 @@ export interface ParcelView {
   id: string;
   code: string;
   x: number; y: number; w: number; h: number; area: number;
+  /** `water`: a parcel of sea, shown in three blues. */
+  kind: "land" | "water";
   status: string;
   hidden: boolean;
   activated_at: Date | null;
@@ -23,7 +25,7 @@ export interface ParcelView {
 }
 
 const SELECT = `
-  select p.id, p.code, p.x, p.y, p.w, p.h, p.area, p.status, (p.hidden_at is not null) as hidden, p.activated_at,
+  select p.id, p.code, p.x, p.y, p.w, p.h, p.area, p.kind, p.status, (p.hidden_at is not null) as hidden, p.activated_at,
          u.id as owner_id, u.username, u.country, (u.avatar_path is not null) as has_avatar,
          a.id as asset_id, a.title, a.description, a.link_url, a.is_commercial, a.published_at, a.avg_color,
          (select count(*) from public.parcel_likes l where l.parcel_id = p.id)::int as likes
@@ -32,7 +34,7 @@ const SELECT = `
     left join public.parcel_assets a on a.id = p.published_asset_id`;
 
 type Row = {
-  id: string; code: string; x: number; y: number; w: number; h: number; area: number; status: string; hidden: boolean; activated_at: Date | null;
+  id: string; code: string; x: number; y: number; w: number; h: number; area: number; kind: string; status: string; hidden: boolean; activated_at: Date | null;
   owner_id: string; username: string; country: string | null; has_avatar: boolean;
   asset_id: string | null; title: string | null; description: string | null; link_url: string | null; is_commercial: boolean | null;
   published_at: Date | null; avg_color: string | null; likes: number;
@@ -40,7 +42,7 @@ type Row = {
 
 function toView(r: Row): ParcelView {
   return {
-    id: r.id, code: r.code, x: r.x, y: r.y, w: r.w, h: r.h, area: r.area, status: r.status, hidden: r.hidden, activated_at: r.activated_at,
+    id: r.id, code: r.code, x: r.x, y: r.y, w: r.w, h: r.h, area: r.area, kind: r.kind === "water" ? "water" : "land", status: r.status, hidden: r.hidden, activated_at: r.activated_at,
     owner: { id: r.owner_id, username: r.username, country: r.country, avatar: r.has_avatar },
     creation: r.asset_id && !r.hidden
       ? { asset_id: r.asset_id, title: r.title, description: r.description, link_url: r.link_url, is_commercial: r.is_commercial ?? false, published_at: r.published_at, avg_color: r.avg_color ?? "#cccccc" }

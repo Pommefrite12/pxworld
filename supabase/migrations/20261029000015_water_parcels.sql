@@ -85,6 +85,8 @@ language sql stable as $$
   )
 $$;
 
+revoke all on function public.px_is_area_free(integer, integer, integer, integer, text) from public, anon, authenticated;
+
 -- The order. `p_land` is the number of LAND pixels of the rectangle, counted by the application server (null = all land).
 drop function public.px_start_order(uuid, integer, integer, integer, integer, integer, text);
 create function public.px_start_order(p_user uuid, p_x integer, p_y integer, p_w integer, p_h integer, p_land integer default null, p_currency text default null, p_kind text default 'land')

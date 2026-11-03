@@ -9,7 +9,7 @@ export const GET = route(async (_req, ctx: { params: Promise<{ code: string }> }
   if (!p) return json({ error: "not_found" }, { status: 404 });
   return json(
     {
-      code: p.code, x: p.x, y: p.y, w: p.w, h: p.h, area: p.area, hidden: p.hidden, likes: p.likes, activatedAt: p.activated_at,
+      code: p.code, x: p.x, y: p.y, w: p.w, h: p.h, area: p.area, kind: p.kind, hidden: p.hidden, likes: p.likes, activatedAt: p.activated_at,
       owner: { username: p.owner.username, country: p.owner.country, avatarId: p.owner.avatar ? p.owner.id : null },
       creation: p.creation && {
         assetId: p.creation.asset_id, title: p.creation.title, description: p.creation.description, link: p.creation.link_url,

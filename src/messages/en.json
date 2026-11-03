@@ -34,7 +34,7 @@
   "stats": {
     "label": "Live statistics",
     "sold": "Pixels sold",
-    "filled": "Share of the land sold",
+    "filled": "Share of the planet sold",
     "available": "Available",
     "owners": "Owners",
     "creations": "Creations"
@@ -113,6 +113,7 @@
     "region": "Region"
   },
   "parcel": {
+    "water": "Water",
     "label": "Parcel details",
     "close": "Close",
     "notFound": "This parcel could not be found.",
@@ -160,7 +161,8 @@
       "out": "The parcel must stay inside the map.",
       "checking": "Checking availability…",
       "closed": "Sales are temporarily closed.",
-      "water": "At least {pct}% of your parcel must be on land. Oceans and seas cannot be bought on their own: move it inland."
+      "water": "At least {pct}% of your parcel must be on land. Move it inland, or switch to Water to buy the sea.",
+      "land": "At least {pct}% of your parcel must be on water. Move it out to sea, or switch to Land."
     },
     "sizeError": {
       "not_integer": "Sizes must be whole numbers.",
@@ -202,6 +204,8 @@
       "total": "Total",
       "land": "Land",
       "sea": "Sea",
+      "water": "Water",
+      "kind": "Kind",
       "seaFree": "offered"
     },
     "accept": "I accept the <terms>terms</terms> and the <rules>community rules</rules>, and I understand that my creation is published after moderation.",
@@ -238,6 +242,15 @@
     },
     "fineTune": "Custom size",
     "seaFree": "{sea} px of your parcel are sea, offered: you only pay for the {land} px of land.",
+    "landFree": "{land} px of your parcel are land, offered: you only pay for the {water} px of water.",
+    "landDiscount": "{land} px of your parcel are land, charged {pct}% of a land pixel; {water} px are water.",
+    "kind": {
+      "label": "What are you buying?",
+      "land": "Land",
+      "water": "Water",
+      "waterHint": "Oceans and seas. Whatever you create is shown in three tints of blue.",
+      "landHint": "Continents and islands. Your creation is shown in its own colours."
+    },
     "seaDiscount": "{sea} px of your parcel are sea, charged {pct}% of a land pixel; {land} px are land."
   },
   "editor": {
@@ -607,7 +620,7 @@
           "p": [
             "The map is a virtual grid of 1,000,000,000 pixels (40,000 × 25,000). A parcel is a rectangle of at least 25 pixels. Buying a parcel gives you the exclusive right to display one creation on that rectangle of the map, according to these terms.",
             "A parcel is a virtual placement. It is not real-estate, nor a geographic, territorial or intellectual property right, and it gives you no right over the places the map depicts.",
-            "Only land is for sale. A parcel may include some sea along a coast, but at least half of its pixels must be land (the exact share is set by the administrators), and a parcel entirely at sea cannot be bought. You pay for the land pixels only: the sea pixels of your rectangle are offered, or discounted if a reduced price is in force, and the order summary shows the split before you pay. The counters on the map count land pixels only."
+            "Land and water are for sale, as two separate categories. A land parcel owns the land pixels of its rectangle: it may include some sea along a coast, but at least half of its pixels must be land (the exact share is set by the administrators). A water parcel owns the water pixels of its rectangle: it may include some land along a coast, but at least half of its pixels must be water. You pay for the pixels your parcel owns only: the pixels of your rectangle that belong to the other category are cut away and offered, or discounted if a reduced price is in force, and the order summary shows the split before you pay. A land parcel and a water parcel may share the same rectangle, since they never share a pixel. Whatever you create on a water parcel is shown in three tints of blue. The counters on the map count the pixels owned by parcels, land and water."
           ]
         },
         {

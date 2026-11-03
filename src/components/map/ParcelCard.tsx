@@ -14,7 +14,7 @@ export function fitSize(w: number, h: number, box: number) {
 }
 
 export interface ParcelInfo {
-  code: string; x: number; y: number; w: number; h: number; area: number; hidden: boolean; likes: number; activatedAt: string | null;
+  code: string; x: number; y: number; w: number; h: number; area: number; kind: "land" | "water"; hidden: boolean; likes: number; activatedAt: string | null;
   owner: { username: string; country: string | null; avatarId: string | null };
   creation: null | { assetId: string; title: string | null; description: string | null; link: string | null; commercial: boolean; publishedAt: string | null; color: string };
 }
@@ -78,6 +78,7 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
           </div>
           <div className="space-y-2 p-4">
             <h2 className="pr-8 text-lg font-bold leading-tight">{info.creation?.title ?? t("untitled")}</h2>
+            {info.kind === "water" && <span className="chip !bg-sky !text-cobalt" data-testid="parcel-water">{t("water")}</span>}
             {info.creation?.commercial && <span className="chip !bg-warn/15 !text-warn">{t("ad")}</span>}
             <p className="text-sm text-ink-soft">
               <Link href={`/u/${info.owner.username}`} className="font-semibold text-ink underline-offset-2 hover:underline">{info.owner.username}</Link>

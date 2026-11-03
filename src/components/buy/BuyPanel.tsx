@@ -5,7 +5,7 @@ import { useFormatter, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { PRESET_SIZES, MAX_SIDE } from "@/lib/grid/constants";
 import { validateRect, type Rect } from "@/lib/grid/geometry";
-import { formatMoney, quote, type Pricing } from "@/lib/grid/pricing";
+import { formatMoney, quote, type ParcelKind, type Pricing } from "@/lib/grid/pricing";
 import type { SelectionState } from "@/components/map/engine";
 
 export type { Pricing };
@@ -18,6 +18,9 @@ interface Props {
   onSize: (w: number, h: number) => void;
   selection: Rect | null;
   state: SelectionState | null;
+  /** What is being bought: land or water (the sea; shown in three blues). */
+  kind: ParcelKind;
+  onKind: (kind: ParcelKind) => void;
   /** Land pixels inside the selection (null while unknown): the sea part of a coastal parcel is discounted. */
   landPixels: number | null;
   serverFree: ServerFree;
@@ -29,13 +32,16 @@ interface Props {
 
 const num = (v: string) => (v === "" ? 0 : Math.max(0, Math.min(99999, Math.floor(Number(v)) || 0)));
 
-export function BuyPanel({ pricing, locale, size, onSize, selection, state, landPixels, serverFree, signedIn, onContinue, onClose }: Props) {
+export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind, onKind, landPixels, serverFree, signedIn, onContinue, onClose }: Props) {
   const t = useTranslations("buy");
   const f = useFormatter();
   const [fine, setFine] = useState(false); // mobile: position fine-tuning is folded away to keep the map visible
   const sizeErr = validateRect({ x: 0, y: 0, ...size }, { minArea: pricing.minArea, maxArea: pricing.maxArea });
-  const q = size.w > 0 && size.h > 0 ? quote(size, pricing.unitPriceCents, { landPixels: selection ? landPixels : null, seaPercent: pricing.seaPercent, currency: pricing.currency }) : null;
-  const blocked = state === "blocked" || state === "out" || state === "water" || serverFree === false;
+  const water = kind === "water";
+  const rates = { kind, seaPercent: pricing.seaPercent, waterPercent: pricing.waterPercent, landCutPercent: pricing.landCutPercent, currency: pricing.currency };
+  const q = size.w > 0 && size.h > 0 ? quote(size, pricing.unitPriceCents, { landPixels: selection ? landPixels : water ? 0 : null, ...rates }) : null;
+  const unit = water ? Math.floor((pricing.unitPriceCents * pricing.waterPercent) / 100) : pricing.unitPriceCents; // what one pixel costs (the shown rate)
+  const blocked = state === "blocked" || state === "out" || state === "water" || state === "land" || serverFree === false;
   const ready = Boolean(selection && !sizeErr && !blocked && state === "ok" && serverFree !== "checking" && pricing.salesOpen);
 
   const status = !pricing.salesOpen ? { tone: "bad", text: t("status.closed") }
@@ -43,6 +49,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, land
     : !selection ? { tone: "info", text: t("status.place") }
     : state === "out" ? { tone: "bad", text: t("status.out") }
     : state === "water" ? { tone: "bad", text: t("status.water", { pct: pricing.minLandPercent }) }
+    : state === "land" ? { tone: "bad", text: t("status.land", { pct: pricing.minWaterPercent }) }
     : state === "blocked" ? { tone: "bad", text: t("status.blocked") }
     : serverFree === false ? { tone: "bad", text: t("status.reserved") }
     : state === "checking" || serverFree === "checking" ? { tone: "info", text: t("status.checking") }
@@ -56,13 +63,23 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, land
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-extrabold leading-tight md:text-xl">{t("title")}</h2>
-          <p className="mt-0.5 text-xs text-ink-soft">{t("unitPrice", { price: formatMoney(pricing.unitPriceCents, locale, pricing.currency) })}</p>
+          <p className="mt-0.5 text-xs text-ink-soft">{t("unitPrice", { price: formatMoney(unit, locale, pricing.currency) })}</p>
         </div>
         <button className="btn btn-ghost btn-icon btn-sm shrink-0 text-lg" onClick={onClose} aria-label={t("close")}>×</button>
       </div>
 
       <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-0.5">
-        <fieldset>
+        <fieldset data-testid="buy-kind">
+          <legend className="label">{t("kind.label")}</legend>
+          <div className="grid grid-cols-2 gap-1.5">
+            {(["land", "water"] as const).map((k) => (
+              <button key={k} type="button" aria-pressed={kind === k} onClick={() => onKind(k)} data-testid={`buy-kind-${k}`} className="btn btn-secondary">{t(`kind.${k}`)}</button>
+            ))}
+          </div>
+          <p className="mt-1.5 text-[0.7rem] leading-snug text-ink-faint">{water ? t("kind.waterHint") : t("kind.landHint")}</p>
+        </fieldset>
+
+        <fieldset className="mt-3">
           <legend className="label">{t("presets")}</legend>
           <div className="grid grid-cols-3 gap-1.5">
             {PRESET_SIZES.map((p) => {
@@ -71,7 +88,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, land
                 <button key={`${p.w}x${p.h}`} aria-pressed={on} onClick={() => onSize(p.w, p.h)}
                   className="btn btn-secondary !min-h-14 !flex-col !gap-0 !px-1 text-center">
                   <span className="pixel-num block whitespace-nowrap text-[0.8rem] leading-none">{p.w}×{p.h}</span>
-                  <span className="mt-1 block text-[0.65rem] font-semibold text-ink-soft">{formatMoney(p.w * p.h * pricing.unitPriceCents, locale, pricing.currency)}</span>
+                  <span className="mt-1 block text-[0.65rem] font-semibold text-ink-soft">{formatMoney(quote(p, pricing.unitPriceCents, { landPixels: water ? 0 : null, ...rates }).totalCents, locale, pricing.currency)}</span>
                 </button>
               );
             })}
@@ -95,9 +112,14 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, land
             <span className="text-sm text-ink-soft">{t("price")}</span>
             <span className="pixel-display text-[2.1rem] text-signal md:text-[2.4rem]" data-testid="buy-price">{q ? formatMoney(q.totalCents, locale, pricing.currency) : "—"}</span>
           </div>
-          {q && q.seaPixels > 0 && (
+          {q && q.cutPixels > 0 && !water && (
             <p className="mt-1 text-xs text-ink-soft" data-testid="buy-sea-note">
               {pricing.seaPercent === 0 ? t("seaFree", { land: f.number(q.landPixels), sea: f.number(q.seaPixels) }) : t("seaDiscount", { land: f.number(q.landPixels), sea: f.number(q.seaPixels), pct: pricing.seaPercent })}
+            </p>
+          )}
+          {q && q.cutPixels > 0 && water && (
+            <p className="mt-1 text-xs text-ink-soft" data-testid="buy-land-note">
+              {pricing.landCutPercent === 0 ? t("landFree", { land: f.number(q.cutPixels), water: f.number(q.ownedPixels) }) : t("landDiscount", { land: f.number(q.cutPixels), water: f.number(q.ownedPixels), pct: pricing.landCutPercent })}
             </p>
           )}
         </div>

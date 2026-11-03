@@ -123,3 +123,26 @@ test("a water parcel on a coast: the land inside is cut away, free, and still fo
   for (const [land, owner] of owners) expect(owner, land ? "land: no water parcel there" : "water: the water parcel").toBe(land ? null : true);
   await Promise.all([api.dispose(), admin.dispose()]);
 });
+
+test("the buy panel offers Land and Water: the same spot at sea is refused as land and free as water, at the water price", async ({ page }) => {
+  const sea = { x: SEA.x + 400, y: SEA.y + 200, w: 20, h: 20 }; // another bit of the open Atlantic
+  await page.setViewportSize({ width: 1360, height: 860 });
+  await page.goto(`/map?bx=${sea.x}&by=${sea.y}&bw=${sea.w}&bh=${sea.h}`);
+  await expect(page.getByTestId("buy-panel")).toBeVisible();
+  await expect(page.getByTestId("buy-kind-land")).toHaveAttribute("aria-pressed", "true"); // land is the default
+  await expect(page.getByTestId("buy-status")).toContainText(/on land/i); // "at least 50 % of your parcel must be on land"
+  await expect(page.getByTestId("buy-continue")).toBeDisabled();
+  await page.getByTestId("buy-kind-water").click();
+  await expect(page.getByTestId("buy-kind-water")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("buy-status")).toContainText(/free/i);
+  await expect(page.getByTestId("buy-price")).toHaveText("€200"); // 400 water pixels at the land price (default)
+  await page.getByTestId("buy-kind-land").click();
+  await expect(page.getByTestId("buy-status")).toContainText(/on land/i); // back: the sea is not land
+  // a purchase resumed after signing in keeps its kind (?bk=water), and the editor says what the sea does to a creation
+  await page.request.post("/api/dev/login", { data: { email: "navigator@example.test" } });
+  await page.goto(`/map?bx=${sea.x}&by=${sea.y}&bw=${sea.w}&bh=${sea.h}&bk=water`);
+  await expect(page.getByTestId("buy-kind-water")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("buy-status")).toContainText(/free/i);
+  await page.getByTestId("buy-continue").click();
+  await expect(page.getByTestId("co-water-note")).toContainText(/blue/i);
+});

@@ -14,6 +14,8 @@ For the test site: `NEXT_PUBLIC_STORY_PREVIEW=J-40` shows the story to every vis
 
 Also for the test site: **demonstration data** (`npm run demo:seed` / `demo:status` / `demo:clear`, step 9 of `DEPLOIEMENT_PAS_A_PAS.md`): 50 marked accounts, one generated picture-parcel each, no order and no payment, refuses anything but a confirmed test site; **`demo:clear` is a launch blocker** (the public counters would show made-up numbers).
 
+Also done: **the oceans and seas can be bought** (water parcels: same customisation, shown in three blues, cut by the coast; the counter is the whole planet; **the destruction touches the seas too**). To decide: the price of water (today the same as land, `water_price_percent`), the first words of the water terms (legal, drafts).
+
 ## 1. Look at what changed today (owner, ~20 min, before anything else)
 
 A lot went in on one day. Pull the branch, restart (`npm run dev`: the comments migration 13 applies by itself) and go through:

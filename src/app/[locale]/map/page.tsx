@@ -46,7 +46,7 @@ export default async function HomePage({ params, searchParams }: { params: Promi
         latest={(latest ?? []).map((c) => ({ code: c.code, x: c.x, y: c.y, w: c.w, h: c.h, assetId: c.asset_id, title: c.title }))}
         viewer={viewer}
         pricing={pricing ?? DEFAULT_PRICING}
-        initial={{ camera, parcelCode: isParcelCode(sp.p) ? sp.p : null, buy, startBuy }}
+        initial={{ camera, parcelCode: isParcelCode(sp.p) ? sp.p : null, buy, startBuy, kind: sp.bk === "water" ? "water" : "land" }}
       />
     </main>
   );

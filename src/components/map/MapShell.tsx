@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { SiteHeader, type HeaderViewer } from "@/components/layout/SiteHeader";
 import { BuyPanel, type ServerFree } from "@/components/buy/BuyPanel";
-import type { Pricing } from "@/lib/grid/pricing";
+import type { ParcelKind, Pricing } from "@/lib/grid/pricing";
 import { CheckoutDialog } from "@/components/buy/CheckoutDialog";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { centeredRect, clampToGrid, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
@@ -26,7 +26,7 @@ export interface MapShellProps {
   latest?: LatestCreation[];
   pricing: Pricing;
   viewer: HeaderViewer | null;
-  initial: { camera: Camera | null; parcelCode: string | null; buy: Rect | null; startBuy?: boolean };
+  initial: { camera: Camera | null; parcelCode: string | null; buy: Rect | null; startBuy?: boolean; /** Land or water, when a purchase is resumed after signing in. */ kind?: ParcelKind };
 }
 
 const DEFAULT_SIZE = { w: 20, h: 20 };
@@ -55,6 +55,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
   const [selState, setSelState] = useState<SelectionState | null>(null);
   const [selLand, setSelLand] = useState<number | null>(null);
   const [serverFree, setServerFree] = useState<ServerFree>(null);
+  const [kind, setKind] = useState<ParcelKind>(initial.kind ?? "land"); // what the buyer is acquiring: land, or water (the sea)
   const [parcelCode, setParcelCode] = useState<string | null>(initial.parcelCode);
   const [dialog, setDialog] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -133,13 +134,13 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
     setServerFree("checking");
     const ctl = new AbortController();
     const id = setTimeout(() => {
-      fetch(`/api/availability?x=${selection.x}&y=${selection.y}&w=${selection.w}&h=${selection.h}`, { signal: ctl.signal })
+      fetch(`/api/availability?x=${selection.x}&y=${selection.y}&w=${selection.w}&h=${selection.h}&kind=${kind}`, { signal: ctl.signal })
         .then((r) => r.json()).then((j: { free?: boolean }) => setServerFree(j.free === true ? true : j.free === false ? false : null)).catch(() => undefined);
     }, 300);
     return () => { clearTimeout(id); ctl.abort(); };
-  }, [selection, selState]);
+  }, [selection, selState, kind]);
 
-  const buyUrl = (r: Rect) => `/map?bx=${r.x}&by=${r.y}&bw=${r.w}&bh=${r.h}`;
+  const buyUrl = (r: Rect) => `/map?bx=${r.x}&by=${r.y}&bw=${r.w}&bh=${r.h}${kind === "water" ? "&bk=water" : ""}`;
   const continueBuy = () => {
     if (!selection) return;
     if (!viewer) { window.location.assign(`/auth/sign-in?next=${encodeURIComponent(buyUrl(selection))}`); return; }
@@ -158,6 +159,8 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
   // deep links: open the buy flow / focus a parcel once the engine exists
   const started = useRef(false);
   useEffect(() => { if (engineReady) engine()?.setLandRule(pricing.minLandPercent); }, [engineReady, pricing.minLandPercent]);
+  useEffect(() => { if (engineReady) engine()?.setWaterRule(pricing.minWaterPercent); }, [engineReady, pricing.minWaterPercent]);
+  useEffect(() => { if (engineReady) engine()?.setBuyKind(kind); }, [engineReady, kind]);
   // the last minute: the end state of the visible land is drawn ahead, so that nothing has to be made while the sequence plays
   useEffect(() => { if (engineReady && arming) engine()?.armFinale(); }, [engineReady, arming]);
   // the sequence starts (the countdown reached zero, or "Replay"): the map plays it. BEFORE the story's step is set below, because a
@@ -254,7 +257,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
         {mode === "buy" && (
           <BuyPanel
             pricing={pricing} locale={locale} size={size} onSize={changeSize} selection={selection}
-            state={selState} landPixels={selLand} serverFree={serverFree} signedIn={Boolean(viewer)} onContinue={continueBuy} onClose={stopBuy}
+            state={selState} kind={kind} onKind={(k) => { setServerFree(null); setKind(k); }} landPixels={selLand} serverFree={serverFree} signedIn={Boolean(viewer)} onContinue={continueBuy} onClose={stopBuy}
           />
         )}
 
@@ -274,7 +277,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
 
       {dialog && selection && (
         <CheckoutDialog
-          rect={selection} pricing={pricing} landPixels={selLand}
+          rect={selection} kind={kind} pricing={pricing} landPixels={selLand}
           onClose={() => { engine()?.setPreviewImage(null); setDialog(false); }}
           onPreviewOnMap={(img) => { const e = engine(); e?.setPreviewImage(img); if (img && e) e.fitRect(selection, { padding: 110, maxScale: 14 }); }}
           onUnavailable={() => { setDialog(false); setToast(t("spotTaken")); engine()?.setPreviewImage(null); setSelState(null); applySelection({ ...selection }); }}

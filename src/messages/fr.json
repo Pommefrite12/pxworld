@@ -34,7 +34,7 @@
   "stats": {
     "label": "Statistiques en direct",
     "sold": "Pixels acquis",
-    "filled": "Part des terres acquises",
+    "filled": "Part de la planète acquise",
     "available": "Disponibles",
     "owners": "Propriétaires",
     "creations": "Créations"
@@ -113,6 +113,7 @@
     "region": "Région"
   },
   "parcel": {
+    "water": "Eau",
     "label": "Détails de la parcelle",
     "close": "Fermer",
     "notFound": "Cette parcelle est introuvable.",
@@ -160,7 +161,8 @@
       "out": "La parcelle doit rester dans la carte.",
       "checking": "Vérification de la disponibilité…",
       "closed": "Les ventes sont momentanément fermées.",
-      "water": "Au moins {pct} % de votre parcelle doit être sur la terre ferme. Les océans et les mers ne s'achètent pas seuls : rapprochez-la des terres."
+      "water": "Au moins {pct} % de votre parcelle doit être sur la terre ferme. Rapprochez-la des terres, ou passez en mode Eau pour acheter la mer.",
+      "land": "Au moins {pct} % de votre parcelle doit être sur l'eau. Éloignez-la des côtes, ou passez en mode Terre."
     },
     "sizeError": {
       "not_integer": "Les dimensions doivent être des nombres entiers.",
@@ -202,6 +204,8 @@
       "total": "Total",
       "land": "Terre",
       "sea": "Mer",
+      "water": "Eau",
+      "kind": "Catégorie",
       "seaFree": "offerte"
     },
     "accept": "J'accepte les <terms>conditions</terms> et les <rules>règles de la communauté</rules>, et je comprends que ma création est publiée après modération.",
@@ -238,6 +242,15 @@
     },
     "fineTune": "Taille personnalisée",
     "seaFree": "{sea} px de votre parcelle sont en mer, offerts : vous ne payez que les {land} px de terre.",
+    "landFree": "{land} px de votre parcelle sont de la terre, offerts : vous ne payez que les {water} px d'eau.",
+    "landDiscount": "{land} px de votre parcelle sont de la terre, facturés {pct} % d'un pixel de terre ; {water} px sont de l'eau.",
+    "kind": {
+      "label": "Que voulez-vous acquérir ?",
+      "land": "Terre",
+      "water": "Eau",
+      "waterHint": "Les océans et les mers. Tout ce que vous créez s'affiche en trois teintes de bleu.",
+      "landHint": "Les continents et les îles. Votre création s'affiche dans ses propres couleurs."
+    },
     "seaDiscount": "{sea} px de votre parcelle sont en mer, facturés {pct} % d'un pixel de terre ; {land} px sont de la terre."
   },
   "editor": {
@@ -607,7 +620,7 @@
           "p": [
             "La carte est une grille virtuelle de 1 000 000 000 de pixels (40 000 × 25 000). Une parcelle est un rectangle d'au moins 25 pixels. L'achat d'une parcelle vous donne le droit exclusif d'y afficher une création sur ce rectangle de la carte, selon les présentes conditions.",
             "Une parcelle est un emplacement virtuel. Ce n'est ni un bien immobilier, ni un droit géographique, territorial ou de propriété intellectuelle, et elle ne vous donne aucun droit sur les lieux représentés par la carte.",
-            "Seules les terres sont à vendre. Une parcelle peut inclure un peu de mer le long d'une côte, mais au moins la moitié de ses pixels doit être de la terre (la part exacte est fixée par les administrateurs), et une parcelle entièrement en mer ne peut pas être achetée. Vous ne payez que les pixels de terre : les pixels de mer de votre rectangle sont offerts, ou à prix réduit si un tarif réduit est en vigueur, et le récapitulatif de commande montre la répartition avant le paiement. Les compteurs de la carte ne comptent que les pixels de terre."
+            "La terre et l'eau sont à vendre, en deux catégories distinctes. Une parcelle de terre possède les pixels de terre de son rectangle : elle peut inclure un peu de mer le long d'une côte, mais au moins la moitié de ses pixels doit être de la terre (la part exacte est fixée par les administrateurs). Une parcelle d'eau possède les pixels d'eau de son rectangle : elle peut inclure un peu de terre le long d'une côte, mais au moins la moitié de ses pixels doit être de l'eau. Vous ne payez que les pixels que votre parcelle possède : les pixels de votre rectangle qui appartiennent à l'autre catégorie sont coupés et offerts, ou à prix réduit si un tarif réduit est en vigueur, et le récapitulatif de commande montre la répartition avant le paiement. Une parcelle de terre et une parcelle d'eau peuvent partager le même rectangle, puisqu'elles ne partagent aucun pixel. Tout ce que vous créez sur une parcelle d'eau s'affiche en trois teintes de bleu. Les compteurs de la carte comptent les pixels possédés par les parcelles, terre et eau."
           ]
         },
         {

@@ -405,7 +405,7 @@ Ce qui change et ce qui ne change pas :
 
 ## Étape 9 : habiller le site de test avec des comptes et des parcelles de démonstration (10 min)
 
-Un site de test vide est triste à regarder. Un outil fabrique **50 comptes fictifs** (`demo_…`, adresses `demo-001@demo.invalid`…) et **une parcelle chacun**, grande et placée sur la terre autour des grandes villes,
+Un site de test vide est triste à regarder. Un outil fabrique **50 comptes fictifs** (`demo_…`, adresses `demo-001@demo.invalid`…) et **une parcelle chacun**, grande, placée autour des grandes villes (sur la terre) ou, pour **une sur cinq, en pleine mer** (une parcelle d'eau, affichée en bleu),
 avec **une image générée** (invaders en pixel art, plasmas, logos, rayures, mosaïques, paysages, icônes, mots). Il tourne dans le Codespace, jamais depuis le site.
 
 **Ce que l'outil ne fait pas :** aucune commande, aucun paiement, aucune action de modération (donc ni faux chiffre d'affaires, ni faux historique). Les comptes n'ont pas de mot de passe connu : personne ne peut s'y connecter.
