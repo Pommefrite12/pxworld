@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DOOM_DAYS, infection, parseEnd, pad2, phaseOf, previewEnd, remaining } from "@/lib/doom/clock";
+import { DOOM_DAYS, PRE_END_INTENSITY, infection, parseEnd, pad2, phaseOf, previewEnd, remaining } from "@/lib/doom/clock";
 
 const DAY = 86_400_000, HOUR = 3_600_000, MIN = 60_000, SEC = 1000;
 const NOW = Date.UTC(2026, 10, 3, 9, 0, 0);
@@ -36,6 +36,16 @@ describe("the countdown clock", () => {
     }
     expect(remaining(previewEnd("J-250", NOW)!, NOW).days).toBe(DOOM_DAYS); // never more than the story lasts
     for (const v of [undefined, "", "bientôt", "J-x", "-5"]) expect(previewEnd(v, NOW), String(v)).toBeNull();
+  });
+  it("previews the end in a few seconds, to watch the final sequence live", () => {
+    for (const [v, s] of [["T-5", 5], ["t-30", 30], ["T3", 3]] as const) expect(previewEnd(v, NOW), v).toBe(NOW + s * SEC);
+    expect(remaining(previewEnd("T-5", NOW)!, NOW)).toMatchObject({ seconds: 5, over: false });
+    expect(remaining(previewEnd("T-5", NOW)!, NOW + 5 * SEC).over).toBe(true);
+    expect(previewEnd("T-x", NOW)).toBeNull();
+  });
+  it("is at its pre-end intensity right up to the last second, which is where the final sequence starts from", () => {
+    expect(infection(remaining(NOW + SEC, NOW))).toBeCloseTo(PRE_END_INTENSITY, 4);
+    expect(Math.round(infection(remaining(NOW + 1, NOW)) * 200)).toBe(Math.round(PRE_END_INTENSITY * 200)); // the same step: no tile is redrawn at zero
   });
   it("corrupts the land slowly at first, then faster, and all of it at the end", () => {
     const at = (days: number) => infection(remaining(NOW + days * DAY, NOW));

@@ -3,6 +3,7 @@
 import { useFormatter, useTranslations } from "next-intl";
 import { pad2 } from "@/lib/doom/clock";
 import { useDoom } from "./useDoom";
+import { startFinale, useFinaleDuring } from "./finaleStore";
 
 /**
  * "100 days to save the world" — the parts of the interface that belong to the story (art direction "Glitch").
@@ -63,10 +64,20 @@ export function DoomPlate() {
 /** The sentence of the current chapter of the story, under the countdown. `survivors` = real parcels, never invented. */
 export function DoomMessage({ survivors }: { survivors: number }) {
   const d = useDoom();
+  const during = useFinaleDuring();
   const t = useTranslations("doom");
   if (!d) return null;
-  const text = d.phase === 5 ? t("phase5", { n: survivors }) : t(`phase${d.phase}`);
+  const text = d.phase === 5 ? (during ? t("during") : t("phase5", { n: survivors })) : t(`phase${d.phase}`);
   return <p className="doom-msg" data-testid="doom-message">{text}</p>;
+}
+
+/** After the end: play the destruction again (the countdown's big moment, for showing it to somebody). */
+export function DoomReplay({ className = "" }: { className?: string }) {
+  const d = useDoom();
+  const during = useFinaleDuring();
+  const t = useTranslations("doom");
+  if (!d || !d.remaining.over || during) return null;
+  return <button type="button" className={`btn btn-secondary btn-sm pointer-events-auto ${className}`} onClick={() => startFinale(true)} data-testid="doom-replay">{t("replay")}</button>;
 }
 
 /** "Saved world": the real share of the land that has been acquired (and so would survive), the real number of parcels. */
@@ -86,6 +97,7 @@ export function DoomStats({ fillPercent, soldPixels, parcels, compact = false }:
         {Array.from({ length: CELLS }, (_, i) => <i key={i} className={i < filled ? "" : `bad${i % 7 === 3 ? " x" : i % 11 === 5 ? " y" : ""}`} />)}
       </div>
       {!compact && <p className="mt-2 hidden text-[0.8rem] text-ink-soft sm:block">{t("savedLine", { n: parcels, danger })}</p>}
+      <DoomReplay className="mt-2 w-full sm:hidden" />
     </section>
   );
 }

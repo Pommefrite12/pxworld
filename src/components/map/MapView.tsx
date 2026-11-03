@@ -35,6 +35,7 @@ export const MapView = forwardRef<MapViewHandle, Props>(function MapView({ label
       onPlace: (r) => cbRef.current.onPlace?.(r),
       onSelectionState: (s) => cbRef.current.onSelectionState?.(s),
       onSelectionLand: (l) => cbRef.current.onSelectionLand?.(l),
+      onFinaleEnd: () => cbRef.current.onFinaleEnd?.(),
     });
     engineRef.current = engine;
     if (process.env.NODE_ENV !== "production") (window as unknown as { __pxEngine?: MapEngine }).__pxEngine = engine; // debugging / e2e hook (dev only)

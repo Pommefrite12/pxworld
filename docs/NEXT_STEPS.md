@@ -8,7 +8,8 @@ launch checklist is `LAUNCH_CHECKLIST.md`; this list is what to do *first*.
 
 Done: the countdown and the interface that goes with it, **off until `NEXT_PUBLIC_WORLD_END_AT` is set**; look at it with `?preview=J-9`, `J-87`, `J-3`, `0`.
 Also done: **the corrupted land on the map** (it follows the countdown: nothing destroyed at J-87, about half of the land at J-9, all of it at the end) and **survivor beacons** (acquired parcels stay intact, framed, and are marked from afar).
-Next, in this order: (1) the final sequence, the sweep that corrupts the land in a few seconds when the countdown reaches zero, with a replay button; (2) a chromatic fringe along the coasts of the destroyed land; (3) the share image with the new look.
+Also done: **the final sequence** at zero (flash, shake, a sweep from west to east that corrupts the land, then the end state for good) and the **"Replay the destruction"** button; try `?preview=T-8` to watch the countdown end live and `?preview=0` for the end state.
+Next, in this order: (1) a chromatic fringe (cyan/magenta) along the coasts of the destroyed land; (2) the share image with the new look (and a way to share the end state); (3) a real-device pass on a phone (the sequence draws a few hundred bands of pixels per frame).
 Needs the owner: the date and time zone of the end (**owner**), whether buying stays open in destroyed zones after zero (proposed: yes, shown as "restored"), and a read of the English and French wording.
 
 ## 1. Look at what changed today (owner, ~20 min, before anything else)

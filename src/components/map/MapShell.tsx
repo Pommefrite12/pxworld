@@ -14,9 +14,10 @@ import { MapView, type MapViewHandle } from "./MapView";
 import type { Camera, MapParcel, Mode, SelectionState } from "./engine";
 import { CursorReadout, LatestTile, MapControls, StatsCard, type LatestCreation } from "./Hud";
 import { ParcelCard } from "./ParcelCard";
-import { DoomMessage, DoomPlate } from "@/components/doom/Doom";
+import { DoomMessage, DoomPlate, DoomReplay } from "@/components/doom/Doom";
+import { endFinale, finaleInfo, useFinaleDuring } from "@/components/doom/finaleStore";
 import { useDoom } from "@/components/doom/useDoom";
-import { infection } from "@/lib/doom/clock";
+import { PRE_END_INTENSITY, infection } from "@/lib/doom/clock";
 import { SearchBox, type SearchTarget } from "./SearchBox";
 
 export interface MapShellProps {
@@ -35,7 +36,11 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
   const tc = useTranslations("common");
   const td = useTranslations("doom");
   const doom = useDoom(); // "100 days to save the world": null while the countdown is off
-  const storyStep = doom ? Math.round(infection(doom.remaining) * 200) : null; // how much of the land the story has corrupted, in 0.5 % steps
+  const during = useFinaleDuring(); // the final sequence is playing
+  // how much of the land the story has corrupted, in 0.5 % steps; while the final sequence plays, the world as it was just before the end
+  // (the sweep then turns it into the end state)
+  const storyStep = doom ? Math.round((doom.remaining.over && during ? PRE_END_INTENSITY : infection(doom.remaining)) * 200) : null;
+  const arming = Boolean(doom && !doom.remaining.over && doom.remaining.ms <= 60_000);
   const locale = useLocale();
   const router = useRouter();
   const mapRef = useRef<MapViewHandle>(null);
@@ -146,6 +151,15 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
   // deep links: open the buy flow / focus a parcel once the engine exists
   const started = useRef(false);
   useEffect(() => { if (engineReady) engine()?.setLandRule(pricing.minLandPercent); }, [engineReady, pricing.minLandPercent]);
+  // the last minute: the end state of the visible land is drawn ahead, so that nothing has to be made while the sequence plays
+  useEffect(() => { if (engineReady && arming) engine()?.armFinale(); }, [engineReady, arming]);
+  // the sequence starts (the countdown reached zero, or "Replay"): the map plays it. BEFORE the story's step is set below, because a
+  // replay keeps the end-state tiles it is showing and goes back to the world as it was before the end
+  useEffect(() => {
+    if (!engineReady || !during) return;
+    const info = finaleInfo();
+    engine()?.startFinale(info.startedAt, window.matchMedia("(prefers-reduced-motion: reduce)").matches, info.replay);
+  }, [engineReady, during]);
   useEffect(() => { if (engineReady) engine()?.setStory(storyStep === null ? null : storyStep / 200); }, [engineReady, storyStep]);
 
   useEffect(() => {
@@ -180,7 +194,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
         viewer={viewer}
         center={<SearchBox onGo={goTo} />}
         cta={mode === "explore" ? (
-          <button className={`btn btn-primary btn-sm sm:!min-h-10 sm:!px-5${doom ? " doom-cta" : ""}`} onClick={() => startBuy()} data-testid="find-your-spot">{doom ? (doom.remaining.over ? td("ctaOver") : td("cta")) : t("findYourSpot")}</button>
+          <button className={`btn btn-primary btn-sm sm:!min-h-10 sm:!px-5${doom ? " doom-cta" : ""}`} onClick={() => startBuy()} data-testid="find-your-spot">{doom ? (doom.remaining.over && !during ? td("ctaOver") : td("cta")) : t("findYourSpot")}</button>
         ) : null}
       />
       <div className="relative min-h-0 flex-1">
@@ -196,6 +210,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
           onPlace={(r) => setSelection(r)}
           onSelectionState={setSelState}
           onSelectionLand={setSelLand}
+          onFinaleEnd={endFinale}
         />
 
         {/* the page title stays for search engines and screen readers; the map itself is the hero */}
@@ -206,6 +221,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
           <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex flex-col items-center gap-2 px-3 sm:top-4">
             <DoomPlate />
             <div className="hidden sm:block"><DoomMessage survivors={stats?.parcels ?? 0} /></div>
+            <DoomReplay className="hidden sm:inline-flex" />
           </div>
         )}
 

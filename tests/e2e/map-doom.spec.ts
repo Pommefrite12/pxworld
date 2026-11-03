@@ -109,3 +109,98 @@ test("the survivors: a parcel stays intact and framed among the corrupted land, 
   expect(ring, "the survivor is framed in orange").toBe(true);
   await Promise.all([api.dispose(), admin.dispose()]);
 });
+
+/* ------------------------------------------------------------------ the final sequence */
+type FinEng = Eng & { finale: { start: number; waiting: boolean } | null; finaleNow: () => number; canvas: HTMLCanvasElement };
+
+/** The corrupted share of the land within a band of the screen (fractions of its width). */
+const bandShare = (page: Page, from: number, to: number) => page.getByRole("application").evaluate((c: HTMLCanvasElement, [a, b]) => {
+  const x0 = Math.round(c.width * a!), w = Math.round(c.width * (b! - a!)), d = c.getContext("2d")!.getImageData(x0, 0, w, c.height).data;
+  let cream = 0, lav = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i]!, g = d[i + 1]!, bl = d[i + 2]!;
+    if (r === 251 && g === 245 && bl === 230) cream++;
+    else if ((r === 233 && g === 229 && bl === 255) || (r === 220 && g === 214 && bl === 255)) lav++;
+  }
+  return cream + lav === 0 ? 0 : lav / (cream + lav);
+}, [from, to]);
+
+/** Is there a front of the sweep on the screen: a whole column of cyan, from top to bottom? */
+const hasFront = (page: Page) => page.getByRole("application").evaluate((c: HTMLCanvasElement) => {
+  const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+  for (let x = 0; x < c.width; x++) {
+    let n = 0;
+    for (let y = 0; y < c.height; y++) { const i = (y * c.width + x) * 4; if (d[i] === 25 && d[i + 1] === 211 && d[i + 2] === 255) n++; }
+    if (n > c.height * 0.9) return true;
+  }
+  return false;
+});
+
+/** Opens the end state, plays "Replay the destruction", and lets the test set the clock of the sequence. */
+async function replay(page: Page) {
+  await page.goto("/?preview=0");
+  await ready(page);
+  await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
+  await page.locator('[data-testid="doom-replay"]:visible').click();
+  await page.waitForFunction(() => { const e = (window as unknown as { __pxEngine: FinEng }).__pxEngine; return Boolean(e.finale && !e.finale.waiting); }, undefined, { timeout: 20_000 });
+  const start = await page.evaluate(() => (window as unknown as { __pxEngine: FinEng }).__pxEngine.finale!.start);
+  return async (seconds: number) => { // the sequence at `seconds`, then let a few frames draw it
+    await page.evaluate(([s, t]) => { (window as unknown as { __pxEngine: FinEng }).__pxEngine.finaleNow = () => (s as number) + (t as number) * 1000; }, [start, seconds]);
+    await page.waitForTimeout(400);
+  };
+}
+
+test("the final sequence: a front sweeps the screen from west to east, the land behind it is the end state, the land ahead is not yet", async ({ page }) => {
+  const at = await replay(page);
+  expect(await page.getByTestId("doom-message").innerText()).toMatch(/^ERROR 0x064/); // the interface says what is happening
+  await expect(page.locator('[data-testid="doom-replay"]')).toHaveCount(0); // nothing to replay while it plays
+  await at(0.1);
+  expect(await page.getByRole("application").evaluate((c: HTMLCanvasElement) => c.style.transform), "the screen shakes at the start").not.toBe("");
+  expect(await hasFront(page), "the front is still off the left edge").toBe(false);
+  await at(2);
+  expect(await page.getByRole("application").evaluate((c: HTMLCanvasElement) => c.style.transform), "and stops shaking").toBe("");
+  expect(await hasFront(page), "the front is on the screen").toBe(true);
+  await at(3.6); // the front is in the middle of the screen
+  const west = await bandShare(page, 0.02, 0.3), east = await bandShare(page, 0.7, 0.98);
+  expect(west, "behind the front: the end state").toBeGreaterThan(0.9);
+  expect(east, "ahead of it: the world as it was before the end").toBeLessThan(west - 0.2);
+  await at(5.5);
+  expect(await bandShare(page, 0.02, 0.5)).toBeGreaterThan(0.9);
+  await at(7.2); // over: the end state is permanent and nothing is left of the sequence
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __pxEngine: FinEng }).__pxEngine.finale), { timeout: 5000 }).toBeNull();
+  expect(await hasFront(page)).toBe(false);
+  expect((await corruptedShare(page)).share).toBeGreaterThan(0.9);
+  expect(await page.getByRole("application").evaluate((c: HTMLCanvasElement) => c.style.transform)).toBe("");
+});
+
+test("someone who asked for fewer animations gets the end state fading in: no shake, no front, no flash", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const at = await replay(page);
+  for (const t of [0.1, 3.6]) {
+    await at(t);
+    expect(await page.getByRole("application").evaluate((c: HTMLCanvasElement) => c.style.transform), `t=${t}: no shake`).toBe("");
+    expect(await hasFront(page), `t=${t}: no front`).toBe(false);
+  }
+  await at(7.2);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __pxEngine: FinEng }).__pxEngine.finale), { timeout: 5000 }).toBeNull();
+  expect((await corruptedShare(page)).share).toBeGreaterThan(0.9);
+});
+
+test("the sequence plays by itself when the countdown reaches zero in front of the visitor, then the world is gone for good", async ({ page }) => {
+  await page.goto("/?preview=T-12"); // the page takes a few seconds to be ready: leave room
+  await ready(page);
+  const plate = page.getByTestId("doom-plate");
+  await expect(plate).toBeVisible();
+  await expect(page.getByTestId("doom-message")).toHaveText("Last chance to save: leave your mark before it is too late."); // the last seconds belong to the last chapter
+  await expect(page.getByTestId("find-your-spot")).toHaveText("Save my plot");
+    // zero: the sequence starts by itself (the interface says so, and nothing can be replayed while it plays)
+  await expect(page.getByTestId("doom-message")).toHaveText("ERROR 0x064 — DELETION IN PROGRESS", { timeout: 15_000 });
+  await expect(plate).toContainText("WORLD DELETED");
+  await expect(page.locator('[data-testid="doom-replay"]')).toHaveCount(0);
+  // about seven seconds later: the end, for good
+  await expect(page.getByTestId("doom-message")).toHaveText(/^The world has been deleted\. (No plot survived\.|\d+ plots? survived\.)$/, { timeout: 20_000 });
+  await expect(page.getByTestId("find-your-spot")).toHaveText("Join the survivors");
+  await expect(page.locator('[data-testid="doom-replay"]:visible')).toHaveCount(1);
+  await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 15_000 }).toBeGreaterThan(0.9);
+  expect(await hasFront(page)).toBe(false);
+});

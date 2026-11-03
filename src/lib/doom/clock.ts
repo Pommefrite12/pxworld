@@ -49,13 +49,16 @@ export function phaseOf(r: Remaining): DoomPhase {
 
 /**
  * A preview of the countdown at a chosen moment, for looking at each chapter without touching the real date:
- * `J-9` or `9` → nine days (and a fixed 6 h 41 min 27 s so that the digits are lively); `0`, `J0`, `fin` or `over` → the end.
+ * `J-9` or `9` → nine days (and a fixed 6 h 41 min 27 s so that the digits are lively); `0`, `J0`, `fin` or `over` → the end;
+ * `T-5` → the end in five seconds, to watch the final sequence play live.
  * Returns the instant the clock should be counting to, or `null` when the value means nothing.
  */
 export function previewEnd(value: string | null | undefined, now: number): number | null {
   const v = (value ?? "").trim().toLowerCase();
   if (!v) return null;
   if (["0", "j0", "fin", "over", "end"].includes(v)) return 0; // long since over, whatever the clock reads: never "a second left"
+  const t = /^t-?(\d{1,3})$/.exec(v);
+  if (t) return now + Number(t[1]) * SECOND;
   const m = /^(?:j-?)?(\d{1,3})$/.exec(v);
   if (!m) return null;
   const days = Math.min(DOOM_DAYS, Number(m[1]));
@@ -64,6 +67,9 @@ export function previewEnd(value: string | null | undefined, now: number): numbe
 
 /** Two digits for the countdown ("07"); three or more are left whole. */
 export const pad2 = (n: number): string => String(n).padStart(2, "0");
+
+/** The corruption just before the end (the world as it is when the final sequence starts). */
+export const PRE_END_INTENSITY = 0.58;
 
 /**
  * How much of the unacquired land the story has already corrupted at this moment, 0 to 1 (before the end; at the end the

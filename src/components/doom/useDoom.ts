@@ -2,6 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { parseEnd, phaseOf, previewEnd, remaining, type DoomPhase, type Remaining } from "@/lib/doom/clock";
+import { startFinale } from "./finaleStore";
 
 /**
  * The end of the (fictional) digital world configured for this deployment: `NEXT_PUBLIC_WORLD_END_AT`, an ISO date.
@@ -26,18 +27,36 @@ const previewEndFor = (value: string): number | null => {
   return previewEnd(value, anchors.get(value)!);
 };
 
-/* ---- one shared clock for every piece of the countdown ---- */
+/** The end the page is counting to right now: the preview if there is one, else the configured date, else none. */
+function currentEnd(): number | null {
+  const preview = readPreview();
+  return (preview && preview.toLowerCase() !== "off" ? previewEndFor(preview) : null) ?? CONFIGURED_END;
+}
+
+/* ---- one shared clock for every piece of the countdown; it also notices the moment the countdown reaches zero ---- */
 const listeners = new Set<() => void>();
 let timer: ReturnType<typeof setInterval> | undefined;
+let wasOver: boolean | null = null; // null: not known yet (the sequence only plays for someone who sees the countdown reach zero)
+const tickNow = () => {
+  const end = currentEnd();
+  const over = end === null ? null : Date.now() >= end;
+  if (wasOver === false && over === true) startFinale(); // started before anything re-renders, so the interface never shows the end state first
+  wasOver = over;
+  listeners.forEach((l) => l());
+};
 const subscribeClock = (cb: () => void) => {
   listeners.add(cb);
-  if (!timer) { timer = setInterval(() => listeners.forEach((l) => l()), 1000); document.addEventListener("visibilitychange", tickNow); }
+  if (!timer) {
+    const end = currentEnd();
+    wasOver = end === null ? null : Date.now() >= end;
+    timer = setInterval(tickNow, 1000);
+    document.addEventListener("visibilitychange", tickNow);
+  }
   return () => {
     listeners.delete(cb);
-    if (!listeners.size && timer) { clearInterval(timer); timer = undefined; document.removeEventListener("visibilitychange", tickNow); }
+    if (!listeners.size && timer) { clearInterval(timer); timer = undefined; wasOver = null; document.removeEventListener("visibilitychange", tickNow); }
   };
 };
-const tickNow = () => listeners.forEach((l) => l());
 const nowSecond = () => Math.floor(Date.now() / 1000);
 
 export interface Doom {

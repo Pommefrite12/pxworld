@@ -1,6 +1,7 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { gridAlpha } from "@/lib/map/pixelGrid";
 import { cellDevicePx, cellLook, damage, field, hash2, levelAlpha, makeRanker, tearOffset, GLITCH } from "@/lib/doom/corruption";
+import { finaleAt, frontX, type FinaleFrame } from "@/lib/doom/finale";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
 import { enoughLand } from "@/lib/grid/pricing";
 import { ASSET_SIZES, assetSizeFor, assetUrl } from "@/lib/images/sizes";
@@ -36,6 +37,8 @@ export interface EngineCallbacks {
   onSelectionState?: (s: SelectionState) => void;
   /** Land pixels inside the selection (null while unknown or when nothing is selected). */
   onSelectionLand?: (landPixels: number | null) => void;
+  /** The final sequence of the story has finished playing. */
+  onFinaleEnd?: () => void;
 }
 
 type TileParcel = [string, number, number, number, number, string | null, string | null];
@@ -221,6 +224,7 @@ export class MapEngine {
 
   destroy() {
     this.destroyed = true;
+    this.canvas.style.transform = "";
     this.cancelWarm();
     cancelAnimationFrame(this.raf);
     this.cleanup.forEach((f) => f());
@@ -547,6 +551,7 @@ export class MapEngine {
 
     if (this.dirty || again) { this.dirty = false; this.draw(); }
     if (this.geoPending) { this.dirty = true; again = true; } // geography tiles are still being rasterised: draw the next batch next frame
+    if (this.finale) { this.dirty = true; again = true; } // the final sequence is playing
     if (again) this.raf = requestAnimationFrame((n) => this.frame(n));
     else this.scheduleWarm();
   }
@@ -556,6 +561,7 @@ export class MapEngine {
   private draw() {
     const { ctx, w, h, dpr, cam } = this;
     const s = cam.scale;
+    this.updateFinale();
     this.geo?.tick(this.frameNo);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = COLORS.paper;
@@ -598,6 +604,7 @@ export class MapEngine {
     }
     this.offX = 0;
     ctx.restore();
+    this.drawFinaleFront();
 
     // top and bottom edge of the planet
     ctx.strokeStyle = `rgba(${COLORS.ink},0.55)`;
@@ -671,6 +678,93 @@ export class MapEngine {
     this.invalidate();
   }
 
+  /* ------------------------------------------------------------------ the final sequence of the story */
+  /** The sequence in progress (null: none). `waiting`: a replay that first needs the screen redrawn in the world before the end. */
+  private finale: { start: number; reduced: boolean; waiting: boolean; waitedSince: number } | null = null;
+  /** The land in its end state (intensity 1), drawn ahead of the sequence so that nothing has to be made while it plays. */
+  private finTiles = new Map<string, { c: HTMLCanvasElement; used: number; complete: boolean; ver: number; step: number }>();
+  private finArmed = false;
+  private geoMissing = 0;
+  private fin: { frame: FinaleFrame; front: number; reduced: boolean; t: number } | null = null;
+  /** The clock of the sequence, in ms. Replaceable, so that a test can step through the sequence instead of waiting for it. */
+  private finaleNow = () => performance.now();
+
+  /** The countdown is about to reach zero: draw the end state of the visible land now, a few tiles per frame. */
+  armFinale() {
+    if (this.finArmed) return;
+    this.finArmed = true;
+    this.invalidate();
+  }
+
+  /**
+   * Plays the sequence: a sweep crosses the screen from west to east and the land behind it becomes the end state; with `reduced`
+   * (the visitor asked for fewer animations) the end state simply fades in. A `replay` starts from the world as it was just
+   * before the end, so those tiles are redrawn first.
+   */
+  startFinale(start: number, reduced: boolean, replay: boolean) {
+    if (!this.story) return;
+    if (replay) this.finTiles = new Map([...this.geoTiles].filter(([, t]) => t.step === 200));
+    this.finale = { start, reduced, waiting: replay, waitedSince: this.finaleNow() };
+    this.finArmed = true;
+    this.invalidate();
+  }
+
+  private updateFinale() {
+    const f = this.finale;
+    this.fin = null;
+    if (!f || !this.story) return;
+    if (f.waiting) {
+      if ((this.geoMissing === 0 && this.finTiles.size > 0) || this.finaleNow() - f.waitedSince > 2000) { f.start = this.finaleNow(); f.waiting = false; } else return;
+    }
+    const t = (this.finaleNow() - f.start) / 1000, frame = finaleAt(t);
+    if (frame.done) { this.completeFinale(); return; }
+    this.fin = { frame, front: frontX(frame.sweep, this.w), reduced: f.reduced, t };
+    this.canvas.style.transform = frame.shake > 0 && !f.reduced ? `translate(${Math.round((hash2(Math.floor(t * 30), 1) - 0.5) * 2 * 4 * frame.shake)}px, ${Math.round((hash2(Math.floor(t * 30), 2) - 0.5) * 2 * 3 * frame.shake)}px)` : "";
+  }
+
+  /** The sweep is over: the end-state tiles become the map's tiles for good (nothing is redrawn), and the story is at its end. */
+  private completeFinale() {
+    for (const [k, t] of this.finTiles) this.geoTiles.set(k, t);
+    this.finTiles.clear();
+    this.finale = null;
+    this.finArmed = false;
+    this.story = { step: 200 };
+    this.canvas.style.transform = "";
+    this.invalidate();
+    this.cb.onFinaleEnd?.();
+  }
+
+  /** What the sweep leaves on the screen: its front (cyan and magenta blocks), the flash. */
+  private drawFinaleFront() {
+    const fin = this.fin;
+    if (!fin) return;
+    const { ctx, w, h } = this;
+    if (!fin.reduced && fin.frame.sweep > 0 && fin.frame.sweep < 1) {
+      const x = Math.round(fin.front), bucket = Math.floor(fin.t * 12);
+      for (let row = 0; row * 4 < h; row++) {
+        const dx = Math.round((hash2(row, bucket) - 0.5) * 12);
+        ctx.fillStyle = hash2(row, bucket + 7) < 0.5 ? GLITCH.cyan : GLITCH.magenta;
+        ctx.fillRect(x + dx, row * 4, 4, 4);
+        if (hash2(row, bucket + 3) < 0.3) { ctx.fillStyle = GLITCH.white; ctx.fillRect(x + dx + 4, row * 4, 4, 4); }
+      }
+      ctx.fillStyle = GLITCH.cyan; ctx.fillRect(x - 2, 0, 1, h);
+      ctx.fillStyle = GLITCH.magenta; ctx.fillRect(x + 2, 0, 1, h);
+    }
+    if (!fin.reduced && fin.frame.flash > 0) { ctx.fillStyle = `rgba(255,255,255,${0.85 * fin.frame.flash})`; ctx.fillRect(0, 0, w, h); }
+  }
+
+  /** Bands of the land just behind the front slide sideways, a few at a time: the world tearing as it goes. */
+  private tearBehindFront() {
+    const fin = this.fin;
+    if (!fin || fin.reduced || fin.frame.sweep <= 0 || fin.frame.sweep >= 1) return;
+    const { ctx, canvas, dpr, h } = this, bucket = Math.floor(fin.t * 5), x1 = Math.round(fin.front) - 8, x0 = Math.max(0, x1 - 140);
+    if (x1 <= 0) return;
+    for (let q = 0; q < 10; q++) {
+      const y = Math.round(hash2(bucket, q + 20) * h), bh = Math.round(6 + hash2(bucket, q + 40) * 18), dx = Math.round((hash2(bucket, q + 60) - 0.5) * 30);
+      ctx.drawImage(canvas, x0 * dpr, y * dpr, (x1 - x0) * dpr, bh * dpr, x0 + dx, y, x1 - x0, bh);
+    }
+  }
+
   /** The rank of a place among the land, calibrated once on the coarse coast: "intensity 30 %" then means 30 % of the land. */
   private rankOf(): (v: number) => number {
     if (!this.ranker) {
@@ -687,8 +781,8 @@ export class MapEngine {
    * destroyed area, and bands that have slid sideways. The cells of a level have a fixed size in device pixels, so a tile
    * holds a whole number of them and they never leave seams.
    */
-  private paintCorruption(g: CanvasRenderingContext2D, fill: Path2D, k: number, tx: number, ty: number, scale: number) {
-    const I = this.story!.step / 200;
+  private paintCorruption(g: CanvasRenderingContext2D, fill: Path2D, k: number, tx: number, ty: number, scale: number, step: number) {
+    const I = step / 200;
     if (I <= 0) return;
     const rank = this.rankOf(), R = 64, size = GEO_TILE_PX / scale, lattice = new Float32Array((R + 1) * (R + 1));
     let min = 1;
@@ -745,7 +839,7 @@ export class MapEngine {
    * Rasterises one geography tile. With `strict` it refuses (returns null) to draw anything while data the tile needs is
    * still downloading — pre-rendering must never spend time on a stand-in that will be redrawn anyway.
    */
-  private renderGeoTile(k: number, tx: number, ty: number, strict = false, fillOnly = false): { c: HTMLCanvasElement; complete: boolean } | null {
+  private renderGeoTile(k: number, tx: number, ty: number, strict = false, fillOnly = false, stepOverride?: number): { c: HTMLCanvasElement; complete: boolean } | null {
     if (!this.geo) return null;
     const scale = 2 ** k, size = GEO_TILE_PX / scale;
     const rect = { x0: tx * size, y0: ty * size, x1: (tx + 1) * size, y1: (ty + 1) * size };
@@ -768,7 +862,7 @@ export class MapEngine {
     g.fillStyle = COLORS.land;
     g.fill(paths.fill, "evenodd");
     if (fillOnly) return { c, complete };
-    if (this.story) this.paintCorruption(g, paths.fill, k, tx, ty, scale); // the story: corrupted land, under the borders and the coast
+    if (this.story) this.paintCorruption(g, paths.fill, k, tx, ty, scale, stepOverride ?? this.story.step); // the story: corrupted land, under the borders and the coast
     // Borders are SOLID thin lines (dashes cost a lot to rasterise and read as noise), kept discreet by their opacity.
     if (communes) {
       g.strokeStyle = `rgba(${COLORS.ink},${k >= 5 ? 0.3 : 0.22})`;
@@ -932,6 +1026,7 @@ export class MapEngine {
       // a tile drawn from a coarser level while data was missing is redrawn once new data has arrived; so is one of another step of the story
       if (!tile || (!tile.complete && tile.ver !== this.geo.version) || tile.step !== step) missing.push({ tx, ty, d: Math.hypot((tx + 0.5) * size - this.cam.x, (ty + 0.5) * size - this.cam.y) });
     }
+    this.geoMissing = missing.length;
     if (missing.length) {
       missing.sort((a, b) => a.d - b.d);
       for (const m of missing.slice(0, 4)) {
@@ -939,13 +1034,34 @@ export class MapEngine {
         if (r) this.geoTiles.set(`${k}/${m.tx}/${m.ty}`, { c: r.c, used: 0, complete: r.complete, ver: this.geo.version, step });
       }
     }
+    // the end state of the visible land, made ahead of the final sequence (or while it plays, if the camera moved)
+    if (this.story && this.finArmed && !(this.finale?.waiting)) {
+      let baked = 0;
+      for (let ty = ty0; ty <= ty1 && baked < 2; ty++) for (let tx = tx0; tx <= tx1 && baked < 2; tx++) {
+        const key = `${k}/${tx}/${ty}`, have = this.finTiles.get(key);
+        if (have && have.ver === this.geo.version) continue;
+        const r = this.renderGeoTile(k, tx, ty, false, false, 200);
+        if (r) { this.finTiles.set(key, { c: r.c, used: this.frameNo, complete: r.complete, ver: this.geo.version, step: 200 }); baked++; }
+      }
+      if (baked) this.geoPending = true; // keep drawing until the whole visible land is ready
+    }
+    const placed: { key: string; x: number; y: number; px: number }[] = [];
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
       const tile = this.geoTiles.get(`${k}/${tx}/${ty}`);
       const a = this.worldToScreen(tx * size, ty * size);
       const px = size * s;
+      placed.push({ key: `${k}/${tx}/${ty}`, x: a.x, y: a.y, px });
       if (tile) { tile.used = this.frameNo; ctx.drawImage(tile.c, a.x, a.y, px + 0.6, px + 0.6); if (!tile.complete && tile.ver !== this.geo.version) this.geoPending = true; continue; }
       this.geoPending = true;
       this.drawGeoStandIn(k, tx, ty, a.x, a.y, px);
+    }
+    const fin = this.fin;
+    if (fin && this.finTiles.size) { // the final sequence: the end state of the land, behind the front of the sweep (or fading in)
+      ctx.save();
+      if (fin.reduced) ctx.globalAlpha = fin.frame.sweep; else { ctx.beginPath(); ctx.rect(0, 0, Math.max(0, fin.front), this.h); ctx.clip(); }
+      for (const p of placed) { const ft = this.finTiles.get(p.key); if (ft) ctx.drawImage(ft.c, p.x, p.y, p.px + 0.6, p.px + 0.6); }
+      ctx.restore();
+      this.tearBehindFront();
     }
     // never evict what is on screen: the cache must at least hold the visible tiles
     const cacheMax = Math.max(GEO_CACHE_MAX, (tx1 - tx0 + 1) * (ty1 - ty0 + 1) + 16);
