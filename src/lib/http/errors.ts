@@ -46,6 +46,9 @@ export function errorResponse(e: unknown) {
   if (e instanceof HttpError) return NextResponse.json({ error: e.code, message: e.message }, { status: e.status });
   const code = (e as { message?: string } | null)?.message;
   if (code && /^px_[a-z_]+$/.test(code)) return NextResponse.json({ error: code }, { status: statusForPx(code) });
-  console.error("Unhandled API error", e);
+  // a column or a function the code expects is not in the database: the migrations were not applied after an update (the usual cause of a map without parcels)
+  const pg = (e as { code?: string } | null)?.code;
+  if (pg === "42703" || pg === "42883" || pg === "42P01") console.error("[alert] The database is out of date: run `node scripts/migrate.mjs` (deployment guide, step 1F). Underlying error:", (e as Error).message);
+  else console.error("Unhandled API error", e);
   return NextResponse.json({ error: "internal_error" }, { status: 500 });
 }
