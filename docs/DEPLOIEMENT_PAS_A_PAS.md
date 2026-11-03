@@ -1,7 +1,7 @@
 # Mettre le site en ligne en mode TEST, pas à pas
 
 À suivre dans l'ordre, environ **1 h 30 à 2 h**. Tout se fait en **mode test** : aucune vraie carte bancaire, aucun vrai paiement.
-Les étapes 1 à 3 créent trois comptes gratuits (Supabase pour la base de données et les comptes des visiteurs, Stripe pour le
+Les étapes 1 à 3 créent trois comptes gratuits (l'étape 2, Stripe, peut attendre) (Supabase pour la base de données et les comptes des visiteurs, Stripe pour le
 paiement, Vercel pour héberger le site). L'étape 4 les relie, l'étape 5 vérifie que tout marche.
 
 > **Règle d'or :** les clés et mots de passe vont dans un fichier de notes privé (ou un gestionnaire de mots de passe), et dans les
@@ -174,6 +174,8 @@ Ces deux valeurs ne sont **pas secrètes** (le navigateur des visiteurs les util
 
 ## Étape 2 : Stripe, le paiement en mode test (15 min)
 
+> **Cette étape peut se faire après les étapes 3 et 4.** Le site fonctionne sans Stripe (les achats sont alors désactivés, avec un message clair). Dans ce cas, passez directement à l'étape 3 et revenez ici ensuite, puis suivez « Ajouter Stripe après coup » en bas.
+
 Stripe encaisse les paiements. **En mode test, personne ne paie rien** : on utilise de fausses cartes. À la fin de cette étape, vous aurez noté **1 information**
 (la clé secrète de test). Le webhook (le message que Stripe envoie au site pour dire « c'est payé ») sera créé à l'étape 4, quand le site aura son adresse.
 
@@ -221,87 +223,131 @@ Stripe encaisse les paiements. **En mode test, personne ne paie rien** : on util
 
 ---
 
-## Étape 3 : Vercel, l'hébergement (20 min)
+## Étape 3 : Vercel, l'hébergement (30 min)
 
-1. Allez sur **vercel.com** → **Sign Up** → **Continue with GitHub**, plan **Hobby**.
-2. **Add New…** → **Project** → choisissez le dépôt **`Pommefrite12/pxworld`** → **Import**. (Si le dépôt n'apparaît pas :
-   **Adjust GitHub App Permissions** et donnez l'accès à ce dépôt.)
-3. Avant de cliquer sur Deploy :
-   - **Project Name** : `pixelworld-test` (l'adresse sera `https://pixelworld-test.vercel.app` si le nom est libre ; sinon Vercel en propose un autre, notez-le).
-   - **Framework Preset** : Next.js (automatique). Ne changez ni la commande de build ni le dossier.
-   - **Environment Variables** : ajoutez **une par une** les lignes du tableau ci-dessous (pour chacune : nom, valeur, **Add**).
-4. **Deploy**, puis attendez 3 à 5 minutes. Si le build échoue, ouvrez le journal rouge, copiez les 20 dernières lignes **sans clé** et envoyez-les-moi.
-5. **Branche de production** : le dépôt a une branche `main` quasi vide ; notre travail est sur `claude/funny-bell-k7v5xf`.
-   Dans Vercel : **Settings** → **Environments** → **Production** → **Branch Tracking** (ou **Settings** → **Git** → **Production Branch**)
-   → choisissez `claude/funny-bell-k7v5xf`, puis **Save**. Chaque fois que je pousse du code sur cette branche, le site se met à jour tout seul.
-   (Si vous préférez que la branche principale devienne `main`, dites-le-moi : je prépare la fusion sur votre demande.)
-6. **Settings** → **General** → **Node.js Version** : **22.x**.
+Vercel met le site en ligne : il récupère le code sur GitHub, le construit et lui donne une adresse. **Stripe n'est pas nécessaire pour cette étape** : sans lui, le site
+fonctionne mais les achats sont désactivés (les visiteurs voient « Les paiements ne sont pas encore disponibles. »). Vous ajouterez Stripe après coup.
 
-### Les variables d'environnement
+### 3A. Dire à GitHub quelle branche contient le site
 
-| Nom | Valeur | D'où elle vient |
-|---|---|---|
-| `NEXT_PUBLIC_SITE_URL` | `https://pixelworld-test.vercel.app` (**l'adresse exacte du site, en https, sans `/` final**) | le nom du projet |
-| `DATABASE_URL` | l'adresse **Transaction pooler** (port 6543, avec le mot de passe) | Supabase, étape 1D |
-| `NEXT_PUBLIC_SUPABASE_URL` | la **Project URL** | Supabase, étape 1B |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | la **clé publique** (`sb_publishable_…`) | Supabase, étape 1B |
-| `SUPABASE_SERVICE_ROLE_KEY` | la **clé secrète** (`sb_secret_…`) | Supabase, étape 1C |
-| `STRIPE_SECRET_KEY` | `sk_test_…` | Stripe, étape 2D |
-| `RATE_LIMIT_SALT` | le premier secret généré | étape 0.3 |
-| `CRON_SECRET` | le second secret généré | étape 0.3 |
-| `STRIPE_WEBHOOK_SECRET` | *(à ajouter à l'étape 4.2)* | Stripe |
+Le dépôt a une branche `main` (presque vide) et la branche `claude/funny-bell-k7v5xf` (tout le site). Vercel déploie la **branche par défaut** : on la change.
 
-À **ne pas** ajouter : `DEV_AUTH`, `NEXT_PUBLIC_DEV_AUTH`, `DEV_AUTH_SECRET`, `STRIPE_MOCK`, `LOCAL_STORAGE_DIR`, `PAYMENTS_LIVE_ENABLED`
-(variables de développement ou de vrais paiements), ni `NEXT_PUBLIC_WORLD_END_AT` (l'histoire des 100 jours reste éteinte tant que la date n'est pas décidée).
-Les variables `NEXT_PUBLIC_OPERATOR_*` et `NEXT_PUBLIC_CONTACT_EMAIL` (identité du vendeur) peuvent attendre : les pages légales afficheront des
-trous entre crochets, c'est normal pour un test.
+1. Ouvrez **https://github.com/Pommefrite12/pxworld**.
+2. Cliquez sur l'onglet **Settings** (en haut du dépôt, tout à droite).
+3. Dans le menu de gauche, cliquez sur **Branches** (rubrique « Code and automation »).
+4. Dans « **Default branch** », à droite de `main`, cliquez sur l'icône à deux flèches **⇄** (« Switch to another branch »).
+5. Dans la liste, choisissez **`claude/funny-bell-k7v5xf`**, puis cliquez sur **Update**.
+6. GitHub demande confirmation : cliquez sur **I understand, update the default branch**.
 
-> `NEXT_PUBLIC_…` est « figé » à la construction du site : si vous modifiez une de ces variables, il faut **redéployer**
-> (**Deployments** → les trois points du dernier déploiement → **Redeploy**).
+### 3B. Créer le compte Vercel
+
+1. Ouvrez **https://vercel.com** et cliquez sur **Sign Up**.
+2. Choisissez le plan **Hobby** (personnel, gratuit) si on vous le demande, et un nom (le vôtre).
+3. Cliquez sur **Continue with GitHub**, puis **Authorize Vercel**. Si Vercel demande de vérifier votre téléphone, faites-le.
+
+### 3C. Importer le dépôt
+
+1. Sur le tableau de bord, en haut à droite : **Add New…** puis **Project**.
+2. Dans « **Import Git Repository** », trouvez **pxworld**.
+   - Il n'apparaît pas ? Cliquez sur **Adjust GitHub App Permissions**, sur GitHub choisissez **Only select repositories**, ajoutez `pxworld`, **Save**, puis revenez sur Vercel.
+3. Cliquez sur **Import** à droite de `pxworld`.
+4. Page « **Configure Project** » :
+   - **Project Name** : `pixelworld-test`
+   - **Framework Preset** : doit afficher **Next.js** (automatique).
+   - **Root Directory** : laissez `./`.
+   - Ne touchez pas à « Build and Output Settings ».
+5. **Ne cliquez pas encore sur Deploy.** Cliquez d'abord sur **Environment Variables** pour déplier la section (étape suivante).
+
+### 3D. Remplir les variables d'environnement
+
+Pour **chacune** des 7 lignes du tableau : cliquez dans **Key**, tapez le nom ; cliquez dans **Value**, collez la valeur depuis vos notes ; cliquez sur **Add**.
+Sans guillemets, sans espace avant ou après. *(Pas encore faits à l'étape 0 : les deux secrets se génèrent dans le terminal du Codespace avec `openssl rand -hex 32`, deux fois, une valeur chacun.)*
+
+| Key (nom exact) | Value (depuis vos notes) |
+|---|---|
+| `NEXT_PUBLIC_SITE_URL` | `https://pixelworld-test.vercel.app` (https, **sans `/` à la fin**) |
+| `DATABASE_URL` | votre **Adresse Transaction pooler** (celle en `:6543`, avec le mot de passe) |
+| `NEXT_PUBLIC_SUPABASE_URL` | votre **Project URL** |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | votre **clé publique** (`sb_publishable_…`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | votre **clé secrète** (`sb_secret_…`) |
+| `RATE_LIMIT_SALT` | le premier secret généré par `openssl rand -hex 32` |
+| `CRON_SECRET` | le second secret généré |
+
+**À ne pas ajouter :** `STRIPE_SECRET_KEY` et `STRIPE_WEBHOOK_SECRET` (plus tard, quand Stripe sera prêt), ni `DEV_AUTH`, `STRIPE_MOCK`, `NEXT_PUBLIC_WORLD_END_AT`.
+
+### 3E. Déployer
+
+1. Cliquez sur **Deploy**. Vercel construit le site : 3 à 5 minutes, avec un journal qui défile.
+2. Quand l'écran « **Congratulations!** » apparaît, cliquez sur **Continue to Dashboard**.
+3. Si le déploiement échoue (écran rouge, « Build Failed ») : ouvrez **Build Logs**, copiez les **20 dernières lignes** et envoyez-les-moi (elles ne contiennent pas de clé).
+4. **L'adresse réelle du site** : dans le tableau de bord du projet, section **Domains**, repérez l'adresse **courte** qui se termine par `.vercel.app` (par exemple `pixelworld-test.vercel.app`). Ce n'est **pas** celle avec des lettres aléatoires au milieu.
+5. Si cette adresse **n'est pas exactement** celle de `NEXT_PUBLIC_SITE_URL` : **Settings → Environment Variables**, cliquez sur les trois points de `NEXT_PUBLIC_SITE_URL` → **Edit**, corrigez, **Save** ; puis **Deployments**, les trois points du dernier déploiement → **Redeploy** → **Redeploy**. Attendez 3 minutes.
+6. Cliquez sur **Visit** : la carte du monde doit s'afficher (10 secondes la première fois).
+
+### 3F. Version de Node.js
+
+1. **Settings → General**, descendez jusqu'à **Node.js Version**.
+2. Si ce n'est pas **22.x**, choisissez-le et cliquez sur **Save** (puis **Redeploy** comme en 3E point 5).
 
 ---
 
-## Étape 4 : relier les trois (10 min)
+## Étape 4 : dire à Supabase l'adresse du site (5 min)
 
-1. **Supabase** → **Authentication** → **URL Configuration** :
-   - **Site URL** : l'adresse du site (`https://pixelworld-test.vercel.app`)
-   - **Redirect URLs** → **Add URL** : `https://pixelworld-test.vercel.app/auth/callback` **et** `https://pixelworld-test.vercel.app/**` → **Save**
-2. **Stripe** → **Developers** → **Webhooks** (ou **Event destinations**) → **Add endpoint** (**Create destination**) :
-   - **Endpoint URL** : `https://pixelworld-test.vercel.app/api/stripe/webhook`
-   - **Events** : cochez exactement ces 8 : `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
-     `checkout.session.async_payment_failed`, `checkout.session.expired`, `payment_intent.payment_failed`, `charge.refunded`,
-     `charge.dispute.created`, `charge.dispute.closed`
-   - Après création : **Signing secret** → **Reveal** → copiez la valeur qui commence par **`whsec_`**.
-   - Dans **Vercel** → **Settings** → **Environment Variables** : ajoutez `STRIPE_WEBHOOK_SECRET` = cette valeur, puis **Redeploy** le site.
-3. Si l'adresse réelle du site n'est pas celle que vous aviez mise dans `NEXT_PUBLIC_SITE_URL`, corrigez-la, **Redeploy**, et reprenez le point 1.
+Sans cela, le lien de confirmation reçu par e-mail ne ramènerait pas vers votre site.
+
+1. Dans **Supabase**, menu de gauche : **Authentication**.
+2. Rubrique « Configuration » : cliquez sur **URL Configuration**.
+3. **Site URL** : effacez ce qui est écrit, tapez l'adresse du site : `https://pixelworld-test.vercel.app` (celle de l'étape 3E point 4). Cliquez sur **Save changes**.
+4. **Redirect URLs** : cliquez sur **Add URL**, tapez `https://pixelworld-test.vercel.app/auth/callback`, validez. Cliquez de nouveau sur **Add URL**,
+   tapez `https://pixelworld-test.vercel.app/**` (avec les deux étoiles), validez. Cliquez sur **Save** si le bouton apparaît.
 
 ---
 
-## Étape 5 : vérifier (20 min)
+## Étape 5 : vérifier le site, sans Stripe (20 min)
 
-1. **Le contrôle automatique**. Dans le Codespace :
+1. **Le contrôle automatique.** Dans un terminal du Codespace :
    ```bash
    node scripts/smoke.mjs https://pixelworld-test.vercel.app
    ```
    Résultat attendu : `51/51 checks passed`. S'il y a des `FAIL`, copiez les lignes et envoyez-les-moi.
-2. **Le site s'ouvre**, la carte s'affiche. Passez en anglais / français.
-3. **Créez votre compte** (Sign in → Sign up) avec votre vrai e-mail, confirmez par le lien reçu. (Le service d'e-mails gratuit de Supabase limite à
-   quelques messages par heure : si le message tarde, patientez.)
-4. **Devenez administrateur** : Supabase → **SQL Editor** → **New query**, en remplaçant l'adresse par la vôtre :
+2. **Ouvrez le site** : la carte s'affiche. Essayez le changement de langue (anglais / français).
+3. **Créez votre compte** : bouton **Sign in** → **Sign up**, avec votre vrai e-mail, un nom, un mot de passe d'au moins 10 caractères. Ouvrez l'e-mail reçu et cliquez sur le lien de
+   confirmation : vous revenez sur le site, connecté. *(Le service d'e-mails gratuit de Supabase limite à quelques messages par heure : si rien n'arrive, patientez ; regardez les spams.)*
+4. **Devenez administrateur.** Supabase → **SQL Editor** → **New query**, collez ceci en remplaçant l'adresse par **celle de votre compte**, puis **Run** :
    ```sql
    insert into public.admin_roles (user_id, role) select id, 'admin' from auth.users where email = 'vous@exemple.fr';
    ```
-   Puis rechargez le site : le menu de votre compte doit proposer l'administration.
-5. **Un achat de test** : cliquez sur **Trouver ma place** / **Find your spot**, choisissez une petite parcelle **sur la terre**, ajoutez une image,
-   acceptez les conditions, **Payer**. Sur la page de Stripe, carte **`4242 4242 4242 4242`**, une date future quelconque, un code CVC
-   quelconque, un code postal quelconque. Vous revenez sur le site : la commande doit passer à **Payée**. Dans **Administration → Modération**,
-   approuvez la création ; la parcelle apparaît sur la carte.
-   - Dans Stripe (mode test) → **Payments** : le paiement de test apparaît, en **EUR** puisque vous êtes en France.
-6. **Une parcelle en mer** doit être refusée (« pas sur la terre »).
-7. **Tester le prix en dollars** (sans VPN) : dans Vercel, ajoutez `TEST_COUNTRY` = `US`, **Redeploy** ; le prix s'affiche en **$**. Refaites un achat
-   de test : Stripe doit montrer **USD**. Puis **supprimez la variable `TEST_COUNTRY`** et **Redeploy** (elle ne fonctionne qu'avec une clé `sk_test_`).
-8. **Les journaux** : Vercel → votre projet → **Logs**. Cherchez `[config]` : ce sont les avertissements de configuration (il ne doit plus y avoir
-   de `error`). Cherchez `[alert]` et `[csp]` : à lire de temps en temps pendant la semaine de test.
+   Résultat attendu : « Success. 1 row affected » (ou similaire). Rechargez le site : le menu de votre compte doit proposer **l'administration**.
+5. **Les journaux.** Vercel → votre projet → **Logs**. Cherchez `[config]` : il doit y avoir deux avertissements (`STRIPE_SECRET_KEY` absent, identité du vendeur incomplète) et **aucun `error`**.
+
+---
+
+## Étape 6 : ajouter Stripe, quand vous pouvez (15 min + 10 min)
+
+1. Faites l'**étape 2** (compte Stripe, mode test, clé secrète `sk_test_…`).
+2. **Vercel** → votre projet → **Settings** → **Environment Variables** : ajoutez `STRIPE_SECRET_KEY` = votre clé `sk_test_…` (**Add**).
+3. **Créer le webhook** (le message que Stripe envoie au site pour dire « c'est payé »). Dans Stripe : barre de recherche → **Webhooks** (ou **Developers → Webhooks**) → **Add endpoint**
+   (ou **Create an event destination**) :
+   - **Endpoint URL** : `https://pixelworld-test.vercel.app/api/stripe/webhook`
+   - **Events** : cochez exactement ces 8 : `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+     `checkout.session.async_payment_failed`, `checkout.session.expired`, `payment_intent.payment_failed`, `charge.refunded`,
+     `charge.dispute.created`, `charge.dispute.closed`
+   - Validez. Sur la page du webhook : **Signing secret** → **Reveal** → copiez la valeur qui commence par **`whsec_`**.
+4. Dans **Vercel** → **Environment Variables** : ajoutez `STRIPE_WEBHOOK_SECRET` = cette valeur (**Add**).
+5. **Redeploy** (Deployments → les trois points du dernier déploiement → **Redeploy**) et attendez 3 minutes.
+
+---
+
+## Étape 7 : l'achat de test (20 min)
+
+1. Sur le site, cliquez sur **Trouver ma place** / **Find your spot**, choisissez une petite parcelle **sur la terre**, ajoutez une image, acceptez les conditions, **Payer**.
+2. Sur la page de Stripe, carte **`4242 4242 4242 4242`**, une date future quelconque, un code CVC quelconque, un code postal quelconque.
+3. Vous revenez sur le site : la commande doit passer à **Payée**. Dans **Administration → Modération**, approuvez la création ; la parcelle apparaît sur la carte.
+   Dans Stripe → **Payments** : le paiement de test apparaît, en **EUR** (vous êtes en France).
+4. **Une parcelle en mer** doit être refusée (« pas sur la terre »).
+5. **Le prix en dollars**, sans VPN : dans Vercel, ajoutez `TEST_COUNTRY` = `US`, **Redeploy** ; le prix s'affiche en **$**. Refaites un achat de test : Stripe doit montrer **USD**.
+   Puis **supprimez la variable `TEST_COUNTRY`** et **Redeploy** (elle ne fonctionne qu'avec une clé `sk_test_`).
+6. Dans les **Logs** de Vercel, cherchez `[config]` (plus aucun `error` ni avertissement Stripe), puis `[alert]` et `[csp]` : à relire de temps en temps pendant la semaine de test.
 
 ---
 
@@ -320,8 +366,8 @@ trous entre crochets, c'est normal pour un test.
 |---|---|
 | Le build Vercel échoue | copiez les dernières lignes du journal et envoyez-les-moi |
 | La page affiche une erreur « Invalid environment configuration » | une variable est mal écrite (guillemets, espace, `/` final) |
-| Impossible de se connecter / le lien de l'e-mail mène à une erreur | étape 4.1 : l'adresse de redirection manque ou ne correspond pas |
-| Le paiement réussit mais la commande reste « en attente » | étape 4.2 : webhook absent, mauvais événements, ou `STRIPE_WEBHOOK_SECRET` faux (puis **Redeploy**) |
+| Impossible de se connecter / le lien de l'e-mail mène à une erreur | étape 4 : l'adresse de redirection manque ou ne correspond pas |
+| Le paiement réussit mais la commande reste « en attente » | étape 6 : webhook absent, mauvais événements, ou `STRIPE_WEBHOOK_SECRET` faux (puis **Redeploy**) |
 | `migrate.mjs` : « password authentication failed » | le mot de passe de la base est faux (ou contient des symboles non protégés) |
 | `migrate.mjs` : « ENOTFOUND » / « timeout » | prenez bien l'adresse **Session pooler** (pas « Direct connection ») |
 | Rien ne s'affiche sur la carte | attendez 10 secondes (le premier chargement est plus long) ; sinon regardez **Logs** |
