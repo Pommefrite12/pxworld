@@ -47,7 +47,7 @@ test("water is bought like land: priced for its water, refused on land, shown in
   // the open sea is not for land; it is for water, at the land price by default
   const q = (kind: string, r = SEA) => api.get(`/api/availability?x=${r.x}&y=${r.y}&w=${r.w}&h=${r.h}&kind=${kind}`).then((x) => x.json());
   expect(await q("land")).toMatchObject({ kind: "land", enough: false, free: false });
-  expect(await q("water")).toMatchObject({ kind: "water", enough: true, free: true, landPixels: 0, price: { ownedPixels: 400, cutPixels: 0, totalCents: 400 * 50 } });
+  expect(await q("water")).toMatchObject({ kind: "water", enough: true, free: true, landPixels: 0, price: { ownedPixels: 400, cutPixels: 0, totalCents: 400 * 25 } });
   expect((await api.get(`/api/availability?x=${SEA.x}&y=${SEA.y}&w=20&h=20&kind=lava`)).status()).toBe(400);
   // and the wrong kind is refused when buying
   const red = await sharp({ create: { width: 20, height: 20, channels: 3, background: "#ff0000" } }).png().toBuffer();
@@ -115,7 +115,7 @@ test("a water parcel on a coast: the land inside is cut away, free, and still fo
   expect(coast, "a rectangle on the coast of Portugal").not.toBeNull();
   const c = coast!;
   const water = await api.get(`/api/availability?x=${c.x}&y=${c.y}&w=20&h=20&kind=water`).then((x) => x.json());
-  expect(water).toMatchObject({ enough: true, price: { ownedPixels: 400 - c.landPixels, cutPixels: c.landPixels, totalCents: (400 - c.landPixels) * 50 } });
+  expect(water).toMatchObject({ enough: true, price: { ownedPixels: 400 - c.landPixels, cutPixels: c.landPixels, totalCents: (400 - c.landPixels) * 25 } });
   await buy(api, admin, c, "water", "Coast", "#ff0000");
   // the land part is still the land's: free for a land parcel when there is enough of it (here a quarter: not enough), and the map shows land there
   await page.setViewportSize({ width: 1360, height: 860 });
@@ -149,7 +149,7 @@ test("the buy panel offers Land and Water: the same spot at sea is refused as la
   await page.getByTestId("buy-kind-water").click();
   await expect(page.getByTestId("buy-kind-water")).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("buy-status")).toContainText(/free/i);
-  await expect(page.getByTestId("buy-price")).toHaveText("€200"); // 400 water pixels at the land price (default)
+  await expect(page.getByTestId("buy-price")).toHaveText("€100"); // 400 water pixels at the land price (default)
   await page.getByTestId("buy-kind-land").click();
   await expect(page.getByTestId("buy-status")).toContainText(/on land/i); // back: the sea is not land
   // a purchase resumed after signing in keeps its kind (?bk=water), and the editor says what the sea does to a creation

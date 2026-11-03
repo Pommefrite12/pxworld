@@ -114,4 +114,4 @@ See [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
 
 ## Default price (migrations 7 and 8)
 
-Migration 7 (`…07_price_10_cents.sql`) moved the factory default of `app_settings.price_unit_cents` from 100 to 10 cents; migration 8 (`…08_price_50_cents.sql`) moves it to **50** (€0.50 per pixel) when it still holds 100 or 10. Any other value, i.e. a price an admin chose on purpose, is never touched, and existing orders keep their own `unit_price_cents` snapshot. Re-running them is harmless (`tests/db/price-default.test.ts`).
+Migration 7 (`…07_price_10_cents.sql`) moved the factory default of `app_settings.price_unit_cents` from 100 to 10 cents; migration 8 (`…08_price_50_cents.sql`) moves it to 50 when it still holds 100 or 10; migration 16 (`…16_price_25_cents.sql`) moves an untouched 50 to **25** (€0.25 per pixel), and the dollar price `price_unit_cents_usd` the same way ($0.25). Any other value, i.e. a price an admin chose on purpose, is never touched, and existing orders keep their own `unit_price_cents` snapshot. Re-running them is harmless (`tests/db/price-default.test.ts`).

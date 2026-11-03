@@ -76,8 +76,8 @@ export function creationScale(w: number, h: number): number {
   return k;
 }
 
-/** Default price: €0.50 per pixel, in minor units (cents). */
-export const DEFAULT_UNIT_PRICE_CENTS = 50;
+/** Default price: €0.25 per pixel (and $0.25), in minor units (cents). */
+export const DEFAULT_UNIT_PRICE_CENTS = 25;
 export const CURRENCY = "eur";
 
 /** How long a reservation holds pixels before they are released again. */

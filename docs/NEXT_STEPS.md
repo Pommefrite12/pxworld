@@ -30,7 +30,7 @@ Anything that is not as you wanted goes to the top of the list.
 
 ## 2. Decisions that block the launch (owner)
 
-1. **Price**: decided — euros in the euro area, dollars elsewhere. dollar price **confirmed at $0.50** (`price_unit_cents_usd`, editable in `/admin/settings`); the euro-using micro-states pay in euros (confirmed). Only the final launch prices remain to be re-read.
+1. **Price**: decided — euros in the euro area, dollars elsewhere. dollar price **now $0.25** (owner's decision; was $0.50) (`price_unit_cents_usd`, editable in `/admin/settings`); the euro-using micro-states pay in euros (confirmed). Only the final launch prices remain to be re-read.
 2. **Operator identity**: the legal entity that sells the pixels (name, address, registration number) → `NEXT_PUBLIC_OPERATOR_*`.
 3. **Legal texts** (terms, privacy, community rules, refund/withdrawal policy, VAT treatment): the texts in `src/messages/*.json → pages.*` are drafts with `[bracketed]` gaps. They need a lawyer. **(approval)**
 4. **Moderation**: who reviews creations and reports, and how fast (a new creation or a report waits for a human).

@@ -12,7 +12,7 @@ achetés sont définitivement à lui. Un visiteur peut aussi inviter d'autres pe
 
 ## Le prix
 
-**0,50 € le pixel de terre dans la zone euro, 0,50 $ ailleurs** (la devise est choisie par le serveur d'après le pays du visiteur). Une
+**0,25 € le pixel dans la zone euro, 0,25 $ ailleurs (terre comme eau)** (la devise est choisie par le serveur d'après le pays du visiteur). Une
 parcelle côtière peut contenir de la mer (offerte) mais doit être à moitié de la terre au moins. Paiement unique, pas d'abonnement.
 
 ## Comment ça marche techniquement
@@ -45,7 +45,7 @@ Le site est prêt pour un **déploiement de test** (paiements Stripe en mode tes
 
 ## Questions que vous pouvez poser
 
-1. **Modèle économique :** le prix de 0,50 € (ou 0,50 $) le pixel est-il crédible pour un million de petites parcelles ? Que faire pour les premiers acheteurs
+1. **Modèle économique :** le prix de 0,25 € (ou 0,25 $) le pixel est-il crédible pour un million de petites parcelles ? Que faire pour les premiers acheteurs
    (rareté, emplacements, effet de preuve sociale) ? Comparaison avec la « Million Dollar Homepage » et d'autres projets du même genre.
 2. **Droit et conformité (UE) :** vente de contenu numérique (droit de rétractation, consentement à l'exécution immédiate), TVA/OSS, conditions de vente,
    responsabilité sur les contenus publiés par les acheteurs (droits d'auteur, contenus illicites), RGPD. Que faut-il absolument faire valider ?

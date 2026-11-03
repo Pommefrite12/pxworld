@@ -46,7 +46,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     const panel = page.getByTestId("buy-panel");
     await expect(panel).toBeVisible();
     await expect(page.getByTestId("buy-status")).toContainText(/free/i);
-    await expect(page.getByTestId("buy-price")).toHaveText("€200"); // 400 pixels at €0.50
+    await expect(page.getByTestId("buy-price")).toHaveText("€100"); // 400 pixels at €0.25
     await expect(page.getByTestId("buy-area")).toContainText("400");
     // the surface is counted in pixels only, and the position is not editable by hand (no coordinates, no arrows)
     await expect(panel).not.toContainText("km²");
@@ -88,7 +88,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await dialog.getByTestId("to-review").click();
 
     await dialog.getByTestId("co-title").fill("Hello world");
-    await expect(dialog.getByTestId("co-total")).toHaveText("€200");
+    await expect(dialog.getByTestId("co-total")).toHaveText("€100");
     await expect(dialog.getByTestId("co-area")).toHaveText("400 px");
     await expect(dialog).not.toContainText("km²");
     await expect(dialog).not.toContainText(`@ ${SPOT.x}`); // no coordinates in the summary either

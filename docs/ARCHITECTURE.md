@@ -43,7 +43,7 @@ Geography → (zoomed in) place names → **1-px grid** (land only, last zoom st
 
 ### Drawing finer than a pixel (down to 0.1 px)
 
-The grid does not change: a parcel is `w × h` **pixels**, those are what is sold, counted (`available`, `sold`) and priced (€0.50 each). What changes is how finely a creation is **drawn**: every pixel holds `k × k` dots, so the finest brush is `1/k` of a pixel — **0.1 px** when `k = 10`. The editor offers 0.1, 0.2, 0.5, 1, 2, 3, 5 and 8 px (those that are a whole number of dots at the parcel's precision).
+The grid does not change: a parcel is `w × h` **pixels**, those are what is sold, counted (`available`, `sold`) and priced (€0.25 each). What changes is how finely a creation is **drawn**: every pixel holds `k × k` dots, so the finest brush is `1/k` of a pixel — **0.1 px** when `k = 10`. The editor offers 0.1, 0.2, 0.5, 1, 2, 3, 5 and 8 px (those that are a whole number of dots at the parcel's precision).
 
 * **Precision is capped by the size of the image**: `k` is the largest value ≤ 10 with `k² · w · h ≤ 4 000 000` dots (`creationScale()` in `src/lib/grid/constants.ts`, `px_dot_scale()` in SQL, tested to agree). A 20 × 20 or 200 × 200 parcel gets the full 10 × 10 dots per pixel; a 500 × 500 parcel (the default maximum area) gets 4 × 4 (0.25 px); a 1 000 × 1 000 one gets 2 × 2.
 * A creation image is the parcel's size **times any whole scale from 1 to `k`** (`px_add_asset` and `processCreation` check it; anything else is `px_bad_dimensions`). Older creations (1× or 2×) stay valid. The asset rows keep the real image size.

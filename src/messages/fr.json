@@ -626,7 +626,7 @@
         {
           "h": "Prix et paiement",
           "p": [
-            "Le prix initial est de 0,50 € par pixel pour les acheteurs de la zone euro et de 0,50 $ par pixel pour les autres, facturé dans la devise du pays de l'acheteur détecté au moment de la commande, calculé automatiquement à partir du nombre de pixels et toujours recalculé par nos serveurs. Nous pouvons modifier le prix des ventes futures ; les parcelles déjà achetées ne sont pas concernées. Les paiements sont traités par Stripe ; nous ne voyons ni ne conservons votre numéro de carte.",
+            "Le prix initial est de 0,25 € par pixel pour les acheteurs de la zone euro et de 0,25 $ par pixel pour les autres, facturé dans la devise du pays de l'acheteur détecté au moment de la commande, calculé automatiquement à partir du nombre de pixels et toujours recalculé par nos serveurs. Nous pouvons modifier le prix des ventes futures ; les parcelles déjà achetées ne sont pas concernées. Les paiements sont traités par Stripe ; nous ne voyons ni ne conservons votre numéro de carte.",
             "Lorsque vous démarrez un achat, les pixels sont réservés pour vous pour une durée limitée. Si vous ne payez pas dans ce délai, la réservation est libérée. Votre parcelle ne vous est attribuée que lorsque le prestataire de paiement nous a confirmé le paiement."
           ]
         },

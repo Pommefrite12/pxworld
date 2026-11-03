@@ -1,7 +1,7 @@
 # Pixel World — *One planet. One billion pixels. Your mark.*
 
 A collaborative world map made of **exactly 1 000 000 000 virtual pixels** (40 000 × 25 000). Anyone can claim a
-rectangle of the planet (from 25 pixels, €0.50 per pixel in the euro area, $0.50 elsewhere, to start), draw or upload a creation on it, and share a permanent
+rectangle of the planet (from 25 pixels, €0.25 per pixel in the euro area, $0.25 elsewhere, to start), draw or upload a creation on it, and share a permanent
 link to its place on the map. A parcel can be shared with a secret link so that a community (a stream, a class, friends) draws on it together, moderated before it reaches the map. Inspired by The Million Dollar Homepage, built for the web of 2026: a real world map,
 fluid zoom down to the single pixel, accounts, moderation, secure Stripe payments, and a back office.
 

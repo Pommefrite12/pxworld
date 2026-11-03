@@ -161,12 +161,14 @@ describe("water parcels: the water pixels at their own rate, the land cut away a
 });
 
 describe("pricing", () => {
-  it("charges €0.50 per pixel by default", () => {
-    expect(DEFAULT_UNIT_PRICE_CENTS).toBe(50);
-    expect(DEFAULT_PRICING.unitPriceCents).toBe(50);
-    expect(quote({ w: 10, h: 10 }).totalCents).toBe(5_000); // €50
-    expect(quote({ w: 20, h: 20 }).totalCents).toBe(20_000); // €200
-    expect(quote({ w: 200, h: 200 }).totalCents).toBe(2_000_000); // €20,000
+  it("charges €0.25 per pixel by default", () => {
+    expect(DEFAULT_UNIT_PRICE_CENTS).toBe(25);
+    expect(DEFAULT_PRICING.unitPriceCents).toBe(25);
+    expect(quote({ w: 10, h: 10 }).totalCents).toBe(2_500); // €25
+    expect(quote({ w: 20, h: 20 }).totalCents).toBe(10_000); // €100
+    expect(quote({ w: 200, h: 200 }).totalCents).toBe(1_000_000); // €10,000
+    // every pixel of the planet sold, land and water: 250 million
+    expect(1_000_000_000 * DEFAULT_UNIT_PRICE_CENTS / 100).toBe(250_000_000);
   });
   it("follows the configured unit price", () => {
     expect(quote({ w: 10, h: 10 }, 250).totalCents).toBe(25_000);

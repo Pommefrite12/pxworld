@@ -23,13 +23,13 @@ test("the price a buyer sees is in euros in the euro area, in dollars elsewhere,
     await ctx.close();
     return text;
   };
-  expect(await priceLine("US", "/")).toContain("$0.50");
-  expect(await priceLine("FR", "/")).toContain("€0.50");
-  expect(await priceLine("DE", "/")).toContain("€0.50");
-  expect(await priceLine("GB", "/")).toContain("$0.50"); // outside the euro area, next door or not
-  expect(await priceLine(undefined, "/")).toContain("€0.50");
+  expect(await priceLine("US", "/")).toContain("$0.25");
+  expect(await priceLine("FR", "/")).toContain("€0.25");
+  expect(await priceLine("DE", "/")).toContain("€0.25");
+  expect(await priceLine("GB", "/")).toContain("$0.25"); // outside the euro area, next door or not
+  expect(await priceLine(undefined, "/")).toContain("€0.25");
   const fr = await priceLine("US", "/fr");
-  expect(fr).toMatch(/0,50\s*(\$US|\$)/); // written the French way
+  expect(fr).toMatch(/0,25\s*(\$US|\$)/); // written the French way
   expect(fr).not.toContain("€");
 });
 
@@ -40,8 +40,8 @@ test("the availability probe quotes in the same currency", async ({ browser }) =
     expect(r.ok(), String(country)).toBeTruthy();
     const j = await r.json();
     expect(j.price.currency, String(country)).toBe(currency);
-    expect(j.price.unitPriceCents).toBe(50);
-    expect(j.price.totalCents).toBe(j.price.landPixels * 50 + 0);
+    expect(j.price.unitPriceCents).toBe(25);
+    expect(j.price.totalCents).toBe(j.price.landPixels * 25 + 0);
     await ctx.dispose();
   }
   void browser;
