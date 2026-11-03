@@ -4,6 +4,7 @@ import { query, queryOne } from "@/lib/db/pool";
 import { env } from "@/lib/env";
 import { invalidatePublicStats } from "@/lib/data/map";
 import { stripe } from "./client";
+import { raiseAlert } from "@/lib/alerts";
 
 export type EventOutcome = "processed" | "duplicate" | "ignored";
 
@@ -108,6 +109,7 @@ export async function fulfillSession(session: Stripe.Checkout.Session): Promise<
     ],
   );
   const outcome = row?.outcome ?? "unknown";
+  if (outcome === "refund_required") await raiseAlert("payment-for-unavailable-pixels", { order: orderId, refund: pi ? "automatic" : "none (no payment intent)" });
   if (outcome === "refund_required" && pi) await refundOrder(orderId, pi, "pixels_unavailable");
   return outcome;
 }
@@ -125,6 +127,7 @@ export async function refundOrder(orderId: string, paymentIntent: string, reason
       [orderId, JSON.stringify({ reason })],
     );
   } catch (e) {
+    await raiseAlert("auto-refund-failed", { order: orderId, reason, error: (e as Error).message }); // money to give back, and the automatic refund failed
     await query(
       `insert into public.audit_logs (actor_role, action, target_type, target_id, metadata) values ('system', 'order.auto_refund_failed', 'order', $1, $2::jsonb)`,
       [orderId, JSON.stringify({ reason, error: String((e as Error).message).slice(0, 300) })],

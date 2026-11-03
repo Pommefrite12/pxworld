@@ -18,14 +18,16 @@
 | **Privacy** | IPs are only stored as salted hashes (set `RATE_LIMIT_SALT`); no tracking cookies |
 | **Audit** | append-only `audit_logs` + `moderation_actions` (triggers forbid UPDATE/DELETE); every staff action and payment event is journalised atomically with its effect |
 | **Reports / evidence** | snapshot (asset version, SHA-256, texts, link, owner) taken at report time; rejected/removed files are kept in storage |
-| **HTTP** | HSTS, `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`; `poweredByHeader` off |
+| **HTTP** | HSTS, `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`; `poweredByHeader` off; a **Content-Security-Policy in report-only mode** (production builds): self-hosted everything, no frame, no plugin, no `unsafe-eval`, inline scripts/styles still allowed (Next.js needs a nonce to do without — the step before enforcing); browsers report to `/api/csp-report` (≤ 8 KB, rate limited, one `[csp]` log line per violation). Checked in a real browser against a production build: no violation on the public pages (the signed-in pages — editor, account, admin — still need a look on a real deployment) |
+| **Configuration** | `src/lib/config-check.ts` (pure, tested) names what is wrong with a production environment — a local or http site address, missing Supabase/Stripe/webhook secrets, a placeholder `RATE_LIMIT_SALT`, a live Stripe key without approval, development variables left behind, an end date in the past (the shop is closed for good) — never printing a value: logged at server start-up (`src/instrumentation.ts`) and runnable before a deployment with `npx tsx scripts/check-env.mts <env file>` |
+| **Alerts** | `src/lib/alerts.ts`: a webhook that failed to process, a payment for pixels that were gone, a refund that failed, a reconciliation error and any unhandled server error are written as `[alert]` lines and, when `ALERT_WEBHOOK_URL` is set, posted to that address (Slack/Discord-style); one per kind per five minutes per instance; ids and short messages only, never a secret; an alert can never break what it reports |
 | **Secrets** | only in server env; service-role key and Stripe secrets never reach the client; `.env*` ignored by git |
 | **Dev-only features** | dev sign-in and mock Stripe are impossible when `NODE_ENV=production` or when real Supabase/Stripe credentials are configured |
 
 ## Recommended before launch
 
-* Add a `Content-Security-Policy` (report-only first) once your final third-party origins are known (Stripe redirects away; Google OAuth redirects away).
+* Read the `[csp]` reports of the deployed site for a week (signed-in pages included), then enforce the policy: add a nonce per request (`src/proxy.ts`) and drop `unsafe-inline` from `script-src`.
 * Enable MFA for admin accounts in Supabase Auth and restrict the admin routes by IP if possible.
-* Put a WAF/bot protection (Vercel Firewall) in front of sign-up and `/api/checkout`.
+* Put a WAF/bot protection (Vercel Firewall) in front of sign-up and `/api/checkout`. The per-address rate limits trust `x-vercel-forwarded-for` / `x-real-ip` first and `x-forwarded-for` last: on Vercel the platform sets the first, behind any other proxy make it overwrite `x-real-ip`, or a client can pick its own address.
 * Optional: automated image moderation (e.g. a vendor API) in front of the human queue.
 * Account deletion (GDPR erasure) is an operator procedure for now: anonymise the profile (`deleted_at`, random username) — parcels intentionally use `ON DELETE RESTRICT`.

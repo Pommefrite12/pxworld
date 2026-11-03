@@ -44,6 +44,8 @@ export const LIMITS = {
   commentRead: { name: "comment-read", windowSeconds: 60, max: 180 },
   comment: { name: "comment", windowSeconds: 600, max: 10 },
   auth: { name: "auth", windowSeconds: 600, max: 30 },
+  /** Reports of what the (report-only) Content-Security-Policy would have blocked: a page can send a handful per view. */
+  cspReport: { name: "csp-report", windowSeconds: 60, max: 60 },
   profile: { name: "profile", windowSeconds: 3600, max: 30 },
   /** Drawing together (public links): per address, and per link so one popular link cannot swamp the database. */
   drawRead: { name: "draw-read", windowSeconds: 60, max: 240 },

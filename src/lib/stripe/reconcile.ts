@@ -3,6 +3,7 @@ import { query } from "@/lib/db/pool";
 import { env } from "@/lib/env";
 import { invalidatePublicStats } from "@/lib/data/map";
 import { stripe } from "./client";
+import { raiseAlert } from "@/lib/alerts";
 import { expireCheckoutSession } from "./checkout";
 import { fulfillSession, refundOrder } from "./events";
 
@@ -59,6 +60,7 @@ export async function runMaintenance(): Promise<MaintenanceReport> {
         if ((await reconcileOrder(p.id)) === "paid") report.recoveredPayments++;
       } catch (e) {
         console.error("reconcile failed", p.id, (e as Error).message);
+        await raiseAlert("reconcile-failed", { order: p.id, error: (e as Error).message });
       }
     }
     // 3. Paid-but-unattributable orders whose automatic refund failed earlier.

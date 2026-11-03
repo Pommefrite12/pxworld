@@ -37,6 +37,23 @@ See [`PAYMENTS.md`](PAYMENTS.md): API key, payment methods, webhook endpoint + s
 5. Smoke test: sign up → buy a small parcel with a Stripe test card → see the order *Paid* → approve it in `/admin/moderation`
    → check `/p/<code>` renders its social preview (`/api/og/parcel/<code>`).
 
+## 3b. Before, and right after, the first deployment
+
+1. **Check the environment** (names only, never values): `vercel env pull .env.production.local --environment=production`, then
+   `npx tsx scripts/check-env.mts .env.production.local`. Fix every `ERROR`; read every `warn`. (The server runs the same check at
+   start-up and logs it as `[config] …`.)
+2. **Prove the build** on your machine: `npm run build && npm start`, then `node scripts/smoke.mjs http://localhost:3000` (every page and
+   map endpoint, the share images with their font, the security headers, the doors that must be shut: dev sign-in, mock payment,
+   admin API, webhook, cron). The same script runs against the deployed address: `node scripts/smoke.mjs https://<domain>`.
+3. **Measure**: `node scripts/loadtest.mjs https://<domain>` (read-only endpoints, no write; a few seconds each). Figures from a production
+   build on a small container, no CDN: the map endpoints serve 350–540 requests per second per instance (p95 under 170 ms), the home page
+   and the share image about 80 (they are rendered; the share image is cached for a day by the CDN).
+4. **Alerts**: create an "incoming webhook" in Slack/Discord (or an ntfy topic), set `ALERT_WEBHOOK_URL`, and check that it reaches you:
+   `ALERT_WEBHOOK_URL=https://… npx tsx scripts/test-alert.mts`.
+5. **Supabase Auth**: enable MFA for the admin accounts (Authentication → Multi-factor) and require a confirmed e-mail.
+6. **Vercel Firewall**: add rate/bot rules in front of `/auth/*` and `/api/checkout` (the application's own limits are a second line).
+7. **Read the `[csp]` log lines** for a week, signed-in pages included, before enforcing the policy.
+
 ## 4. Local development against real services (optional)
 
 Fill `.env.local` with the Supabase and Stripe **test** values and remove `DEV_AUTH`/`STRIPE_MOCK`. Use `stripe listen` for webhooks.

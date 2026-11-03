@@ -32,25 +32,27 @@ Anything that is not as you wanted goes to the top of the list.
 4. **Moderation**: who reviews creations and reports, and how fast (a new creation or a report waits for a human).
 5. **Domain name** and the e-mail address the site sends from.
 
-## 3. Prove the production build (me, first thing tomorrow, ~30 min)
+## 3. Prove the production build — DONE
 
-Everything so far was tested against the dev server. Before deploying anything: `npm run build` and `npm start` locally with production
-settings, the whole test suite, then fix whatever only a production build shows (route exports, file tracing of `public/data/geo`
-for the checkout/availability functions, image/font assets).
+`npm run build` and `npm start` work; `node scripts/smoke.mjs` passes 51 checks on the production build (pages, map endpoints, share images with their font, headers, doors that must be shut); `node scripts/loadtest.mjs` shows no error (map endpoints 350–540 requests/s per instance, p95 < 170 ms; the home page and the share image ~80/s). Real-browser check of the Content-Security-Policy (report-only): no violation on the public pages. Also done in code: the CSP + its report endpoint, `[alert]` lines and an optional alert webhook (`ALERT_WEBHOOK_URL`) for payment failures and server errors, a production configuration check (`scripts/check-env.mts`, logged at start-up). CI (`.github/workflows/ci.yml`) already runs lint, types, unit/db tests, the production build and the e2e tests.
 
-## 4. Deploy in TEST mode (me with you, ~half a day)
+## 4. Deploy in TEST mode (me with you, ~half a day) — **needs your accounts; I never invent keys**
 
-1. Supabase project (PITR on), migrations 1–13, storage bucket, admin role, SMTP, Google OAuth.
-2. Vercel project, environment variables (no dev variables), domain + HTTPS, cron.
-3. Stripe in **test mode** only, webhook pointing at the deployed site; one full purchase with a test card end to end on the real site.
-4. On the deployed site: a parcel at sea is refused (`422 px_not_on_land`), one on land is accepted.
-5. CI on GitHub (lint, typecheck, unit/db tests, build, e2e).
+What I need from you, in this order (each one is yours to create; paste nothing secret in the chat — set them in the dashboards, I will tell you where):
+1. A **Supabase** project (region near your Vercel one): I give you the migrations 1–14 and `storage.sql` to run, you tell me when it is done.
+2. A **Vercel** project linked to this repository (branch `claude/funny-bell-k7v5xf` or `main`), with the environment variables of `.env.example` (production block only). `scripts/check-env.mts` tells you what is missing.
+3. A **Stripe account in test mode**: the test secret key, and the webhook endpoint pointing at `https://<domain>/api/stripe/webhook` with its signing secret.
+4. Then, together: one full purchase with a test card (in euros, then — with a VPN or by asking Stripe's test mode — in dollars), a parcel at sea refused (`422 px_not_on_land`), one on land accepted, `node scripts/smoke.mjs https://<domain>`.
+5. CI on GitHub is already in place (`ci.yml`); enable branch protection once it is green.
 
 ## 5. Harden before real users
 
-- Content-Security-Policy in report-only mode, then enforced; MFA for admins; WAF/rate rules on sign-up and checkout.
-- Error monitoring and alerts (payments webhook failures above all); restore drill from a backup (`BACKUP_RESTORE.md`).
-- Load test of the map endpoints behind the CDN; try the map on a real mid-range phone (my timings come from a headless browser without a GPU).
+Done in code: Content-Security-Policy (report-only) with a collection point, `[alert]` lines + optional webhook, configuration check.
+Left, because each needs the deployed site or a dashboard:
+- Read the `[csp]` reports for a week (signed-in pages included), then enforce the policy with a nonce (`docs/SECURITY.md`).
+- MFA for admins (Supabase Auth setting); Vercel Firewall rules on sign-up and checkout.
+- A restore drill from a backup (`BACKUP_RESTORE.md`) and the alert webhook tested for real.
+- Load test **against the deployed site behind its CDN** (`scripts/loadtest.mjs <url>`); try the map on a real mid-range phone (my timings come from a headless browser without a GPU).
 - Comments: an admin view of recent comments, and a notification to the parcel's owner (today they only see them on the card).
 
 ## 6. Launch assets

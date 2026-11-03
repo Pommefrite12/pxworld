@@ -1,6 +1,7 @@
 import { env } from "@/lib/env";
 import { stripe } from "@/lib/stripe/client";
 import { handleStripeEvent } from "@/lib/stripe/events";
+import { raiseAlert } from "@/lib/alerts";
 
 export const maxDuration = 30;
 
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
     return Response.json({ received: true, outcome });
   } catch (e) {
     console.error("stripe webhook processing failed", event.id, event.type, (e as Error).message);
+    await raiseAlert("stripe-webhook-failed", { event: event.id, type: event.type, error: (e as Error).message }); // Stripe retries, but somebody should know
     return new Response("processing failed", { status: 500 }); // Stripe will retry
   }
 }

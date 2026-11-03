@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { contentSecurityPolicy } from "./src/lib/security/csp";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
@@ -10,6 +11,12 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
 ];
+
+// The Content-Security-Policy is sent in REPORT-ONLY mode (production only: the development server needs eval): browsers report what it
+// would block to /api/csp-report and nothing is blocked. See src/lib/security/csp.ts and docs/SECURITY.md before enforcing it.
+const cspReportOnly = process.env.NODE_ENV === "production"
+  ? [{ key: "Content-Security-Policy-Report-Only", value: contentSecurityPolicy({ supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL, reportUri: "/api/csp-report" }) }]
+  : [];
 
 const config: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
@@ -27,7 +34,7 @@ const config: NextConfig = {
   },
   async headers() {
     return [
-      { source: "/:path*", headers: securityHeaders },
+      { source: "/:path*", headers: [...securityHeaders, ...cspReportOnly] },
       // map reference data (land, borders, départements, cities) only changes with `npm run data:world`
       { source: "/data/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }] },
     ];
