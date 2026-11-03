@@ -77,6 +77,20 @@ test("water is bought like land: priced for its water, refused on land, shown in
   const ocean = await pixelAt(page, SEA.x - 20, mid.y);
   expect(ocean, "the free sea around it is the ocean colour").toBe("201,223,232");
 
+  // the server says where the water parcels are, and the world view asks for the water layer only there
+  const cells = (await (await anon.get("/api/map/water")).json()) as { cell: number; c: number[] };
+  expect(cells.cell).toBe(512);
+  expect(cells.c).toEqual(expect.arrayContaining([Math.floor(mid.x / 512), Math.floor(mid.y / 512)]));
+  const asked: string[] = [];
+  page.on("request", (r) => { if (/\/api\/map\/raster\/.*[?&]k=w/.test(r.url())) asked.push(r.url()); });
+  await page.goto("/?preview=off");
+  await ready(page);
+  await expect.poll(() => asked.length, { timeout: 30_000 }).toBeGreaterThan(0); // the water parcel is on the world view
+  await page.waitForTimeout(1500);
+  expect(asked.length, "only the few tiles that can hold the water parcel").toBeLessThanOrEqual(6);
+  await page.goto(`/?x=${mid.x}&y=${mid.y}&z=14&preview=off`);
+  await ready(page);
+
   // the end of the world: the sea is destroyed as well, the water parcel is not
   await page.goto(`/?x=${mid.x}&y=${mid.y}&z=14&preview=0`);
   await ready(page);

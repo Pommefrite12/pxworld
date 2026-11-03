@@ -35,6 +35,25 @@ export async function getTile(tx: number, ty: number): Promise<TileParcel[]> {
     : [r.code, r.x, r.y, r.w, r.h, r.asset_id, r.color, 0]));
 }
 
+/**
+ * Where the WATER parcels are, as 512-px cells (flat `[cx, cy, …]`): the map only asks the server for the water layer of the tiles that
+ * can hold one. Without it every world view would fetch a second, almost empty, layer of raster tiles. At most 78 × 49 cells.
+ */
+export const WATER_CELL = 512;
+async function computeWaterCells(): Promise<number[]> {
+  const rows = await query<{ cx: number; cy: number }>(
+    `select distinct cx, cy
+       from public.parcels p,
+            generate_series(floor(p.x / ${WATER_CELL}.0)::int, floor((p.x + p.w - 1) / ${WATER_CELL}.0)::int) as cx,
+            generate_series(floor(p.y / ${WATER_CELL}.0)::int, floor((p.y + p.h - 1) / ${WATER_CELL}.0)::int) as cy
+      where p.status = 'active' and p.kind = 'water'
+      order by 1, 2
+      limit 5000`,
+  );
+  return rows.flatMap((r) => [r.cx, r.cy]);
+}
+export const getWaterCells = unstable_cache(computeWaterCells, ["map-water-cells"], { revalidate: 30, tags: ["stats"] });
+
 export interface PublicStats {
   totalPixels: number;
   soldPixels: number;

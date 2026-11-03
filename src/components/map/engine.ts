@@ -64,6 +64,7 @@ const RASTER_PX = 256;
 const MAX_Z = 8;
 /** What a water parcel shows while nothing better is known: the medium blue. */
 const WATER_FILL = "#2f8fd8";
+const BAKE_BUDGET_MS = 10;
 const MAX_IMAGES_IN_FLIGHT = 20; // over HTTP/2 (every host that matters) requests share one connection: more at once is faster, not slower
 const MAX_SCALE = 48;
 const RASTER_BELOW = 1; // below this zoom the server-composited rasters are shown; above it, parcels are drawn individually
@@ -106,6 +107,32 @@ export class MapEngine {
   private places: Places | null = null;
   private tiles = new Map<string, Tile>();
   private tileQueue: string[] = [];
+  /** The 512-px cells that hold a water parcel (`null` until known): the water layer is only asked for where there is some. */
+  private waterCells: { cell: number; set: Set<number>; ver: number } | null = null;
+  private waterAsked = -1;
+  private ensureWaterCells() {
+    if (this.waterAsked === this.version) return;
+    this.waterAsked = this.version;
+    const version = this.version;
+    fetch(`/api/map/water?v=${version}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((j: { cell: number; c: number[] }) => {
+        if (this.destroyed || version !== this.version) return;
+        const set = new Set<number>();
+        for (let i = 0; i + 1 < j.c.length; i += 2) set.add(j.c[i]! * 1000 + j.c[i + 1]!);
+        this.waterCells = { cell: j.cell, set, ver: version };
+        this.invalidateSoon();
+      })
+      .catch(() => { setTimeout(() => { if (this.waterAsked === version) this.waterAsked = -1; }, 8000); }); // a later frame retries
+  }
+  /** Can the square of the world at (x, y), `span` wide, hold a water parcel? (No while the cells are not known yet: nothing is asked.) */
+  private waterIn(x: number, y: number, span: number): boolean {
+    const w = this.waterCells;
+    if (!w || w.ver !== this.version) return false;
+    for (let cy = Math.floor(y / w.cell); cy <= Math.floor((y + span - 1) / w.cell); cy++) for (let cx = Math.floor(x / w.cell); cx <= Math.floor((x + span - 1) / w.cell); cx++) if (w.set.has(cx * 1000 + cy)) return true;
+    return false;
+  }
+
   /** The frame at which each metadata tile was last wanted (in view, or asked for by a hit-test): see `pumpTiles`. */
   private tileWantedAt = new Map<string, number>();
   private inflight = 0;
@@ -194,7 +221,7 @@ export class MapEngine {
   setVersion(v: number) {
     if (v === this.version) return;
     this.version = v;
-    this.tiles.clear(); this.tileQueue = []; this.tileWantedAt.clear(); this.rasters.clear();
+    this.tiles.clear(); this.tileQueue = []; this.tileWantedAt.clear(); this.rasters.clear(); this.waterCells = null;
     this.invalidate();
   }
 
@@ -312,7 +339,7 @@ export class MapEngine {
           if (version !== this.version) return;
           this.tiles.set(key, { state: "ready", parcels: rows.map(([code, x, y, w, h, assetId, color, water]) => ({ code, x, y, w, h, assetId, color, water: water === 1 })) });
           this.updateSelectionState();
-          this.invalidate();
+          this.invalidateSoon();
         })
         .catch(() => {
           if (version !== this.version) return;
@@ -333,7 +360,7 @@ export class MapEngine {
     el.decoding = "async";
     e = { el, state: "loading", used: performance.now() };
     map.set(key, e);
-    el.onload = () => { e!.state = "ready"; this.invalidate(); };
+    el.onload = () => { e!.state = "ready"; this.invalidateSoon(); };
     el.onerror = () => { e!.state = "error"; };
     el.src = url;
     if (map.size > limit) {
@@ -592,6 +619,16 @@ export class MapEngine {
 
   /* ------------------------------------------------------------------ frame loop */
 
+  /**
+   * Something arrived (a picture, a tile): the picture is redrawn, but not for each arrival. Sixty pictures trickling in would be sixty full
+   * redraws; arrivals within 60 ms of each other share one. (Nothing changes for what a visitor does: a gesture always draws at once.)
+   */
+  private soonTimer = 0;
+  private invalidateSoon() {
+    if (this.raf || this.soonTimer || this.destroyed) return;
+    this.soonTimer = window.setTimeout(() => { this.soonTimer = 0; this.invalidate(); }, 60);
+  }
+
   invalidate() {
     this.dirty = true;
     this.cancelWarm(); // something is changing on screen: tile preparation waits for the next quiet moment
@@ -637,9 +674,13 @@ export class MapEngine {
 
   /* ------------------------------------------------------------------ drawing */
 
+  /** When the frame being drawn began: the tiles made in a frame share a time budget (`BAKE_BUDGET_MS`), so that a frame never stalls. */
+  private frameStart = 0;
+
   private draw() {
     const { ctx, w, h, dpr, cam } = this;
     const s = cam.scale;
+    this.frameStart = performance.now();
     this.updateFinale();
     this.geo?.tick(this.frameNo);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -960,8 +1001,13 @@ export class MapEngine {
     }
     if (missing.length) { // a few per frame, the nearest to the middle of the view first (as for the land)
       missing.sort((a, b) => a.d - b.d);
-      for (const m of missing.slice(0, 3)) this.seaTiles.set(`${k}/${m.tx}/${m.ty}`, { c: this.renderSeaTile(k, m.tx, m.ty, step), used: this.frameNo, step });
-      if (missing.length > 3) this.geoPending = true; // keep drawing until the whole view is done
+      let made = 0;
+      for (const m of missing) {
+        if (made > 0 && performance.now() - this.frameStart > BAKE_BUDGET_MS) break; // the land took the time: the next frame goes on
+        this.seaTiles.set(`${k}/${m.tx}/${m.ty}`, { c: this.renderSeaTile(k, m.tx, m.ty, step), used: this.frameNo, step });
+        made++;
+      }
+      if (made < missing.length) this.geoPending = true; // keep drawing until the whole view is done
     }
     // the end state of the sea, made ahead of the final sequence
     if (this.finArmed && !(this.finale?.waiting)) {
@@ -1168,6 +1214,7 @@ export class MapEngine {
       const key = `${c.k}/${c.tx}/${c.ty}`;
       const r = this.renderGeoTile(c.k, c.tx, c.ty, true); // null while its data is still downloading (that download is now under way)
       if (!r) continue;
+      if (this.story && this.seaTiles.get(key)?.step !== this.story.step) this.seaTiles.set(key, { c: this.renderSeaTile(c.k, c.tx, c.ty, this.story.step), used: this.frameNo, step: this.story.step }); // the sea of the story, ready too
       // canvas drawing is lazy: touching the tile once makes the browser rasterise it now rather than at the first blit
       if (!this.warmScratch) { const sc = document.createElement("canvas"); sc.width = sc.height = 1; this.warmScratch = sc.getContext("2d"); }
       this.warmScratch?.drawImage(r.c, 0, 0, 1, 1);
@@ -1239,9 +1286,11 @@ export class MapEngine {
     }
     this.geoMissing = missing.length;
     if (missing.length) {
+      // as many as the frame can afford, the nearest to the middle first (at least one, so that the view always makes progress)
       missing.sort((a, b) => a.d - b.d);
-      for (const m of missing.slice(0, 4)) {
-        const r = this.renderGeoTile(k, m.tx, m.ty);
+      for (let i = 0; i < Math.min(missing.length, 6); i++) {
+        if (i > 0 && performance.now() - this.frameStart > BAKE_BUDGET_MS) break;
+        const m = missing[i]!, r = this.renderGeoTile(k, m.tx, m.ty);
         if (r) this.geoTiles.set(`${k}/${m.tx}/${m.ty}`, { c: r.c, used: 0, complete: r.complete, ver: this.geo.version, step });
       }
     }
@@ -1551,13 +1600,17 @@ export class MapEngine {
 
   /** `request: false` draws only what is already in memory (the finer tile, else the coarsest picture standing in for it), asks for nothing. */
   private drawRasters(s: number, v: { x0: number; y0: number; x1: number; y1: number }, request = true, layer: "l" | "w" = "l") {
-    const z = clamp(Math.floor(-Math.log2(s)), 0, MAX_Z);
+    // the level whose picture pixel is about one DEVICE pixel (a little finer rather than coarser): on an ordinary screen that is one level
+    // coarser than for a dense one, four times fewer tiles to ask for, to draw, to decode
+    const z = clamp(Math.floor(-Math.log2(s * this.dpr) + 0.4), 0, MAX_Z);
     const span = rasterSpan(z);
+    if (layer === "w") this.ensureWaterCells();
     const { ctx } = this;
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     for (let ty = Math.max(0, Math.floor(v.y0 / span)); ty <= Math.min(Math.floor(H / span), Math.floor(v.y1 / span)); ty++) {
       for (let tx = Math.max(0, Math.floor(v.x0 / span)); tx <= Math.min(Math.floor(W / span), Math.floor(v.x1 / span)); tx++) {
+        if (layer === "w" && !this.waterIn(tx * span, ty * span, span)) continue; // no water parcel there: nothing to ask for, nothing to draw
         const key = `${layer === "w" ? "w" : ""}${z}/${tx}/${ty}`;
         const img = request ? this.loadImage(this.rasters, key, `/api/map/raster/${z}/${tx}/${ty}?v=${this.version}${layer === "w" ? "&k=w" : ""}`, 300) : (this.rasters.get(key) ?? { el: new Image(), state: "loading" as const, used: 0 });
         const a = this.worldToScreen(tx * span, ty * span);

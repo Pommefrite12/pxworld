@@ -38,7 +38,8 @@ export const MapView = forwardRef<MapViewHandle, Props>(function MapView({ label
       onFinaleEnd: () => cbRef.current.onFinaleEnd?.(),
     });
     engineRef.current = engine;
-    if (process.env.NODE_ENV !== "production") (window as unknown as { __pxEngine?: MapEngine }).__pxEngine = engine; // debugging / e2e hook (dev only)
+    // debugging / e2e hook: in development, and in production only when the address says `?perf` (to measure the real build)
+    if (process.env.NODE_ENV !== "production" || new URLSearchParams(window.location.search).has("perf")) (window as unknown as { __pxEngine?: MapEngine }).__pxEngine = engine;
     const fit = () => {
       const r = wrap.getBoundingClientRect();
       engine.resize(r.width, r.height, Math.min(window.devicePixelRatio || 1, 2.5));

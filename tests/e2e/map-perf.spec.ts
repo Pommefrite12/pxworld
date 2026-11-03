@@ -155,3 +155,13 @@ test("after a long zoom the tiles of the view are not queued behind the hundred 
   const queued = await page.evaluate(() => (window as unknown as { __pxEngine: Eng }).__pxEngine.tileQueue.length);
   expect(queued, "the tiles nobody looks at any more are forgotten").toBeLessThan(6);
 });
+
+test("the water layer of the raster tiles is only asked for where there is water (none anywhere: not at all)", async ({ page }) => {
+  const asked: string[] = [];
+  page.on("request", (r) => { if (/\/api\/map\/raster\/.*[?&]k=w/.test(r.url())) asked.push(r.url()); });
+  await page.goto("/");
+  await engine(page);
+  await page.waitForTimeout(2500);
+  expect(await (await page.request.get("/api/map/water")).json()).toEqual({ cell: 512, c: [] });
+  expect(asked, "no water parcel yet: the world view must not ask for a second layer of tiles").toEqual([]);
+});
