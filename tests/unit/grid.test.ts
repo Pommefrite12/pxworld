@@ -6,7 +6,7 @@ import {
   area, centeredRect, clampToGrid, findCollision, formatRectCode, intersects, lonLatToPixel, pixelToLonLat, validateRect,
 } from "@/lib/grid/geometry";
 import { LAT_MAX } from "@/lib/grid/projection";
-import { DEFAULT_PRICING, enoughLand, formatMoney, quote } from "@/lib/grid/pricing";
+import { DEFAULT_PRICING, enoughForKind, enoughLand, enoughWater, formatMoney, isParcelKind, quote } from "@/lib/grid/pricing";
 
 describe("grid", () => {
   it("contains exactly one billion pixels", () => {
@@ -125,6 +125,38 @@ describe("coastal pricing: land at full price, sea at a percentage", () => {
     expect(enoughLand(100, 100, 100)).toBe(true);
     expect(enoughLand(99, 100, 100)).toBe(false);
     expect(enoughLand(101, 100, 50)).toBe(false); // more land than pixels is nonsense
+  });
+});
+
+describe("water parcels: the water pixels at their own rate, the land cut away at a percentage", () => {
+  it("a water parcel pays for the water it owns; the land cut away is free by default", () => {
+    const q = quote({ w: 20, h: 20 }, 100, { landPixels: 100, kind: "water" });
+    expect(q).toMatchObject({ kind: "water", ownedPixels: 300, cutPixels: 100, landPixels: 100, seaPixels: 300, totalCents: 30_000, waterPercent: 100 });
+  });
+  it("the water rate and the land cut are percentages of the land price, rounded down like the database", () => {
+    expect(quote({ w: 20, h: 20 }, 100, { landPixels: 100, kind: "water", waterPercent: 150, landCutPercent: 50 }).totalCents).toBe(45_000 + 5_000);
+    expect(quote({ w: 10, h: 10 }, 99, { landPixels: 7, kind: "water", waterPercent: 33, landCutPercent: 10 }).totalCents).toBe(Math.floor((93 * 99 * 33) / 100) + Math.floor((7 * 99 * 10) / 100));
+  });
+  it("a land parcel is priced exactly as before, whatever the water settings are", () => {
+    expect(quote({ w: 20, h: 20 }, 100, { landPixels: 300, seaPercent: 50, waterPercent: 400, landCutPercent: 90 }).totalCents).toBe(30_000 + 5_000);
+    expect(quote({ w: 20, h: 20 }, 100, { landPixels: 300 }).kind).toBe("land");
+  });
+  it("the share of water needed mirrors the share of land needed", () => {
+    expect(enoughWater(50, 100, 50)).toBe(true);
+    expect(enoughWater(51, 100, 50)).toBe(false);
+    expect(enoughWater(100, 100, 50)).toBe(false); // all land: no water at all
+    expect(enoughWater(0, 100, 100)).toBe(true);
+    expect(enoughWater(1, 100, 100)).toBe(false);
+    expect(enoughWater(101, 100, 50)).toBe(false);
+    expect(enoughWater(-1, 100, 50)).toBe(false);
+    const p = { minLandPercent: 50, minWaterPercent: 90 };
+    expect(enoughForKind("land", 60, 100, p)).toBe(true);
+    expect(enoughForKind("water", 60, 100, p)).toBe(false);
+    expect(enoughForKind("water", 10, 100, p)).toBe(true);
+  });
+  it("only two kinds exist", () => {
+    expect([isParcelKind("land"), isParcelKind("water"), isParcelKind("lava"), isParcelKind(undefined)]).toEqual([true, true, false, false]);
+    expect(DEFAULT_PRICING).toMatchObject({ minWaterPercent: 50, waterPercent: 100, landCutPercent: 0 });
   });
 });
 

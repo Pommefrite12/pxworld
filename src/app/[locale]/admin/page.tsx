@@ -1,7 +1,7 @@
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { dashboard } from "@/lib/data/admin";
-import { LAND_PIXELS } from "@/lib/geo/landPixels";
+import { TOTAL_PIXELS } from "@/lib/grid/constants";
 import { formatMoney } from "@/lib/grid/pricing";
 
 function Tile({ label, value, href, alert }: { label: string; value: string; href?: string; alert?: boolean }) {
@@ -25,7 +25,7 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
       </section>
       <section aria-label={t("figures")} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Tile label={t("pixelsSold")} value={f.number(d.stats?.sold_pixels ?? 0)} />
-        <Tile label={t("fill")} value={`${f.number(((d.stats?.sold_pixels ?? 0) / LAND_PIXELS) * 100, { maximumFractionDigits: 4 })} %`} />
+        <Tile label={t("fill")} value={`${f.number(((d.stats?.sold_pixels ?? 0) / TOTAL_PIXELS) * 100, { maximumFractionDigits: 4 })} %`} />
         <Tile label={t("parcels")} value={f.number(d.stats?.parcels ?? 0)} />
         <Tile label={t("owners")} value={f.number(d.stats?.owners ?? 0)} />
         <Tile label={t("creations")} value={f.number(d.stats?.published_creations ?? 0)} />

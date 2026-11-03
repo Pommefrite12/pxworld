@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import sharp from "sharp";
-import { LAND_PIXELS } from "../../src/lib/geo/landPixels";
+import { TOTAL_PIXELS } from "../../src/lib/grid/constants";
 
 /**
  * The main user journey, end to end, against a real PostgreSQL and the real Next.js server.
@@ -36,7 +36,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await expect(page.getByTestId("latest-empty"), "no creation yet: the tile says so instead of showing made-up ones").toBeVisible();
     await expect(page.getByTestId("latest-item")).toHaveCount(0);
     const stats = await (await request.get("/api/stats")).json();
-    expect(stats).toMatchObject({ totalPixels: LAND_PIXELS, soldPixels: 0, owners: 0, parcels: 0, publishedCreations: 0 });
+    expect(stats).toMatchObject({ totalPixels: TOTAL_PIXELS, soldPixels: 0, owners: 0, parcels: 0, publishedCreations: 0 });
     // the map canvas is there and has been painted
     await expect(page.getByRole("application")).toBeVisible();
   });

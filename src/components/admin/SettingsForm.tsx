@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/grid/pricing";
 
-export function SettingsForm({ values, locale, canEdit }: { values: { price_unit_cents: number; price_unit_cents_usd: number; min_area: number; max_area: number; reservation_ttl_minutes: number; max_active_reservations_per_user: number; sales_open: boolean; sea_price_percent: number; min_land_percent: number }; locale: string; canEdit: boolean }) {
+export function SettingsForm({ values, locale, canEdit }: { values: { price_unit_cents: number; price_unit_cents_usd: number; min_area: number; max_area: number; reservation_ttl_minutes: number; max_active_reservations_per_user: number; sales_open: boolean; sea_price_percent: number; min_land_percent: number; water_price_percent: number; min_water_percent: number; land_cut_price_percent: number }; locale: string; canEdit: boolean }) {
   const t = useTranslations("admin.settings");
   const router = useRouter();
   const [v, setV] = useState(values);
@@ -32,6 +32,9 @@ export function SettingsForm({ values, locale, canEdit }: { values: { price_unit
       {num("min_area", t("minArea"))}
       {num("min_land_percent", t("minLand"), t("minLandHint"))}
       {num("sea_price_percent", t("seaPrice"), t("seaPriceHint"))}
+      {num("water_price_percent", t("waterPrice"), t("waterPriceHint"))}
+      {num("min_water_percent", t("minWater"), t("minWaterHint"))}
+      {num("land_cut_price_percent", t("landCut"), t("landCutHint"))}
       {num("max_area", t("maxArea"))}
       {num("reservation_ttl_minutes", t("ttl"), t("ttlHint"))}
       {num("max_active_reservations_per_user", t("maxHolds"))}

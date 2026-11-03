@@ -233,7 +233,8 @@
       "rate_limited": "Too many attempts. Please wait a little.",
       "title_required": "Please give your creation a title (at least 3 characters).",
       "payments_not_configured": "Payments are not available yet.",
-      "px_not_on_land": "This parcel does not have enough land. Oceans and seas cannot be bought on their own: pick a spot with more land."
+      "px_not_on_land": "This parcel does not have enough land. Choose a spot with more land, or switch to water.",
+      "px_not_on_water": "This parcel does not have enough water. Choose a spot with more sea or ocean, or switch to land."
     },
     "fineTune": "Custom size",
     "seaFree": "{sea} px of your parcel are sea, offered: you only pay for the {land} px of land.",
@@ -895,8 +896,14 @@
       "adminOnly": "Only administrators can change settings.",
       "minLand": "Minimum land share of a parcel (%)",
       "minLandHint": "A parcel may include some sea along a coast, but at least this share of its pixels must be land (1–100). 100 = no sea at all.",
-      "seaPrice": "Price of a sea pixel (% of a land pixel)",
-      "seaPriceHint": "0 = the sea pixels of a coastal parcel are offered; 50 = half price; 100 = same price as land."
+      "seaPrice": "Price of the sea cut away from a land parcel (% of a land pixel)",
+      "seaPriceHint": "0 = the sea pixels of a coastal land parcel are offered; 50 = half price; 100 = same price as land.",
+      "waterPrice": "Price of a water pixel (% of a land pixel)",
+      "waterPriceHint": "A water parcel pays for the water pixels it owns at this rate: 100 = same price as land, 50 = half, 200 = double (1–1000).",
+      "minWater": "Minimum water share of a water parcel (%)",
+      "minWaterHint": "A water parcel may include some land along a coast, but at least this share of its pixels must be water (1–100).",
+      "landCut": "Price of the land cut away from a water parcel (% of a land pixel)",
+      "landCutHint": "0 = the land pixels of a coastal water parcel are offered; 50 = half price; 100 = same price as land."
     },
     "audit": {
       "title": "Audit log",

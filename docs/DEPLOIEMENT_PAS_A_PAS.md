@@ -132,8 +132,8 @@ Ces deux valeurs ne sont **pas secrètes** (le navigateur des visiteurs les util
    DATABASE_URL='ADRESSE_SESSION_POOLER' node scripts/migrate.mjs
    ```
 4. Collez la ligne complète dans le terminal et appuyez sur Entrée. Ça prend 10 à 30 secondes.
-5. Résultat attendu : **14 lignes** qui commencent par `applying 2026…` et finissent par `… ok`. La première est `20261029000001_core_schema.sql … ok`, la dernière
-   `20261029000014_usd_price.sql … ok`.
+5. Résultat attendu : **15 lignes** qui commencent par `applying 2026…` et finissent par `… ok`. La première est `20261029000001_core_schema.sql … ok`, la dernière
+   `20261029000015_water_parcels.sql … ok`.
 6. Vérification : dans Supabase, menu **Table Editor** → vous devez voir des tables (`parcels`, `orders`, `profiles`, `app_settings`…).
 7. Si vous relancez la commande, elle n'applique plus rien : c'est normal et sans danger.
 
@@ -299,7 +299,7 @@ npx tsx scripts/check-env.mts .env.production.local
 Deux avertissements sont normaux tant que Stripe n'est pas configuré : `STRIPE_SECRET_KEY` et `NEXT_PUBLIC_OPERATOR_*`.
 
 **Le même vérificateur peut aussi interroger Supabase et la base de données** (rien n'est écrit : il demande seulement « acceptez-vous cette clé ? ») : ajoutez `--online`.
-Il dit si Supabase **accepte** la clé publique et la clé secrète, si le dossier des images existe, si les inscriptions sont ouvertes, et si la base répond avec ses 14 migrations.
+Il dit si Supabase **accepte** la clé publique et la clé secrète, si le dossier des images existe, si les inscriptions sont ouvertes, et si la base répond avec ses 15 migrations.
 ```bash
 npx tsx scripts/check-env.mts .env.production.local --online
 ```

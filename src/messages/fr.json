@@ -233,7 +233,8 @@
       "rate_limited": "Trop de tentatives. Patientez un peu.",
       "title_required": "Donnez un titre à votre création (3 caractères minimum).",
       "payments_not_configured": "Les paiements ne sont pas encore disponibles.",
-      "px_not_on_land": "Cette parcelle n'a pas assez de terre. Les océans et les mers ne s'achètent pas seuls : choisissez un emplacement avec plus de terre."
+      "px_not_on_land": "Cette parcelle n'a pas assez de terre. Choisissez un emplacement avec plus de terre, ou passez en mode eau.",
+      "px_not_on_water": "Cette parcelle n'a pas assez d'eau. Choisissez un emplacement avec plus de mer ou d'océan, ou passez en mode terre."
     },
     "fineTune": "Taille personnalisée",
     "seaFree": "{sea} px de votre parcelle sont en mer, offerts : vous ne payez que les {land} px de terre.",
@@ -895,8 +896,14 @@
       "adminOnly": "Seuls les administrateurs peuvent modifier les paramètres.",
       "minLand": "Part minimale de terre d'une parcelle (%)",
       "minLandHint": "Une parcelle peut inclure un peu de mer le long d'une côte, mais au moins cette part de ses pixels doit être de la terre (1–100). 100 = aucune mer.",
-      "seaPrice": "Prix d'un pixel de mer (% d'un pixel de terre)",
-      "seaPriceHint": "0 = les pixels de mer d'une parcelle côtière sont offerts ; 50 = moitié prix ; 100 = même prix que la terre."
+      "seaPrice": "Prix de la mer coupée d'une parcelle de terre (% d'un pixel de terre)",
+      "seaPriceHint": "0 = les pixels de mer d'une parcelle de terre côtière sont offerts ; 50 = moitié prix ; 100 = même prix que la terre.",
+      "waterPrice": "Prix d'un pixel d'eau (% d'un pixel de terre)",
+      "waterPriceHint": "Une parcelle d'eau paie les pixels d'eau qu'elle possède à ce taux : 100 = même prix que la terre, 50 = moitié, 200 = double (1–1000).",
+      "minWater": "Part minimale d'eau d'une parcelle d'eau (%)",
+      "minWaterHint": "Une parcelle d'eau peut inclure un peu de terre le long d'une côte, mais au moins cette part de ses pixels doit être de l'eau (1–100).",
+      "landCut": "Prix de la terre coupée d'une parcelle d'eau (% d'un pixel de terre)",
+      "landCutHint": "0 = les pixels de terre d'une parcelle d'eau côtière sont offerts ; 50 = moitié prix ; 100 = même prix que la terre."
     },
     "audit": {
       "title": "Journal d'audit",

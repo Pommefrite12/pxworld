@@ -1,9 +1,8 @@
 import "server-only";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { query, queryOne } from "@/lib/db/pool";
-import { DEFAULT_UNIT_PRICE_CENTS, GRID_HEIGHT, GRID_WIDTH, MIN_AREA } from "@/lib/grid/constants";
-import { LAND_PIXELS } from "@/lib/geo/landPixels";
-import type { Pricing } from "@/lib/grid/pricing";
+import { DEFAULT_UNIT_PRICE_CENTS, GRID_HEIGHT, GRID_WIDTH, MIN_AREA, TOTAL_PIXELS } from "@/lib/grid/constants";
+import type { ParcelKind, Pricing } from "@/lib/grid/pricing";
 import { salesClosedByStory } from "@/lib/doom/sales";
 import type { SaleCurrency } from "@/lib/currency";
 
@@ -39,23 +38,28 @@ export interface PublicStats {
   parcels: number;
   publishedCreations: number;
   mapVersion: number;
+  /** Of the pixels sold, how many are water (the sea is bought too), and in how many parcels. */
+  waterPixels: number;
+  waterParcels: number;
 }
 
 async function computeStats(): Promise<PublicStats> {
-  const r = await queryOne<{ sold_pixels: number; parcels: number; owners: number; published_creations: number; map_version: number }>(
+  const r = await queryOne<{ sold_pixels: number; parcels: number; owners: number; published_creations: number; map_version: number; water_pixels: number; water_parcels: number }>(
     "select * from public.px_public_stats()",
   );
   const sold = r?.sold_pixels ?? 0;
   return {
-    // only land can be bought: the counters are about the pixels that exist for sale, not the whole 10⁹-pixel grid
-    totalPixels: LAND_PIXELS,
+    // the whole planet is for sale, land and water: every pixel of the grid
+    totalPixels: TOTAL_PIXELS,
     soldPixels: sold,
-    availablePixels: Math.max(0, LAND_PIXELS - sold),
-    fillPercent: (sold / LAND_PIXELS) * 100,
+    availablePixels: Math.max(0, TOTAL_PIXELS - sold),
+    fillPercent: (sold / TOTAL_PIXELS) * 100,
     owners: r?.owners ?? 0,
     parcels: r?.parcels ?? 0,
     publishedCreations: r?.published_creations ?? 0,
     mapVersion: r?.map_version ?? 1,
+    waterPixels: Number(r?.water_pixels ?? 0),
+    waterParcels: Number(r?.water_parcels ?? 0),
   };
 }
 
@@ -77,7 +81,7 @@ export function invalidatePublicStats(): void {
  */
 export async function getPricing(currency?: SaleCurrency): Promise<Pricing> {
   const rows = await query<{ key: string; value: unknown }>(
-    "select key, value from public.app_settings where key in ('price_unit_cents','price_unit_cents_usd','currency','min_area','max_area','sales_open','sea_price_percent','min_land_percent')",
+    "select key, value from public.app_settings where key in ('price_unit_cents','price_unit_cents_usd','currency','min_area','max_area','sales_open','sea_price_percent','min_land_percent','water_price_percent','min_water_percent','land_cut_price_percent')",
   );
   const m = Object.fromEntries(rows.map((r) => [r.key, r.value]));
   const base = String(m.currency ?? "eur").toLowerCase();
@@ -91,10 +95,13 @@ export async function getPricing(currency?: SaleCurrency): Promise<Pricing> {
     salesOpen: m.sales_open !== false && !salesClosedByStory(process.env.NEXT_PUBLIC_WORLD_END_AT, Date.now()), // (and never once the story has ended)
     minLandPercent: Number(m.min_land_percent ?? 50),
     seaPercent: Number(m.sea_price_percent ?? 0),
+    minWaterPercent: Number(m.min_water_percent ?? 50),
+    waterPercent: Number(m.water_price_percent ?? 100),
+    landCutPercent: Number(m.land_cut_price_percent ?? 0),
   };
 }
 
-export async function isAreaFree(x: number, y: number, w: number, h: number): Promise<boolean> {
-  const r = await queryOne<{ f: boolean }>("select public.px_is_area_free($1, $2, $3, $4) as f", [x, y, w, h]);
+export async function isAreaFree(x: number, y: number, w: number, h: number, kind: ParcelKind = "land"): Promise<boolean> {
+  const r = await queryOne<{ f: boolean }>("select public.px_is_area_free($1, $2, $3, $4, $5) as f", [x, y, w, h, kind]);
   return r?.f === true;
 }

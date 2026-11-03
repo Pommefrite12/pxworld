@@ -41,13 +41,16 @@ export async function resetData() {
   await pool.query(`update public.app_settings set value = '0'::jsonb where key = 'sea_price_percent'`);
   await pool.query(`update public.app_settings set value = '50'::jsonb where key = 'min_land_percent'`);
   await pool.query(`update public.app_settings set value = '25'::jsonb where key = 'min_area'`);
+  await pool.query(`update public.app_settings set value = '100'::jsonb where key = 'water_price_percent'`);
+  await pool.query(`update public.app_settings set value = '50'::jsonb where key = 'min_water_percent'`);
+  await pool.query(`update public.app_settings set value = '0'::jsonb where key = 'land_cut_price_percent'`);
 }
 
 export type Rect = { x: number; y: number; w: number; h: number };
 
 /** `land`: land pixels of the rectangle as counted by the application server (omitted = all land). */
-export async function startOrder(user: string, r: Rect, land?: number) {
-  const { rows } = await pool.query(`select * from public.px_start_order($1, $2, $3, $4, $5, $6)`, [user, r.x, r.y, r.w, r.h, land ?? null]);
+export async function startOrder(user: string, r: Rect, land?: number, kind: "land" | "water" = "land") {
+  const { rows } = await pool.query(`select * from public.px_start_order($1, $2, $3, $4, $5, $6, null, $7)`, [user, r.x, r.y, r.w, r.h, land ?? null, kind]);
   return rows[0] as {
     order_id: string; parcel_id: string; reservation_id: string; amount_cents: string;
     unit_price_cents: number; currency: string; expires_at: Date;

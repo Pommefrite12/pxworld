@@ -11,6 +11,7 @@ const PX_STATUS: Record<string, number> = {
   px_parcel_unavailable: 409,
   px_invalid_rect: 400,
   px_not_on_land: 422,
+  px_not_on_water: 422,
   px_sales_closed: 503,
   px_bad_currency: 400,
   px_account_suspended: 403,

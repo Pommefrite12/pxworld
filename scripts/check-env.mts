@@ -50,8 +50,8 @@ async function onlineChecks(): Promise<number> {
     const client = new pg.Client({ connectionString: vars.DATABASE_URL.trim(), ssl: shouldUseSsl(vars.DATABASE_URL.trim(), vars.DATABASE_SSL) ? { rejectUnauthorized: false } : false, connectionTimeoutMillis: 10_000 });
     try {
       await client.connect();
-      const r = await client.query("select value from public.app_settings where key = 'price_unit_cents_usd'");
-      say(r.rowCount === 1, r.rowCount === 1 ? "DATABASE_URL: the database answers and the 14 migrations are applied" : "DATABASE_URL: the database answers but is not up to date: run `node scripts/migrate.mjs` (step 1F)");
+      const r = await client.query("select value from public.app_settings where key = 'water_price_percent'");
+      say(r.rowCount === 1, r.rowCount === 1 ? "DATABASE_URL: the database answers and the 15 migrations are applied" : "DATABASE_URL: the database answers but is not up to date: run `node scripts/migrate.mjs` (step 1F)");
     } catch (e) {
       const m = (e as Error).message;
       say(false, `DATABASE_URL: ${/password authentication/.test(m) ? "the database refuses the password" : /Tenant or user not found/.test(m) ? "wrong user (the address must start with postgresql://postgres.<project id>:)" : /ENOTFOUND|EAI_AGAIN/.test(m) ? "host not found" : /does not exist|relation/.test(m) ? "connected, but the tables are missing: run `node scripts/migrate.mjs` (step 1F)" : m.replace(/\/\/[^@\s]*@/g, "//…@")}`);

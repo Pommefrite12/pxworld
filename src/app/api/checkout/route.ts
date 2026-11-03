@@ -8,7 +8,7 @@ import { validateRect } from "@/lib/grid/geometry";
 import { createCheckoutSession, type OrderForCheckout } from "@/lib/stripe/checkout";
 import { stripeConfigured } from "@/lib/stripe/client";
 import { landPixelsIn } from "@/lib/geo/landServer";
-import { enoughLand } from "@/lib/grid/pricing";
+import { enoughForKind, isParcelKind, type ParcelKind } from "@/lib/grid/pricing";
 import { parseCreationMeta, readCreationImage, storeCreation } from "@/lib/creations";
 import { assertStoryAllowsSales } from "@/lib/doom/sales";
 import { requestCurrency } from "@/lib/currency-server";
@@ -33,6 +33,10 @@ export const POST = route(async (req) => {
   const rect = { x: intParam(String(form.get("x")), 0, 1e9), y: intParam(String(form.get("y")), 0, 1e9), w: intParam(String(form.get("w")), 1, 1e9), h: intParam(String(form.get("h")), 1, 1e9) };
   if (rect.x === null || rect.y === null || rect.w === null || rect.h === null) throw new HttpError(400, "px_invalid_rect");
   const r = { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+  // what is bought: land (the default) or water. A parcel owns only the pixels of its kind inside its rectangle.
+  const kindField = form.get("kind");
+  if (kindField !== null && kindField !== "" && !isParcelKind(kindField)) throw new HttpError(400, "px_invalid_rect");
+  const kind: ParcelKind = kindField === "water" ? "water" : "land";
   // The currency is decided here, from the buyer's country (euros in the euro area, dollars elsewhere). The browser sends the
   // one it displayed: if the two differ (the buyer's connection moved to another country in between), nothing is charged.
   const currency = requestCurrency(req.headers);
@@ -41,17 +45,17 @@ export const POST = route(async (req) => {
   const pricing = await getPricing(currency);
   if (!pricing.salesOpen) throw new HttpError(503, "px_sales_closed");
   if (validateRect(r, { minArea: pricing.minArea, maxArea: pricing.maxArea })) throw new HttpError(400, "px_invalid_rect");
-  // coastal parcels are allowed, never mostly sea: the land count is made HERE, from the server's own map data
+  // coastal parcels are allowed, never mostly of the other kind: the land count is made HERE, from the server's own map data
   const landPx = await landPixelsIn(r);
-  if (!enoughLand(landPx, r.w * r.h, pricing.minLandPercent)) throw new HttpError(422, "px_not_on_land");
+  if (!enoughForKind(kind, landPx, r.w * r.h, pricing)) throw new HttpError(422, kind === "water" ? "px_not_on_water" : "px_not_on_land");
   const locale = form.get("locale") === "fr" ? "fr" : "en";
 
   const meta = parseCreationMeta(form);
   const img = await readCreationImage(form, r); // fail fast, before any pixel is held
 
   const [order] = await query<OrderForCheckout & { reservation_id: string }>(
-    "select order_id as id, parcel_id, $1::uuid as user_id, $2::int as x, $3::int as y, $4::int as w, $5::int as h, ($4 * $5)::int as area, amount_cents, currency, expires_at, reservation_id from public.px_start_order($1, $2, $3, $4, $5, $6, $7)",
-    [viewer.user.id, r.x, r.y, r.w, r.h, landPx, currency],
+    "select order_id as id, parcel_id, $1::uuid as user_id, $2::int as x, $3::int as y, $4::int as w, $5::int as h, ($4 * $5)::int as area, amount_cents, currency, expires_at, reservation_id from public.px_start_order($1, $2, $3, $4, $5, $6, $7, $8)",
+    [viewer.user.id, r.x, r.y, r.w, r.h, landPx, currency, kind],
   );
   if (!order) throw new HttpError(500, "order_not_created");
 
