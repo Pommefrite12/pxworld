@@ -355,7 +355,7 @@ export class MapEngine {
   setLandRule(minLandPercent: number) { this.minLandPercent = minLandPercent; this.updateSelectionState(); this.invalidate(); }
   /** At least this share of a water parcel's pixels must be water (the land cut away is free or discounted): the admin's setting. */
   setWaterRule(minWaterPercent: number) { this.minWaterPercent = minWaterPercent; this.updateSelectionState(); this.invalidate(); }
-  /** Land or water: what the selection is for. The land is hatched while buying water (as the sea is while buying land). */
+  /** Land or water: what the selection is for. While buying water the colours of the map are swapped (the water stays hatched, in both modes). */
   setBuyKind(kind: "land" | "water") {
     if (kind === this.buyKind) return;
     this.buyKind = kind;
@@ -653,9 +653,9 @@ export class MapEngine {
     const swapped = this.mode === "buy" && this.buyKind === "water"; // buying water: the colours are swapped, so that nobody mistakes land for water
     ctx.fillStyle = swapped ? COLORS.land : COLORS.ocean;
     ctx.fillRect(0, y0, w, hh);
-    if (this.mode === "buy" && this.buyKind === "land") {
-      // while buying land, the sea is hatched: land tiles are drawn over it, so only water shows the stripes — "not for sale" (as land)
-      ctx.fillStyle = this.seaHatch() ?? COLORS.ocean;
+    if (this.mode === "buy") {
+      // while buying, the WATER is hatched (whatever is bought): land tiles are drawn over it, so only water shows the stripes
+      ctx.fillStyle = this.seaHatch() ?? (swapped ? COLORS.land : COLORS.ocean);
       ctx.fillRect(0, y0, w, hh);
     }
 
@@ -671,12 +671,8 @@ export class MapEngine {
       this.drawSea(s); // the story: the destroyed seas
       this.drawParcels(s, true); // the water parcels: over the sea, under the land (the coast cuts them)
       this.drawGeography(s);
-      if (swapped) { // while buying water, the land takes the colour of the sea and is hatched (the water, cream, is what is for sale)
-        const hatch = this.seaHatch();
-        this.onLand(s, () => {
-          ctx.globalAlpha = 0.82; ctx.fillStyle = COLORS.ocean; ctx.fillRect(x0, y0, ww, hh); ctx.globalAlpha = 1;
-          if (hatch) { ctx.fillStyle = hatch; ctx.fillRect(x0, y0, ww, hh); }
-        });
+      if (swapped) { // while buying water, the colours are swapped: the land takes the colour of the sea (no hatching), the water is cream and hatched
+        this.onLand(s, () => { ctx.globalAlpha = 0.82; ctx.fillStyle = COLORS.ocean; ctx.fillRect(x0, y0, ww, hh); ctx.globalAlpha = 1; });
       }
       if (this.mode === "buy") { ctx.fillStyle = `rgba(${COLORS.free},0.13)`; ctx.fillRect(x0, y0, ww, hh); }
       // zoomed in, place names sit UNDER the parcels (owners cover the map); zoomed out, parcels are specks and names stay readable on top
