@@ -172,14 +172,52 @@ Ces deux valeurs ne sont **pas secrètes** (le navigateur des visiteurs les util
 
 ---
 
-## Étape 2 : Stripe, le paiement en mode test (10 min)
+## Étape 2 : Stripe, le paiement en mode test (15 min)
 
-1. Allez sur **stripe.com** → créez un compte. **Ne cliquez sur aucune proposition « Activer les paiements » ou « Passer en production »** :
-   restez dans l'environnement de **test** (bandeau « Mode test » ou « Sandbox » en haut).
-2. **Developers** (Développeurs) → **API keys** : copiez la **Secret key** qui commence par **`sk_test_`** → `STRIPE_SECRET_KEY`.
-   Si elle commence par `sk_live_`, vous n'êtes pas en mode test : arrêtez-vous et dites-le-moi.
-3. **Settings** → **Payment methods** : laissez les **cartes** activées, rien d'autre.
-4. Le webhook se crée à l'étape 4 (il lui faut l'adresse du site).
+Stripe encaisse les paiements. **En mode test, personne ne paie rien** : on utilise de fausses cartes. À la fin de cette étape, vous aurez noté **1 information**
+(la clé secrète de test). Le webhook (le message que Stripe envoie au site pour dire « c'est payé ») sera créé à l'étape 4, quand le site aura son adresse.
+
+### 2A. Créer le compte
+
+1. Ouvrez **https://stripe.com** et cliquez sur **Sign in** puis sur **Sign up** (ou **Start now**).
+2. Remplissez : votre e-mail, votre nom complet, un mot de passe (notez-le), le **pays** (France). Cliquez sur **Create account**.
+3. Stripe envoie un e-mail de confirmation : ouvrez-le et cliquez sur le lien de confirmation.
+4. Stripe vous pose des questions sur votre activité, ou vous propose **Activate your account** / **Activer mon compte** : **ignorez-les toutes**, fermez la fenêtre ou cliquez sur
+   **Skip** / **Plus tard** / la croix. Ne donnez ni pièce d'identité, ni compte bancaire : ce n'est utile que pour de vrais paiements, que nous ne faisons pas.
+
+### 2B. S'assurer d'être en mode test
+
+1. Regardez **en haut de la page du tableau de bord**. Vous devez voir un repère « **Test mode** » / « **Mode test** » (souvent un bandeau ou un interrupteur orange), ou le mot **Sandbox**.
+2. S'il y a un **interrupteur** « Test mode » : mettez-le sur **activé**.
+3. S'il y a, en haut à gauche, un **menu déroulant avec le nom de votre compte** : ouvrez-le et choisissez l'environnement **Sandbox** (ou « Test »), s'il y en a un. Si aucun n'existe, créez-en un en cliquant sur **Create sandbox** (nom : `pixelworld-test`).
+4. Dans tous les cas, le critère décisif sera la clé à l'étape 2D : elle doit commencer par **`sk_test_`**.
+
+### 2C. Donner un nom au compte (évite une erreur au premier paiement)
+
+1. Cliquez sur la **roue dentée « Settings »** en haut à droite (ou utilisez la barre de recherche en haut et tapez `Business details`).
+2. Cherchez **Business details** (ou **Public details** / **Public business name**) et, si le nom est vide, écrivez **`Pixel World`**. Cliquez sur **Save**.
+
+### 2D. Noter la clé secrète de test
+
+1. Dans la barre de recherche en haut de la page, tapez **`API keys`** et cliquez sur le résultat. (Sinon : **Developers** en bas du menu de gauche, puis l'onglet **API keys**.)
+2. Vous voyez deux clés :
+   - **Publishable key** (`pk_test_…`) : **vous n'en avez pas besoin**.
+   - **Secret key** (`sk_test_…`), masquée : cliquez sur **Reveal test key** (ou l'icône œil), puis sur **Copy**.
+3. **Vérifiez le début de la clé** :
+   - `sk_test_…` ou `rk_test_…` : parfait.
+   - `sk_live_…` : **arrêtez-vous**, vous n'êtes pas en mode test. Revenez à 2B, et dites-le-moi si vous n'y arrivez pas.
+4. Dans votre fichier de notes, ligne **« Clé secrète Stripe (SECRET !) »** : collez-la. Elle ira dans `STRIPE_SECRET_KEY` sur Vercel. **Ne la collez jamais dans le chat ni dans GitHub.**
+
+### 2E. Moyens de paiement
+
+1. Barre de recherche : tapez **`Payment methods`** et ouvrez **Settings → Payment methods** (« Moyens de paiement »).
+2. Vérifiez que **Cards** (cartes bancaires) est **activé**. C'est le seul dont nous avons besoin. Ne changez rien d'autre.
+
+### Ce que vous devez avoir dans vos notes à la fin de l'étape 2
+
+| # | Ligne | Servira pour (Vercel) |
+|---|---|---|
+| 8 | Clé secrète Stripe (`sk_test_…`) | `STRIPE_SECRET_KEY` |
 
 ---
 
@@ -208,7 +246,7 @@ Ces deux valeurs ne sont **pas secrètes** (le navigateur des visiteurs les util
 | `NEXT_PUBLIC_SUPABASE_URL` | la **Project URL** | Supabase, étape 1B |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | la **clé publique** (`sb_publishable_…`) | Supabase, étape 1B |
 | `SUPABASE_SERVICE_ROLE_KEY` | la **clé secrète** (`sb_secret_…`) | Supabase, étape 1C |
-| `STRIPE_SECRET_KEY` | `sk_test_…` | Stripe, étape 2.2 |
+| `STRIPE_SECRET_KEY` | `sk_test_…` | Stripe, étape 2D |
 | `RATE_LIMIT_SALT` | le premier secret généré | étape 0.3 |
 | `CRON_SECRET` | le second secret généré | étape 0.3 |
 | `STRIPE_WEBHOOK_SECRET` | *(à ajouter à l'étape 4.2)* | Stripe |
