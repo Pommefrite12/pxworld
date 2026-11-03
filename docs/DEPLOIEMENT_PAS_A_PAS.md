@@ -234,10 +234,14 @@ Le dépôt a une branche `main` (presque vide) et la branche `claude/funny-bell-
 
 1. Ouvrez **https://github.com/Pommefrite12/pxworld**.
 2. Cliquez sur l'onglet **Settings** (en haut du dépôt, tout à droite).
-3. Dans le menu de gauche, cliquez sur **Branches** (rubrique « Code and automation »).
-4. Dans « **Default branch** », à droite de `main`, cliquez sur l'icône à deux flèches **⇄** (« Switch to another branch »).
-5. Dans la liste, choisissez **`claude/funny-bell-k7v5xf`**, puis cliquez sur **Update**.
+3. Dans le menu de gauche, tout en haut, cliquez sur **General**. *(Ce réglage n'est plus dans « Branches » : cette page ne parle que des règles de protection.)*
+4. **Descendez** dans la page jusqu'à la section **Default branch**. Elle affiche `main` avec, à droite, une icône à deux flèches **⇄** (« Switch to another branch »).
+5. Cliquez sur **⇄**, choisissez **`claude/funny-bell-k7v5xf`** dans la liste, puis cliquez sur **Update**.
 6. GitHub demande confirmation : cliquez sur **I understand, update the default branch**.
+7. Vérification : la section affiche maintenant **`claude/funny-bell-k7v5xf`**.
+
+*Si vous ne trouvez vraiment pas cette section :* ne perdez pas de temps, passez à 3B. À l'étape 3C, après l'import, vous réglerez la branche directement dans Vercel
+(**Settings → Environments → Production → Branch Tracking**), et dites-moi où vous en êtes.
 
 ### 3B. Créer le compte Vercel
 
