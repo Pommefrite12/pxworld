@@ -82,8 +82,6 @@
     "minutes": "MINUTES",
     "seconds": "SECONDS",
     "timeLeft": "{days} days, {hours} hours and {minutes} minutes left.",
-    "chip": "D-{days}",
-    "chipLabel": "{days} days left before the digital world is destroyed",
     "phase1": "The countdown has begun.",
     "phase2": "Anomaly detected: the world is becoming unstable.",
     "phase3": "How much of the world will be left standing?",

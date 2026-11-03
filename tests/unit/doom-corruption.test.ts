@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GLITCH, WORLD_W, cellDevicePx, cellLook, damage, field, hash2, levelAlpha, makeRanker, tearOffset } from "@/lib/doom/corruption";
+import { GLITCH, WORLD_W, cellDevicePx, cellLook, damage, destroyedRuns, field, fringeShift, hash2, levelAlpha, makeRanker, tearOffset } from "@/lib/doom/corruption";
 
 describe("the large-scale field", () => {
   it("is deterministic, stays in [0, 1] and wraps around the world", () => {
@@ -80,5 +80,32 @@ describe("damage and the look of a cell", () => {
     expect([1, 1.25, 1.5, 2, 2.5, 3].map(cellDevicePx)).toEqual([4, 4, 8, 8, 8, 16]);
     for (const dpr of [1, 1.5, 2, 3]) expect(512 % cellDevicePx(dpr)).toBe(0); // a tile holds a whole number of cells
     expect([0, 2, 3, 4, 5, 8].map(levelAlpha)).toEqual([1, 1, 0.9, 0.75, 0.6, 0.6]);
+  });
+  describe("the chromatic fringe of the coasts", () => {
+    const R = 8;
+    /** A lattice whose rank grows from left to right: the left of the tile goes first. */
+    const gradient = Array.from({ length: (R + 1) * (R + 1) }, (_, n) => (n % (R + 1)) / R);
+    it("only marks the stretches of the tile where the land is destroyed, as runs of cells that grow with the intensity", () => {
+      expect(destroyedRuns(gradient, R, 0)).toEqual([]); // nothing destroyed: clean coasts
+      const some = destroyedRuns(gradient, R, 0.5), more = destroyedRuns(gradient, R, 0.8);
+      expect(some).toHaveLength(R); // one run per row
+      for (const run of some) { expect(run.i0).toBe(0); expect(run.i1).toBeGreaterThan(0); expect(run.i1).toBeLessThan(R); }
+      for (let j = 0; j < R; j++) expect(more[j]!.i1).toBeGreaterThan(some[j]!.i1);
+      for (const run of destroyedRuns(gradient, R, 1)) expect(run).toEqual({ j: run.j, i0: 0, i1: R }); // everything is destroyed at the end
+    });
+    it("merges neighbouring cells into one run and keeps separate stretches apart", () => {
+      const ranks = new Array((R + 1) * (R + 1)).fill(1);
+      for (let j = 0; j <= 1; j++) for (const i of [0, 1, 2, 5, 6]) ranks[j * (R + 1) + i] = 0; // row 0: cells 0–1 and 5 are destroyed
+      expect(destroyedRuns(ranks, R, 0.2).filter((r) => r.j === 0)).toEqual([{ j: 0, i0: 0, i1: 2 }, { j: 0, i0: 5, i1: 6 }]);
+    });
+    it("slides some rows of the fringe sideways, the same way every time, never by more than half a torn band", () => {
+      const shifts = Array.from({ length: 2000 }, (_, row) => fringeShift(row, 3, 4));
+      expect(shifts).toEqual(Array.from({ length: 2000 }, (_, row) => fringeShift(row, 3, 4)));
+      const moved = shifts.filter((x) => x !== 0).length / shifts.length;
+      expect(moved).toBeGreaterThan(0.15);
+      expect(moved).toBeLessThan(0.3);
+      expect(Math.max(...shifts.map(Math.abs))).toBeLessThanOrEqual(8);
+      expect(fringeShift(40, 3, 8)).toBe(fringeShift(40, 3, 4) * 2); // proportional to the size of the big pixels
+    });
   });
 });

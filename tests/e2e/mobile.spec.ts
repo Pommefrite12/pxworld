@@ -37,5 +37,4 @@ test("the countdown fits a phone: no horizontal scrolling, the plate inside the 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   const strip = (await page.getByTestId("doom-ticker").boundingBox())!, header = (await page.locator("header").boundingBox())!;
   expect(strip.y + strip.height).toBeLessThanOrEqual(header.y + 0.5);
-  await expect(page.getByTestId("doom-chip")).toBeHidden(); // no room next to the logo on a phone: the strip and the plate carry it
 });

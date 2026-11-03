@@ -86,3 +86,30 @@ export function cellDevicePx(dpr: number): number { return dpr >= 3 ? 16 : dpr >
 
 /** The cell is a bit transparent when zoomed right in, so that the land a visitor wants to read and buy stays legible. */
 export function levelAlpha(k: number): number { return k <= 2 ? 1 : k === 3 ? 0.9 : k === 4 ? 0.75 : 0.6; }
+
+/**
+ * Where the land is destroyed, as horizontal runs of cells of a coarse lattice (`R` × `R` cells over a tile, `(R + 1)²` ranks at
+ * their corners): a cell counts as destroyed when its average rank is already half gone (`damage` ≥ 0.5). `i0` inclusive, `i1`
+ * exclusive. The coasts only show their chromatic fringe inside these runs.
+ */
+export function destroyedRuns(lattice: ArrayLike<number>, R: number, intensity: number): { j: number; i0: number; i1: number }[] {
+  const runs: { j: number; i0: number; i1: number }[] = [];
+  for (let j = 0; j < R; j++) {
+    let start = -1;
+    for (let i = 0; i <= R; i++) {
+      let on = false;
+      if (i < R) {
+        const b = j * (R + 1) + i, avg = (lattice[b]! + lattice[b + 1]! + lattice[b + R + 1]! + lattice[b + R + 2]!) / 4;
+        on = damage(avg, intensity) >= 0.5;
+      }
+      if (on && start < 0) start = i;
+      else if (!on && start >= 0) { runs.push({ j, i0: start, i1: i }); start = -1; }
+    }
+  }
+  return runs;
+}
+
+/** How far (device px, to the right if positive) a band of a coast's chromatic fringe has slid: nothing for most bands, a lot for the torn ones. */
+export function fringeShift(band: number, k: number, cell: number): number {
+  return tearOffset(band, 77 + k) * cell * 0.5;
+}

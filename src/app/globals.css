@@ -190,27 +190,26 @@
 @keyframes doom-marquee { to { transform: translateX(-50%); } }
 
 .doom-header { background-image: linear-gradient(90deg, var(--color-glitch-magenta), var(--color-glitch-cyan)); background-size: 100% 2px; background-repeat: no-repeat; background-position: bottom; }
-.doom-chip { margin-left: 0.25rem; font-family: var(--font-pixel); font-size: 1.4rem; line-height: 1; white-space: nowrap; color: var(--color-ink); text-shadow: -1px 0 var(--color-glitch-cyan), 1px 0 var(--color-glitch-magenta); }
 .doom-cta { box-shadow: 3px 0 0 var(--color-glitch-cyan), -3px 0 0 var(--color-glitch-magenta) !important; }
 
 .doom-plate {
-  pointer-events: auto; width: min(640px, 100%); overflow: hidden;
-  background: rgb(255 253 248 / 0.97); border: 2px solid var(--color-ink); border-radius: 14px; box-shadow: 5px 5px 0 rgb(31 37 64 / 0.16);
+  pointer-events: auto; width: min(380px, 100%); overflow: hidden;
+  background: rgb(255 253 248 / 0.97); border: 2px solid var(--color-ink); border-radius: 12px; box-shadow: 4px 4px 0 rgb(31 37 64 / 0.16);
 }
 .doom-plate-top {
-  display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 12px;
-  background: repeating-linear-gradient(-45deg, var(--color-signal) 0 9px, var(--color-paper) 9px 18px);
-  font-family: var(--font-pixel); font-size: 17px; letter-spacing: 0.08em; color: var(--color-ink);
+  display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 10px;
+  background: repeating-linear-gradient(-45deg, var(--color-signal) 0 7px, var(--color-paper) 7px 14px);
+  font-family: var(--font-pixel); font-size: 14px; letter-spacing: 0.08em; color: var(--color-ink);
 }
-.doom-plate-top span { background: var(--color-paper); padding: 0 8px; border-radius: 3px; }
-.doom-digits { display: flex; justify-content: center; align-items: flex-start; gap: clamp(4px, 1.6vw, 12px); padding: 10px 12px 12px; }
-.doom-group { position: relative; flex: 1 1 0; min-width: 0; max-width: 120px; text-align: center; }
+.doom-plate-top span { background: var(--color-paper); padding: 0 6px; border-radius: 3px; }
+.doom-digits { display: flex; justify-content: center; align-items: flex-start; gap: clamp(3px, 1.2vw, 8px); padding: 6px 10px 8px; }
+.doom-group { position: relative; flex: 1 1 0; min-width: 0; max-width: 80px; text-align: center; }
 .doom-n {
-  display: block; font-family: var(--font-pixel); font-weight: 400; font-size: clamp(2.6rem, 9.5vw, 5.25rem); line-height: 0.9; color: var(--color-ink);
-  text-shadow: -3px 0 var(--color-glitch-cyan), 3px 0 var(--color-glitch-magenta);
+  display: block; font-family: var(--font-pixel); font-weight: 400; font-size: clamp(1.9rem, 7vw, 2.9rem); line-height: 0.9; color: var(--color-ink);
+  text-shadow: -2px 0 var(--color-glitch-cyan), 2px 0 var(--color-glitch-magenta);
 }
-.doom-group i { display: block; margin-top: 4px; font-style: normal; font-size: clamp(0.5rem, 1.7vw, 0.7rem); font-weight: 700; letter-spacing: 0.14em; color: var(--color-ink-soft); }
-.doom-sep { padding-top: 4px; font-family: var(--font-pixel); font-size: clamp(2.2rem, 8vw, 4.4rem); line-height: 0.9; color: var(--color-signal); }
+.doom-group i { display: block; margin-top: 3px; font-style: normal; font-size: clamp(0.5rem, 1.5vw, 0.62rem); font-weight: 700; letter-spacing: 0.14em; color: var(--color-ink-soft); }
+.doom-sep { padding-top: 2px; font-family: var(--font-pixel); font-size: clamp(1.6rem, 6vw, 2.4rem); line-height: 0.9; color: var(--color-signal); }
 .doom-group.glitch .doom-n { animation: doom-glitch 1s steps(1, end) infinite; } /* the seconds stutter once a second, for a tenth of it */
 @keyframes doom-glitch {
   0%, 90%, 100% { transform: none; clip-path: none; }
@@ -225,11 +224,7 @@
 }
 
 .doom-card-lab { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-ink-soft); }
-.doom-big { margin-top: 0.1rem; font-family: var(--font-pixel); font-size: clamp(2.4rem, 7vw, 3.4rem); line-height: 0.9; color: var(--color-signal); text-shadow: -2px 0 var(--color-glitch-cyan), 2px 0 var(--color-glitch-magenta); }
-.doom-seg { display: grid; grid-template-columns: repeat(30, minmax(0, 1fr)); gap: 2px; height: 14px; margin-top: 0.6rem; }
-.doom-seg i { background: var(--color-signal); }
-.doom-seg i.bad { background-color: var(--color-glitch-lav); background-image: linear-gradient(0deg, transparent 0 45%, #dcd6ff 45% 55%, transparent 55%); }
-.doom-seg i.x { background: var(--color-glitch-magenta); } .doom-seg i.y { background: var(--color-glitch-cyan); }
+.doom-big { margin-top: 0.1rem; font-family: var(--font-pixel); font-size: 2.3rem; line-height: 0.9; color: var(--color-signal); }
 
 @media (prefers-reduced-motion: reduce) {
   .doom-ticker-run, .doom-group.glitch .doom-n { animation: none; }

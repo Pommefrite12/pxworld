@@ -1,6 +1,6 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { gridAlpha } from "@/lib/map/pixelGrid";
-import { cellDevicePx, cellLook, damage, field, hash2, levelAlpha, makeRanker, tearOffset, GLITCH } from "@/lib/doom/corruption";
+import { cellDevicePx, cellLook, damage, destroyedRuns, field, fringeShift, hash2, levelAlpha, makeRanker, tearOffset, GLITCH } from "@/lib/doom/corruption";
 import { finaleAt, frontX, labelPlan, shakeOffset, shakeZoom, type FinaleFrame } from "@/lib/doom/finale";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
 import { enoughLand } from "@/lib/grid/pricing";
@@ -811,15 +811,16 @@ export class MapEngine {
    * Paints the corruption into a geography tile, inside the land only (`fill` is the tile's land): big square cells (a few screen
    * pixels whatever the zoom) of scanlined lavender with stray blocks of error colour, colours slipping at the edge of the
    * destroyed area, and bands that have slid sideways. The cells of a level have a fixed size in device pixels, so a tile
-   * holds a whole number of them and they never leave seams.
+   * holds a whole number of them and they never leave seams. Returns where the land is destroyed (for the fringe of the coasts), or
+   * `null` when nothing of the tile is touched.
    */
-  private paintCorruption(g: CanvasRenderingContext2D, fill: Path2D, k: number, tx: number, ty: number, scale: number, step: number) {
+  private paintCorruption(g: CanvasRenderingContext2D, fill: Path2D, k: number, tx: number, ty: number, scale: number, step: number): { runs: { j: number; i0: number; i1: number }[]; R: number } | null {
     const I = step / 200;
-    if (I <= 0) return;
+    if (I <= 0) return null;
     const rank = this.rankOf(), R = 64, size = GEO_TILE_PX / scale, lattice = new Float32Array((R + 1) * (R + 1));
     let min = 1;
     for (let j = 0; j <= R; j++) for (let i = 0; i <= R; i++) { const r = rank(field(tx * size + (i * size) / R, ty * size + (j * size) / R)); lattice[j * (R + 1) + i] = r; if (r < min) min = r; }
-    if (I * 1.12 - min <= 0) return; // nothing of this tile is touched yet
+    if (I * 1.12 - min <= 0) return null; // nothing of this tile is touched yet
     const cs = cellDevicePx(this.dpr), n = GEO_TILE_PX / cs, alpha = levelAlpha(k), fringe = Math.max(1, cs / 4);
     const B = Math.max(2, n / 16), blocks = n / B; // the tile in 16 × 16 blocks of cells: whole blocks are skipped or filled at once
     g.save();
@@ -861,6 +862,48 @@ export class MapEngine {
       }
     }
     g.restore();
+    return { runs: destroyedRuns(lattice, R, I), R };
+  }
+
+  /** Where the cyan and magenta echoes of the coasts are made (one tile's worth, reused: tiles are drawn one after the other). */
+  private fringeLayer: HTMLCanvasElement | null = null;
+
+  /**
+   * The coasts of the destroyed land come apart into colours: a cyan echo of the coastline slipped to one side and a magenta one
+   * to the other (white where they overlap), a few bands of them slid sideways. Drawn over the coast line, and only where the land
+   * is destroyed (`runs`: the destroyed stretches of the tile, in rows of 8 px), so the intact land keeps its clean coast.
+   */
+  private paintCoastFringe(g: CanvasRenderingContext2D, coast: Path2D, corrupted: { runs: { j: number; i0: number; i1: number }[]; R: number } | null, k: number, tx: number, ty: number, scale: number) {
+    if (!corrupted || corrupted.runs.length === 0) return;
+    const T = GEO_TILE_PX, cs = cellDevicePx(this.dpr), o = Math.max(2, cs / 2), w = Math.max(1.6, cs / 3);
+    const layer = this.fringeLayer ?? (this.fringeLayer = Object.assign(document.createElement("canvas"), { width: T, height: T }));
+    const f = layer.getContext("2d");
+    if (!f) return;
+    f.setTransform(1, 0, 0, 1, 0, 0);
+    f.globalCompositeOperation = "source-over";
+    f.clearRect(0, 0, T, T);
+    f.globalCompositeOperation = "lighter"; // where the two echoes meet, cyan + magenta make white
+    f.lineJoin = "round"; f.lineCap = "round"; f.lineWidth = w / scale;
+    f.setTransform(scale, 0, 0, scale, -tx * T - o, -ty * T); f.strokeStyle = GLITCH.cyan; f.stroke(coast);
+    f.setTransform(scale, 0, 0, scale, -tx * T + o, -ty * T); f.strokeStyle = GLITCH.magenta; f.stroke(coast);
+    const { runs, R } = corrupted, cell = T / R;
+    g.save();
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalAlpha = levelAlpha(k);
+    // the layer is copied into the tile in bands of two rows, each slid by its own amount; neighbouring bands that are alike are copied in one go
+    let cur: { i0: number; i1: number; dx: number; j0: number; j1: number } | null = null;
+    const flush = () => {
+      if (!cur) return;
+      const x0 = cur.i0 * cell, wd = (cur.i1 - cur.i0) * cell, y = cur.j0 * cell, hh = (cur.j1 - cur.j0 + 1) * cell;
+      g.drawImage(layer, x0 - cur.dx, y, wd, hh, x0, y, wd, hh);
+      cur = null;
+    };
+    for (const r of runs) {
+      const dx = Math.round(fringeShift((ty * R + r.j) >> 1, k, cs));
+      if (cur && cur.i0 === r.i0 && cur.i1 === r.i1 && cur.dx === dx && cur.j1 === r.j - 1) cur.j1 = r.j; else { flush(); cur = { i0: r.i0, i1: r.i1, dx, j0: r.j, j1: r.j }; }
+    }
+    flush();
+    g.restore();
   }
   private geoPending = false;
 
@@ -894,7 +937,7 @@ export class MapEngine {
     g.fillStyle = COLORS.land;
     g.fill(paths.fill, "evenodd");
     if (fillOnly) return { c, complete };
-    if (this.story) this.paintCorruption(g, paths.fill, k, tx, ty, scale, stepOverride ?? this.story.step); // the story: corrupted land, under the borders and the coast
+    const corrupted = this.story ? this.paintCorruption(g, paths.fill, k, tx, ty, scale, stepOverride ?? this.story.step) : null; // the story: corrupted land, under the borders and the coast
     // Borders are SOLID thin lines (dashes cost a lot to rasterise and read as noise), kept discreet by their opacity.
     if (communes) {
       g.strokeStyle = `rgba(${COLORS.ink},${k >= 5 ? 0.3 : 0.22})`;
@@ -915,6 +958,7 @@ export class MapEngine {
     g.strokeStyle = `rgba(${COLORS.ink},0.62)`;
     g.lineWidth = (clamp(1.6 + k * 0.12, 1.4, 2.6) * dprBoost) / scale;
     g.stroke(paths.coast);
+    this.paintCoastFringe(g, paths.coast, corrupted, k, tx, ty, scale); // the story: the coasts of the destroyed land come apart into colours
     return { c, complete };
   }
 

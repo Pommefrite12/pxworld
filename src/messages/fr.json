@@ -82,8 +82,6 @@
     "minutes": "MINUTES",
     "seconds": "SECONDES",
     "timeLeft": "Il reste {days} jours, {hours} heures et {minutes} minutes.",
-    "chip": "J-{days}",
-    "chipLabel": "Plus que {days} jours avant la destruction du monde numérique",
     "phase1": "Le compte à rebours est lancé.",
     "phase2": "Anomalie détectée : le monde devient instable.",
     "phase3": "Quelle partie du monde restera debout ?",

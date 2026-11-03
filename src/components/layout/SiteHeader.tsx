@@ -6,7 +6,7 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { localeNames, locales, type Locale } from "@/i18n/routing";
 import { Logo } from "@/components/ui/Logo";
 import { signOut } from "@/lib/auth/client";
-import { DoomChip, DoomTicker } from "@/components/doom/Doom";
+import { DoomTicker } from "@/components/doom/Doom";
 import { useDoom } from "@/components/doom/useDoom";
 
 export interface HeaderViewer { username: string; avatarId: string | null; staffRole: "moderator" | "admin" | null }
@@ -64,14 +64,13 @@ function AccountMenu({ viewer }: { viewer: HeaderViewer }) {
 
 export function SiteHeader({ viewer, center, cta, className = "" }: { viewer: HeaderViewer | null; center?: React.ReactNode; cta?: React.ReactNode; className?: string }) {
   const t = useTranslations("nav");
-  const doom = useDoom(); // the "100 days" story: a strip above the header, "D-87" next to the logo, a coloured line under it — all absent while it is off
+  const doom = useDoom(); // the "100 days" story: a strip above the header, a coloured line under it — all absent while it is off
   return (
     <>
     <DoomTicker />
     <header className={`relative z-40 border-b border-line bg-paper/95 backdrop-blur ${doom ? "doom-header" : ""} ${className}`}>
       <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
         <Link href="/" aria-label={t("home")} className="shrink-0"><Logo /></Link>
-        <DoomChip />
         <div className="mx-auto hidden w-full max-w-md md:block">{center}</div>
         <nav className="ml-auto flex items-center gap-1.5 sm:gap-2" aria-label={t("main")}>
           <Link href="/discover" className="btn btn-nav btn-sm hidden sm:inline-flex">{t("discover")} <span aria-hidden>›</span></Link>
