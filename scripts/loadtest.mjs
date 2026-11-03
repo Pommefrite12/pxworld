@@ -10,7 +10,6 @@ const rnd = (n) => Math.floor(Math.random() * n);
 const targets = [
   ["home page", () => "/"],
   ["/api/stats", () => "/api/stats"],
-  ["/api/map/beacons", () => "/api/map/beacons"],
   ["/api/map/tiles (varied)", () => `/api/map/tiles/${rnd(20)}/${rnd(12)}`],
   ["/api/map/raster (varied)", () => `/api/map/raster/5/${rnd(8)}/${rnd(5)}`],
   ["/api/availability (varied)", () => `/api/availability?x=${19000 + rnd(500)}&y=${11700 + rnd(500)}&w=10&h=10`],

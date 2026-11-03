@@ -60,7 +60,7 @@ const GEO_STAND_IN_LEVELS = 3;
 const COMMUNES_FROM_K = 4;
 const RASTER_PX = 256;
 const MAX_Z = 8;
-const MAX_IMAGES_IN_FLIGHT = 12;
+const MAX_IMAGES_IN_FLIGHT = 20; // over HTTP/2 (every host that matters) requests share one connection: more at once is faster, not slower
 const MAX_SCALE = 48;
 const RASTER_BELOW = 1; // below this zoom the server-composited rasters are shown; above it, parcels are drawn individually
 const JSON_ABOVE = 0.1; // below this zoom parcels are sub-2px: no metadata needed
@@ -102,6 +102,8 @@ export class MapEngine {
   private places: Places | null = null;
   private tiles = new Map<string, Tile>();
   private tileQueue: string[] = [];
+  /** The frame at which each metadata tile was last wanted (in view, or asked for by a hit-test): see `pumpTiles`. */
+  private tileWantedAt = new Map<string, number>();
   private inflight = 0;
   private rasters = new Map<string, Img>();
   private images = new Map<string, Img>();
@@ -169,7 +171,7 @@ export class MapEngine {
   setVersion(v: number) {
     if (v === this.version) return;
     this.version = v;
-    this.tiles.clear(); this.tileQueue = []; this.rasters.clear();
+    this.tiles.clear(); this.tileQueue = []; this.tileWantedAt.clear(); this.rasters.clear();
     this.invalidate();
   }
 
@@ -248,14 +250,35 @@ export class MapEngine {
   private ensureTile(tx: number, ty: number) {
     if (tx < 0 || ty < 0 || tx >= W / TILE || ty >= H / TILE) return;
     const key = `${tx},${ty}`;
+    this.tileWantedAt.set(key, this.frameNo);
     if (this.tiles.has(key)) return;
     this.tiles.set(key, { state: "loading", parcels: [] });
     this.tileQueue.push(key);
     this.pumpTiles();
   }
 
+  /**
+   * The camera moves faster than the network. Zooming from the world down to a city passes over a hundred tiles that nobody will
+   * ever look at, and in a first-come first-served queue the few the screen really shows would wait behind all of them (seconds,
+   * with nothing drawn). So a tile that has not been wanted for a couple of frames is forgotten (and asked for again if the camera
+   * comes back), and of the others the nearest to the centre of the screen goes first.
+   */
   private pumpTiles() {
-    while (this.inflight < 6 && this.tileQueue.length) {
+    if (this.tileQueue.length) {
+      const keep: string[] = [];
+      for (const key of this.tileQueue) {
+        if (this.frameNo - (this.tileWantedAt.get(key) ?? -99) <= 2) keep.push(key);
+        else { this.tiles.delete(key); this.tileWantedAt.delete(key); }
+      }
+      const cx = this.cam.x / TILE - 0.5, cy = this.cam.y / TILE - 0.5, across = W / TILE;
+      const away = (key: string) => {
+        const [tx, ty] = key.split(",").map(Number) as [number, number];
+        const dx = Math.abs(tx - cx);
+        return Math.min(dx, across - dx) ** 2 + (ty - cy) ** 2;
+      };
+      this.tileQueue = keep.sort((a, b) => away(a) - away(b));
+    }
+    while (this.inflight < 8 && this.tileQueue.length) {
       const key = this.tileQueue.shift()!;
       const [tx, ty] = key.split(",").map(Number) as [number, number];
       const version = this.version;
@@ -598,7 +621,6 @@ export class MapEngine {
       // A parcel is a rectangle (what is bought, and where it may be placed), but its drawing is cut along the coast: only
       // the part on land is shown, the sea stays sea. (The parcel's own page shows the whole drawing.)
       this.onLand(s, () => this.drawParcels(s), true);
-      this.drawBeacons(s); // the story's survivors, marked from afar (nothing without the story)
       if (s < RASTER_BELOW) this.drawLabels(s);
       this.drawOverlays(s);
     }
@@ -632,43 +654,6 @@ export class MapEngine {
   /** How corrupted the unacquired land is, as `step / 200` (0.5 % steps), or `null` while the story is off. */
   private story: { step: number } | null = null;
   private ranker: ((v: number) => number) | null = null;
-
-  /** Where the parcels are, grouped by cell (flat x, y, count): the survivors' beacons. Fetched while the story is on. */
-  private beacons: { c: Int32Array; ver: number } | null = null;
-  private beaconsAsked = -1;
-
-  private ensureBeacons() {
-    if (!this.story || this.beaconsAsked === this.version) return;
-    this.beaconsAsked = this.version;
-    const version = this.version;
-    fetch(`/api/map/beacons?v=${version}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((j: { c: number[] }) => { if (!this.destroyed) { this.beacons = { c: Int32Array.from(j.c), ver: version }; this.invalidate(); } })
-      .catch(() => { setTimeout(() => { if (this.beaconsAsked === version) this.beaconsAsked = -1; }, 8000); }); // a later frame retries
-  }
-
-  /**
-   * A mark on every acquired parcel for the story: from far away a parcel is a few pixels at most, so each cell of parcels gets a
-   * small orange block with a white frame (bigger with more parcels). It fades out as the parcels become visible by themselves.
-   */
-  private drawBeacons(s: number) {
-    if (!this.story) return;
-    this.ensureBeacons();
-    const b = this.beacons;
-    const fade = clamp(1 - (s - 0.4) / 1.6, 0, 1);
-    if (!b || fade <= 0) return;
-    const { ctx } = this, v = this.visibleWorld(), pad = 12 / s;
-    ctx.globalAlpha = fade;
-    for (let i = 0; i < b.c.length; i += 3) {
-      const x = b.c[i]!, y = b.c[i + 1]!;
-      if (x < v.x0 - pad || x > v.x1 + pad || y < v.y0 - pad || y > v.y1 + pad) continue;
-      const a = this.worldToScreen(x, y), m = Math.round(clamp(5 + Math.log2(b.c[i + 2]!) * 1.5, 6, 12)), rx = Math.round(a.x - m / 2), ry = Math.round(a.y - m / 2);
-      ctx.fillStyle = "rgba(240,67,22,0.3)"; ctx.fillRect(rx - 4, ry - 4, m + 8, m + 8); // the glow
-      ctx.fillStyle = "#fff"; ctx.fillRect(rx - 1, ry - 1, m + 2, m + 2);
-      ctx.fillStyle = `rgb(${COLORS.accent})`; ctx.fillRect(rx, ry, m, m);
-    }
-    ctx.globalAlpha = 1;
-  }
 
   /** Sets how much of the land is corrupted (0 to 1), or `null` for the ordinary map. Tiles of another step are redrawn lazily. */
   setStory(intensity: number | null) {
@@ -1333,9 +1318,23 @@ export class MapEngine {
       const tx0 = Math.max(0, Math.floor(v.x0 / TILE)), tx1 = Math.min(W / TILE - 1, Math.floor(v.x1 / TILE));
       const ty0 = Math.max(0, Math.floor(v.y0 / TILE)), ty1 = Math.min(H / TILE - 1, Math.floor(v.y1 / TILE));
       const { ctx } = this;
-      const seen = new Set<string>();
+      // The parcels of a tile can only be drawn one by one once the tile has arrived. Until then (a few hundred ms after a long
+      // zoom) the pictures of the coarser rasters already in memory stand in for them, there only: parcels never blink out.
+      const missing: [number, number][] = [];
       for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
         this.ensureTile(tx, ty);
+        if (s >= RASTER_BELOW && this.tiles.get(`${tx},${ty}`)?.state !== "ready") missing.push([tx, ty]);
+      }
+      if (missing.length) {
+        ctx.save();
+        ctx.beginPath();
+        for (const [tx, ty] of missing) { const a = this.worldToScreen(tx * TILE, ty * TILE); ctx.rect(a.x, a.y, TILE * s + 0.5, TILE * s + 0.5); }
+        ctx.clip();
+        this.drawRasters(s, v, false);
+        ctx.restore();
+      }
+      const seen = new Set<string>();
+      for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
         const tile = this.tiles.get(`${tx},${ty}`);
         if (!tile || tile.state !== "ready" || s < RASTER_BELOW) continue;
         for (const p of tile.parcels) {
@@ -1367,16 +1366,13 @@ export class MapEngine {
             ctx.fillStyle = p.assetId && p.color ? p.color : (this.hatchPattern() ?? "#ddd");
             ctx.fillRect(rx, ry, rw, rh);
           }
-          if (this.story) { // a survivor: framed in white and orange, so it stands out of the corrupted land
-            ctx.lineWidth = 1; ctx.strokeStyle = "#fff"; ctx.strokeRect(rx - 0.5, ry - 0.5, rw + 1, rh + 1);
-            ctx.lineWidth = 2; ctx.strokeStyle = `rgb(${COLORS.accent})`; ctx.strokeRect(rx - 2, ry - 2, rw + 4, rh + 4);
-          }
         }
       }
     }
   }
 
-  private drawRasters(s: number, v: { x0: number; y0: number; x1: number; y1: number }) {
+  /** `request: false` draws only what is already in memory (the finer tile, else the coarsest picture standing in for it), asks for nothing. */
+  private drawRasters(s: number, v: { x0: number; y0: number; x1: number; y1: number }, request = true) {
     const z = clamp(Math.floor(-Math.log2(s)), 0, MAX_Z);
     const span = rasterSpan(z);
     const { ctx } = this;
@@ -1384,7 +1380,8 @@ export class MapEngine {
     ctx.imageSmoothingQuality = "high";
     for (let ty = Math.max(0, Math.floor(v.y0 / span)); ty <= Math.min(Math.floor(H / span), Math.floor(v.y1 / span)); ty++) {
       for (let tx = Math.max(0, Math.floor(v.x0 / span)); tx <= Math.min(Math.floor(W / span), Math.floor(v.x1 / span)); tx++) {
-        const img = this.loadImage(this.rasters, `${z}/${tx}/${ty}`, `/api/map/raster/${z}/${tx}/${ty}?v=${this.version}`, 300);
+        const key = `${z}/${tx}/${ty}`;
+        const img = request ? this.loadImage(this.rasters, key, `/api/map/raster/${z}/${tx}/${ty}?v=${this.version}`, 300) : (this.rasters.get(key) ?? { el: new Image(), state: "loading" as const, used: 0 });
         const a = this.worldToScreen(tx * span, ty * span);
         const size = span * s;
         if (img.state === "ready") {

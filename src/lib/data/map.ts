@@ -98,22 +98,3 @@ export async function isAreaFree(x: number, y: number, w: number, h: number): Pr
   const r = await queryOne<{ f: boolean }>("select public.px_is_area_free($1, $2, $3, $4) as f", [x, y, w, h]);
   return r?.f === true;
 }
-
-/**
- * "Beacons" for the "100 days" story: where the parcels are, grouped by 128-pixel cell, flat `[x, y, count, …]` (x, y = the
- * average centre of the parcels of the cell, in grid pixels). A parcel of a few pixels is invisible on a world map, so the map
- * marks the survivors with these. At most one entry per cell (≤ 62 500), so it stays small however many parcels there are.
- */
-export const BEACON_CELL = 128;
-async function computeBeacons(): Promise<number[]> {
-  const rows = await query<{ cx: number; cy: number; n: number }>(
-    `select round(avg(p.x + p.w / 2.0))::int as cx, round(avg(p.y + p.h / 2.0))::int as cy, count(*)::int as n
-       from public.parcels p
-      where p.status = 'active'
-      group by floor((p.x + p.w / 2.0) / ${BEACON_CELL}), floor((p.y + p.h / 2.0) / ${BEACON_CELL})
-      order by 1, 2
-      limit 70000`,
-  );
-  return rows.flatMap((r) => [r.cx, r.cy, r.n]);
-}
-export const getBeacons = unstable_cache(computeBeacons, ["map-beacons"], { revalidate: 30, tags: ["stats"] });

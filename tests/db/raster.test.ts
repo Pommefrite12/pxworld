@@ -86,6 +86,21 @@ describe("raster tiles (zoomed-out view)", () => {
     expect(px[0]).toBeGreaterThan(200);
     expect(px[3]).toBe(255);
   });
+  it("far out, a parcel of a few pixels is its average colour (its picture is not even fetched); closer, it keeps its picture", async () => {
+    await publishedParcel({ x: 512, y: 512, w: 64, h: 64 });
+    const near = await renderRasterTile(2, 0, 0); // 16 px wide on the tile: the picture
+    expect(await pixel(near, 512 / 4 + 2, 512 / 4 + 8)).toEqual([255, 0, 0, 255]);
+    expect(await pixel(near, 512 / 4 + 13, 512 / 4 + 8)).toEqual([0, 0, 255, 255]);
+    const far = await renderRasterTile(3, 0, 0); // 8 px wide: its average colour, one flat block
+    expect(await pixel(far, 512 / 8 + 1, 512 / 8 + 3)).toEqual([128, 0, 128, 255]);
+    expect(await pixel(far, 512 / 8 + 6, 512 / 8 + 3)).toEqual([128, 0, 128, 255]);
+  });
+  it("a picture fetched for one tile is kept for the next ones (a stored file never changes)", async () => {
+    const p = await publishedParcel({ x: 512, y: 512, w: 64, h: 64 });
+    expect(await pixel(await renderRasterTile(2, 0, 0), 512 / 4 + 2, 512 / 4 + 8)).toEqual([255, 0, 0, 255]);
+    fs.rmSync(path.join(dir, `creations/${p.parcel_id}/test.png`)); // gone from storage…
+    expect(await pixel(await renderRasterTile(1, 1, 1), 2, 8)).toEqual([255, 0, 0, 255]); // …yet the next tile (another zoom level) still has it
+  });
   it("tiny parcels are never invisible: they render as one coloured pixel", async () => {
     await publishedParcel({ x: 100, y: 100, w: 10, h: 10 });
     const png = await renderRasterTile(6, 0, 0); // 1 px = 64 virtual px

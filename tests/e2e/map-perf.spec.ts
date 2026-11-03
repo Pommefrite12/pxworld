@@ -13,6 +13,8 @@ type Eng = {
   warmNow: (max?: number) => number;
   warmCandidates: () => unknown[];
   flyTo: (c: { x: number; y: number; scale: number }, ms: number) => void;
+  tiles: Map<string, { state: string }>;
+  tileQueue: string[];
 };
 const engine = (page: import("@playwright/test").Page) => page.waitForFunction(() => { const e = (window as unknown as { __pxEngine?: Eng }).__pxEngine; return Boolean(e && e.geo && !e.geoPending); }, null, { timeout: 60_000 });
 
@@ -134,4 +136,22 @@ test("zooming out or panning over land never flashes the ocean colour while the 
   });
   expect(flashes.frames).toBeGreaterThan(60);
   expect(flashes.bad, `${flashes.bad} of ${flashes.frames} frames showed the ocean colour over land`).toBe(0);
+});
+
+test("after a long zoom the tiles of the view are not queued behind the hundred tiles of the way", async ({ page }) => {
+  // every metadata tile takes 250 ms to arrive (a real network): in a first-come queue the last ones wait for seconds
+  await page.route(/\/api\/map\/tiles\//, async (route) => { await new Promise((r) => setTimeout(r, 250)); await route.continue(); });
+  await page.goto("/");
+  await engine(page);
+  const frames = () => page.evaluate(() => new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done()))));
+  await page.evaluate(() => (window as unknown as { __pxEngine: Eng }).__pxEngine.flyTo({ x: 20_000, y: 12_500, scale: 0.12 }, 0)); // a hundred tiles in view…
+  await frames();
+  expect(await page.evaluate(() => (window as unknown as { __pxEngine: Eng }).__pxEngine.tiles.size), "the first view wants many tiles").toBeGreaterThan(40);
+  const t0 = Date.now();
+  await page.evaluate((c) => (window as unknown as { __pxEngine: Eng }).__pxEngine.flyTo({ ...c, scale: 1.5 }, 0), PARIS); // …then a close view elsewhere
+  await frames();
+  await page.waitForFunction(() => (window as unknown as { __pxEngine: Eng }).__pxEngine.tiles.get("18,11")?.state === "ready", null, { timeout: 15_000 });
+  expect(Date.now() - t0, "the tile under the screen is not behind the ones of the way").toBeLessThan(2000);
+  const queued = await page.evaluate(() => (window as unknown as { __pxEngine: Eng }).__pxEngine.tileQueue.length);
+  expect(queued, "the tiles nobody looks at any more are forgotten").toBeLessThan(6);
 });

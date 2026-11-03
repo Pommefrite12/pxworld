@@ -21,6 +21,33 @@ function hexToRgb(hex: string | null) {
   return { r: parseInt(hex.slice(1, 3), 16), g: parseInt(hex.slice(3, 5), 16), b: parseInt(hex.slice(5, 7), 16) };
 }
 
+/**
+ * Pictures already fetched from storage, kept for the next tiles this server instance renders (the same parcel is on a tile of
+ * every zoom level). A stored file never changes (its name carries a hash), so there is nothing to invalidate; the bytes in memory
+ * are capped so that a busy instance cannot grow without bound.
+ */
+const FILE_CACHE_BYTES = 48 * 1024 * 1024;
+const files = new Map<string, Buffer>();
+let fileBytes = 0;
+async function fetchFile(path: string): Promise<Buffer | null> {
+  const hit = files.get(path);
+  if (hit) { files.delete(path); files.set(path, hit); return hit; } // most recently used last
+  const bytes = await objectStore().get(path);
+  if (bytes && bytes.length < FILE_CACHE_BYTES / 4) {
+    files.set(path, bytes);
+    fileBytes += bytes.length;
+    for (const [k, v] of files) { if (fileBytes <= FILE_CACHE_BYTES) break; files.delete(k); fileBytes -= v.length; }
+  }
+  return bytes;
+}
+
+/**
+ * From this level on (a pixel of the grid is 1/8 of a pixel or less), a parcel of at most 8 px on the tile is its average colour:
+ * nobody can tell the picture apart at that size, and not fetching it is what makes the world view appear at once.
+ */
+const FLAT_FROM_LEVEL = 3;
+const FLAT_UP_TO_PX = 8;
+
 interface Row { x: number; y: number; w: number; h: number; path: string | null; color: string | null; src_w: number | null }
 
 /**
@@ -55,8 +82,8 @@ export async function renderRasterTile(z: number, tx: number, ty: number): Promi
       const w = Math.max(1, Math.round(r.w * scale)), h = Math.max(1, Math.round(r.h * scale));
       if (left >= RASTER_TILE || top >= RASTER_TILE || left + w <= 0 || top + h <= 0) continue;
       let input: Buffer | null = null;
-      if (r.path && (w > 2 || h > 2)) {
-        const bytes = await objectStore().get(r.path);
+      if (r.path && (z >= FLAT_FROM_LEVEL ? w > FLAT_UP_TO_PX || h > FLAT_UP_TO_PX : w > 2 || h > 2)) {
+        const bytes = await fetchFile(r.path);
         if (bytes) {
           input = await sharp(bytes)
             // crisp pixels only when the creation is magnified or kept as is; a finer (half-pixel) creation shown smaller is averaged
@@ -79,7 +106,7 @@ export async function renderRasterTile(z: number, tx: number, ty: number): Promi
       layers.push({ input, left: Math.max(0, left), top: Math.max(0, top) });
     }
   };
-  await Promise.all(Array.from({ length: 8 }, work));
+  await Promise.all(Array.from({ length: 12 }, work));
 
   return sharp({ create: { width: RASTER_TILE, height: RASTER_TILE, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
     .composite(layers)

@@ -42,7 +42,7 @@ check("/api/stats answers with real figures", stats.status === 200 && isOurs, `$
 // Locally the header carries `s-maxage`. On Vercel the edge consumes it (the browser is told `max-age=0, must-revalidate`) and says what it did in
 // `x-vercel-cache` (HIT, MISS, STALE…): either proves that a CDN is allowed to keep the answer.
 check("/api/stats is cacheable by a CDN", /s-maxage=\d+/.test(stats.r.headers.get("cache-control") ?? "") || Boolean(stats.r.headers.get("x-vercel-cache")), stats.r.headers.get("x-vercel-cache") ? `x-vercel-cache: ${stats.r.headers.get("x-vercel-cache")}` : "");
-for (const path of ["/api/map/tiles/0/0", "/api/map/beacons", "/api/map/raster/5/0/0", "/api/availability?x=19000&y=11700&w=10&h=10", "/sitemap.xml", "/robots.txt", "/icon.png", "/apple-icon.png"]) {
+for (const path of ["/api/map/tiles/0/0", "/api/map/raster/5/0/0", "/api/availability?x=19000&y=11700&w=10&h=10", "/sitemap.xml", "/robots.txt", "/icon.png", "/apple-icon.png"]) {
   const x = await get(path);
   check(`endpoint ${path}`, x.status === 200 && x.body.length > 0, `${x.status}, ${x.body.length} bytes`);
 }
