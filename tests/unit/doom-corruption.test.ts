@@ -49,16 +49,12 @@ describe("damage and the look of a cell", () => {
       expect(damage(r, 0)).toBe(0);
     }
   });
-  it("paints a destroyed cell as scanlined lavender with rare blocks of error colour", () => {
-    let sparks = 0;
+  it("paints a destroyed cell as scanlined lavender and nothing else: no stray blocks of colour", () => {
     for (let i = 0; i < 20_000; i++) {
       const look = cellLook(1, hash2(i, 1), i);
       expect(look.split).toBe(false);
-      if (look.fill === GLITCH.lav || look.fill === GLITCH.lav2) expect(look.fill).toBe(i & 1 ? GLITCH.lav2 : GLITCH.lav); // the rows alternate
-      else sparks++;
+      expect(look.fill).toBe(i & 1 ? GLITCH.lav2 : GLITCH.lav); // the rows alternate, whatever the cell's own random number
     }
-    expect(sparks / 20_000).toBeGreaterThan(0.012);
-    expect(sparks / 20_000).toBeLessThan(0.02);
   });
   it("leaves intact land alone, slips the colours of a cell about to go, and sparks at the very start", () => {
     for (let i = 0; i < 500; i++) expect(cellLook(0, hash2(i, 2), i)).toEqual({ fill: null, split: false });

@@ -17,6 +17,7 @@ import { ParcelCard } from "./ParcelCard";
 import { DoomActions, DoomMessage, DoomPlate } from "@/components/doom/Doom";
 import { endFinale, finaleInfo, useFinaleDuring } from "@/components/doom/finaleStore";
 import { useDoom } from "@/components/doom/useDoom";
+import { ComicButton } from "@/components/doom/Comic";
 import { PRE_END_INTENSITY, infection } from "@/lib/doom/clock";
 import { SearchBox, type SearchTarget } from "./SearchBox";
 
@@ -232,6 +233,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
         {doom && mode === "explore" && !parcelCode && (
           <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex flex-col items-center gap-2 px-3 sm:top-4">
             <DoomPlate />
+            <ComicButton ended={ended} onSave={() => startBuy()} />
             <DoomMessage survivors={stats?.parcels ?? 0} className="hidden sm:block" />
             <DoomActions survivors={stats?.parcels ?? 0} className="hidden sm:flex" />
           </div>

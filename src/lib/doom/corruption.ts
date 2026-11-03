@@ -63,14 +63,9 @@ export interface CellLook {
   split: boolean;
 }
 
-const SPARKS = [GLITCH.magenta, GLITCH.cyan, GLITCH.orange, GLITCH.ink, GLITCH.white, GLITCH.violet] as const;
-
 /** What one cell looks like. `h` is the cell's own random number in [0, 1), `row` its row (scanlines alternate). */
 export function cellLook(damaged: number, h: number, row: number): CellLook {
-  if (damaged >= 0.6) {
-    if (h < 0.016) return { fill: SPARKS[Math.min(5, Math.floor((h / 0.016) * 6))]!, split: false }; // a stray block of error colour
-    return { fill: row & 1 ? GLITCH.lav2 : GLITCH.lav, split: false }; // the scanlined lavender field
-  }
+  if (damaged >= 0.6) return { fill: row & 1 ? GLITCH.lav2 : GLITCH.lav, split: false }; // the scanlined lavender field, clean (no stray blocks of colour)
   if (damaged > 0.12) return { fill: null, split: true }; // not gone yet: the colours slip
   if (damaged > 0) return { fill: h < (0.35 * damaged) / 0.12 ? (h < (0.175 * damaged) / 0.12 ? GLITCH.magenta : GLITCH.cyan) : null, split: false }; // the first sparks
   return { fill: null, split: false };

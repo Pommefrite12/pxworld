@@ -308,3 +308,59 @@ test("the sequence plays by itself when the countdown reaches zero in front of t
   await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 15_000 }).toBeGreaterThan(0.9);
   expect(await hasFront(page)).toBe(false);
 });
+
+/* ------------------------------------------------------------------ the bug of the destroyed land, every 45 s */
+type GlitchEng = Eng & { glitch: { t0: number } | null; glitchNow(): boolean; setGlitchEvery(ms: number): void };
+const engine = (page: Page) => page.evaluateHandle(() => (window as unknown as { __pxEngine: GlitchEng }).__pxEngine);
+/** A fingerprint of everything on the canvas (every 5th pixel is enough to see a band move). */
+const fingerprint = (page: Page) => page.getByRole("application").evaluate((c: HTMLCanvasElement) => {
+  const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+  let h = 2166136261;
+  for (let i = 0; i < d.length; i += 20) h = Math.imul(h ^ (d[i]! | (d[i + 1]! << 8) | (d[i + 2]! << 16)), 16777619) >>> 0;
+  return h;
+});
+
+test("every so often the destroyed land has a computer bug for about a second, then goes back exactly where it was", async ({ page }) => {
+  await page.goto("/?preview=0");
+  await ready(page);
+  await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
+  await page.waitForTimeout(1500); // the tiles are all made
+  const calm = await fingerprint(page);
+  expect(await fingerprint(page), "nothing moves between two bugs").toBe(calm);
+
+  const e = await engine(page);
+  expect(await e.evaluate((x) => x.glitchNow())).toBe(true);
+  expect(await e.evaluate((x) => x.glitchNow()), "a burst already going on is not restarted").toBe(false);
+  await expect.poll(() => fingerprint(page), { timeout: 5000, intervals: [60] }).not.toBe(calm); // the destroyed zones move
+  await expect.poll(() => e.evaluate((x) => x.glitch === null), { timeout: 5000 }).toBe(true); // it is over after about a second
+  await expect.poll(() => fingerprint(page), { timeout: 5000 }).toBe(calm); // and everything is back in place, pixel for pixel
+});
+
+test("the bug comes by itself, again and again, on the schedule it is given", async ({ page }) => {
+  await page.goto("/?preview=0");
+  await ready(page);
+  await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
+  const e = await engine(page);
+  await e.evaluate((x) => x.setGlitchEvery(700));
+  const seen: number[] = [];
+  for (let i = 0; i < 2; i++) {
+    await expect.poll(() => e.evaluate((x) => x.glitch !== null), { timeout: 8000, intervals: [50] }).toBe(true);
+    seen.push(await e.evaluate((x) => x.glitch!.t0));
+    await expect.poll(() => e.evaluate((x) => x.glitch === null), { timeout: 5000, intervals: [50] }).toBe(true);
+  }
+  expect(seen[1]!, "a second burst, after the first").toBeGreaterThan(seen[0]!);
+  await e.evaluate((x) => x.setGlitchEvery(45_000));
+});
+
+test("no bug on the ordinary map, none for a visitor who asked for fewer animations", async ({ page }) => {
+  await page.goto("/");
+  await ready(page);
+  await page.waitForTimeout(800);
+  expect(await (await engine(page)).evaluate((x) => x.glitchNow()), "no story, no bug").toBe(false);
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/?preview=0");
+  await ready(page);
+  await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
+  expect(await (await engine(page)).evaluate((x) => x.glitchNow()), "reduced motion: the land stays still").toBe(false);
+});

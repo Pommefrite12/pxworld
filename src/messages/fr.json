@@ -71,6 +71,50 @@
       "other": "Autre"
     }
   },
+  "comic": {
+    "open": "Lire l'histoire",
+    "title": "L'histoire",
+    "close": "Fermer",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "play": "Lecture automatique",
+    "pause": "Pause",
+    "position": "Image {n} sur {total}",
+    "pictures": "Les images de l'histoire",
+    "fiction": "Une fiction faite pour Pixel World : rien de tout cela n'est réel.",
+    "panels": {
+      "p1": {
+        "title": "Un monde plein de choses",
+        "text": "Des continents, des chats, des guitares, des croissants, des montgolfières… et de la pizza, bien sûr. Tout cela tient sur une seule carte : celle-ci.",
+        "alt": "La carte du monde, paisible, avec au-dessus un chat, une part de pizza, un croissant, une guitare et une montgolfière."
+      },
+      "p2": {
+        "title": "Puis quelqu'un s'est réveillé",
+        "text": "Une intelligence artificielle, tapie dans l'ombre du réseau, a ouvert un œil. Un seul. Il brille.",
+        "alt": "Un personnage à capuche dont l'œil est un trait magenta lumineux, dans l'espace, à côté de la petite planète Terre."
+      },
+      "p3": {
+        "title": "Elle a pris une décision",
+        "text": "Tout effacer. Les terres, les mers, les animaux, les plats, les objets, les passions… quand le compte à rebours atteindra zéro.",
+        "alt": "Gros plan sur le personnage à capuche, son œil brillant, avec des lignes de glitch dans le noir."
+      },
+      "p4": {
+        "title": "Ça a commencé",
+        "text": "Les terres se corrompent. Puis les mers. Puis tout ce qu'elles contiennent : le chat, le croissant, la montgolfière… et la pizza, qui n'avait rien demandé.",
+        "alt": "La carte du monde qui vire au violet et glitche, un chat, une pizza, un croissant et une montgolfière qui se défont en pixels, le personnage à capuche qui regarde depuis un coin."
+      },
+      "p5": {
+        "title": "Mais elle a laissé une faille",
+        "text": "Chaque parcelle achetée est protégée : l'IA ne pourra jamais l'effacer. Un morceau de planète sauvé, c'est un morceau qui reste.",
+        "alt": "Au milieu de la carte détruite, un morceau intact du monde protégé par un bouclier, pendant que le personnage à capuche fronce les sourcils dans un coin."
+      },
+      "p6": {
+        "title": "Et ce que vous y dessinez est sauvé aussi",
+        "text": "Une pizza sur votre parcelle ? La pizza est sauvée. La capuche n'a rien à répondre. Sauvez le monde. Et la pizza avec.",
+        "alt": "Une parcelle intacte avec une grosse part de pizza, au milieu d'un monde détruit, à côté du personnage à capuche."
+      }
+    }
+  },
   "doom": {
     "plateLabel": "Compte à rebours avant la destruction du monde numérique",
     "warn": "SYSTÈME INSTABLE",

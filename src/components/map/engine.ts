@@ -1,5 +1,6 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { gridAlpha } from "@/lib/map/pixelGrid";
+import { GLITCH_EVERY_MS, GLITCH_FOR_MS, glitchFrame, glitchShift, type GlitchFrame } from "@/lib/doom/glitch";
 import { cellDevicePx, cellLook, damage, destroyedRuns, field, fringeLook, fringeShift, hash2, levelAlpha, makeRanker, tearOffset, GLITCH } from "@/lib/doom/corruption";
 import { finaleAt, frontX, labelPlan, shakeOffset, shakeZoom, type FinaleFrame } from "@/lib/doom/finale";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
@@ -49,6 +50,9 @@ interface Img { el: HTMLImageElement; state: "loading" | "ready" | "error"; used
 
 const TILE = 1000;
 const GEO_TILE_PX = 512;
+/** Where a tile's land is destroyed (rows of runs on an R × R lattice): the zones that can glitch. */
+type GeoGlitch = { runs: { j: number; i0: number; i1: number }[]; R: number };
+type GeoTile = { c: HTMLCanvasElement; used: number; complete: boolean; ver: number; step: number; glitch?: GeoGlitch };
 const GEO_CACHE_MAX = 64;
 /**
  * The coarsest geography level. Its handful of tiles covers the whole world, is drawn with the land fill ONLY (no lines: a line
@@ -279,6 +283,7 @@ export class MapEngine {
     this.canvas.style.transform = "";
     this.cancelWarm();
     cancelAnimationFrame(this.raf);
+    this.stopGlitch();
     this.cleanup.forEach((f) => f());
   }
 
@@ -665,6 +670,11 @@ export class MapEngine {
     const sr = this.selectionScreenRect();
     if (sr && (sr.w < 28 || sr.h < 28)) { this.pulse = (t % 1400) / 1400; again = true; }
 
+    if (this.glitch) { // the bug of the destroyed land: a still picture every 90 ms, then everything back in place
+      if (performance.now() - this.glitch.t0 >= GLITCH_FOR_MS) this.glitch = null;
+      else again = true;
+      this.dirty = true;
+    }
     if (this.dirty || again) { this.dirty = false; this.draw(); }
     if (this.geoPending) { this.dirty = true; again = true; } // geography tiles are still being rasterised: draw the next batch next frame
     if (this.finale) { this.dirty = true; again = true; } // the final sequence is playing
@@ -751,7 +761,7 @@ export class MapEngine {
    * blitted: a pan/zoom frame costs a handful of drawImage calls instead of re-filling ~100 000 path segments.
    * Level k renders 512-px tiles at 2^k device pixels per grid pixel, so edges stay vector-sharp at every zoom.
    */
-  private geoTiles = new Map<string, { c: HTMLCanvasElement; used: number; complete: boolean; ver: number; step: number }>();
+  private geoTiles = new Map<string, GeoTile>();
 
   /* ------------------------------------------------------------------ the "100 days" story: corrupted land */
   /** How corrupted the unacquired land is, as `step / 200` (0.5 % steps), or `null` while the story is off. */
@@ -764,14 +774,70 @@ export class MapEngine {
     const step = intensity === null ? -1 : Math.round(clamp(intensity, 0, 1) * 200);
     if (step === (this.story ? this.story.step : -1)) return;
     this.story = step < 0 ? null : { step };
+    if (this.story) this.armGlitch(); else this.stopGlitch();
     this.invalidate();
+  }
+
+  /* ------------------------------------------------------------------ the bug of the destroyed land, every 45 s */
+  private glitch: { t0: number } | null = null;
+  private glitchTimer = 0;
+  private glitchEvery = GLITCH_EVERY_MS;
+
+  /** The picture of the burst to draw now (null: none going on). */
+  private glitchPicture(): GlitchFrame | null {
+    return this.glitch ? glitchFrame(performance.now() - this.glitch.t0) : null;
+  }
+
+  /** From now on a burst happens every `glitchEvery` ms while the story shows destroyed land (a test shortens the wait). */
+  private armGlitch() {
+    if (this.glitchTimer || this.destroyed) return;
+    this.glitchTimer = window.setTimeout(() => { this.glitchTimer = 0; this.glitchNow(); this.armGlitch(); }, this.glitchEvery);
+  }
+  private stopGlitch() {
+    if (this.glitchTimer) clearTimeout(this.glitchTimer);
+    this.glitchTimer = 0; this.glitch = null;
+  }
+  setGlitchEvery(ms: number) { this.glitchEvery = ms; if (this.glitchTimer) { this.stopGlitch(); this.armGlitch(); } }
+
+  /**
+   * Starts a burst now: the destroyed zones tear sideways for about a second. Nothing happens for an ordinary map, before anything is
+   * destroyed, during the final sequence, in a hidden tab, or for a visitor who asked for fewer animations.
+   */
+  glitchNow(): boolean {
+    if (!this.story || this.story.step < 1 || this.finale || this.fin || this.glitch || this.destroyed) return false;
+    if (document.visibilityState === "hidden" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return false;
+    this.glitch = { t0: performance.now() };
+    this.invalidate();
+    return true;
+  }
+
+  /**
+   * The bug itself, over one tile: bands of the destroyed zones (`glitch.runs`, in rows of the tile's lattice) are drawn again,
+   * slid sideways. Where a band slides over a coast, its magenta and cyan fringe moves with it. Bands that slide by the same amount
+   * and sit one above the other are drawn in one go.
+   */
+  private drawGlitch(tile: HTMLCanvasElement, glitch: GeoGlitch, x: number, y: number, size: number, ty: number, gf: GlitchFrame) {
+    const { runs, R } = glitch, cell = GEO_TILE_PX / R, f = size / GEO_TILE_PX, { ctx } = this;
+    let cur: { i0: number; i1: number; dx: number; j0: number; j1: number } | null = null;
+    const flush = () => {
+      if (!cur) return;
+      const sx = cur.i0 * cell, sw = (cur.i1 - cur.i0) * cell, sy = cur.j0 * cell, sh = (cur.j1 - cur.j0 + 1) * cell;
+      ctx.drawImage(tile, sx, sy, sw, sh, x + (sx + cur.dx) * f, y + sy * f, sw * f, sh * f);
+      cur = null;
+    };
+    for (const r of runs) {
+      const dx = glitchShift((ty * R + r.j) >> 1, gf);
+      if (!dx) { flush(); continue; }
+      if (cur && cur.i0 === r.i0 && cur.i1 === r.i1 && cur.dx === dx && cur.j1 === r.j - 1) cur.j1 = r.j; else { flush(); cur = { i0: r.i0, i1: r.i1, dx, j0: r.j, j1: r.j }; }
+    }
+    flush();
   }
 
   /* ------------------------------------------------------------------ the final sequence of the story */
   /** The sequence in progress (null: none). `waiting`: a replay that first needs the screen redrawn in the world before the end. */
   private finale: { start: number; reduced: boolean; waiting: boolean; waitedSince: number } | null = null;
   /** The land in its end state (intensity 1), drawn ahead of the sequence so that nothing has to be made while it plays. */
-  private finTiles = new Map<string, { c: HTMLCanvasElement; used: number; complete: boolean; ver: number; step: number }>();
+  private finTiles = new Map<string, GeoTile>();
   private finArmed = false;
   private geoMissing = 0;
   private fin: { frame: FinaleFrame; front: number; reduced: boolean; t: number } | null = null;
@@ -905,7 +971,7 @@ export class MapEngine {
   /**
    * Paints the corruption into a geography tile, inside the land only (`fill` is the tile's land; for the SEA, `sea`, it is the whole tile
    * and the look is the plain lavender field — the error colours stay on the land): big square cells (a few screen
-   * pixels whatever the zoom) of scanlined lavender with stray blocks of error colour, colours slipping at the edge of the
+   * pixels whatever the zoom) of scanlined lavender, colours slipping at the edge of the
    * destroyed area, and bands that have slid sideways. The cells of a level have a fixed size in device pixels, so a tile
    * holds a whole number of them and they never leave seams. Returns where the land is destroyed (for the fringe of the coasts), or
    * `null` when nothing of the tile is touched.
@@ -930,19 +996,13 @@ export class MapEngine {
       let lo = 1, hi = 0;
       for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const r = lattice[j * (R + 1) + i]!; if (r < lo) lo = r; if (r > hi) hi = r; }
       if (lim - lo <= 0) continue; // untouched
-      if ((lim - hi) / 0.1 >= 0.62) { // destroyed everywhere in the block: its scanlines in one go, then the stray blocks of error colour
+      if ((lim - hi) / 0.1 >= 0.62) { // destroyed everywhere in the block: its scanlines in one go
         for (let r = 0; r < B; r++) {
           const cy = by * B + r, iy = ty * n + cy;
           g.fillStyle = iy & 1 ? GLITCH.lav2 : GLITCH.lav;
           g.fillRect(bx * B * cs + (sea ? 0 : tearOffset(iy >> 1, k) * cs), cy * cs, B * cs, cs);
         }
-        if (sea) continue; // the destroyed sea is the lavender field alone: the error colours (magenta, cyan…) belong to the land
-        const bseed = (ty * blocks + by) * 7919 + tx * blocks + bx, count = Math.floor(B * B * 0.016 + hash2(bseed, 300 + k));
-        for (let q = 0; q < count; q++) {
-          g.fillStyle = [GLITCH.magenta, GLITCH.cyan, GLITCH.orange, GLITCH.ink, GLITCH.white, GLITCH.violet][Math.floor(hash2(bseed, 340 + q) * 6)]!;
-          g.fillRect((bx * B + Math.floor(hash2(bseed, 310 + q) * B)) * cs, (by * B + Math.floor(hash2(bseed, 320 + q) * B)) * cs, cs, cs);
-        }
-        continue;
+        continue; // the destroyed field is the scanlined lavender alone: no stray blocks of colour
       }
       for (let cy = by * B; cy < (by + 1) * B; cy++) { // mixed: cell by cell
         const v = ((cy + 0.5) / n) * R, j = Math.min(R - 1, Math.floor(v)), fy = v - j, iy = ty * n + cy, off = tearOffset(iy >> 1, k);
@@ -1095,7 +1155,7 @@ export class MapEngine {
    * Rasterises one geography tile. With `strict` it refuses (returns null) to draw anything while data the tile needs is
    * still downloading — pre-rendering must never spend time on a stand-in that will be redrawn anyway.
    */
-  private renderGeoTile(k: number, tx: number, ty: number, strict = false, fillOnly = false, stepOverride?: number): { c: HTMLCanvasElement; complete: boolean } | null {
+  private renderGeoTile(k: number, tx: number, ty: number, strict = false, fillOnly = false, stepOverride?: number): { c: HTMLCanvasElement; complete: boolean; glitch?: GeoGlitch } | null {
     if (!this.geo) return null;
     const scale = 2 ** k, size = GEO_TILE_PX / scale;
     const rect = { x0: tx * size, y0: ty * size, x1: (tx + 1) * size, y1: (ty + 1) * size };
@@ -1140,7 +1200,7 @@ export class MapEngine {
     g.lineWidth = (clamp(1.6 + k * 0.12, 1.4, 2.6) * dprBoost) / scale;
     g.stroke(paths.coast);
     this.paintCoastFringe(g, paths.coast, corrupted, k, tx, ty, scale); // the story: the coasts of the destroyed land come apart into colours
-    return { c, complete };
+    return { c, complete, glitch: corrupted && corrupted.runs.length ? corrupted : undefined };
   }
 
   /* ------------------------------------------------------------------ pre-rendering */
@@ -1218,7 +1278,7 @@ export class MapEngine {
       // canvas drawing is lazy: touching the tile once makes the browser rasterise it now rather than at the first blit
       if (!this.warmScratch) { const sc = document.createElement("canvas"); sc.width = sc.height = 1; this.warmScratch = sc.getContext("2d"); }
       this.warmScratch?.drawImage(r.c, 0, 0, 1, 1);
-      this.geoTiles.set(key, { c: r.c, used: this.frameNo, complete: true, ver: this.geo.version, step: this.story ? this.story.step : -1 });
+      this.geoTiles.set(key, { c: r.c, used: this.frameNo, complete: true, ver: this.geo.version, step: this.story ? this.story.step : -1, glitch: r.glitch });
       made++;
     }
     return made;
@@ -1291,7 +1351,7 @@ export class MapEngine {
       for (let i = 0; i < Math.min(missing.length, 6); i++) {
         if (i > 0 && performance.now() - this.frameStart > BAKE_BUDGET_MS) break;
         const m = missing[i]!, r = this.renderGeoTile(k, m.tx, m.ty);
-        if (r) this.geoTiles.set(`${k}/${m.tx}/${m.ty}`, { c: r.c, used: 0, complete: r.complete, ver: this.geo.version, step });
+        if (r) this.geoTiles.set(`${k}/${m.tx}/${m.ty}`, { c: r.c, used: 0, complete: r.complete, ver: this.geo.version, step, glitch: r.glitch });
       }
     }
     // the end state of the visible land, made ahead of the final sequence (or while it plays, if the camera moved)
@@ -1306,12 +1366,19 @@ export class MapEngine {
       if (baked) this.geoPending = true; // keep drawing until the whole visible land is ready
     }
     const placed: { key: string; x: number; y: number; px: number }[] = [];
+    const gf = this.glitchPicture(); // the bug of the destroyed land, while one is on
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
       const tile = this.geoTiles.get(`${k}/${tx}/${ty}`);
       const a = this.worldToScreen(tx * size, ty * size);
       const px = size * s;
       placed.push({ key: `${k}/${tx}/${ty}`, x: a.x, y: a.y, px });
-      if (tile) { tile.used = this.frameNo; ctx.drawImage(tile.c, a.x, a.y, px + 0.6, px + 0.6); if (!tile.complete && tile.ver !== this.geo.version) this.geoPending = true; continue; }
+      if (tile) {
+        tile.used = this.frameNo;
+        ctx.drawImage(tile.c, a.x, a.y, px + 0.6, px + 0.6);
+        if (gf && tile.glitch) this.drawGlitch(tile.c, tile.glitch, a.x, a.y, px + 0.6, ty, gf);
+        if (!tile.complete && tile.ver !== this.geo.version) this.geoPending = true;
+        continue;
+      }
       this.geoPending = true;
       this.drawGeoStandIn(k, tx, ty, a.x, a.y, px);
     }
