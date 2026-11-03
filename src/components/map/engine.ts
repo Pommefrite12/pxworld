@@ -24,7 +24,7 @@ import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
  */
 
 export interface Camera { x: number; y: number; scale: number }
-export interface MapParcel { code: string; x: number; y: number; w: number; h: number; assetId: string | null; color: string | null }
+export interface MapParcel { code: string; x: number; y: number; w: number; h: number; assetId: string | null; color: string | null; /** A water parcel: drawn under the land, in three blues. */ water: boolean }
 export type SelectionState = "ok" | "blocked" | "checking" | "out" | "water";
 export type Mode = "explore" | "buy";
 
@@ -41,7 +41,7 @@ export interface EngineCallbacks {
   onFinaleEnd?: () => void;
 }
 
-type TileParcel = [string, number, number, number, number, string | null, string | null];
+type TileParcel = [string, number, number, number, number, string | null, string | null, 0 | 1];
 interface Tile { state: "loading" | "ready" | "error"; parcels: MapParcel[] }
 interface Img { el: HTMLImageElement; state: "loading" | "ready" | "error"; used: number }
 
@@ -287,7 +287,7 @@ export class MapEngine {
         .then((r) => (r.ok ? (r.json() as Promise<TileParcel[]>) : Promise.reject(new Error(String(r.status)))))
         .then((rows) => {
           if (version !== this.version) return;
-          this.tiles.set(key, { state: "ready", parcels: rows.map(([code, x, y, w, h, assetId, color]) => ({ code, x, y, w, h, assetId, color })) });
+          this.tiles.set(key, { state: "ready", parcels: rows.map(([code, x, y, w, h, assetId, color, water]) => ({ code, x, y, w, h, assetId, color, water: water === 1 })) });
           this.updateSelectionState();
           this.invalidate();
         })

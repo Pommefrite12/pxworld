@@ -24,9 +24,9 @@ afterAll(async () => {
 beforeEach(resetData);
 
 /** A published parcel whose creation is a known pattern: left half red, right half blue. */
-async function publishedParcel(rect: { x: number; y: number; w: number; h: number }, pattern = true) {
+async function publishedParcel(rect: { x: number; y: number; w: number; h: number }, pattern = true, water = false) {
   const u = await createUser();
-  const o = await startOrder(u, rect);
+  const o = water ? await startOrder(u, rect, 0, "water") : await startOrder(u, rect);
   await fulfill(o.order_id);
   const half = Buffer.alloc(rect.w * rect.h * 4);
   for (let i = 0; i < rect.w * rect.h; i++) {
@@ -66,6 +66,37 @@ describe("metadata tiles", () => {
     const admin = await createUser("adm", { role: "admin" });
     await pool.query(`select public.px_set_parcel_hidden($1, $2, true, 'x')`, [admin, p.parcel_id]);
     expect((await getTile(0, 0))[0]![5]).toBeNull();
+  });
+});
+
+describe("water parcels", () => {
+  it("are a layer of their own in the raster tiles, in three blues whatever the creation is", async () => {
+    const land = await publishedParcel({ x: 256 + 10, y: 20, w: 20, h: 20 });
+    const water = await publishedParcel({ x: 256 + 100, y: 20, w: 20, h: 20 }, true, true);
+    void land; void water;
+    const onLand = await renderRasterTile(0, 1, 0), onWater = await renderRasterTile(0, 1, 0, "water");
+    expect(await pixel(onLand, 10 + 2, 20 + 5)).toEqual([255, 0, 0, 255]); // the land parcel keeps its colours
+    expect((await pixel(onLand, 100 + 2, 20 + 5))[3]).toBe(0); // the water parcel is not on the land layer
+    expect((await pixel(onWater, 10 + 2, 20 + 5))[3]).toBe(0); // and the land parcel is not on the water layer
+    expect(await pixel(onWater, 100 + 2, 20 + 5)).toEqual([27, 79, 156, 255]); // red is dark: deep blue
+    expect(await pixel(onWater, 100 + 15, 20 + 5)).toEqual([27, 79, 156, 255]); // so is blue
+  });
+  it("far away, a water parcel is the tint of its average colour; without a published creation it is the medium blue", async () => {
+    await publishedParcel({ x: 512, y: 512, w: 64, h: 64 }, true, true); // average colour #800080 is dark (lightness 0.21): deep blue
+    const far = await renderRasterTile(3, 0, 0, "water");
+    expect(await pixel(far, 512 / 8 + 3, 512 / 8 + 3)).toEqual([27, 79, 156, 255]);
+    const u = await createUser();
+    const o = await startOrder(u, { x: 2048, y: 512, w: 64, h: 64 }, 0, "water");
+    await fulfill(o.order_id); // paid, creation not published yet
+    expect(await pixel(await renderRasterTile(3, 1, 0, "water"), 3, 512 / 8 + 3)).toEqual([47, 143, 216, 255]);
+  });
+  it("the metadata tile says which parcels are water and gives them their blue", async () => {
+    await publishedParcel({ x: 1100, y: 2200, w: 20, h: 20 });
+    await publishedParcel({ x: 1300, y: 2200, w: 20, h: 20 }, true, true);
+    const tile = await getTile(1, 2);
+    expect(tile.map((p) => [p[1], p[7]])).toEqual([[1100, 0], [1300, 1]]);
+    expect(tile[0]![6]).toBe("#800080"); // land: the real average colour
+    expect(tile[1]![6]).toBe("#1b4f9c"); // water: its tint (#800080 is dark: deep blue)
   });
 });
 

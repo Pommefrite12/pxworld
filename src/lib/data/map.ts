@@ -5,18 +5,22 @@ import { DEFAULT_UNIT_PRICE_CENTS, GRID_HEIGHT, GRID_WIDTH, MIN_AREA, TOTAL_PIXE
 import type { ParcelKind, Pricing } from "@/lib/grid/pricing";
 import { salesClosedByStory } from "@/lib/doom/sales";
 import type { SaleCurrency } from "@/lib/currency";
+import { tintColor } from "@/lib/images/waterTint";
 
 export const TILE_SIZE = 1000; // virtual pixels per JSON metadata tile (40 × 25 tiles)
 export const TILES_X = GRID_WIDTH / TILE_SIZE;
 export const TILES_Y = GRID_HEIGHT / TILE_SIZE;
 
-/** [code, x, y, w, h, assetId | null, avgColor | null] — compact on purpose, a tile can hold thousands. */
-export type TileParcel = [string, number, number, number, number, string | null, string | null];
+/**
+ * [code, x, y, w, h, assetId | null, avgColor | null, water] — compact on purpose, a tile can hold thousands. `water` is 1 for a water
+ * parcel (then `avgColor` is already one of its three blues, and is the medium blue while the creation is not published).
+ */
+export type TileParcel = [string, number, number, number, number, string | null, string | null, 0 | 1];
 
 export async function getTile(tx: number, ty: number): Promise<TileParcel[]> {
   const x0 = tx * TILE_SIZE, y0 = ty * TILE_SIZE;
-  const rows = await query<{ code: string; x: number; y: number; w: number; h: number; asset_id: string | null; color: string | null }>(
-    `select p.code, p.x, p.y, p.w, p.h,
+  const rows = await query<{ code: string; x: number; y: number; w: number; h: number; kind: string; asset_id: string | null; color: string | null }>(
+    `select p.code, p.x, p.y, p.w, p.h, p.kind,
             case when p.hidden_at is null then p.published_asset_id end as asset_id,
             case when p.hidden_at is null then a.avg_color end as color
        from public.parcels p
@@ -26,7 +30,9 @@ export async function getTile(tx: number, ty: number): Promise<TileParcel[]> {
       limit 20000`,
     [x0, y0, x0 + TILE_SIZE - 1, y0 + TILE_SIZE - 1],
   );
-  return rows.map((r) => [r.code, r.x, r.y, r.w, r.h, r.asset_id, r.color]);
+  return rows.map((r) => (r.kind === "water"
+    ? [r.code, r.x, r.y, r.w, r.h, r.asset_id, tintColor(r.color), 1]
+    : [r.code, r.x, r.y, r.w, r.h, r.asset_id, r.color, 0]));
 }
 
 export interface PublicStats {

@@ -2,6 +2,7 @@ import "server-only";
 import sharp, { type OverlayOptions } from "sharp";
 import { query } from "@/lib/db/pool";
 import { objectStore } from "@/lib/storage";
+import { tintColor, tintPixels } from "@/lib/images/waterTint";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 
 export const RASTER_TILE = 256;
@@ -48,29 +49,31 @@ async function fetchFile(path: string): Promise<Buffer | null> {
 const FLAT_FROM_LEVEL = 3;
 const FLAT_UP_TO_PX = 8;
 
-interface Row { x: number; y: number; w: number; h: number; path: string | null; color: string | null; src_w: number | null }
+interface Row { x: number; y: number; w: number; h: number; kind: string; path: string | null; color: string | null; src_w: number | null }
 
 /**
  * Renders the 256×256 PNG for tile (z, tx, ty): the parcels of that region, downscaled by 2^z.
  * Level 0 is 1 virtual pixel = 1 image pixel. Parcels without a published creation (pending / hidden)
- * are drawn as a neutral block so sold space is never shown as free.
+ * are drawn as a neutral block so sold space is never shown as free. WATER parcels are drawn in three tints of blue
+ * (`lib/images/waterTint`), whatever their creation is. The tile holds the parcels of ONE kind (`kind`): land and water are two
+ * layers, because the browser draws water under the land (the coast cuts both) and clips nothing on the server.
  * Results are immutable per map version and cached by the CDN (see the route's Cache-Control).
  */
-export async function renderRasterTile(z: number, tx: number, ty: number): Promise<Buffer> {
+export async function renderRasterTile(z: number, tx: number, ty: number, kind: "land" | "water" = "land"): Promise<Buffer> {
   const span = rasterSpan(z);
   const x0 = tx * span, y0 = ty * span;
   if (x0 >= GRID_WIDTH || y0 >= GRID_HEIGHT) return EMPTY;
   const scale = 2 ** -z;
 
   const rows = await query<Row>(
-    `select p.x, p.y, p.w, p.h,
+    `select p.x, p.y, p.w, p.h, p.kind,
             case when p.hidden_at is null then a.storage_path end as path,
             case when p.hidden_at is null then a.avg_color end as color,
             case when p.hidden_at is null then a.width end as src_w
        from public.parcels p left join public.parcel_assets a on a.id = p.published_asset_id
-      where p.status = 'active' and p.bbox && box(point($1::float8, $2::float8), point($3::float8, $4::float8))
+      where p.status = 'active' and p.kind = $5 and p.bbox && box(point($1::float8, $2::float8), point($3::float8, $4::float8))
       order by p.area desc limit 4000`,
-    [x0, y0, x0 + span - 1, y0 + span - 1],
+    [x0, y0, x0 + span - 1, y0 + span - 1, kind],
   );
   if (rows.length === 0) return EMPTY;
 
@@ -85,7 +88,13 @@ export async function renderRasterTile(z: number, tx: number, ty: number): Promi
       if (r.path && (z >= FLAT_FROM_LEVEL ? w > FLAT_UP_TO_PX || h > FLAT_UP_TO_PX : w > 2 || h > 2)) {
         const bytes = await fetchFile(r.path);
         if (bytes) {
-          input = await sharp(bytes)
+          let img = sharp(bytes);
+          if (r.kind === "water") { // the picture as it is shown on water: three blues
+            const { data, info } = await img.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+            tintPixels(data, 4);
+            img = sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } });
+          }
+          input = await img
             // crisp pixels only when the creation is magnified or kept as is; a finer (half-pixel) creation shown smaller is averaged
             .resize(w, h, { fit: "fill", kernel: z === 0 && (r.src_w ?? 0) <= w ? "nearest" : "lanczos3" })
             .png({ compressionLevel: 1 })
@@ -93,7 +102,7 @@ export async function renderRasterTile(z: number, tx: number, ty: number): Promi
         }
       }
       if (!input) {
-        const c = r.path ? hexToRgb(r.color) : PLACEHOLDER;
+        const c = r.kind === "water" ? hexToRgb(tintColor(r.path ? r.color : null)) : r.path ? hexToRgb(r.color) : PLACEHOLDER;
         input = await sharp({ create: { width: w, height: h, channels: 4, background: { ...c, alpha: 1 } } }).png({ compressionLevel: 1 }).toBuffer();
       }
       // sharp refuses overlays that exceed the canvas: crop to the tile

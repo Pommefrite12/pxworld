@@ -36,7 +36,7 @@ export function EditCreation({ code, w, h, current }: { code: string; w: number;
 
   return (
     <form onSubmit={submit} className="space-y-6">
-      <ParcelEditor ref={editor} w={w} h={h} onChange={onChange} initialImageUrl={current.assetId ? `/api/assets/${current.assetId}` : null} />
+      <ParcelEditor ref={editor} w={w} h={h} onChange={onChange} initialImageUrl={current.assetId ? `/api/assets/${current.assetId}?raw=1` : null} />
       <div className="grid gap-3 sm:grid-cols-2">
         <div><label className="label" htmlFor="ec-title">{tb("fields.title")}</label><input id="ec-title" className="field" required minLength={TITLE_MIN} maxLength={TITLE_MAX} autoComplete="off" value={title} onChange={(e) => setTitle(e.target.value)} data-testid="ec-title" /><p className="mt-1 text-xs text-ink-faint">{tb("fields.titleHint", { min: TITLE_MIN })}</p></div>
         <div><label className="label" htmlFor="ec-link">{tb("fields.link")}</label><input id="ec-link" className="field" type="url" maxLength={500} placeholder="https://" value={link} onChange={(e) => setLink(e.target.value)} /></div>
