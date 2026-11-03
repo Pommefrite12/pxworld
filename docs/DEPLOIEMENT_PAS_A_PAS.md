@@ -35,36 +35,140 @@ paiement, Vercel pour héberger le site). L'étape 4 les relie, l'étape 5 véri
 
 ---
 
-## Étape 1 : Supabase, la base de données et les comptes (20 min)
+## Étape 1 : Supabase, la base de données et les comptes (30 min)
 
-1. Allez sur **supabase.com** → **Start your project** → connectez-vous avec GitHub.
-2. **New project** :
-   - **Name** : `pixelworld-test`
-   - **Database password** : cliquez sur **Generate a password**, **copiez-le dans vos notes**. Si le mot de passe contient des symboles
-     (`@`, `/`, `:`…), régénérez-en un jusqu'à en avoir un fait uniquement de lettres et de chiffres : c'est plus simple pour la suite.
-   - **Region** : **Frankfurt** (ou la plus proche de chez vous en Europe).
-   - Plan **Free**. Cliquez sur **Create new project** et attendez 2 minutes.
-3. **Récupérez les clés** : menu de gauche → **Project Settings** (la roue dentée) → **API** (ou **API Keys**). Notez :
-   - **Project URL** (ressemble à `https://abcdxyz.supabase.co`) → ce sera `NEXT_PUBLIC_SUPABASE_URL`
-   - la clé **anon** (ou **publishable**) → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - la clé **service_role** (ou **secret**), à ne montrer à personne → `SUPABASE_SERVICE_ROLE_KEY`
-4. **Récupérez les deux adresses de connexion** : bouton **Connect** en haut de la page → onglet **Connection string** (ou **ORMs**).
-   Vous avez besoin de deux adresses, dans lesquelles vous remplacez `[YOUR-PASSWORD]` par le mot de passe de la base :
-   - **Session pooler** (port **5432**) → pour installer la base depuis votre Codespace (point 6 ci-dessous)
-   - **Transaction pooler** (port **6543**) → ce sera `DATABASE_URL` sur Vercel
-   Elles commencent par `postgresql://postgres.` et contiennent `pooler.supabase.com`. **N'ajoutez rien à la fin** (pas de `?sslmode=…`).
-5. **Créer le dossier privé des images** : menu **SQL Editor** → **New query**. Dans votre Codespace, affichez le fichier :
+Supabase fait trois choses pour nous : il garde **les données** (parcelles, commandes), il gère **les comptes** des visiteurs (inscription, connexion) et il
+range **les images**. À la fin de cette étape, vous aurez noté **7 informations** dans votre fichier de notes (la liste est en bas).
+
+### 1A. Créer le compte et le projet
+
+*(Si vous avez déjà un projet Supabase, passez à 1B. Votre projet actuel s'appelle peut-être déjà `pixelworld-test` : gardez-le.)*
+
+1. Ouvrez **https://supabase.com**.
+2. En haut à droite, cliquez sur **Sign in** puis sur **Continue with GitHub**. GitHub vous demande d'autoriser Supabase : cliquez sur **Authorize supabase**.
+3. Si Supabase vous demande de créer une **organisation** : **Name** = `Pixel World`, **Type** = `Personal`, **Plan** = `Free`, puis **Create organization**.
+4. Cliquez sur le bouton vert **New project**.
+5. Remplissez le formulaire :
+   - **Organization** : celle que vous venez de créer (déjà sélectionnée).
+   - **Project name** : `pixelworld-test`
+   - **Database Password** : cliquez sur **Generate a password**. Un mot de passe apparaît.
+     **Avant de continuer, copiez-le dans votre fichier de notes** (ligne « Mot de passe de la base »). Supabase ne le remontrera plus jamais.
+     Vérifiez qu'il ne contient **que des lettres et des chiffres**. S'il contient des symboles comme `@ / : # ? %`, cliquez de nouveau sur **Generate a password** jusqu'à en obtenir un sans symbole.
+   - **Region** : ouvrez la liste et choisissez **Europe (Frankfurt)**, ou la ville d'Europe la plus proche de chez vous.
+   - Laissez **toutes les autres options** comme elles sont (ne cochez et ne décochez rien).
+6. Cliquez sur **Create new project**.
+7. Attendez 1 à 2 minutes : une page de chargement s'affiche, puis le tableau de bord du projet. Quand vous voyez le menu à gauche avec « Table Editor », « SQL Editor »,
+   etc., c'est prêt.
+
+### 1B. Noter l'adresse du projet et la clé publique
+
+1. En haut de la page, cliquez sur le bouton **Connect**. Une fenêtre « Connect to your project » s'ouvre (celle de votre capture), avec cinq onglets : *Framework, Server, Direct, ORM, MCP*.
+2. Restez sur l'onglet **Framework**. **Ne changez rien** à « Framework », « Variant » ni « Shadcn », et n'exécutez aucune commande de cet écran (il est fait pour des développeurs qui partent de zéro).
+3. En bas à droite, la zone avec les onglets `.env.local`, `page.tsx`… : restez sur **`.env.local`**. Elle contient deux lignes :
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxxxxxxx
+   ```
+   Les lignes sont coupées à droite : faites défiler la zone vers la droite, ou passez la souris dessus pour faire apparaître un bouton **Copy**.
+4. Dans votre fichier de notes, écrivez :
+   - ligne **« Project URL »** : ce qui vient **après** `NEXT_PUBLIC_SUPABASE_URL=` (c'est une adresse qui commence par `https://` et se termine par `.supabase.co`)
+   - ligne **« Clé publique »** : ce qui vient **après** `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=` (elle commence par `sb_publishable_`)
+5. **Attention aux noms** : Supabase l'appelle « PUBLISHABLE_KEY », notre site l'appelle **`NEXT_PUBLIC_SUPABASE_ANON_KEY`**. C'est la même chose. Sur Vercel (étape 3), la valeur de cette « clé publique » ira dans la variable nommée `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+6. Notez aussi **l'identifiant du projet** : ce sont les lettres entre `https://` et `.supabase.co` dans le Project URL (votre capture montre `wrpemamvpcsgrapwukzj`). Ligne **« Identifiant du projet »**.
+
+Ces deux valeurs ne sont **pas secrètes** (le navigateur des visiteurs les utilise).
+
+### 1C. Noter la clé secrète
+
+1. Fermez la fenêtre « Connect » (croix en haut à droite ou touche Échap).
+2. En bas du menu de gauche, cliquez sur la **roue dentée « Project Settings »**.
+3. Dans le menu qui s'ouvre, cliquez sur **API Keys**.
+4. Vous voyez des onglets : gardez celui des clés récentes (**« Publishable and secret API keys »**). Descendez jusqu'à la section **Secret keys**. Une clé nommée **`default`** y est listée, masquée.
+5. Cliquez sur l'icône **œil** (ou **Reveal**), puis sur **Copy**. Elle commence par **`sb_secret_`**.
+6. Dans votre fichier de notes, ligne **« Clé secrète (SECRET !) »** : collez-la. Elle ira dans la variable `SUPABASE_SERVICE_ROLE_KEY` de Vercel.
+   **Cette clé donne tous les droits sur vos données : ne la collez jamais dans le chat, dans GitHub, ni dans une capture d'écran.**
+7. *Si vous ne voyez pas cette page* ou qu'elle n'a pas de « Secret keys » : cherchez un onglet **« Legacy API keys »** ; il contient une clé **`service_role`** (longue, commence par `eyJ`) qu'on utilise de la même façon.
+
+### 1D. Noter les deux adresses de connexion à la base
+
+1. Cliquez de nouveau sur **Connect** (en haut de la page).
+2. Cliquez sur le **troisième onglet** : **Direct — Connection string**.
+3. Vous voyez des adresses de connexion, ou une liste de choix (« Method »). Il y en a trois sortes. Il nous en faut **deux** :
+   - **Session pooler** → se termine par `:5432/postgres`
+   - **Transaction pooler** → se termine par `:6543/postgres`
+   (La troisième, « Direct connection », ne marche pas depuis votre Codespace : ignorez-la.)
+4. Pour chacune des deux : copiez l'adresse. Elle ressemble à :
+   ```
+   postgresql://postgres.xxxxxxxx:[YOUR-PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:5432/postgres
+   ```
+5. **Dans votre fichier de notes** (pas dans Supabase), remplacez `[YOUR-PASSWORD]` par le mot de passe de la base noté en 1A. **Supprimez aussi les crochets** `[` et `]`.
+   Exemple : si le mot de passe est `Ab12Cd34`, l'adresse devient `postgresql://postgres.xxxxxxxx:Ab12Cd34@aws-0-…`.
+6. Écrivez-les sur deux lignes : **« Adresse Session pooler »** et **« Adresse Transaction pooler »**.
+7. **Ne rajoutez rien à la fin** de ces adresses (pas de `?sslmode=…`).
+8. Si vous avez perdu le mot de passe : **Project Settings** (roue dentée) → **Database** → **Reset database password** → choisissez-en un (lettres et chiffres uniquement), notez-le.
+
+### 1E. Créer le dossier privé des images
+
+1. Dans votre **Codespace**, ouvrez un terminal et affichez le fichier :
    ```bash
    cat supabase/storage.sql
    ```
-   Copiez tout ce qu'il affiche, collez-le dans l'éditeur Supabase, cliquez sur **Run**. Message attendu : *Success. No rows returned*.
-6. **Installer les tables** : dans le terminal du Codespace, en remplaçant l'adresse par votre **Session pooler** (entre apostrophes) :
+2. Sélectionnez tout le texte affiché et copiez-le.
+3. Dans Supabase, menu de gauche : **SQL Editor** (icône `>_`).
+4. Cliquez sur **New query** (ou sur le **+**). Une page blanche s'ouvre. Collez le texte.
+5. Cliquez sur **Run** (en bas à droite de l'éditeur ; ou touches Ctrl + Entrée).
+6. En bas, le résultat doit dire **« Success. No rows returned »**. (Si Supabase affiche une fenêtre d'avertissement, lisez-la : ce script ne supprime rien.)
+7. Vérification : menu de gauche **Storage** → vous devez voir un dossier (bucket) nommé **`pixel-world-creations`**, marqué **Private**.
+
+### 1F. Installer les tables depuis le Codespace
+
+1. Dans le Codespace, ouvrez un **nouveau terminal** (le **+** en haut à droite du panneau du terminal) pour ne pas arrêter votre site de développement.
+2. Mettez le code à jour :
    ```bash
-   DATABASE_URL='postgresql://postgres.xxxx:VOTRE_MOT_DE_PASSE@aws-0-xxxx.pooler.supabase.com:5432/postgres' node scripts/migrate.mjs
+   git pull origin claude/funny-bell-k7v5xf
    ```
-   Vous devez voir 14 lignes `applying … ok`. Si vous relancez la commande, elle n'applique plus rien : c'est normal.
-7. **Réglages des comptes** : menu **Authentication** → **Sign In / Providers** : **Email** doit être activé, avec **Confirm email** coché.
-   (Google est facultatif pour ce test.) Les adresses du site seront réglées à l'étape 4.
+3. Préparez la commande **dans votre fichier de notes**, jamais directement dans le terminal : copiez la ligne ci-dessous et remplacez `ADRESSE_SESSION_POOLER` par votre **« Adresse Session pooler »** (celle qui se termine par `:5432/postgres`, avec le mot de passe déjà dedans). **Gardez les apostrophes** autour.
+   ```bash
+   DATABASE_URL='ADRESSE_SESSION_POOLER' node scripts/migrate.mjs
+   ```
+4. Collez la ligne complète dans le terminal et appuyez sur Entrée. Ça prend 10 à 30 secondes.
+5. Résultat attendu : **14 lignes** qui commencent par `applying 2026…` et finissent par `… ok`. La première est `20261029000001_core_schema.sql … ok`, la dernière
+   `20261029000014_usd_price.sql … ok`.
+6. Vérification : dans Supabase, menu **Table Editor** → vous devez voir des tables (`parcels`, `orders`, `profiles`, `app_settings`…).
+7. Si vous relancez la commande, elle n'applique plus rien : c'est normal et sans danger.
+
+**Si la commande affiche une erreur :**
+
+| Message | Ce que ça veut dire | Quoi faire |
+|---|---|---|
+| `password authentication failed` | mot de passe faux ou mal recopié | refaites 1D point 5 (ou réinitialisez le mot de passe, 1D point 8) |
+| `ENOTFOUND` ou `getaddrinfo` | adresse mal recopiée | recopiez-la depuis « Connect » → « Direct » |
+| `timeout`, `ECONNREFUSED`, `ENETUNREACH` | vous avez pris « Direct connection » | prenez bien l'adresse **Session pooler** (`:5432`) |
+| `Tenant or user not found` | l'identifiant devant `:` est faux | l'adresse doit commencer par `postgresql://postgres.` suivi de l'identifiant du projet |
+| autre erreur (par exemple `permission denied` ou `extension`) | c'est le **premier vrai essai** sur un Supabase | copiez **tout le message** (il ne contient aucun mot de passe) et envoyez-le-moi |
+
+### 1G. Régler les comptes des visiteurs
+
+1. Menu de gauche : **Authentication**.
+2. Dans la colonne de gauche de cette page, rubrique **Configuration** : cliquez sur **Sign In / Providers**.
+3. Cliquez sur la ligne **Email**. Vérifiez que **Enable Email provider** est activé, et que **Confirm email** est **activé**. Si un réglage **Minimum password length** est proposé, mettez **10**. Cliquez sur **Save**.
+4. Les autres lignes (Google, etc.) : laissez-les telles quelles, vous n'en avez pas besoin pour le test.
+5. **Ne touchez pas encore à « URL Configuration »** : on s'en occupe à l'étape 4, quand le site aura son adresse.
+
+### Ce que vous devez avoir dans vos notes à la fin de l'étape 1
+
+| # | Ligne de vos notes | Où elle servira |
+|---|---|---|
+| 1 | Mot de passe de la base | (déjà dans les adresses 6 et 7) |
+| 2 | Project URL (`https://….supabase.co`) | Vercel : `NEXT_PUBLIC_SUPABASE_URL` |
+| 3 | Clé publique (`sb_publishable_…`) | Vercel : `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+| 4 | Clé secrète (`sb_secret_…`) | Vercel : `SUPABASE_SERVICE_ROLE_KEY` |
+| 5 | Identifiant du projet | (pour vérifier vos adresses) |
+| 6 | Adresse Session pooler (`:5432`) | déjà utilisée pour installer les tables |
+| 7 | Adresse Transaction pooler (`:6543`) | Vercel : `DATABASE_URL` |
+
+> Les nouvelles clés (`sb_publishable_…`, `sb_secret_…`) devraient fonctionner avec ce site, mais je n'ai pas pu l'essayer sur un vrai projet. Si la connexion ou l'envoi d'images échoue plus tard,
+> prenez les anciennes clés (onglet « Legacy API keys » : `anon` et `service_role`) et dites-moi l'erreur exacte.
 
 ---
 
@@ -100,10 +204,10 @@ paiement, Vercel pour héberger le site). L'étape 4 les relie, l'étape 5 véri
 | Nom | Valeur | D'où elle vient |
 |---|---|---|
 | `NEXT_PUBLIC_SITE_URL` | `https://pixelworld-test.vercel.app` (**l'adresse exacte du site, en https, sans `/` final**) | le nom du projet |
-| `DATABASE_URL` | l'adresse **Transaction pooler** (port 6543) | Supabase, étape 1.4 |
-| `NEXT_PUBLIC_SUPABASE_URL` | la **Project URL** | Supabase, étape 1.3 |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | la clé **anon / publishable** | Supabase, étape 1.3 |
-| `SUPABASE_SERVICE_ROLE_KEY` | la clé **service_role / secret** | Supabase, étape 1.3 |
+| `DATABASE_URL` | l'adresse **Transaction pooler** (port 6543, avec le mot de passe) | Supabase, étape 1D |
+| `NEXT_PUBLIC_SUPABASE_URL` | la **Project URL** | Supabase, étape 1B |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | la **clé publique** (`sb_publishable_…`) | Supabase, étape 1B |
+| `SUPABASE_SERVICE_ROLE_KEY` | la **clé secrète** (`sb_secret_…`) | Supabase, étape 1C |
 | `STRIPE_SECRET_KEY` | `sk_test_…` | Stripe, étape 2.2 |
 | `RATE_LIMIT_SALT` | le premier secret généré | étape 0.3 |
 | `CRON_SECRET` | le second secret généré | étape 0.3 |
