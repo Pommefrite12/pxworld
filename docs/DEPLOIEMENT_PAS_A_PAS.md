@@ -334,7 +334,7 @@ Sans cela, le lien de confirmation reçu par e-mail ne ramènerait pas vers votr
    ```bash
    node scripts/smoke.mjs https://pixelworld-test.vercel.app
    ```
-   Résultat attendu : `51/51 checks passed`. S'il y a des `FAIL`, copiez les lignes et envoyez-les-moi.
+   Résultat attendu : `50/50 checks passed`. S'il y a des `FAIL`, copiez les lignes et envoyez-les-moi.
 2. **Ouvrez le site** : la carte s'affiche. Essayez le changement de langue (anglais / français).
 3. **Créez votre compte** : bouton **Sign in** → **Sign up**, avec votre vrai e-mail, un nom, un mot de passe d'au moins 10 caractères. Ouvrez l'e-mail reçu et cliquez sur le lien de
    confirmation : vous revenez sur le site, connecté. *(Le service d'e-mails gratuit de Supabase limite à quelques messages par heure : si rien n'arrive, patientez ; regardez les spams.)*
