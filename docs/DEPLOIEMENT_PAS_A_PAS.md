@@ -277,6 +277,19 @@ Sans guillemets, sans espace avant ou après. *(Pas encore faits à l'étape 0 :
 | `RATE_LIMIT_SALT` | le premier secret généré par `openssl rand -hex 32` |
 | `CRON_SECRET` | le second secret généré |
 
+**Les fautes de collage les plus fréquentes** (le build échoue alors avec « Invalid environment configuration ») :
+- coller **la ligne entière** `NEXT_PUBLIC_SUPABASE_URL=https://…` : dans **Value**, il ne faut que ce qui vient **après** le `=` (ici `https://xxxx.supabase.co`) ;
+- mettre des **guillemets** autour de la valeur, ou laisser une **espace** ou un retour à la ligne avant ou après ;
+- laisser `[YOUR-PASSWORD]` (**crochets compris**) dans l'adresse de la base au lieu du vrai mot de passe ;
+- **intervertir** la clé publique et la clé secrète de Supabase.
+
+**Vérificateur facultatif, avant de cliquer sur Deploy** (vos valeurs ne quittent pas votre Codespace) : créez un fichier `.env.production.local` (il est ignoré par git) avec vos 7 lignes
+`NOM=valeur`, puis lancez la commande suivante. Elle nomme chaque variable douteuse sans jamais afficher sa valeur. **Supprimez ensuite le fichier** (`rm .env.production.local`).
+```bash
+npx tsx scripts/check-env.mts .env.production.local
+```
+Deux avertissements sont normaux tant que Stripe n'est pas configuré : `STRIPE_SECRET_KEY` et `NEXT_PUBLIC_OPERATOR_*`.
+
 **À ne pas ajouter :** `STRIPE_SECRET_KEY` et `STRIPE_WEBHOOK_SECRET` (plus tard, quand Stripe sera prêt), ni `DEV_AUTH`, `STRIPE_MOCK`, `NEXT_PUBLIC_WORLD_END_AT`.
 
 ### 3E. Déployer
@@ -369,6 +382,7 @@ Sans cela, le lien de confirmation reçu par e-mail ne ramènerait pas vers votr
 | Symptôme | Cause probable |
 |---|---|
 | Le build Vercel échoue | copiez les dernières lignes du journal et envoyez-les-moi |
+| Le build Vercel échoue avec « Invalid environment configuration … Invalid URL → at NEXT_PUBLIC_SUPABASE_URL » (ou `NEXT_PUBLIC_SITE_URL`) | la valeur n'est pas une adresse valide : il faut **seulement** `https://xxxx.supabase.co` (sans `NEXT_PUBLIC_SUPABASE_URL=` devant, sans guillemets, sans espace). Corrigez-la (Settings → Environment Variables → ⋯ → Edit), puis **Redeploy** |
 | La page affiche une erreur « Invalid environment configuration » | une variable est mal écrite (guillemets, espace, `/` final) |
 | Impossible de se connecter / le lien de l'e-mail mène à une erreur | étape 4 : l'adresse de redirection manque ou ne correspond pas |
 | Le paiement réussit mais la commande reste « en attente » | étape 6 : webhook absent, mauvais événements, ou `STRIPE_WEBHOOK_SECRET` faux (puis **Redeploy**) |

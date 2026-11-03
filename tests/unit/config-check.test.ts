@@ -72,4 +72,27 @@ describe("the production configuration check", () => {
     const live = configProblems({ ...GOOD, TEST_COUNTRY: "US", STRIPE_SECRET_KEY: "sk_live_1", PAYMENTS_LIVE_ENABLED: "yes-i-have-approval" }, NOW);
     expect(live.map((p) => [p.level, p.key])).toContainEqual(["error", "TEST_COUNTRY"]);
   });
+  it("catches the mistakes people make when pasting a value into a dashboard", () => {
+    const e = (over: Record<string, string>) => configProblems({ ...GOOD, ...over }, NOW).filter((p) => p.level === "error");
+    // the name pasted with the value (what the Supabase "Connect" box shows)
+    expect(e({ NEXT_PUBLIC_SUPABASE_URL: "NEXT_PUBLIC_SUPABASE_URL=https://abc.supabase.co" }).map((p) => p.key)).toContain("NEXT_PUBLIC_SUPABASE_URL");
+    // quotes, a trailing space, a line break
+    expect(e({ NEXT_PUBLIC_SUPABASE_URL: '"https://abc.supabase.co"' })[0]!.message).toContain("quotation");
+    expect(e({ CRON_SECRET: "abc " })[0]!.message).toContain("space");
+    expect(e({ STRIPE_SECRET_KEY: "sk_test_123\n" })[0]!.key).toBe("STRIPE_SECRET_KEY");
+    // a value that is not a URL at all, or not https
+    expect(e({ NEXT_PUBLIC_SUPABASE_URL: "abc.supabase.co" })[0]!.message).toContain("not a valid URL");
+    expect(e({ NEXT_PUBLIC_SUPABASE_URL: "http://abc.supabase.co" })[0]!.message).toContain("https://");
+  });
+  it("catches a database address that still holds its placeholder, or is not an address", () => {
+    expect(configProblems({ ...GOOD, DATABASE_URL: "postgresql://postgres.abc:[YOUR-PASSWORD]@aws-0-eu.pooler.supabase.com:6543/postgres" }, NOW).map((p) => [p.level, p.key, p.message.includes("YOUR-PASSWORD")])).toEqual([["error", "DATABASE_URL", true]]);
+    expect(configProblems({ ...GOOD, DATABASE_URL: "aws-0-eu.pooler.supabase.com" }, NOW).map((p) => p.key)).toEqual(["DATABASE_URL"]);
+    expect(configProblems({ ...GOOD, DATABASE_URL: "postgresql://postgres.abc:pw@aws-0-eu.pooler.supabase.com:5432/postgres" }, NOW).map((p) => [p.level, p.message.includes("6543")])).toEqual([["warn", true]]);
+    expect(configProblems({ ...GOOD, DATABASE_URL: "postgresql://postgres.abc:pw@aws-0-eu.pooler.supabase.com:6543/postgres" }, NOW)).toEqual([]);
+  });
+  it("catches the two Supabase keys swapped, above all a secret key sent to every browser", () => {
+    expect(configProblems({ ...GOOD, NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_secret_abc" }, NOW).map((p) => [p.level, p.key])).toEqual([["error", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]]);
+    expect(configProblems({ ...GOOD, SUPABASE_SERVICE_ROLE_KEY: "sb_publishable_abc" }, NOW).map((p) => [p.level, p.key])).toEqual([["error", "SUPABASE_SERVICE_ROLE_KEY"]]);
+    expect(configProblems({ ...GOOD, NEXT_PUBLIC_SUPABASE_URL: "https://shop.example.com" }, NOW).map((p) => [p.level, p.key])).toEqual([["warn", "NEXT_PUBLIC_SUPABASE_URL"]]);
+  });
 });

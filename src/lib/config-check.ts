@@ -17,6 +17,15 @@ export function configProblems(v: Vars, now: number = Date.now()): ConfigProblem
   const add = (level: ConfigProblem["level"], key: string, message: string) => out.push({ level, key, message });
   const has = (k: string) => Boolean(v[k] && v[k]!.trim() !== "");
 
+  // The commonest mistakes when pasting a value into a dashboard: the name of the variable pasted with it, quotes, a stray space or line break.
+  for (const k of ["NEXT_PUBLIC_SITE_URL", "DATABASE_URL", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "RATE_LIMIT_SALT", "CRON_SECRET", "ALERT_WEBHOOK_URL"]) {
+    const raw = v[k];
+    if (raw === undefined || raw === "") continue;
+    if (raw.trim().startsWith(`${k}=`)) add("error", k, `the name of the variable is part of its value (\`${k}=…\`): paste only what comes after the "="`);
+    else if (/^(["']).*\1$/s.test(raw.trim())) add("error", k, "the value is wrapped in quotation marks: paste it without them");
+    else if (raw !== raw.trim()) add("error", k, "the value has a space or a line break before or after it: paste it without");
+  }
+
   // the site's own address
   try {
     const u = new URL(v.NEXT_PUBLIC_SITE_URL ?? "");
@@ -26,11 +35,23 @@ export function configProblems(v: Vars, now: number = Date.now()): ConfigProblem
 
   // database, auth, storage
   if (!has("DATABASE_URL")) add("error", "DATABASE_URL", "missing: nothing works without the database (on Vercel use the POOLER connection string)");
+  else if (!/^postgres(ql)?:\/\//.test(v.DATABASE_URL!.trim())) add("error", "DATABASE_URL", "must start with postgresql:// (copy the whole connection string)");
+  else if (/\[[^\]]*\]/.test(v.DATABASE_URL!)) add("error", "DATABASE_URL", "still contains [YOUR-PASSWORD] (or another [bracketed] placeholder): replace it, brackets included, by the real database password");
   else if (v.DATABASE_SSL === "false") {
     let host = "";
     try { host = new URL(v.DATABASE_URL!).hostname; } catch { /* a malformed address fails elsewhere, loudly */ }
     if (host && !isLocalHost(host)) add("warn", "DATABASE_SSL", "SSL is switched off for a database that is not on this machine");
   }
+  if (has("NEXT_PUBLIC_SUPABASE_URL")) {
+    try {
+      const u = new URL(v.NEXT_PUBLIC_SUPABASE_URL!.trim());
+      if (u.protocol !== "https:") add("error", "NEXT_PUBLIC_SUPABASE_URL", "must start with https:// (it looks like https://<project>.supabase.co)");
+      else if (!u.hostname.endsWith(".supabase.co") && !u.hostname.endsWith(".supabase.in")) add("warn", "NEXT_PUBLIC_SUPABASE_URL", "is not a *.supabase.co address: fine for a custom domain, but check it is the Project URL of your Supabase project");
+    } catch { add("error", "NEXT_PUBLIC_SUPABASE_URL", "is not a valid URL: it must look like https://<project>.supabase.co (the Project URL, copied whole)"); }
+  }
+  if (has("NEXT_PUBLIC_SUPABASE_ANON_KEY") && /^(sb_secret_|eyJ.*service)/.test(v.NEXT_PUBLIC_SUPABASE_ANON_KEY!.trim())) add("error", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "holds a SECRET key: this one is sent to every browser. Use the publishable (anon) key here");
+  if (has("SUPABASE_SERVICE_ROLE_KEY") && v.SUPABASE_SERVICE_ROLE_KEY!.trim().startsWith("sb_publishable_")) add("error", "SUPABASE_SERVICE_ROLE_KEY", "holds the PUBLISHABLE key: the server needs the secret key here (sb_secret_…)");
+  if (has("DATABASE_URL") && /pooler\.supabase\.com:5432\//.test(v.DATABASE_URL!)) add("warn", "DATABASE_URL", "uses the Session pooler (port 5432): on Vercel use the Transaction pooler (port 6543), which copes with many short-lived server instances");
   if (!has("NEXT_PUBLIC_SUPABASE_URL") || !has("NEXT_PUBLIC_SUPABASE_ANON_KEY")) add("error", "NEXT_PUBLIC_SUPABASE_URL", "Supabase is not configured: nobody can sign in on a production build (the development sign-in is impossible there)");
   if (!has("SUPABASE_SERVICE_ROLE_KEY")) add("error", "SUPABASE_SERVICE_ROLE_KEY", "missing: creations cannot be stored and read (private storage bucket)");
 
