@@ -113,3 +113,18 @@ export function destroyedRuns(lattice: ArrayLike<number>, R: number, intensity: 
 export function fringeShift(band: number, k: number, cell: number): number {
   return tearOffset(band, 77 + k) * cell * 0.5;
 }
+
+/**
+ * How the chromatic fringe of the coasts looks at render level `k`, for big pixels of `cell` device px. Zoomed out (the whole
+ * world on screen, `k` ≤ -3) the coasts are close together and a wide fringe turns into a tangle of parallel lines: there it is a
+ * thin, tight edge and its bands do not slide. Zoomed in (`k` ≥ 0) it has its full spread and its torn bands.
+ */
+export function fringeLook(k: number, cell: number): { offset: number; width: number; alpha: number; slide: number } {
+  const near = clamp((k + 3) / 3, 0, 1);
+  return {
+    offset: Math.max(1, Math.round(Math.max(1, cell / 4) + (Math.max(2, cell / 2) - Math.max(1, cell / 4)) * near)),
+    width: Math.max(1, Math.max(1.1, cell / 4) + (Math.max(1.6, cell / 3) - Math.max(1.1, cell / 4)) * near),
+    alpha: 0.75 + 0.25 * near,
+    slide: near,
+  };
+}

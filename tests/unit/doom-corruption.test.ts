@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GLITCH, WORLD_W, cellDevicePx, cellLook, damage, destroyedRuns, field, fringeShift, hash2, levelAlpha, makeRanker, tearOffset } from "@/lib/doom/corruption";
+import { GLITCH, WORLD_W, cellDevicePx, cellLook, damage, destroyedRuns, field, fringeLook, fringeShift, hash2, levelAlpha, makeRanker, tearOffset } from "@/lib/doom/corruption";
 
 describe("the large-scale field", () => {
   it("is deterministic, stays in [0, 1] and wraps around the world", () => {
@@ -106,6 +106,25 @@ describe("damage and the look of a cell", () => {
       expect(moved).toBeLessThan(0.3);
       expect(Math.max(...shifts.map(Math.abs))).toBeLessThanOrEqual(8);
       expect(fringeShift(40, 3, 8)).toBe(fringeShift(40, 3, 4) * 2); // proportional to the size of the big pixels
+    });
+    it("is a thin, tight edge when zoomed out, whatever the screen, and only spreads and slides as one zooms in", () => {
+      for (const cell of [4, 8, 16]) {
+        let last = fringeLook(-5, cell);
+        expect(last.slide, "no sliding bands with the whole world on screen").toBe(0);
+        expect(last.offset, "the two echoes hug the coast").toBeLessThanOrEqual(Math.max(1, cell / 4));
+        for (let k = -4; k <= 6; k++) {
+          const f = fringeLook(k, cell);
+          expect(f.offset).toBeGreaterThanOrEqual(last.offset);
+          expect(f.width).toBeGreaterThanOrEqual(last.width);
+          expect(f.alpha).toBeGreaterThanOrEqual(last.alpha);
+          expect(f.slide).toBeGreaterThanOrEqual(last.slide);
+          last = f;
+        }
+        expect(fringeLook(-3, cell).slide).toBe(0);
+        expect(fringeLook(0, cell)).toMatchObject({ offset: Math.max(2, cell / 2), alpha: 1, slide: 1 });
+        expect(fringeLook(3, cell)).toEqual(fringeLook(0, cell));
+      }
+      expect(fringeLook(-5, 4).offset).toBe(1); // at the usual density: one pixel each side
     });
   });
 });

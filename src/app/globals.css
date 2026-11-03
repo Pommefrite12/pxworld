@@ -193,7 +193,7 @@
 .doom-cta { box-shadow: 3px 0 0 var(--color-glitch-cyan), -3px 0 0 var(--color-glitch-magenta) !important; }
 
 .doom-plate {
-  pointer-events: auto; width: min(380px, 100%); overflow: hidden;
+  pointer-events: auto; width: min(380px, 100%); margin-inline: auto; overflow: hidden;
   background: rgb(255 253 248 / 0.97); border: 2px solid var(--color-ink); border-radius: 12px; box-shadow: 4px 4px 0 rgb(31 37 64 / 0.16);
 }
 .doom-plate-top {
@@ -219,7 +219,7 @@
 .doom-plate[data-phase="5"] .doom-n { color: var(--color-glitch-magenta); text-shadow: none; }
 
 .doom-msg {
-  pointer-events: auto; display: inline-block; max-width: min(36rem, calc(100% - 1rem)); padding: 0.5rem 1rem; border-radius: 8px; text-align: center;
+  pointer-events: auto; width: fit-content; max-width: min(36rem, 100%); padding: 0.5rem 1rem; border-radius: 8px; text-align: center;
   background: var(--color-ink); color: #fff; font-weight: 700; font-size: 0.95rem; box-shadow: 3px 3px 0 var(--color-glitch-magenta);
 }
 

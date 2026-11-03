@@ -1,6 +1,8 @@
 "use client";
 
-import { useFormatter, useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { routing } from "@/i18n/routing";
 import { pad2 } from "@/lib/doom/clock";
 import { useDoom } from "./useDoom";
 import { startFinale, useFinaleDuring } from "./finaleStore";
@@ -50,13 +52,13 @@ export function DoomPlate() {
 }
 
 /** The sentence of the current chapter of the story, under the countdown. `survivors` = real parcels, never invented. */
-export function DoomMessage({ survivors }: { survivors: number }) {
+export function DoomMessage({ survivors, className = "" }: { survivors: number; className?: string }) {
   const d = useDoom();
   const during = useFinaleDuring();
   const t = useTranslations("doom");
   if (!d) return null;
   const text = d.phase === 5 ? (during ? t("during") : t("phase5", { n: survivors })) : t(`phase${d.phase}`);
-  return <p className="doom-msg" data-testid="doom-message">{text}</p>;
+  return <p className={`doom-msg ${className}`} data-testid="doom-message">{text}</p>;
 }
 
 /** After the end: play the destruction again (the countdown's big moment, for showing it to somebody). */
@@ -66,6 +68,48 @@ export function DoomReplay({ className = "" }: { className?: string }) {
   const t = useTranslations("doom");
   if (!d || !d.remaining.over || during) return null;
   return <button type="button" className={`btn btn-secondary btn-sm pointer-events-auto ${className}`} onClick={() => startFinale(true)} data-testid="doom-replay">{t("replay")}</button>;
+}
+
+/** After the end: share it (the share sheet of the device where there is one, else the link is copied). The preview image says the end. */
+export function DoomShare({ survivors }: { survivors: number }) {
+  const d = useDoom();
+  const during = useFinaleDuring();
+  const t = useTranslations("doom");
+  const locale = useLocale();
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const id = setTimeout(() => setCopied(false), 2500);
+    return () => clearTimeout(id);
+  }, [copied]);
+  if (!d || !d.remaining.over || during) return null;
+  const share = async () => {
+    const url = `${window.location.origin}${locale === routing.defaultLocale ? "/" : `/${locale}`}`; // the home page, never a preview of the visitor's
+    const text = t("phase5", { n: survivors });
+    try {
+      if (typeof navigator.share === "function") await navigator.share({ title: "Pixel World", text, url });
+      else { await navigator.clipboard.writeText(`${text} ${url}`); setCopied(true); }
+    } catch { /* the visitor closed the share sheet, or the browser refused the clipboard: nothing to do */ }
+  };
+  return (
+    <>
+      <button type="button" className="btn btn-secondary btn-sm pointer-events-auto" onClick={share} data-testid="doom-share">{copied ? t("shareCopied") : t("share")}</button>
+      <span role="status" className="sr-only">{copied ? t("shareCopied") : ""}</span>
+    </>
+  );
+}
+
+/** The buttons of the end, side by side and centred: replay the destruction, share it. Nothing while the sequence plays or before the end. */
+export function DoomActions({ survivors, className = "" }: { survivors: number; className?: string }) {
+  const d = useDoom();
+  const during = useFinaleDuring();
+  if (!d || !d.remaining.over || during) return null;
+  return (
+    <div className={`flex-wrap items-center justify-center gap-2 ${className}`} data-testid="doom-actions">
+      <DoomReplay />
+      <DoomShare survivors={survivors} />
+    </div>
+  );
 }
 
 /**
@@ -89,7 +133,7 @@ export function DoomStats({ fillPercent, soldPixels, parcels, compact = false }:
       </div>
       <div className="mt-1 flex justify-between text-[0.7rem] font-semibold text-ink-faint" aria-hidden="true"><span>0 %</span><span>100 %</span></div>
       {!compact && <p className="mt-2 hidden text-[0.8rem] text-ink-soft sm:block">{t("savedLine", { n: parcels, danger })}</p>}
-      <DoomReplay className="mt-2 w-full sm:hidden" />
+      <DoomActions survivors={parcels} className="mt-2 flex sm:hidden" />
     </section>
   );
 }

@@ -95,7 +95,9 @@
     "saved": "Monde sauvé",
     "savedLine": "{n, plural, =0 {Aucune parcelle sauvée pour l’instant} one {# parcelle sauvée} other {# parcelles sauvées}} · {danger} encore en danger",
     "during": "ERREUR 0x064 — SUPPRESSION EN COURS",
-    "replay": "Rejouer la destruction"
+    "replay": "Rejouer la destruction",
+    "share": "Partager",
+    "shareCopied": "Lien copié"
   },
   "search": {
     "label": "Rechercher un lieu",

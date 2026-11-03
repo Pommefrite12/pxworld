@@ -9,7 +9,7 @@ launch checklist is `LAUNCH_CHECKLIST.md`; this list is what to do *first*.
 Done: the countdown and the interface that goes with it, **off until `NEXT_PUBLIC_WORLD_END_AT` is set**; look at it with `?preview=J-9`, `J-87`, `J-3`, `0`.
 Also done: **the corrupted land on the map** (it follows the countdown: nothing destroyed at J-87, about half of the land at J-9, all of it at the end) and **survivor beacons** (acquired parcels stay intact, framed, and are marked from afar).
 Also done: **the final sequence** at zero (a flash, a hard shake, then a slow 12-second sweep from west to east that corrupts the land and **erases every name** — countries, regions, cities — then the end state for good, without names) and the **"Replay the destruction"** button; try `?preview=T-8` to watch the countdown end live and `?preview=0` for the end state.
-Also done: **a chromatic fringe (cyan/magenta) along the coasts of the destroyed land**, a plain progress bar in the counter card, a smaller countdown, and no "D-87" next to the logo any more. Next, in this order: (1) the share image with the new look (and a way to share the end state); (2) a real-device pass on a phone (the sequence draws a few hundred bands of pixels per frame).
+Also done: **a chromatic fringe (cyan/magenta) along the coasts of the destroyed land**, a plain progress bar in the counter card, a smaller countdown, and no "D-87" next to the logo any more. Also done: **the share image follows the story** (ordinary, countdown with the real days left, the end with the real number of survivors; pixel font) and a **"Share" button** after the end. Next: a real-device pass on a phone (the sequence draws a few hundred bands of pixels per frame).
 Needs the owner: the date and time zone of the end (**owner**), whether the names should come back at close zoom in the end state so that people can still find where to buy (today: none at all), whether buying stays open in destroyed zones after zero (proposed: yes, shown as "restored"), and a read of the English and French wording.
 
 ## 1. Look at what changed today (owner, ~20 min, before anything else)
@@ -55,7 +55,7 @@ for the checkout/availability functions, image/font assets).
 
 ## 6. Launch assets
 
-- Share image: the wordmark of `/api/og/home` is still plain sans text — bundle the pixel font file into the function.
+- Share image: check, on the deployed site, that `/api/og/home` has its font (`outputFileTracingIncludes` is set; try `?preview=0`), and what the platforms' debuggers show for the countdown and the end.
 - Check the share previews on X, LinkedIn, WhatsApp; seed Discover with real editorial picks (the app never inserts fake data).
 - French review of the new wording (comments, palette, tile) by a native reader.
 

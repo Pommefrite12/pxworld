@@ -95,7 +95,9 @@
     "saved": "World saved",
     "savedLine": "{n, plural, =0 {No plot saved yet} one {# plot saved} other {# plots saved}} · {danger} still in danger",
     "during": "ERROR 0x064 — DELETION IN PROGRESS",
-    "replay": "Replay the destruction"
+    "replay": "Replay the destruction",
+    "share": "Share",
+    "shareCopied": "Link copied"
   },
   "search": {
     "label": "Search a place",

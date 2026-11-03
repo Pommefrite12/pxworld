@@ -1,6 +1,6 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { gridAlpha } from "@/lib/map/pixelGrid";
-import { cellDevicePx, cellLook, damage, destroyedRuns, field, fringeShift, hash2, levelAlpha, makeRanker, tearOffset, GLITCH } from "@/lib/doom/corruption";
+import { cellDevicePx, cellLook, damage, destroyedRuns, field, fringeLook, fringeShift, hash2, levelAlpha, makeRanker, tearOffset, GLITCH } from "@/lib/doom/corruption";
 import { finaleAt, frontX, labelPlan, shakeOffset, shakeZoom, type FinaleFrame } from "@/lib/doom/finale";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
 import { enoughLand } from "@/lib/grid/pricing";
@@ -875,7 +875,7 @@ export class MapEngine {
    */
   private paintCoastFringe(g: CanvasRenderingContext2D, coast: Path2D, corrupted: { runs: { j: number; i0: number; i1: number }[]; R: number } | null, k: number, tx: number, ty: number, scale: number) {
     if (!corrupted || corrupted.runs.length === 0) return;
-    const T = GEO_TILE_PX, cs = cellDevicePx(this.dpr), o = Math.max(2, cs / 2), w = Math.max(1.6, cs / 3);
+    const T = GEO_TILE_PX, cs = cellDevicePx(this.dpr), look = fringeLook(k, cs), o = look.offset, w = look.width; // thinner and tighter when zoomed out
     const layer = this.fringeLayer ?? (this.fringeLayer = Object.assign(document.createElement("canvas"), { width: T, height: T }));
     const f = layer.getContext("2d");
     if (!f) return;
@@ -889,7 +889,7 @@ export class MapEngine {
     const { runs, R } = corrupted, cell = T / R;
     g.save();
     g.setTransform(1, 0, 0, 1, 0, 0);
-    g.globalAlpha = levelAlpha(k);
+    g.globalAlpha = levelAlpha(k) * look.alpha;
     // the layer is copied into the tile in bands of two rows, each slid by its own amount; neighbouring bands that are alike are copied in one go
     let cur: { i0: number; i1: number; dx: number; j0: number; j1: number } | null = null;
     const flush = () => {
@@ -899,7 +899,7 @@ export class MapEngine {
       cur = null;
     };
     for (const r of runs) {
-      const dx = Math.round(fringeShift((ty * R + r.j) >> 1, k, cs));
+      const dx = Math.round(fringeShift((ty * R + r.j) >> 1, k, cs) * look.slide);
       if (cur && cur.i0 === r.i0 && cur.i1 === r.i1 && cur.dx === dx && cur.j1 === r.j - 1) cur.j1 = r.j; else { flush(); cur = { i0: r.i0, i1: r.i1, dx, j0: r.j, j1: r.j }; }
     }
     flush();

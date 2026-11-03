@@ -126,3 +126,15 @@ test("the countdown does not cover a parcel's card, and the buy panel keeps the 
   await expect(page.getByTestId("buy-status")).toBeVisible();
   await expect(page.getByTestId("doom-plate")).toHaveCount(0); // buying: nothing in the way
 });
+
+test("the plate, the sentence and the buttons of the end share one axis, in the middle of the screen", async ({ page }) => {
+  for (const width of [1360, 700]) {
+    await page.setViewportSize({ width, height: 860 });
+    await page.goto("/fr?preview=0"); // the end: all three are there, and the sentence wraps on a narrower screen
+    const parts = ["doom-plate", "doom-message", "doom-actions"].map((id) => page.locator(`[data-testid="${id}"]:visible`));
+    for (const p of parts) await expect(p).toHaveCount(1);
+    const centres: number[] = [];
+    for (const p of parts) { const b = (await p.boundingBox())!; centres.push(b.x + b.width / 2); }
+    for (const c of centres) expect(Math.abs(c - width / 2), `width ${width}: centres ${centres.join(", ")}`).toBeLessThanOrEqual(1);
+  }
+});

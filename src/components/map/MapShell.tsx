@@ -14,7 +14,7 @@ import { MapView, type MapViewHandle } from "./MapView";
 import type { Camera, MapParcel, Mode, SelectionState } from "./engine";
 import { CursorReadout, LatestTile, MapControls, StatsCard, type LatestCreation } from "./Hud";
 import { ParcelCard } from "./ParcelCard";
-import { DoomMessage, DoomPlate, DoomReplay } from "@/components/doom/Doom";
+import { DoomActions, DoomMessage, DoomPlate } from "@/components/doom/Doom";
 import { endFinale, finaleInfo, useFinaleDuring } from "@/components/doom/finaleStore";
 import { useDoom } from "@/components/doom/useDoom";
 import { PRE_END_INTENSITY, infection } from "@/lib/doom/clock";
@@ -220,8 +220,8 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
         {doom && mode === "explore" && !parcelCode && (
           <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex flex-col items-center gap-2 px-3 sm:top-4">
             <DoomPlate />
-            <div className="hidden sm:block"><DoomMessage survivors={stats?.parcels ?? 0} /></div>
-            <DoomReplay className="hidden sm:inline-flex" />
+            <DoomMessage survivors={stats?.parcels ?? 0} className="hidden sm:block" />
+            <DoomActions survivors={stats?.parcels ?? 0} className="hidden sm:flex" />
           </div>
         )}
 

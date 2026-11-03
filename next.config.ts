@@ -19,7 +19,12 @@ const config: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["sharp", "pg"],
   // the purchase checks read the map's land data files at runtime: make sure serverless bundles carry them
-  outputFileTracingIncludes: { "/api/checkout": ["./public/data/geo/**/*"], "/api/availability": ["./public/data/geo/**/*"] },
+  outputFileTracingIncludes: {
+    "/api/checkout": ["./public/data/geo/**/*"],
+    "/api/availability": ["./public/data/geo/**/*"],
+    // the share image of the home page is set in the site's pixel font, read from disk
+    "/api/og/home": ["./node_modules/@fontsource/jersey-10/files/jersey-10-latin-400-normal.woff"],
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
