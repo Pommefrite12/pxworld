@@ -16,6 +16,7 @@ import { CursorReadout, LatestTile, MapControls, StatsCard, type LatestCreation 
 import { ParcelCard } from "./ParcelCard";
 import { DoomMessage, DoomPlate } from "@/components/doom/Doom";
 import { useDoom } from "@/components/doom/useDoom";
+import { infection } from "@/lib/doom/clock";
 import { SearchBox, type SearchTarget } from "./SearchBox";
 
 export interface MapShellProps {
@@ -34,6 +35,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
   const tc = useTranslations("common");
   const td = useTranslations("doom");
   const doom = useDoom(); // "100 days to save the world": null while the countdown is off
+  const storyStep = doom ? Math.round(infection(doom.remaining) * 200) : null; // how much of the land the story has corrupted, in 0.5 % steps
   const locale = useLocale();
   const router = useRouter();
   const mapRef = useRef<MapViewHandle>(null);
@@ -144,6 +146,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
   // deep links: open the buy flow / focus a parcel once the engine exists
   const started = useRef(false);
   useEffect(() => { if (engineReady) engine()?.setLandRule(pricing.minLandPercent); }, [engineReady, pricing.minLandPercent]);
+  useEffect(() => { if (engineReady) engine()?.setStory(storyStep === null ? null : storyStep / 200); }, [engineReady, storyStep]);
 
   useEffect(() => {
     if (!engineReady || started.current) return;

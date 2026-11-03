@@ -1,5 +1,6 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { gridAlpha } from "@/lib/map/pixelGrid";
+import { cellDevicePx, cellLook, damage, field, hash2, levelAlpha, makeRanker, tearOffset, GLITCH } from "@/lib/doom/corruption";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
 import { enoughLand } from "@/lib/grid/pricing";
 import { ASSET_SIZES, assetSizeFor, assetUrl } from "@/lib/images/sizes";
@@ -591,6 +592,7 @@ export class MapEngine {
       // A parcel is a rectangle (what is bought, and where it may be placed), but its drawing is cut along the coast: only
       // the part on land is shown, the sea stays sea. (The parcel's own page shows the whole drawing.)
       this.onLand(s, () => this.drawParcels(s), true);
+      this.drawBeacons(s); // the story's survivors, marked from afar (nothing without the story)
       if (s < RASTER_BELOW) this.drawLabels(s);
       this.drawOverlays(s);
     }
@@ -617,7 +619,123 @@ export class MapEngine {
    * blitted: a pan/zoom frame costs a handful of drawImage calls instead of re-filling ~100 000 path segments.
    * Level k renders 512-px tiles at 2^k device pixels per grid pixel, so edges stay vector-sharp at every zoom.
    */
-  private geoTiles = new Map<string, { c: HTMLCanvasElement; used: number; complete: boolean; ver: number }>();
+  private geoTiles = new Map<string, { c: HTMLCanvasElement; used: number; complete: boolean; ver: number; step: number }>();
+
+  /* ------------------------------------------------------------------ the "100 days" story: corrupted land */
+  /** How corrupted the unacquired land is, as `step / 200` (0.5 % steps), or `null` while the story is off. */
+  private story: { step: number } | null = null;
+  private ranker: ((v: number) => number) | null = null;
+
+  /** Where the parcels are, grouped by cell (flat x, y, count): the survivors' beacons. Fetched while the story is on. */
+  private beacons: { c: Int32Array; ver: number } | null = null;
+  private beaconsAsked = -1;
+
+  private ensureBeacons() {
+    if (!this.story || this.beaconsAsked === this.version) return;
+    this.beaconsAsked = this.version;
+    const version = this.version;
+    fetch(`/api/map/beacons?v=${version}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((j: { c: number[] }) => { if (!this.destroyed) { this.beacons = { c: Int32Array.from(j.c), ver: version }; this.invalidate(); } })
+      .catch(() => { setTimeout(() => { if (this.beaconsAsked === version) this.beaconsAsked = -1; }, 8000); }); // a later frame retries
+  }
+
+  /**
+   * A mark on every acquired parcel for the story: from far away a parcel is a few pixels at most, so each cell of parcels gets a
+   * small orange block with a white frame (bigger with more parcels). It fades out as the parcels become visible by themselves.
+   */
+  private drawBeacons(s: number) {
+    if (!this.story) return;
+    this.ensureBeacons();
+    const b = this.beacons;
+    const fade = clamp(1 - (s - 0.4) / 1.6, 0, 1);
+    if (!b || fade <= 0) return;
+    const { ctx } = this, v = this.visibleWorld(), pad = 12 / s;
+    ctx.globalAlpha = fade;
+    for (let i = 0; i < b.c.length; i += 3) {
+      const x = b.c[i]!, y = b.c[i + 1]!;
+      if (x < v.x0 - pad || x > v.x1 + pad || y < v.y0 - pad || y > v.y1 + pad) continue;
+      const a = this.worldToScreen(x, y), m = Math.round(clamp(5 + Math.log2(b.c[i + 2]!) * 1.5, 6, 12)), rx = Math.round(a.x - m / 2), ry = Math.round(a.y - m / 2);
+      ctx.fillStyle = "rgba(240,67,22,0.3)"; ctx.fillRect(rx - 4, ry - 4, m + 8, m + 8); // the glow
+      ctx.fillStyle = "#fff"; ctx.fillRect(rx - 1, ry - 1, m + 2, m + 2);
+      ctx.fillStyle = `rgb(${COLORS.accent})`; ctx.fillRect(rx, ry, m, m);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Sets how much of the land is corrupted (0 to 1), or `null` for the ordinary map. Tiles of another step are redrawn lazily. */
+  setStory(intensity: number | null) {
+    const step = intensity === null ? -1 : Math.round(clamp(intensity, 0, 1) * 200);
+    if (step === (this.story ? this.story.step : -1)) return;
+    this.story = step < 0 ? null : { step };
+    this.invalidate();
+  }
+
+  /** The rank of a place among the land, calibrated once on the coarse coast: "intensity 30 %" then means 30 % of the land. */
+  private rankOf(): (v: number) => number {
+    if (!this.ranker) {
+      const pts = this.geo!.landLattice(160, 100), vals = new Float64Array(pts.length >> 1);
+      for (let i = 0; i < vals.length; i++) vals[i] = field(pts[2 * i]!, pts[2 * i + 1]!);
+      this.ranker = makeRanker(vals);
+    }
+    return this.ranker;
+  }
+
+  /**
+   * Paints the corruption into a geography tile, inside the land only (`fill` is the tile's land): big square cells (a few screen
+   * pixels whatever the zoom) of scanlined lavender with stray blocks of error colour, colours slipping at the edge of the
+   * destroyed area, and bands that have slid sideways. The cells of a level have a fixed size in device pixels, so a tile
+   * holds a whole number of them and they never leave seams.
+   */
+  private paintCorruption(g: CanvasRenderingContext2D, fill: Path2D, k: number, tx: number, ty: number, scale: number) {
+    const I = this.story!.step / 200;
+    if (I <= 0) return;
+    const rank = this.rankOf(), R = 64, size = GEO_TILE_PX / scale, lattice = new Float32Array((R + 1) * (R + 1));
+    let min = 1;
+    for (let j = 0; j <= R; j++) for (let i = 0; i <= R; i++) { const r = rank(field(tx * size + (i * size) / R, ty * size + (j * size) / R)); lattice[j * (R + 1) + i] = r; if (r < min) min = r; }
+    if (I * 1.12 - min <= 0) return; // nothing of this tile is touched yet
+    const cs = cellDevicePx(this.dpr), n = GEO_TILE_PX / cs, alpha = levelAlpha(k), fringe = Math.max(1, cs / 4);
+    const B = Math.max(2, n / 16), blocks = n / B; // the tile in 16 × 16 blocks of cells: whole blocks are skipped or filled at once
+    g.save();
+    g.clip(fill, "evenodd");
+    g.setTransform(1, 0, 0, 1, 0, 0); // from here, tile pixels (the clip stays where the land is)
+    g.globalAlpha = alpha;
+    const lim = I * 1.12;
+    for (let by = 0; by < blocks; by++) for (let bx = 0; bx < blocks; bx++) {
+      // the ranks at the corners of the block tell whether it is untouched, destroyed from corner to corner, or mixed
+      const i0 = Math.floor((bx * B * R) / n), i1 = Math.min(R, Math.ceil(((bx + 1) * B * R) / n)), j0 = Math.floor((by * B * R) / n), j1 = Math.min(R, Math.ceil(((by + 1) * B * R) / n));
+      let lo = 1, hi = 0;
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const r = lattice[j * (R + 1) + i]!; if (r < lo) lo = r; if (r > hi) hi = r; }
+      if (lim - lo <= 0) continue; // untouched
+      if ((lim - hi) / 0.1 >= 0.62) { // destroyed everywhere in the block: its scanlines in one go, then the stray blocks of error colour
+        for (let r = 0; r < B; r++) {
+          const cy = by * B + r, iy = ty * n + cy;
+          g.fillStyle = iy & 1 ? GLITCH.lav2 : GLITCH.lav;
+          g.fillRect(bx * B * cs + tearOffset(iy >> 1, k) * cs, cy * cs, B * cs, cs);
+        }
+        const bseed = (ty * blocks + by) * 7919 + tx * blocks + bx, count = Math.floor(B * B * 0.016 + hash2(bseed, 300 + k));
+        for (let q = 0; q < count; q++) {
+          g.fillStyle = [GLITCH.magenta, GLITCH.cyan, GLITCH.orange, GLITCH.ink, GLITCH.white, GLITCH.violet][Math.floor(hash2(bseed, 340 + q) * 6)]!;
+          g.fillRect((bx * B + Math.floor(hash2(bseed, 310 + q) * B)) * cs, (by * B + Math.floor(hash2(bseed, 320 + q) * B)) * cs, cs, cs);
+        }
+        continue;
+      }
+      for (let cy = by * B; cy < (by + 1) * B; cy++) { // mixed: cell by cell
+        const v = ((cy + 0.5) / n) * R, j = Math.min(R - 1, Math.floor(v)), fy = v - j, iy = ty * n + cy, off = tearOffset(iy >> 1, k);
+        for (let cx = bx * B; cx < (bx + 1) * B; cx++) {
+          const u = ((cx + 0.5) / n) * R, i = Math.min(R - 1, Math.floor(u)), fx = u - i, b = j * (R + 1) + i;
+          const r = (lattice[b]! * (1 - fx) + lattice[b + 1]! * fx) * (1 - fy) + (lattice[b + R + 1]! * (1 - fx) + lattice[b + R + 2]! * fx) * fy;
+          const d = damage(r, I);
+          if (d <= 0) continue;
+          const look = cellLook(d, hash2(tx * n + cx, iy, 100 + k), iy);
+          const px = cx * cs + (d >= 0.6 ? off * cs : 0), py = cy * cs;
+          if (look.fill) { g.fillStyle = look.fill; g.fillRect(px, py, cs, cs); }
+          if (look.split) { g.fillStyle = GLITCH.cyan; g.fillRect(px - fringe, py, fringe, cs); g.fillStyle = GLITCH.magenta; g.fillRect(px + cs, py, fringe, cs); }
+        }
+      }
+    }
+    g.restore();
+  }
   private geoPending = false;
 
   /** Level of detail for a render level k (2^k device pixels per grid pixel). */
@@ -650,6 +768,7 @@ export class MapEngine {
     g.fillStyle = COLORS.land;
     g.fill(paths.fill, "evenodd");
     if (fillOnly) return { c, complete };
+    if (this.story) this.paintCorruption(g, paths.fill, k, tx, ty, scale); // the story: corrupted land, under the borders and the coast
     // Borders are SOLID thin lines (dashes cost a lot to rasterise and read as noise), kept discreet by their opacity.
     if (communes) {
       g.strokeStyle = `rgba(${COLORS.ink},${k >= 5 ? 0.3 : 0.22})`;
@@ -747,7 +866,7 @@ export class MapEngine {
       // canvas drawing is lazy: touching the tile once makes the browser rasterise it now rather than at the first blit
       if (!this.warmScratch) { const sc = document.createElement("canvas"); sc.width = sc.height = 1; this.warmScratch = sc.getContext("2d"); }
       this.warmScratch?.drawImage(r.c, 0, 0, 1, 1);
-      this.geoTiles.set(key, { c: r.c, used: this.frameNo, complete: true, ver: this.geo.version });
+      this.geoTiles.set(key, { c: r.c, used: this.frameNo, complete: true, ver: this.geo.version, step: this.story ? this.story.step : -1 });
       made++;
     }
     return made;
@@ -807,16 +926,17 @@ export class MapEngine {
     ctx.imageSmoothingEnabled = true;
     // a few tiles are rasterised per frame (the cost is bounded), the ones nearest to the middle of the view first
     const missing: { tx: number; ty: number; d: number }[] = [];
+    const step = this.story ? this.story.step : -1;
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
       const tile = this.geoTiles.get(`${k}/${tx}/${ty}`);
-      // a tile drawn from a coarser level while data was missing is redrawn once new data has arrived
-      if (!tile || (!tile.complete && tile.ver !== this.geo.version)) missing.push({ tx, ty, d: Math.hypot((tx + 0.5) * size - this.cam.x, (ty + 0.5) * size - this.cam.y) });
+      // a tile drawn from a coarser level while data was missing is redrawn once new data has arrived; so is one of another step of the story
+      if (!tile || (!tile.complete && tile.ver !== this.geo.version) || tile.step !== step) missing.push({ tx, ty, d: Math.hypot((tx + 0.5) * size - this.cam.x, (ty + 0.5) * size - this.cam.y) });
     }
     if (missing.length) {
       missing.sort((a, b) => a.d - b.d);
       for (const m of missing.slice(0, 4)) {
         const r = this.renderGeoTile(k, m.tx, m.ty);
-        if (r) this.geoTiles.set(`${k}/${m.tx}/${m.ty}`, { c: r.c, used: 0, complete: r.complete, ver: this.geo.version });
+        if (r) this.geoTiles.set(`${k}/${m.tx}/${m.ty}`, { c: r.c, used: 0, complete: r.complete, ver: this.geo.version, step });
       }
     }
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
@@ -1034,6 +1154,10 @@ export class MapEngine {
           if (!drawn) {
             ctx.fillStyle = p.assetId && p.color ? p.color : (this.hatchPattern() ?? "#ddd");
             ctx.fillRect(rx, ry, rw, rh);
+          }
+          if (this.story) { // a survivor: framed in white and orange, so it stands out of the corrupted land
+            ctx.lineWidth = 1; ctx.strokeStyle = "#fff"; ctx.strokeRect(rx - 0.5, ry - 0.5, rw + 1, rh + 1);
+            ctx.lineWidth = 2; ctx.strokeStyle = `rgb(${COLORS.accent})`; ctx.strokeRect(rx - 2, ry - 2, rw + 4, rh + 4);
           }
         }
       }

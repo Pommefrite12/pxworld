@@ -7,7 +7,8 @@ launch checklist is `LAUNCH_CHECKLIST.md`; this list is what to do *first*.
 ## 0. The "100 days to save the world" story (art direction Glitch chosen)
 
 Done: the countdown and the interface that goes with it, **off until `NEXT_PUBLIC_WORLD_END_AT` is set**; look at it with `?preview=J-9`, `J-87`, `J-3`, `0`.
-Next, in this order: (1) the corrupted land on the map, following `infection()`; (2) beacons so that survivors are visible from afar (needs a small cached endpoint listing parcels, clustered); (3) the final sequence with a replay button, in the permanent end state; (4) the share image with the new look.
+Also done: **the corrupted land on the map** (it follows the countdown: nothing destroyed at J-87, about half of the land at J-9, all of it at the end) and **survivor beacons** (acquired parcels stay intact, framed, and are marked from afar).
+Next, in this order: (1) the final sequence, the sweep that corrupts the land in a few seconds when the countdown reaches zero, with a replay button; (2) a chromatic fringe along the coasts of the destroyed land; (3) the share image with the new look.
 Needs the owner: the date and time zone of the end (**owner**), whether buying stays open in destroyed zones after zero (proposed: yes, shown as "restored"), and a read of the English and French wording.
 
 ## 1. Look at what changed today (owner, ~20 min, before anything else)
