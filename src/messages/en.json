@@ -352,7 +352,12 @@
       "invalidCredentials": "Incorrect email or password.",
       "weakPassword": "Your password must have at least 10 characters.",
       "exists": "An account already exists for this email.",
-      "notConfigured": "Authentication is not configured on this server."
+      "notConfigured": "Authentication is not configured on this server.",
+      "rateLimit": "Too many attempts for now. Please wait a few minutes before trying again.",
+      "invalidEmail": "This email address is not accepted. Please try another one.",
+      "notConfirmed": "Please confirm your email first: open the link we sent you (check your spam folder).",
+      "signupDisabled": "Sign-ups are closed for now.",
+      "network": "Cannot reach the sign-in service. Check your connection and try again."
     },
     "callbackError": "Authentication failed. Please try again."
   },

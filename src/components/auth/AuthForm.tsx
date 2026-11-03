@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { browserSupabase, devAuthUi, safeNext, supabaseEnabled } from "@/lib/auth/client";
+import { classifyAuthError, type AuthErrorLike } from "@/lib/auth/errors";
 
 type Mode = "sign-in" | "sign-up" | "forgot" | "reset";
 
@@ -19,6 +20,11 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
   const origin = typeof window === "undefined" ? "" : window.location.origin;
 
   const fail = (msg?: string) => { setError(msg ?? t("errors.generic")); setBusy(false); };
+  // say what Supabase said, in words the visitor can act on; an error nobody anticipated keeps its code (to be reported)
+  const failWith = (e: AuthErrorLike) => {
+    const { key, detail } = classifyAuthError(e);
+    return fail(key === "generic" && detail ? `${t("errors.generic")} (${detail})` : t(`errors.${key}`));
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,12 +38,12 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
     const sb = browserSupabase();
     if (mode === "sign-in") {
       const { error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) return fail(t("errors.invalidCredentials"));
+      if (error) return failWith(error);
       window.location.assign(dest);
     } else if (mode === "sign-up") {
       if (password.length < 10) return fail(t("errors.weakPassword"));
       const { data, error } = await sb.auth.signUp({ email, password, options: { data: { username: username || undefined }, emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(dest)}` } });
-      if (error) return fail(error.message.toLowerCase().includes("already") ? t("errors.exists") : t("errors.generic"));
+      if (error) return failWith(error);
       if (data.session) window.location.assign(dest);
       else { setInfo(t("checkEmail")); setBusy(false); }
     } else if (mode === "forgot") {
@@ -46,7 +52,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
     } else {
       if (password.length < 10) return fail(t("errors.weakPassword"));
       const { error } = await sb.auth.updateUser({ password });
-      if (error) return fail();
+      if (error) return failWith(error);
       window.location.assign("/account");
     }
   };
