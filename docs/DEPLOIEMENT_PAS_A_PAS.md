@@ -267,15 +267,23 @@ Le dépôt a une branche `main` (presque vide) et la branche `claude/funny-bell-
 Pour **chacune** des 7 lignes du tableau : cliquez dans **Key**, tapez le nom ; cliquez dans **Value**, collez la valeur depuis vos notes ; cliquez sur **Add**.
 Sans guillemets, sans espace avant ou après. *(Pas encore faits à l'étape 0 : les deux secrets se génèrent dans le terminal du Codespace avec `openssl rand -hex 32`, deux fois, une valeur chacun.)*
 
-| Key (nom exact) | Value (depuis vos notes) |
-|---|---|
-| `NEXT_PUBLIC_SITE_URL` | `https://pixelworld-test.vercel.app` (https, **sans `/` à la fin**) |
-| `DATABASE_URL` | votre **Adresse Transaction pooler** (celle en `:6543`, avec le mot de passe) |
-| `NEXT_PUBLIC_SUPABASE_URL` | votre **Project URL** |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | votre **clé publique** (`sb_publishable_…`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | votre **clé secrète** (`sb_secret_…`) |
-| `RATE_LIMIT_SALT` | le premier secret généré par `openssl rand -hex 32` |
-| `CRON_SECRET` | le second secret généré |
+| Key (nom exact) | Value (depuis vos notes) | **Type** |
+|---|---|---|
+| `NEXT_PUBLIC_SITE_URL` | `https://pixelworld-test.vercel.app` (https, **sans `/` à la fin**) | **Config** |
+| `DATABASE_URL` | votre **Adresse Transaction pooler** (celle en `:6543`, avec le mot de passe) | **Secret** |
+| `NEXT_PUBLIC_SUPABASE_URL` | votre **Project URL** | **Config** |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | votre **clé publique** (`sb_publishable_…`) | **Config** |
+| `SUPABASE_SERVICE_ROLE_KEY` | votre **clé secrète** (`sb_secret_…`) | **Secret** |
+| `RATE_LIMIT_SALT` | le premier secret généré par `openssl rand -hex 32` | **Secret** |
+| `CRON_SECRET` | le second secret généré | **Secret** |
+
+**Le « Type » de chaque variable compte.** Sur Vercel, chaque variable a un **Type**, à choisir en la créant :
+- **Secret** : valeur secrète, illisible une fois enregistrée. À utiliser pour les mots de passe, clés et jetons.
+- **Config** : valeur ordinaire, qu'on peut relire.
+
+Les trois variables dont le nom commence par **`NEXT_PUBLIC_`** sont envoyées à tous les navigateurs **par conception** : elles doivent être de type **Config**. Vercel refuse d'enregistrer
+une variable `NEXT_PUBLIC_…` de type Secret (message rouge « Remove the public framework prefix… », bouton **Save** bloqué). Si cela vous arrive : **un Secret enregistré ne peut plus devenir Config**,
+donc supprimez la variable (⋯ → **Remove**) et recréez-la en choisissant **Config**.
 
 **Les fautes de collage les plus fréquentes** (le build échoue alors avec « Invalid environment configuration ») :
 - coller **la ligne entière** `NEXT_PUBLIC_SUPABASE_URL=https://…` : dans **Value**, il ne faut que ce qui vient **après** le `=` (ici `https://xxxx.supabase.co`) ;
