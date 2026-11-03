@@ -357,7 +357,8 @@
       "invalidEmail": "This email address is not accepted. Please try another one.",
       "notConfirmed": "Please confirm your email first: open the link we sent you (check your spam folder).",
       "signupDisabled": "Sign-ups are closed for now.",
-      "network": "Cannot reach the sign-in service. Check your connection and try again."
+      "network": "Cannot reach the sign-in service. Check your connection and try again.",
+      "badKey": "The site is not properly connected to its account service (key refused). This is not your fault: please tell the site's administrator."
     },
     "callbackError": "Authentication failed. Please try again."
   },

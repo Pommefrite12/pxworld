@@ -298,6 +298,13 @@ npx tsx scripts/check-env.mts .env.production.local
 ```
 Deux avertissements sont normaux tant que Stripe n'est pas configuré : `STRIPE_SECRET_KEY` et `NEXT_PUBLIC_OPERATOR_*`.
 
+**Le même vérificateur peut aussi interroger Supabase et la base de données** (rien n'est écrit : il demande seulement « acceptez-vous cette clé ? ») : ajoutez `--online`.
+Il dit si Supabase **accepte** la clé publique et la clé secrète, si le dossier des images existe, si les inscriptions sont ouvertes, et si la base répond avec ses 14 migrations.
+```bash
+npx tsx scripts/check-env.mts .env.production.local --online
+```
+C'est le moyen d'éviter un aller-retour de 5 minutes avec Vercel à chaque faute de copie.
+
 **À ne pas ajouter :** `STRIPE_SECRET_KEY` et `STRIPE_WEBHOOK_SECRET` (plus tard, quand Stripe sera prêt), ni `DEV_AUTH`, `STRIPE_MOCK`, `NEXT_PUBLIC_WORLD_END_AT`.
 
 ### 3E. Déployer
@@ -396,6 +403,7 @@ Sans cela, le lien de confirmation reçu par e-mail ne ramènerait pas vers votr
 | Le build Vercel échoue avec « Invalid environment configuration … Invalid URL → at NEXT_PUBLIC_SUPABASE_URL » (ou `NEXT_PUBLIC_SITE_URL`) | la valeur n'est pas une adresse valide : il faut **seulement** `https://xxxx.supabase.co` (sans `NEXT_PUBLIC_SUPABASE_URL=` devant, sans guillemets, sans espace). Corrigez-la (Settings → Environment Variables → ⋯ → Edit), puis **Redeploy** |
 | La page affiche une erreur « Invalid environment configuration » | une variable est mal écrite (guillemets, espace, `/` final) |
 | Le contrôle `smoke.mjs` affiche `STOP: … does not answer like the Pixel World site`, ou des 404 partout | ce n'est pas votre site : mauvaise adresse (voir 3E point 4), ou déploiement pas en production |
+| L'inscription échoue, et dans les outils du navigateur (F12 → Réseau → `signup` → Réponse) on lit **`Invalid API key`** | la clé publique `NEXT_PUBLIC_SUPABASE_ANON_KEY` est fausse ou **tronquée** (la zone de la fenêtre « Connect » est coupée à droite : utilisez le bouton **Copy** de **Project Settings → API Keys**). Recréez la variable en type **Config**, puis **Redeploy** |
 | Impossible de se connecter / le lien de l'e-mail mène à une erreur | étape 4 : l'adresse de redirection manque ou ne correspond pas |
 | Le paiement réussit mais la commande reste « en attente » | étape 6 : webhook absent, mauvais événements, ou `STRIPE_WEBHOOK_SECRET` faux (puis **Redeploy**) |
 | `migrate.mjs` : « password authentication failed » | le mot de passe de la base est faux (ou contient des symboles non protégés) |

@@ -25,4 +25,8 @@ describe("what Supabase Auth refused, in words a visitor can act on", () => {
     expect(classifyAuthError({ status: 500 })).toEqual({ key: "generic", detail: "HTTP 500" });
     expect(classifyAuthError({})).toEqual({ key: "generic", detail: null });
   });
+  it("says the site is not properly connected when Supabase refuses its key (the visitor can do nothing, the owner must)", () => {
+    expect(classifyAuthError({ message: "Invalid API key", status: 401 }).key).toBe("badKey");
+    expect(classifyAuthError({ code: "invalid_api_key" }).key).toBe("badKey");
+  });
 });

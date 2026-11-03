@@ -357,7 +357,8 @@
       "invalidEmail": "Cette adresse e-mail n'est pas acceptée. Essayez-en une autre.",
       "notConfirmed": "Confirmez d'abord votre e-mail : ouvrez le lien que nous vous avons envoyé (regardez les courriers indésirables).",
       "signupDisabled": "Les inscriptions sont fermées pour le moment.",
-      "network": "Impossible de joindre le service de connexion. Vérifiez votre connexion et réessayez."
+      "network": "Impossible de joindre le service de connexion. Vérifiez votre connexion et réessayez.",
+      "badKey": "Le site n'est pas correctement relié à son service de comptes (clé refusée). Ce n'est pas de votre fait : prévenez l'administrateur du site."
     },
     "callbackError": "L'authentification a échoué. Veuillez réessayer."
   },
