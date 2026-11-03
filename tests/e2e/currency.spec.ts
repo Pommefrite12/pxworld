@@ -13,8 +13,13 @@ test("the price a buyer sees is in euros in the euro area, in dollars elsewhere,
     const ctx = await browser.newContext({ extraHTTPHeaders: as(country), baseURL: BASE });
     const page = await ctx.newPage();
     await page.goto(path);
-    await page.getByTestId("find-your-spot").click();
-    const text = await page.getByTestId("buy-panel").innerText();
+    // a click before the page is interactive does nothing: wait for the map, and click again until the panel is there
+    await page.waitForFunction(() => Boolean((window as unknown as { __pxEngine?: unknown }).__pxEngine), undefined, { timeout: 40_000 });
+    await expect(async () => {
+      if (!(await page.getByTestId("buy-panel").isVisible())) await page.getByTestId("find-your-spot").click({ timeout: 2000 }).catch(() => undefined);
+      await expect(page.getByTestId("buy-panel")).toBeVisible({ timeout: 3000 });
+    }).toPass({ timeout: 40_000 });
+    const text = await page.getByTestId("buy-panel").innerText({ timeout: 10_000 });
     await ctx.close();
     return text;
   };
