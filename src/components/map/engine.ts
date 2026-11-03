@@ -3,8 +3,9 @@ import { gridAlpha } from "@/lib/map/pixelGrid";
 import { cellDevicePx, cellLook, damage, destroyedRuns, field, fringeLook, fringeShift, hash2, levelAlpha, makeRanker, tearOffset, GLITCH } from "@/lib/doom/corruption";
 import { finaleAt, frontX, labelPlan, shakeOffset, shakeZoom, type FinaleFrame } from "@/lib/doom/finale";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
-import { enoughLand } from "@/lib/grid/pricing";
+import { enoughLand, enoughWater } from "@/lib/grid/pricing";
 import { ASSET_SIZES, assetSizeFor, assetUrl } from "@/lib/images/sizes";
+import { tintPixels } from "@/lib/images/waterTint";
 import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
 
 /**
@@ -25,7 +26,8 @@ import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
 
 export interface Camera { x: number; y: number; scale: number }
 export interface MapParcel { code: string; x: number; y: number; w: number; h: number; assetId: string | null; color: string | null; /** A water parcel: drawn under the land, in three blues. */ water: boolean }
-export type SelectionState = "ok" | "blocked" | "checking" | "out" | "water";
+/** `water`: a land parcel that is mostly sea; `land`: a water parcel that is mostly land (the other kind's pixels are cut away, but never most of the parcel). */
+export type SelectionState = "ok" | "blocked" | "checking" | "out" | "water" | "land";
 export type Mode = "explore" | "buy";
 
 export interface EngineCallbacks {
@@ -60,6 +62,8 @@ const GEO_STAND_IN_LEVELS = 3;
 const COMMUNES_FROM_K = 4;
 const RASTER_PX = 256;
 const MAX_Z = 8;
+/** What a water parcel shows while nothing better is known: the medium blue. */
+const WATER_FILL = "#2f8fd8";
 const MAX_IMAGES_IN_FLIGHT = 20; // over HTTP/2 (every host that matters) requests share one connection: more at once is faster, not slower
 const MAX_SCALE = 48;
 const RASTER_BELOW = 1; // below this zoom the server-composited rasters are shown; above it, parcels are drawn individually
@@ -116,6 +120,9 @@ export class MapEngine {
   private ghost: Rect | null = null;
   private ghostWater: { key: string; ver: number; water: boolean } | null = null;
   private minLandPercent = 50;
+  private minWaterPercent = 50;
+  /** What the buyer is choosing: land or water. A selection only collides with parcels of its own kind. */
+  private buyKind: "land" | "water" = "land";
   private selectionLand: number | null = null;
   private highlight: string | null = null;
   private hovered: MapParcel | null = null;
@@ -159,7 +166,23 @@ export class MapEngine {
   setBrush(b: { w: number; h: number } | null) { this.brush = b; this.ghost = null; this.invalidate(); }
   setHighlight(code: string | null) { this.highlight = code; this.invalidate(); }
   /** Shows the buyer's creation, pixel-exact, inside the selection rectangle ("preview on the map"). */
-  setPreviewImage(img: CanvasImageSource | null) { this.previewImage = img; this.invalidate(); }
+  setPreviewImage(img: CanvasImageSource | null) { this.previewImage = img; this.previewShown = this.shownPreview(img); this.invalidate(); }
+  /** What the preview shows: the creation as it is, or — on water — in the three blues it will have (made once, not at every frame). */
+  private previewShown: CanvasImageSource | null = null;
+  private shownPreview(img: CanvasImageSource | null): CanvasImageSource | null {
+    if (!img || this.buyKind !== "water") return img;
+    const w = (img as { width?: number }).width ?? 0, h = (img as { height?: number }).height ?? 0;
+    if (!w || !h) return img;
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const g = c.getContext("2d");
+    if (!g) return img;
+    g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, w, h);
+    tintPixels(d.data, 4);
+    g.putImageData(d, 0, 0);
+    return c;
+  }
 
   setSelection(r: Rect | null) {
     this.selection = r;
@@ -212,13 +235,13 @@ export class MapEngine {
   get viewport() { return { w: this.w, h: this.h }; }
 
   /** Parcels currently known (loaded tiles) that intersect the rectangle. */
-  parcelsIn(r: Rect): MapParcel[] | null {
+  parcelsIn(r: Rect, water?: boolean): MapParcel[] | null {
     const out: MapParcel[] = [];
     for (let ty = Math.floor(r.y / TILE); ty <= Math.floor((r.y + r.h - 1) / TILE); ty++) {
       for (let tx = Math.floor(r.x / TILE); tx <= Math.floor((r.x + r.w - 1) / TILE); tx++) {
         const tile = this.tiles.get(`${tx},${ty}`);
         if (!tile || tile.state !== "ready") { this.ensureTile(tx, ty); return null; }
-        for (const p of tile.parcels) if (intersects(r, p)) out.push(p);
+        for (const p of tile.parcels) if ((water === undefined || p.water === water) && intersects(r, p) && !out.includes(p)) out.push(p);
       }
     }
     return out;
@@ -330,6 +353,20 @@ export class MapEngine {
 
   /** At least this share of a parcel's pixels must be land (the rest may be sea, at a reduced price): the admin's setting. */
   setLandRule(minLandPercent: number) { this.minLandPercent = minLandPercent; this.updateSelectionState(); this.invalidate(); }
+  /** At least this share of a water parcel's pixels must be water (the land cut away is free or discounted): the admin's setting. */
+  setWaterRule(minWaterPercent: number) { this.minWaterPercent = minWaterPercent; this.updateSelectionState(); this.invalidate(); }
+  /** Land or water: what the selection is for. The land is hatched while buying water (as the sea is while buying land). */
+  setBuyKind(kind: "land" | "water") {
+    if (kind === this.buyKind) return;
+    this.buyKind = kind;
+    this.previewShown = this.shownPreview(this.previewImage);
+    this.ghostWater = null;
+    this.updateSelectionState();
+    this.invalidate();
+  }
+  private enoughOfKind(landPx: number, areaPx: number) {
+    return this.buyKind === "water" ? enoughWater(landPx, areaPx, this.minWaterPercent) : enoughLand(landPx, areaPx, this.minLandPercent);
+  }
 
   private updateSelectionState() {
     let s: SelectionState | null = null;
@@ -340,10 +377,10 @@ export class MapEngine {
       else {
         const land = this.geo?.landIn(r);
         if (land && !land.pending) landPx = land.land;
-        const hits = this.parcelsIn(r);
+        const hits = this.parcelsIn(r, this.buyKind === "water");
         s = hits === null ? "checking" : hits.length ? "blocked" : "ok";
-        // coastal parcels are fine (the sea part is discounted) but never mostly sea
-        if (s === "ok") s = landPx === null ? "checking" : enoughLand(landPx, r.w * r.h, this.minLandPercent) ? "ok" : "water";
+        // coastal parcels are fine (what is cut away is discounted) but never mostly of the other kind
+        if (s === "ok") s = landPx === null ? "checking" : this.enoughOfKind(landPx, r.w * r.h) ? "ok" : this.buyKind === "water" ? "land" : "water";
       }
     }
     if (s !== this.selectionState) { this.selectionState = s; if (s) this.cb.onSelectionState?.(s); }
@@ -505,10 +542,29 @@ export class MapEngine {
     this.invalidate();
   }
 
+  /** Is this pixel land? `null` while the coast around it is still downloading. (A parcel only owns the pixels of its own kind.) */
+  private landAt(wx: number, wy: number): boolean | null {
+    const g = this.geo;
+    if (!g) return null;
+    const x = Math.floor(wx), y = Math.floor(wy), key = `${x},${y}`;
+    if (this.lastLandAt?.key === key && this.lastLandAt.ver === g.version) return this.lastLandAt.land;
+    const l = g.landIn({ x, y, w: 1, h: 1 });
+    if (l.pending) return null;
+    this.lastLandAt = { key, ver: g.version, land: l.land > 0 };
+    return l.land > 0;
+  }
+  private lastLandAt: { key: string; ver: number; land: boolean } | null = null;
+
+  /** The parcel that owns the pixel under a point: a land parcel on land, a water parcel on water (the two may share a rectangle). */
   private parcelAt(wx: number, wy: number): MapParcel | null {
     const tile = this.tiles.get(`${Math.floor(wx / TILE)},${Math.floor(wy / TILE)}`);
     if (!tile || tile.state !== "ready") return null;
-    for (const p of tile.parcels) if (wx >= p.x && wx < p.x + p.w && wy >= p.y && wy < p.y + p.h) return p;
+    let land: boolean | null | undefined;
+    for (const p of tile.parcels) {
+      if (!(wx >= p.x && wx < p.x + p.w && wy >= p.y && wy < p.y + p.h)) continue;
+      if (land === undefined) land = this.landAt(wx, wy);
+      if (land === null || land === !p.water) return p;
+    }
     return null;
   }
 
@@ -596,8 +652,8 @@ export class MapEngine {
     ctx.fillRect(0, y0 + 6, w, hh);
     ctx.fillStyle = COLORS.ocean;
     ctx.fillRect(0, y0, w, hh);
-    if (this.mode === "buy") {
-      // while buying, the sea is hatched: land tiles are drawn over it, so only water shows the stripes — "not for sale"
+    if (this.mode === "buy" && this.buyKind === "land") {
+      // while buying land, the sea is hatched: land tiles are drawn over it, so only water shows the stripes — "not for sale" (as land)
       ctx.fillStyle = this.seaHatch() ?? COLORS.ocean;
       ctx.fillRect(0, y0, w, hh);
     }
@@ -611,7 +667,13 @@ export class MapEngine {
     for (let c = Math.floor((cam.x - halfW) / W); c <= Math.floor((cam.x + halfW) / W); c++) {
       this.offX = c * W; // draw the world copy that covers this stretch of the screen
       const x0 = (this.offX - cam.x) * s + w / 2, ww = W * s;
+      this.drawSea(s); // the story: the destroyed seas
+      this.drawParcels(s, true); // the water parcels: over the sea, under the land (the coast cuts them)
       this.drawGeography(s);
+      if (this.mode === "buy" && this.buyKind === "water") { // while buying water, it is the land that is hatched
+        const hatch = this.seaHatch();
+        if (hatch) this.onLand(s, () => { ctx.fillStyle = hatch; ctx.fillRect(x0, y0, ww, hh); });
+      }
       if (this.mode === "buy") { ctx.fillStyle = `rgba(${COLORS.free},0.13)`; ctx.fillRect(x0, y0, ww, hh); }
       // zoomed in, place names sit UNDER the parcels (owners cover the map); zoomed out, parcels are specks and names stay readable on top
       if (s >= RASTER_BELOW) this.drawLabels(s);
@@ -654,6 +716,7 @@ export class MapEngine {
   /** How corrupted the unacquired land is, as `step / 200` (0.5 % steps), or `null` while the story is off. */
   private story: { step: number } | null = null;
   private ranker: ((v: number) => number) | null = null;
+  private seaRanker: ((v: number) => number) | null = null;
 
   /** Sets how much of the land is corrupted (0 to 1), or `null` for the ordinary map. Tiles of another step are redrawn lazily. */
   setStory(intensity: number | null) {
@@ -688,7 +751,7 @@ export class MapEngine {
    */
   startFinale(start: number, reduced: boolean, replay: boolean) {
     if (!this.story) return;
-    if (replay) this.finTiles = new Map([...this.geoTiles].filter(([, t]) => t.step === 200));
+    if (replay) { this.finTiles = new Map([...this.geoTiles].filter(([, t]) => t.step === 200)); this.finSeaTiles = new Map([...this.seaTiles].filter(([, t]) => t.step === 200)); }
     this.finale = { start, reduced, waiting: replay, waitedSince: this.finaleNow() };
     this.finArmed = true;
     this.invalidate();
@@ -714,6 +777,8 @@ export class MapEngine {
   private completeFinale() {
     for (const [k, t] of this.finTiles) this.geoTiles.set(k, t);
     this.finTiles.clear();
+    for (const [k, t] of this.finSeaTiles) this.seaTiles.set(k, t);
+    this.finSeaTiles.clear();
     this.finale = null;
     this.finArmed = false;
     this.story = { step: 200 };
@@ -782,14 +847,18 @@ export class MapEngine {
     }
   }
 
-  /** The rank of a place among the land, calibrated once on the coarse coast: "intensity 30 %" then means 30 % of the land. */
-  private rankOf(): (v: number) => number {
-    if (!this.ranker) {
-      const pts = this.geo!.landLattice(160, 100), vals = new Float64Array(pts.length >> 1);
-      for (let i = 0; i < vals.length; i++) vals[i] = field(pts[2 * i]!, pts[2 * i + 1]!);
-      this.ranker = makeRanker(vals);
-    }
-    return this.ranker;
+  /**
+   * The rank of a place among the land (or, with `sea`, among the water), calibrated once on the coarse coast: "intensity 30 %" then
+   * means 30 % of the land AND 30 % of the seas, whatever the shape of the continents: the destruction touches the whole planet.
+   */
+  private rankOf(sea = false): (v: number) => number {
+    const have = sea ? this.seaRanker : this.ranker;
+    if (have) return have;
+    const pts = sea ? this.geo!.waterLattice(160, 100) : this.geo!.landLattice(160, 100), vals = new Float64Array(pts.length >> 1);
+    for (let i = 0; i < vals.length; i++) vals[i] = field(pts[2 * i]!, pts[2 * i + 1]!);
+    const r = makeRanker(vals);
+    if (sea) this.seaRanker = r; else this.ranker = r;
+    return r;
   }
 
   /**
@@ -799,10 +868,10 @@ export class MapEngine {
    * holds a whole number of them and they never leave seams. Returns where the land is destroyed (for the fringe of the coasts), or
    * `null` when nothing of the tile is touched.
    */
-  private paintCorruption(g: CanvasRenderingContext2D, fill: Path2D, k: number, tx: number, ty: number, scale: number, step: number): { runs: { j: number; i0: number; i1: number }[]; R: number } | null {
+  private paintCorruption(g: CanvasRenderingContext2D, fill: Path2D, k: number, tx: number, ty: number, scale: number, step: number, sea = false): { runs: { j: number; i0: number; i1: number }[]; R: number } | null {
     const I = step / 200;
     if (I <= 0) return null;
-    const rank = this.rankOf(), R = 64, size = GEO_TILE_PX / scale, lattice = new Float32Array((R + 1) * (R + 1));
+    const rank = this.rankOf(sea), R = 64, size = GEO_TILE_PX / scale, lattice = new Float32Array((R + 1) * (R + 1));
     let min = 1;
     for (let j = 0; j <= R; j++) for (let i = 0; i <= R; i++) { const r = rank(field(tx * size + (i * size) / R, ty * size + (j * size) / R)); lattice[j * (R + 1) + i] = r; if (r < min) min = r; }
     if (I * 1.12 - min <= 0) return null; // nothing of this tile is touched yet
@@ -848,6 +917,81 @@ export class MapEngine {
     }
     g.restore();
     return { runs: destroyedRuns(lattice, R, I), R };
+  }
+
+  /* ------------------------------------------------------------------ the story: the destroyed seas */
+  /**
+   * The destruction touches the water as well as the land. Its tiles are a layer of their own, drawn over the ocean colour and UNDER
+   * the water parcels (an acquired piece of sea stays intact in a destroyed ocean) and under the land (which is opaque, so the layer
+   * needs no clipping at all). `c` is null when nothing of the tile is touched yet.
+   */
+  private seaTiles = new Map<string, { c: HTMLCanvasElement | null; used: number; step: number }>();
+  /** The sea in its end state, drawn ahead of the final sequence (see `finTiles`). */
+  private finSeaTiles = new Map<string, { c: HTMLCanvasElement | null; used: number; step: number }>();
+
+  private renderSeaTile(k: number, tx: number, ty: number, step: number): HTMLCanvasElement | null {
+    const scale = 2 ** k, size = GEO_TILE_PX / scale;
+    const c = document.createElement("canvas");
+    c.width = c.height = GEO_TILE_PX;
+    const g = c.getContext("2d");
+    if (!g) return null;
+    g.setTransform(scale, 0, 0, scale, -tx * GEO_TILE_PX, -ty * GEO_TILE_PX);
+    const all = new Path2D();
+    all.rect(tx * size, ty * size, size, size);
+    return this.paintCorruption(g, all, k, tx, ty, scale, step, true) ? c : null;
+  }
+
+  private drawSea(s: number) {
+    if (!this.story || !this.geo) return;
+    const { ctx } = this;
+    const k = Math.ceil(Math.log2(s * this.dpr)), size = GEO_TILE_PX / 2 ** k, v = this.visibleWorld(), step = this.story.step;
+    const tx0 = Math.max(0, Math.floor(v.x0 / size)), tx1 = Math.min(Math.floor(W / size), Math.floor(v.x1 / size));
+    const ty0 = Math.max(0, Math.floor(v.y0 / size)), ty1 = Math.min(Math.floor(H / size), Math.floor(v.y1 / size));
+    const missing: { tx: number; ty: number; d: number }[] = [];
+    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+      const t = this.seaTiles.get(`${k}/${tx}/${ty}`);
+      if (!t || t.step !== step) missing.push({ tx, ty, d: Math.hypot((tx + 0.5) * size - this.cam.x, (ty + 0.5) * size - this.cam.y) });
+    }
+    if (missing.length) { // a few per frame, the nearest to the middle of the view first (as for the land)
+      missing.sort((a, b) => a.d - b.d);
+      for (const m of missing.slice(0, 3)) this.seaTiles.set(`${k}/${m.tx}/${m.ty}`, { c: this.renderSeaTile(k, m.tx, m.ty, step), used: this.frameNo, step });
+      if (missing.length > 3) this.geoPending = true; // keep drawing until the whole view is done
+    }
+    // the end state of the sea, made ahead of the final sequence
+    if (this.finArmed && !(this.finale?.waiting)) {
+      let baked = 0;
+      for (let ty = ty0; ty <= ty1 && baked < 2; ty++) for (let tx = tx0; tx <= tx1 && baked < 2; tx++) {
+        const key = `${k}/${tx}/${ty}`;
+        if (this.finSeaTiles.has(key)) continue;
+        this.finSeaTiles.set(key, { c: this.renderSeaTile(k, tx, ty, 200), used: this.frameNo, step: 200 });
+        baked++;
+      }
+      if (baked) this.geoPending = true;
+    }
+    const placed: { key: string; x: number; y: number; px: number }[] = [];
+    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+      const key = `${k}/${tx}/${ty}`, t = this.seaTiles.get(key), a = this.worldToScreen(tx * size, ty * size), px = size * s;
+      placed.push({ key, x: a.x, y: a.y, px });
+      if (t) { t.used = this.frameNo; if (t.c) ctx.drawImage(t.c, a.x, a.y, px + 0.6, px + 0.6); continue; }
+      // not made yet: the nearest coarser tile we have, stretched (never the bare ocean colour in the middle of a destroyed sea)
+      for (let kk = k - 1; kk >= k - GEO_STAND_IN_LEVELS; kk--) {
+        const sz = GEO_TILE_PX / 2 ** kk, bx = Math.floor((tx * size) / sz), by = Math.floor((ty * size) / sz), anc = this.seaTiles.get(`${kk}/${bx}/${by}`);
+        if (!anc) continue;
+        if (anc.c) { const f = (size / sz) * GEO_TILE_PX; ctx.drawImage(anc.c, ((tx * size) - bx * sz) / sz * GEO_TILE_PX, ((ty * size) - by * sz) / sz * GEO_TILE_PX, f, f, a.x, a.y, px + 0.6, px + 0.6); }
+        break;
+      }
+    }
+    const fin = this.fin;
+    if (fin && this.finSeaTiles.size) { // the final sequence: the end state of the sea, behind the front of the sweep (or fading in)
+      ctx.save();
+      if (fin.reduced) ctx.globalAlpha = fin.frame.sweep; else { ctx.beginPath(); ctx.rect(0, 0, Math.max(0, fin.front), this.h); ctx.clip(); }
+      for (const p of placed) { const ft = this.finSeaTiles.get(p.key); if (ft?.c) ctx.drawImage(ft.c, p.x, p.y, p.px + 0.6, p.px + 0.6); }
+      ctx.restore();
+    }
+    if (this.seaTiles.size > 120) { // never evict what is on screen: 120 tiles are far more than a view needs
+      const old = [...this.seaTiles.entries()].sort((x, y) => x[1].used - y[1].used).slice(0, this.seaTiles.size - 100);
+      for (const [key] of old) this.seaTiles.delete(key);
+    }
   }
 
   /** Where the cyan and magenta echoes of the coasts are made (one tile's worth, reused: tiles are drawn one after the other). */
@@ -1171,6 +1315,29 @@ export class MapEngine {
     ctx.restore();
   }
 
+  /** The water, as a clip: a rectangle much bigger than the world with the land cut out of it (even-odd), rebuilt when the land is. */
+  private waterPathCache: { land: Path2D; path: Path2D } | null = null;
+
+  /** Runs `draw` clipped to the water (the sea, the oceans): the counterpart of `onLand`, for what a water parcel shows. */
+  private onWater(s: number, draw: () => void, whenUnknown = false) {
+    const land = this.landPath(s);
+    if (!land) { if (whenUnknown) draw(); return; }
+    let wp = this.waterPathCache;
+    if (!wp || wp.land !== land) {
+      const path = new Path2D();
+      path.rect(-W, -H, 3 * W, 3 * H);
+      path.addPath(land);
+      wp = this.waterPathCache = { land, path };
+    }
+    const { ctx, dpr, cam, w, h } = this;
+    ctx.save();
+    ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * ((this.offX - cam.x) * s + w / 2), dpr * (h / 2 - cam.y * s));
+    ctx.clip(wp.path, "evenodd");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+    ctx.restore();
+  }
+
   /**
    * Place names, most important first so they win collisions: countries → big cities → départements/states →
    * mid-size cities → towns. Each layer has its own zoom range; the smaller layers load their data on demand.
@@ -1310,9 +1477,14 @@ export class MapEngine {
     return (this.hatch = this.ctx.createPattern(c, "repeat"));
   }
 
-  private drawParcels(s: number) {
-    const v = this.visibleWorld();
-    if (s < RASTER_BELOW) this.drawRasters(s, v);
+  /**
+   * The parcels of one kind: land (clipped to the land by the caller, drawn over the land) or WATER (drawn before the land, over the
+   * sea, so that the land — opaque — cuts them along the coast at every zoom, for free). Water is shown in three blues: the server
+   * already serves the blue pictures and the blue average colours.
+   */
+  private drawParcels(s: number, water = false) {
+    const v = this.visibleWorld(), layer = water ? "w" : "l";
+    if (s < RASTER_BELOW) this.drawRasters(s, v, true, layer);
     // metadata tiles (needed for hit-testing and, when zoomed in, for per-parcel rendering)
     if (s >= JSON_ABOVE) {
       const tx0 = Math.max(0, Math.floor(v.x0 / TILE)), tx1 = Math.min(W / TILE - 1, Math.floor(v.x1 / TILE));
@@ -1330,7 +1502,7 @@ export class MapEngine {
         ctx.beginPath();
         for (const [tx, ty] of missing) { const a = this.worldToScreen(tx * TILE, ty * TILE); ctx.rect(a.x, a.y, TILE * s + 0.5, TILE * s + 0.5); }
         ctx.clip();
-        this.drawRasters(s, v, false);
+        this.drawRasters(s, v, false, layer);
         ctx.restore();
       }
       const seen = new Set<string>();
@@ -1338,7 +1510,7 @@ export class MapEngine {
         const tile = this.tiles.get(`${tx},${ty}`);
         if (!tile || tile.state !== "ready" || s < RASTER_BELOW) continue;
         for (const p of tile.parcels) {
-          if (seen.has(p.code) || p.x > v.x1 || p.y > v.y1 || p.x + p.w < v.x0 || p.y + p.h < v.y0) continue;
+          if (p.water !== water || seen.has(p.code) || p.x > v.x1 || p.y > v.y1 || p.x + p.w < v.x0 || p.y + p.h < v.y0) continue;
           seen.add(p.code);
           const a = this.worldToScreen(p.x, p.y);
           const sw = p.w * s, sh = p.h * s;
@@ -1363,7 +1535,7 @@ export class MapEngine {
             }
           }
           if (!drawn) {
-            ctx.fillStyle = p.assetId && p.color ? p.color : (this.hatchPattern() ?? "#ddd");
+            ctx.fillStyle = water ? (p.color ?? WATER_FILL) : p.assetId && p.color ? p.color : (this.hatchPattern() ?? "#ddd");
             ctx.fillRect(rx, ry, rw, rh);
           }
         }
@@ -1372,7 +1544,7 @@ export class MapEngine {
   }
 
   /** `request: false` draws only what is already in memory (the finer tile, else the coarsest picture standing in for it), asks for nothing. */
-  private drawRasters(s: number, v: { x0: number; y0: number; x1: number; y1: number }, request = true) {
+  private drawRasters(s: number, v: { x0: number; y0: number; x1: number; y1: number }, request = true, layer: "l" | "w" = "l") {
     const z = clamp(Math.floor(-Math.log2(s)), 0, MAX_Z);
     const span = rasterSpan(z);
     const { ctx } = this;
@@ -1380,8 +1552,8 @@ export class MapEngine {
     ctx.imageSmoothingQuality = "high";
     for (let ty = Math.max(0, Math.floor(v.y0 / span)); ty <= Math.min(Math.floor(H / span), Math.floor(v.y1 / span)); ty++) {
       for (let tx = Math.max(0, Math.floor(v.x0 / span)); tx <= Math.min(Math.floor(W / span), Math.floor(v.x1 / span)); tx++) {
-        const key = `${z}/${tx}/${ty}`;
-        const img = request ? this.loadImage(this.rasters, key, `/api/map/raster/${z}/${tx}/${ty}?v=${this.version}`, 300) : (this.rasters.get(key) ?? { el: new Image(), state: "loading" as const, used: 0 });
+        const key = `${layer === "w" ? "w" : ""}${z}/${tx}/${ty}`;
+        const img = request ? this.loadImage(this.rasters, key, `/api/map/raster/${z}/${tx}/${ty}?v=${this.version}${layer === "w" ? "&k=w" : ""}`, 300) : (this.rasters.get(key) ?? { el: new Image(), state: "loading" as const, used: 0 });
         const a = this.worldToScreen(tx * span, ty * span);
         const size = span * s;
         if (img.state === "ready") {
@@ -1392,7 +1564,7 @@ export class MapEngine {
         for (let zz = z + 1; zz <= MAX_Z; zz++) {
           const sp = rasterSpan(zz);
           const ax = Math.floor((tx * span) / sp), ay = Math.floor((ty * span) / sp);
-          const anc = this.rasters.get(`${zz}/${ax}/${ay}`);
+          const anc = this.rasters.get(`${layer === "w" ? "w" : ""}${zz}/${ax}/${ay}`);
           if (anc?.state === "ready") {
             const k = span / sp * RASTER_PX;
             ctx.drawImage(anc.el, ((tx * span) - ax * sp) / sp * RASTER_PX, ((ty * span) - ay * sp) / sp * RASTER_PX, k, k, a.x, a.y, size + 0.5, size + 0.5);
@@ -1437,12 +1609,12 @@ export class MapEngine {
     }
     const draw = (rect: Rect, state: SelectionState | null, ghost: boolean) => {
       const r = rectPath(rect);
-      const bad = state === "blocked" || state === "out" || state === "water";
+      const bad = state === "blocked" || state === "out" || state === "water" || state === "land";
       const col = bad ? COLORS.danger : COLORS.free;
-      if (!ghost && this.previewImage) {
-        // the preview is cut along the coast too, so what you see is what will be shown
-        const img = this.previewImage;
-        this.onLand(s, () => {
+      if (!ghost && this.previewShown) {
+        // the preview is cut along the coast too, so what you see is what will be shown: the land for land, the water for water
+        const img = this.previewShown, cut = this.buyKind === "water" ? this.onWater : this.onLand;
+        cut.call(this, s, () => {
           ctx.imageSmoothingEnabled = ((img as ImageBitmap).width ?? 0) > r.w * 1.001;
           ctx.imageSmoothingQuality = "high";
           ctx.drawImage(img, r.x, r.y, r.w, r.h);
@@ -1463,9 +1635,9 @@ export class MapEngine {
       const g = this.ghost, key = `${g.x},${g.y},${g.w},${g.h}`, ver = this.geo?.version ?? -1;
       if (this.ghostWater?.key !== key || this.ghostWater.ver !== ver) {
         const l = this.geo?.landIn(g);
-        this.ghostWater = { key, ver, water: Boolean(l && !l.pending && !enoughLand(l.land, g.w * g.h, this.minLandPercent)) };
+        this.ghostWater = { key, ver, water: Boolean(l && !l.pending && !this.enoughOfKind(l.land, g.w * g.h)) };
       }
-      draw(g, this.ghostWater.water ? "water" : null, true);
+      draw(g, this.ghostWater.water ? (this.buyKind === "water" ? "land" : "water") : null, true);
     }
     if (this.selection) draw(this.selection, this.selectionState, false);
   }

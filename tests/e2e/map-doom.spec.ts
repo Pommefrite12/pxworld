@@ -14,17 +14,18 @@ const BLUE = [0x2b, 0x35, 0xe0];
 type Eng = { geoPending: boolean; geo: unknown; story: { step: number } | null; worldToScreen(x: number, y: number): { x: number; y: number } };
 const ready = (page: Page) => page.waitForFunction(() => { const e = (window as unknown as { __pxEngine?: Eng }).__pxEngine; return Boolean(e && e.geo && !e.geoPending); }, undefined, { timeout: 60_000 });
 
-/** Of the land pixels of the map (intact cream, corrupted lavender), which share is corrupted? */
+/** Of the pixels of the planet (intact land, free ocean, corrupted lavender — land or sea), which share is corrupted? */
 const corruptedShare = (page: Page) => page.getByRole("application").evaluate((c: HTMLCanvasElement) => {
   const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
-  let cream = 0, lav = 0, sparks = 0;
+  let cream = 0, lav = 0, sparks = 0, ocean = 0;
   for (let i = 0; i < d.length; i += 4) {
     const r = d[i]!, g = d[i + 1]!, b = d[i + 2]!;
     if (r === 251 && g === 245 && b === 230) cream++;
+    else if (r === 201 && g === 223 && b === 232) ocean++; // free ocean
     else if ((r === 233 && g === 229 && b === 255) || (r === 220 && g === 214 && b === 255)) lav++;
     else if ((r === 25 && g === 211 && b === 255) || (r === 255 && g === 46 && b === 147)) sparks++; // cyan, magenta: the errors
   }
-  return { share: cream + lav === 0 ? 0 : lav / (cream + lav), lav, sparks };
+  return { share: cream + lav + ocean === 0 ? 0 : lav / (cream + lav + ocean), lav, sparks };
 });
 
 test.beforeEach(async ({ page }) => { await page.setViewportSize({ width: 1360, height: 860 }); });

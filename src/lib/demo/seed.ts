@@ -55,7 +55,7 @@ export async function seedDemo(p: DemoPorts, opts: SeedOptions): Promise<SeedRep
       if ((await p.query("select 1 from public.parcels where owner_id = $1 and status = 'active' limit 1", [userId])).length) { report.parcelsSkipped++; continue; }
 
       // a place: around the anchor city, mostly on land, clear of every other parcel; the circle grows (and the parcel shrinks) when it is crowded
-      const c = lonLatToPixel({ lon: item.anchor.lon, lat: item.anchor.lat });
+      const c = lonLatToPixel({ lon: item.spot.lon, lat: item.spot.lat });
       let done = false;
       for (let attempt = 0; attempt < 160 && !done; attempt++) {
         const shrink = attempt < 60 ? 1 : attempt < 110 ? 0.75 : 0.5;
@@ -63,15 +63,15 @@ export async function seedDemo(p: DemoPorts, opts: SeedOptions): Promise<SeedRep
         const angle = ((item.seed * 97 + attempt * 137) % 360) * (Math.PI / 180), radius = 80 + attempt * 14 + ((item.seed * 31 + attempt * 17) % 220);
         const r: Rect = { x: clamp(Math.round(c.x + Math.cos(angle) * radius - w / 2), 0, GRID_WIDTH - w), y: clamp(Math.round(c.y + Math.sin(angle) * radius * 0.7 - h / 2), 0, GRID_HEIGHT - h), w, h };
         if (placed.some((o) => overlaps(r, o, 6))) continue;
-        const land = await p.landPixels(r);
-        if (land < MIN_LAND_SHARE * w * h) continue;
+        const land = await p.landPixels(r), water = item.kind === "water";
+        if ((water ? w * h - land : land) < MIN_LAND_SHARE * w * h) continue; // a parcel is placed where it owns (nearly) all its rectangle
 
         const at = new Date(now - item.ageHours * 3_600_000).toISOString();
         let parcel: { id: string };
         try {
           [parcel] = await p.query<{ id: string }>(
-            "insert into public.parcels (owner_id, x, y, w, h, status, land_px, created_at, activated_at, updated_at) values ($1, $2, $3, $4, $5, 'active', $6, $7, $7, $7) returning id",
-            [userId, r.x, r.y, w, h, land, at],
+            "insert into public.parcels (owner_id, x, y, w, h, status, land_px, created_at, activated_at, updated_at, kind) values ($1, $2, $3, $4, $5, 'active', $6, $7, $7, $7, $8) returning id",
+            [userId, r.x, r.y, w, h, land, at, item.kind],
           ) as [{ id: string }];
         } catch (e) {
           if ((e as { code?: string }).code === "23P01") { placed.push(r); continue; } // somebody else's parcel is there: try elsewhere
@@ -91,9 +91,9 @@ export async function seedDemo(p: DemoPorts, opts: SeedOptions): Promise<SeedRep
         placed.push(r);
         report.parcelsCreated++;
         done = true;
-        p.log(`  ${item.username.padEnd(16)} ${String(w).padStart(3)}×${String(h).padEnd(3)} near ${item.anchor.name.padEnd(12)} "${item.title}"`);
+        p.log(`  ${item.username.padEnd(16)} ${String(w).padStart(3)}×${String(h).padEnd(3)} ${item.kind === "water" ? "on" : "near"} ${item.spot.name.padEnd(12)} "${item.title}"`);
       }
-      if (!done) { report.failed.push(`${item.username}: no free place found near ${item.anchor.name}`); }
+      if (!done) { report.failed.push(`${item.username}: no free place found near ${item.spot.name}`); }
     } catch (e) {
       report.failed.push(`${item.username}: ${(e as Error).message}`);
     }

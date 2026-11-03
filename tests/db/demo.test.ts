@@ -3,6 +3,7 @@ import { closeDb, pool, resetData } from "./helpers";
 import { lonLatToPixel } from "@/lib/grid/geometry";
 import { ANCHORS } from "@/lib/demo/plan";
 import { clearDemo, demoStatus, seedDemo, type DemoPorts, type Rect } from "@/lib/demo/seed";
+import { landPixelsIn } from "@/lib/geo/landServer";
 
 afterAll(closeDb);
 
@@ -10,8 +11,8 @@ const DOMAIN = "demo.invalid";
 let files = new Map<string, Buffer>();
 let logged: string[] = [];
 
-/** The ports of the real script, on the scratch database: accounts straight in `auth.users`, files in memory, every rectangle is land. */
-const ports = (land: (r: Rect) => number = (r) => r.w * r.h): DemoPorts => ({
+/** The ports of the real script, on the scratch database: accounts straight in `auth.users`, files in memory, the real map of the land. */
+const ports = (land: (r: Rect) => number | Promise<number> = (r) => landPixelsIn(r)): DemoPorts => ({
   query: async (sql, params) => (await pool.query(sql, params)).rows,
   async createUser(email, username) {
     const { rows } = await pool.query("insert into auth.users (email, raw_user_meta_data) values ($1, jsonb_build_object('username', $2::text)) returning id", [email, username]);
@@ -40,11 +41,12 @@ describe("demonstration data for a test site", () => {
     const { rows: parcels } = await pool.query(`select pc.*, a.status as asset_status, a.storage_path, a.published_at from public.parcels pc
       join public.parcel_assets a on a.id = pc.published_asset_id`);
     expect(parcels).toHaveLength(20);
+    expect(parcels.filter((p) => p.kind === "water")).toHaveLength(4); // every fifth one is on the sea
     for (const p of parcels) {
       expect(p.status).toBe("active");
       expect(p.asset_status).toBe("approved");
       expect(p.w).toBeGreaterThanOrEqual(40);
-      expect(p.land_px).toBe(p.w * p.h);
+      expect(p.owned_px).toBeGreaterThanOrEqual(0.85 * p.w * p.h); // the parcel owns (nearly) all of its rectangle, land for land and water for water
       expect(files.has(p.storage_path)).toBe(true);
       expect(files.get(p.storage_path)!.subarray(1, 4).toString()).toBe("PNG");
       expect(new Date(p.published_at).getTime()).toBeLessThanOrEqual(Date.now());

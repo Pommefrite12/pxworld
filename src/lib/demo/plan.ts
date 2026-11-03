@@ -22,6 +22,15 @@ export const ANCHORS: readonly Anchor[] = [
   { name: "Bogota", lat: 4.71, lon: -74.07, country: "CO" }, { name: "São Paulo", lat: -23.55, lon: -46.63, country: "BR" }, { name: "Buenos Aires", lat: -34.6, lon: -58.38, country: "AR" },
 ];
 
+/** Where the demonstration WATER parcels go: open water (seas and oceans), so that the sea does not look empty either. */
+export const SEAS: readonly { name: string; lat: number; lon: number }[] = [
+  { name: "Méditerranée est", lat: 34.5, lon: 25 }, { name: "Méditerranée ouest", lat: 38, lon: 5 }, { name: "Mer du Nord", lat: 56, lon: 3 }, { name: "Mer Baltique", lat: 58.5, lon: 20 },
+  { name: "Mer Noire", lat: 43.2, lon: 34 }, { name: "Atlantique nord", lat: 45, lon: -30 }, { name: "Atlantique sud", lat: -20, lon: -15 }, { name: "Caraïbes", lat: 15, lon: -75 },
+  { name: "Golfe du Mexique", lat: 25, lon: -90 }, { name: "Pacifique est", lat: 0, lon: -140 }, { name: "Pacifique nord", lat: 35, lon: -160 }, { name: "Océan Indien", lat: -15, lon: 75 },
+  { name: "Mer d'Arabie", lat: 15, lon: 65 }, { name: "Mer de Chine méridionale", lat: 12, lon: 114 }, { name: "Mer du Japon", lat: 40, lon: 135 }, { name: "Mer de Corail", lat: -18, lon: 155 },
+  { name: "Mer de Tasman", lat: -40, lon: 160 }, { name: "Golfe du Bengale", lat: 14, lon: 88 }, { name: "Mer Rouge", lat: 20, lon: 38 }, { name: "Golfe de Guinée", lat: 0, lon: 0 },
+];
+
 const WORDS = ["lucie", "mathis", "chloe", "hugo", "emma", "louis", "jade", "noah", "lea", "adam", "alice", "tom", "zoe", "leo", "nina", "paul", "ines", "theo", "mila", "ryan",
   "fox", "panda", "otter", "heron", "lynx", "koala", "gecko", "bison", "wolf", "crane", "orca", "yak", "moth", "newt", "seal", "swan", "ibis", "kiwi", "lark", "wren",
   "pixel", "neon", "mint", "coral", "amber", "indigo", "olive", "ruby", "onyx", "sky", "dune", "reef", "fjord", "delta", "ember", "frost", "grove", "lagoon", "mesa", "tundra"];
@@ -42,9 +51,14 @@ export interface DemoItem {
   title: string;
   description: string;
   style: ArtStyle;
+  /** `water`: a parcel on the sea (every fifth one); it is shown in blue, whatever its picture is. */
+  kind: "land" | "water";
   w: number;
   h: number;
+  /** The home of the account (its country). */
   anchor: Anchor;
+  /** Where the parcel goes: near the anchor (land) or in a sea (water). */
+  spot: { name: string; lat: number; lon: number };
   seed: number;
   /** How long ago the parcel was "bought", in hours (so that the newest creations are not all the same minute). */
   ageHours: number;
@@ -66,6 +80,7 @@ export function demoPlan(count: number, seed = 1): DemoItem[] {
     const ratio = 0.7 + next() * 0.6;
     const w = Math.max(60, Math.min(400, Math.round(base * ratio))), h = Math.max(60, Math.min(400, Math.round(base / ratio)));
     const title = titles[i % titles.length]! + (i >= titles.length ? ` ${Math.floor(i / titles.length) + 1}` : "");
+    const water = i % 5 === 4, anchor = ANCHORS[i % ANCHORS.length]!;
     return {
       index: i,
       username,
@@ -73,8 +88,10 @@ export function demoPlan(count: number, seed = 1): DemoItem[] {
       title,
       description: DESCRIPTIONS[i % DESCRIPTIONS.length]!,
       style: ART_STYLES[i % ART_STYLES.length]!,
-      w, h,
-      anchor: ANCHORS[i % ANCHORS.length]!,
+      kind: water ? "water" : "land",
+      w: water ? Math.max(180, w) : w, h: water ? Math.max(180, h) : h,
+      anchor,
+      spot: water ? SEAS[Math.floor(i / 5) % SEAS.length]! : anchor,
       seed: seed * 1000 + i,
       ageHours: Math.round(next() * 14 * 24),
     };
