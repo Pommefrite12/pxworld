@@ -132,6 +132,7 @@ Ces deux valeurs ne sont **pas secrètes** (le navigateur des visiteurs les util
    DATABASE_URL='ADRESSE_SESSION_POOLER' node scripts/migrate.mjs
    ```
 4. Collez la ligne complète dans le terminal et appuyez sur Entrée. Ça prend 10 à 30 secondes.
+   **Autre façon**, si vous avez un fichier `.env.production.local` avec la ligne `DATABASE_URL=…` : `node scripts/migrate.mjs --env .env.production.local`. La première ligne affichée donne la base visée : elle doit être `aws-…pooler.supabase.com (managed, over TLS)`, **pas** `127.0.0.1 (on this machine)` (la base locale du Codespace). N'utilisez pas `node --env-file=…` : il ne remplace pas la variable `DATABASE_URL` que le Codespace possède déjà, et les migrations partent alors dans la mauvaise base.
 5. Résultat attendu : **15 lignes** qui commencent par `applying 2026…` et finissent par `… ok`. La première est `20261029000001_core_schema.sql … ok`, la dernière
    `20261029000015_water_parcels.sql … ok`.
 6. Vérification : dans Supabase, menu **Table Editor** → vous devez voir des tables (`parcels`, `orders`, `profiles`, `app_settings`…).
