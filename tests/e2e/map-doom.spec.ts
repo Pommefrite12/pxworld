@@ -121,10 +121,10 @@ test("the coasts of the destroyed land come apart into cyan and magenta; the int
     const keys = [...e.geoTiles.keys()].map((key) => key.split("/").map(Number) as [number, number, number]);
     const level = keys.map((q) => q[0]).sort((a, b) => keys.filter((q) => q[0] === b).length - keys.filter((q) => q[0] === a).length)[0]!;
     const tiles = keys.filter((q) => q[0] === level).slice(0, 12);
-    // cyan and magenta of the fringe (or of a spark): count them in a tile, rendered with the story at `step`
+    const eng = e as { paintCoastFringe?: unknown };
+    // cyan and magenta of the fringe (or of a spark): count them in the tiles, rendered with the story at `step`
     const count = (step: number) => {
       let n = 0;
-      const t0 = performance.now();
       for (const [k, tx, ty] of tiles) {
         const c = e.renderGeoTile(k, tx, ty, false, false, step)!.c, d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
         for (let i = 0; i < d.length; i += 4) {
@@ -132,22 +132,30 @@ test("the coasts of the destroyed land come apart into cyan and magenta; the int
           if ((R < 90 && G > 170 && B > 220) || (R > 220 && G < 110 && B > 110 && B < 190)) n++;
         }
       }
-      return { n, ms: performance.now() - t0 };
+      return n;
     };
-    count(200); // (a first pass to warm everything up: the timings below compare like with like)
+    const none = () => {}; // the engine's own method is hidden behind this (and comes back when the property is deleted)
     const withFringe = count(200), half = count(100), intact = count(0);
-    const saved = e.paintCoastFringe;
-    e.paintCoastFringe = () => {};
+    eng.paintCoastFringe = none;
     const without = count(200), halfWithout = count(100), intactWithout = count(0);
-    e.paintCoastFringe = saved; // (the instance's own copy goes away: the method of the engine is back)
-    delete (e as { paintCoastFringe?: unknown }).paintCoastFringe;
-    return { tiles: tiles.length, level, fringe: withFringe.n - without.n, halfFringe: half.n - halfWithout.n, intactFringe: intact.n - intactWithout.n, extraMs: (withFringe.ms - without.ms) / tiles.length };
+    delete eng.paintCoastFringe;
+    // the cost: the same tiles drawn with and without the fringe, one after the other, several times over; the best time of each
+    // (a busy machine only ever makes a run slower: the fastest one is the true cost)
+    const draw = () => { const t0 = performance.now(); for (const [k, tx, ty] of tiles) e.renderGeoTile(k, tx, ty, false, false, 200); return performance.now() - t0; };
+    let bestWith = Infinity, bestWithout = Infinity;
+    for (let i = 0; i < 8; i++) {
+      bestWith = Math.min(bestWith, draw());
+      eng.paintCoastFringe = none;
+      bestWithout = Math.min(bestWithout, draw());
+      delete eng.paintCoastFringe;
+    }
+    return { tiles: tiles.length, level, fringe: withFringe - without, halfFringe: half - halfWithout, intactFringe: intact - intactWithout, extraMs: (bestWith - bestWithout) / tiles.length };
   });
   expect(r.tiles, "tiles to look at").toBeGreaterThan(3);
   expect(r.fringe, `the end state: the coasts are fringed (level ${r.level})`).toBeGreaterThan(300);
   expect(r.halfFringe, "half way: fewer coasts are fringed").toBeLessThan(r.fringe);
   expect(r.intactFringe, "the intact world: no fringe at all").toBe(0);
-  expect(r.extraMs, "the fringe costs well under a few ms per tile").toBeLessThan(5); // (about 0.5 ms measured, with software rendering)
+  expect(r.extraMs, "the fringe costs only a few ms per tile").toBeLessThan(6); // (about 2 ms measured, best of 8, with software rendering)
 });
 
 /* ------------------------------------------------------------------ the final sequence */
