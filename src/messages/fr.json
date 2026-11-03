@@ -71,6 +71,32 @@
       "other": "Autre"
     }
   },
+  "doom": {
+    "plateLabel": "Compte à rebours avant la destruction du monde numérique",
+    "warn": "SYSTÈME INSTABLE",
+    "warnOver": "MONDE SUPPRIMÉ",
+    "fiction": "FICTION · 100 JOURS",
+    "preview": "APERÇU",
+    "days": "JOURS",
+    "hours": "HEURES",
+    "minutes": "MINUTES",
+    "seconds": "SECONDES",
+    "timeLeft": "Il reste {days} jours, {hours} heures et {minutes} minutes.",
+    "chip": "J-{days}",
+    "chipLabel": "Plus que {days} jours avant la destruction du monde numérique",
+    "phase1": "Le compte à rebours est lancé.",
+    "phase2": "Anomalie détectée : le monde devient instable.",
+    "phase3": "Quelle partie du monde restera debout ?",
+    "phase4": "Dernière sauvegarde possible : laissez votre empreinte avant qu’il ne soit trop tard.",
+    "phase5": "{n, plural, =0 {Le monde a été supprimé. Aucune parcelle n’a survécu.} one {Le monde a été supprimé. # parcelle a survécu.} other {Le monde a été supprimé. # parcelles ont survécu.}}",
+    "ticker": "LE COMPTE À REBOURS EST LANCÉ ▪ SEULES LES PARCELLES ACQUISES SURVIVRONT ▪ QUELLE PARTIE DU MONDE RESTERA DEBOUT ? ▪ ",
+    "tickerOver": "LE MONDE A ÉTÉ SUPPRIMÉ ▪ SEULES LES PARCELLES ACQUISES ONT SURVÉCU ▪ ",
+    "cta": "Sauver ma parcelle",
+    "ctaOver": "Rejoindre les survivants",
+    "latest": "Derniers sauvetages",
+    "saved": "Monde sauvé",
+    "savedLine": "{n, plural, =0 {Aucune parcelle sauvée pour l’instant} one {# parcelle sauvée} other {# parcelles sauvées}} · {danger} encore en danger"
+  },
   "search": {
     "label": "Rechercher un lieu",
     "placeholder": "Rechercher un pays, un département, une ville, x,y ou 48,85, 2,35",

@@ -25,3 +25,17 @@ test.describe("mobile (touch)", () => {
     }
   });
 });
+
+test("the countdown fits a phone: no horizontal scrolling, the plate inside the screen, the strip above the header", async ({ page }) => {
+  await page.goto("/?preview=J-9");
+  const plate = page.getByTestId("doom-plate");
+  await expect(plate).toBeVisible();
+  const box = (await plate.boundingBox())!;
+  const vw = await page.evaluate(() => window.innerWidth);
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(vw + 0.5);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  const strip = (await page.getByTestId("doom-ticker").boundingBox())!, header = (await page.locator("header").boundingBox())!;
+  expect(strip.y + strip.height).toBeLessThanOrEqual(header.y + 0.5);
+  await expect(page.getByTestId("doom-chip")).toBeHidden(); // no room next to the logo on a phone: the strip and the plate carry it
+});

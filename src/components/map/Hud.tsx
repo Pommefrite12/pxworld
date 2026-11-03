@@ -7,14 +7,18 @@ import { metersPerPixel, pixelToLonLat } from "@/lib/grid/geometry";
 import { assetUrl } from "@/lib/images/sizes";
 import type { Camera } from "./engine";
 import type { PublicStats } from "@/lib/data/map";
+import { DoomStats } from "@/components/doom/Doom";
+import { useDoom } from "@/components/doom/useDoom";
 
 /** Pixels sold, from the database. No placeholder numbers: until the first sale it truthfully reads 0. */
 export function StatsCard({ stats, compact }: { stats: PublicStats; compact: boolean }) {
   const t = useTranslations("stats");
   const f = useFormatter();
+  const doom = useDoom();
   const pct = stats.fillPercent;
   // the share of the land sold, with enough digits to never read "0 %" once something is sold: 0.015 %, 2.5 %, 40 %
   const pctLabel = f.number(pct / 100, { style: "percent", ...(pct < 1 ? { maximumSignificantDigits: 2 } : { maximumFractionDigits: 1 }) });
+  if (doom) return <DoomStats fillPercent={pct} soldPixels={stats.soldPixels} parcels={stats.parcels} compact={compact} />; // the story's version of the same real figures
   return (
     <section aria-label={t("label")} className={`card pointer-events-auto w-full max-w-[22rem] ${compact ? "p-3" : "p-4"}`}>
       <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">{t("sold")}</p>
@@ -46,11 +50,13 @@ export interface LatestCreation { code: string; x: number; y: number; w: number;
 /** The newest published creations, as small pictures: click one to fly to it, the arrow opens the whole gallery. Real data only. */
 export function LatestTile({ items, onPick }: { items: LatestCreation[]; onPick: (c: LatestCreation) => void }) {
   const t = useTranslations("latest");
+  const td = useTranslations("doom");
+  const doom = useDoom();
   return (
     // not on phones (the map needs the room) nor on very short screens
     <section aria-label={t("title")} className="card pointer-events-auto w-full max-w-[22rem] p-4 max-sm:hidden [@media(max-height:639px)]:hidden" data-testid="latest-tile">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-extrabold leading-tight">{t("title")}</h2>
+        <h2 className="text-lg font-extrabold leading-tight">{doom ? td("latest") : t("title")}</h2>
         <Link href="/discover" className="btn btn-ghost btn-icon btn-sm" aria-label={t("all")} title={t("all")} data-testid="latest-all">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M9 5l7 7-7 7" /></svg>
         </Link>

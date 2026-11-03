@@ -14,6 +14,8 @@ import { MapView, type MapViewHandle } from "./MapView";
 import type { Camera, MapParcel, Mode, SelectionState } from "./engine";
 import { CursorReadout, LatestTile, MapControls, StatsCard, type LatestCreation } from "./Hud";
 import { ParcelCard } from "./ParcelCard";
+import { DoomMessage, DoomPlate } from "@/components/doom/Doom";
+import { useDoom } from "@/components/doom/useDoom";
 import { SearchBox, type SearchTarget } from "./SearchBox";
 
 export interface MapShellProps {
@@ -30,6 +32,8 @@ const DEFAULT_SIZE = { w: 20, h: 20 };
 export function MapShell({ stats: initialStats, latest = [], pricing, viewer, initial }: MapShellProps) {
   const t = useTranslations("map");
   const tc = useTranslations("common");
+  const td = useTranslations("doom");
+  const doom = useDoom(); // "100 days to save the world": null while the countdown is off
   const locale = useLocale();
   const router = useRouter();
   const mapRef = useRef<MapViewHandle>(null);
@@ -173,7 +177,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
         viewer={viewer}
         center={<SearchBox onGo={goTo} />}
         cta={mode === "explore" ? (
-          <button className="btn btn-primary btn-sm sm:!min-h-10 sm:!px-5" onClick={() => startBuy()} data-testid="find-your-spot">{t("findYourSpot")}</button>
+          <button className={`btn btn-primary btn-sm sm:!min-h-10 sm:!px-5${doom ? " doom-cta" : ""}`} onClick={() => startBuy()} data-testid="find-your-spot">{doom ? (doom.remaining.over ? td("ctaOver") : td("cta")) : t("findYourSpot")}</button>
         ) : null}
       />
       <div className="relative min-h-0 flex-1">
@@ -193,6 +197,14 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
 
         {/* the page title stays for search engines and screen readers; the map itself is the hero */}
         <h1 className="sr-only">{t("sloganA")} {t("sloganB")} {t("sloganC")}</h1>
+
+        {/* the countdown of the story, top of the map (not over a parcel card or the buy panel) */}
+        {doom && mode === "explore" && !parcelCode && (
+          <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex flex-col items-center gap-2 px-3 sm:top-4">
+            <DoomPlate />
+            <div className="hidden sm:block"><DoomMessage survivors={stats?.parcels ?? 0} /></div>
+          </div>
+        )}
 
         {/* live counter (bottom) */}
         <div className="pointer-events-none absolute inset-3 z-10 flex flex-col justify-end sm:inset-5">

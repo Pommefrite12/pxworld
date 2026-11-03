@@ -33,6 +33,11 @@
   --color-mint: #12b886;
   --color-danger: #d92d20;
   --color-warn: #8a5a10;
+  /* "100 days" story (art direction Glitch): the colours of a corrupted file. Never used for running text. */
+  --color-glitch-cyan: #19d3ff;
+  --color-glitch-magenta: #ff2e93;
+  --color-glitch-lav: #e9e5ff;
+  --color-glitch-violet: #6a4cff;
 
   --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
@@ -164,3 +169,68 @@
 
 .pixelated { image-rendering: pixelated; image-rendering: crisp-edges; }
 .checker { background-color: #fff; background-image: linear-gradient(45deg, #ece4d3 25%, transparent 25%, transparent 75%, #ece4d3 75%), linear-gradient(45deg, #ece4d3 25%, transparent 25%, transparent 75%, #ece4d3 75%); background-size: 16px 16px; background-position: 0 0, 8px 8px; }
+
+/* ------------------------------------------------------------------ "100 days to save the world" (art direction Glitch)
+   Only on the page while the countdown is on (see components/doom). The interface stays clear and cream: the story shows
+   in a scrolling strip, the countdown plate, a few fringes of cyan/magenta, and the map. */
+.doom-ticker {
+  position: relative; height: 26px; overflow: hidden; white-space: nowrap;
+  background: var(--color-paper); border-bottom: 2px solid var(--color-ink);
+  font-family: var(--font-pixel); font-size: 17px; line-height: 24px; letter-spacing: 0.06em; color: var(--color-ink);
+}
+.doom-ticker::before, .doom-ticker::after {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 56px; z-index: 2;
+  background: repeating-linear-gradient(-45deg, var(--color-signal) 0 7px, var(--color-paper) 7px 14px);
+}
+.doom-ticker::before { left: 0; } .doom-ticker::after { right: 0; }
+.doom-ticker[data-phase="4"]::before, .doom-ticker[data-phase="4"]::after,
+.doom-ticker[data-phase="5"]::before, .doom-ticker[data-phase="5"]::after { width: 112px; } /* the last week and after: the strip wears more hazard */
+.doom-ticker-run { display: flex; width: max-content; animation: doom-marquee 90s linear infinite; }
+.doom-ticker-run span { padding-left: 4rem; }
+@keyframes doom-marquee { to { transform: translateX(-50%); } }
+
+.doom-header { background-image: linear-gradient(90deg, var(--color-glitch-magenta), var(--color-glitch-cyan)); background-size: 100% 2px; background-repeat: no-repeat; background-position: bottom; }
+.doom-chip { margin-left: 0.25rem; font-family: var(--font-pixel); font-size: 1.4rem; line-height: 1; white-space: nowrap; color: var(--color-ink); text-shadow: -1px 0 var(--color-glitch-cyan), 1px 0 var(--color-glitch-magenta); }
+.doom-cta { box-shadow: 3px 0 0 var(--color-glitch-cyan), -3px 0 0 var(--color-glitch-magenta) !important; }
+
+.doom-plate {
+  pointer-events: auto; width: min(640px, 100%); overflow: hidden;
+  background: rgb(255 253 248 / 0.97); border: 2px solid var(--color-ink); border-radius: 14px; box-shadow: 5px 5px 0 rgb(31 37 64 / 0.16);
+}
+.doom-plate-top {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 12px;
+  background: repeating-linear-gradient(-45deg, var(--color-signal) 0 9px, var(--color-paper) 9px 18px);
+  font-family: var(--font-pixel); font-size: 17px; letter-spacing: 0.08em; color: var(--color-ink);
+}
+.doom-plate-top span { background: var(--color-paper); padding: 0 8px; border-radius: 3px; }
+.doom-digits { display: flex; justify-content: center; align-items: flex-start; gap: clamp(4px, 1.6vw, 12px); padding: 10px 12px 12px; }
+.doom-group { position: relative; flex: 1 1 0; min-width: 0; max-width: 120px; text-align: center; }
+.doom-n {
+  display: block; font-family: var(--font-pixel); font-weight: 400; font-size: clamp(2.6rem, 9.5vw, 5.25rem); line-height: 0.9; color: var(--color-ink);
+  text-shadow: -3px 0 var(--color-glitch-cyan), 3px 0 var(--color-glitch-magenta);
+}
+.doom-group i { display: block; margin-top: 4px; font-style: normal; font-size: clamp(0.5rem, 1.7vw, 0.7rem); font-weight: 700; letter-spacing: 0.14em; color: var(--color-ink-soft); }
+.doom-sep { padding-top: 4px; font-family: var(--font-pixel); font-size: clamp(2.2rem, 8vw, 4.4rem); line-height: 0.9; color: var(--color-signal); }
+.doom-group.glitch .doom-n { animation: doom-glitch 1s steps(1, end) infinite; } /* the seconds stutter once a second, for a tenth of it */
+@keyframes doom-glitch {
+  0%, 90%, 100% { transform: none; clip-path: none; }
+  91% { transform: translate(3px, -2px); clip-path: polygon(0 0, 100% 0, 100% 38%, 0 38%, 0 46%, 100% 46%, 100% 100%, 0 100%); text-shadow: -5px 0 var(--color-glitch-cyan), 5px 0 var(--color-glitch-magenta); }
+  95% { transform: translate(-2px, 1px); }
+}
+.doom-plate[data-phase="5"] .doom-n { color: var(--color-glitch-magenta); text-shadow: none; }
+
+.doom-msg {
+  pointer-events: auto; display: inline-block; max-width: min(36rem, calc(100% - 1rem)); padding: 0.5rem 1rem; border-radius: 8px; text-align: center;
+  background: var(--color-ink); color: #fff; font-weight: 700; font-size: 0.95rem; box-shadow: 3px 3px 0 var(--color-glitch-magenta);
+}
+
+.doom-card-lab { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-ink-soft); }
+.doom-big { margin-top: 0.1rem; font-family: var(--font-pixel); font-size: clamp(2.4rem, 7vw, 3.4rem); line-height: 0.9; color: var(--color-signal); text-shadow: -2px 0 var(--color-glitch-cyan), 2px 0 var(--color-glitch-magenta); }
+.doom-seg { display: grid; grid-template-columns: repeat(30, minmax(0, 1fr)); gap: 2px; height: 14px; margin-top: 0.6rem; }
+.doom-seg i { background: var(--color-signal); }
+.doom-seg i.bad { background-color: var(--color-glitch-lav); background-image: linear-gradient(0deg, transparent 0 45%, #dcd6ff 45% 55%, transparent 55%); }
+.doom-seg i.x { background: var(--color-glitch-magenta); } .doom-seg i.y { background: var(--color-glitch-cyan); }
+
+@media (prefers-reduced-motion: reduce) {
+  .doom-ticker-run, .doom-group.glitch .doom-n { animation: none; }
+}
