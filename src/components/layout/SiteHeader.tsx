@@ -103,14 +103,19 @@ export function SiteHeader({ viewer, center, cta, className = "" }: { viewer: He
     <>
     <DoomTicker />
     <header className={`relative z-40 border-b border-line bg-paper/95 backdrop-blur ${doom ? "doom-header" : ""} ${className}`}>
-      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
-        <Link href="/" aria-label={t("home")} className="shrink-0"><Logo /></Link>
+      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-1.5 px-2.5 min-[360px]:gap-2 min-[360px]:px-3 sm:gap-4 sm:px-5">
+        {/* on a phone the row (logo, call to action, language, account) is tight, above all in French: below 440 px the name gives way to the globe */}
+        <Link href="/" aria-label={t("home")} className="shrink-0"><Logo wordClassName="max-[439px]:hidden" /></Link>
         <div className="mx-auto hidden w-full max-w-md md:block">{center}</div>
-        <nav className="ml-auto flex items-center gap-1.5 sm:gap-2" aria-label={t("main")}>
+        <nav className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2" aria-label={t("main")}>
           <Link href="/discover" className="btn btn-nav btn-sm hidden sm:inline-flex">{t("discover")} <span aria-hidden>›</span></Link>
           {cta}
           <LocaleSwitch />
-          {viewer ? <AccountMenu viewer={viewer} /> : <Link href="/auth/sign-in" className="btn btn-secondary btn-sm" data-testid="sign-in-link">{t("signIn")}</Link>}
+          {viewer ? <AccountMenu viewer={viewer} /> : <Link href="/auth/sign-in" className="btn btn-secondary btn-sm max-sm:!px-2.5" data-testid="sign-in-link" aria-label={t("signIn")}>
+            {/* a person on a phone (the words come back from 640 px), with the words for screen readers */}
+            <svg aria-hidden viewBox="0 0 24 24" className="h-5 w-5 sm:hidden" fill="currentColor"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z" /></svg>
+            <span className="max-sm:sr-only">{t("signIn")}</span>
+          </Link>}
         </nav>
       </div>
       {center && <div className="px-3 pb-2 md:hidden">{center}</div>}

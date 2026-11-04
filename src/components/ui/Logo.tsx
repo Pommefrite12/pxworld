@@ -26,11 +26,12 @@ export function PixelGlobe({ size = 28 }: { size?: number }) {
   );
 }
 
-export function Logo({ className = "" }: { className?: string }) {
+/** `wordClassName` lets a place that is short of room hide the name and keep the globe (the link around the logo carries the name for screen readers). */
+export function Logo({ className = "", wordClassName = "" }: { className?: string; wordClassName?: string }) {
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
       <PixelGlobe />
-      <span className="font-display text-[1.35rem] font-extrabold leading-none tracking-tight">
+      <span className={`font-display text-[1.35rem] font-extrabold leading-none tracking-tight ${wordClassName}`}>
         {/* "pixel" is set in the site's pixel font (one weight, no letter-spacing: its letters sit on a pixel grid); a little larger,
             because a pixel font has a smaller x-height than the display font next to it */}
         <span className="font-pixel text-[1.3em] font-normal tracking-normal">pixel</span><span className="text-signal">world</span>

@@ -38,3 +38,28 @@ test("the countdown fits a phone: no horizontal scrolling, the plate inside the 
   const strip = (await page.getByTestId("doom-ticker").boundingBox())!, header = (await page.locator("header").boundingBox())!;
   expect(strip.y + strip.height).toBeLessThanOrEqual(header.y + 0.5);
 });
+
+/** The header is one row: logo, a call to action, the language and the account. On the narrowest phones it must still fit, in both languages, with and without the story. */
+for (const width of [320, 360, 390, 412]) {
+  for (const path of ["/", "/fr", "/?preview=J-9", "/fr?preview=J-9", "/discover", "/fr/discover"]) {
+    test(`the header fits a ${width}px phone: ${path}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 780 });
+      await page.goto(path);
+      await expect(page.locator("header")).toBeVisible();
+      await page.waitForTimeout(500);
+      const m = await page.evaluate(() => {
+        const header = document.querySelector("header")!, vw = window.innerWidth;
+        const out: string[] = [];
+        for (const el of header.querySelectorAll<HTMLElement>("a, button")) {
+          const r = el.getBoundingClientRect();
+          if (r.width === 0 || r.height === 0) continue; // hidden at this width
+          if (r.left < -0.5 || r.right > vw + 0.5) out.push(`${(el.textContent || el.getAttribute("aria-label") || el.tagName).trim().slice(0, 24)} [${Math.round(r.left)}–${Math.round(r.right)}]`);
+        }
+        return { outside: out, pageScrolls: document.documentElement.scrollWidth > vw, headerScrolls: header.scrollWidth > header.clientWidth };
+      });
+      expect(m.outside, "nothing of the header is pushed off the screen").toEqual([]);
+      expect(m.pageScrolls, "the page does not scroll sideways").toBe(false);
+      expect(m.headerScrolls, "the header does not overflow itself").toBe(false);
+    });
+  }
+}

@@ -152,10 +152,11 @@ test.describe("map interaction", () => {
     const search = page.getByRole("combobox").first();
     await search.fill("Paris");
     await page.getByRole("listbox").getByRole("option").first().click();
-    await expect.poll(async () => (await camera(page)).scale, { timeout: 8000 }).toBeGreaterThan(1);
-    const c = await camera(page);
-    expect(Math.abs(c.x - 18984)).toBeLessThan(40); // 2.35°E
-    expect(Math.abs(c.y - 11738)).toBeLessThan(40); // 48.85°N (Mercator)
+    // the flight is over when the camera is there (the zoom is ahead of the position while it flies: look until both are right)
+    await expect.poll(async () => {
+      const c = await camera(page);
+      return c.scale > 1 && Math.abs(c.x - 18984) < 40 /* 2.35°E */ && Math.abs(c.y - 11738) < 40 /* 48.85°N (Mercator) */;
+    }, { timeout: 15_000 }).toBe(true);
     await search.fill("48.85, 2.35");
     await page.getByRole("listbox").getByRole("option").first().click();
     await expect.poll(async () => Math.round((await camera(page)).scale)).toBe(6);

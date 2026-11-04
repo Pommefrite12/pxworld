@@ -206,8 +206,8 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
         center={<SearchBox onGo={goTo} />}
         cta={mode === "explore" ? (ended
           // the world has ended and nothing can be bought any more: the button now leads to the ones who saved a piece of it
-          ? <Link href="/discover" className="btn btn-primary btn-sm doom-cta sm:!min-h-10 sm:!px-5" data-testid="find-your-spot">{td("ctaOver")}</Link>
-          : <button className={`btn btn-primary btn-sm sm:!min-h-10 sm:!px-5${doom ? " doom-cta" : ""}`} onClick={() => startBuy()} data-testid="find-your-spot">{doom ? td("cta") : t("findYourSpot")}</button>
+          ? <Link href="/discover" className="btn btn-primary btn-sm doom-cta max-sm:!px-3 sm:!min-h-10 sm:!px-5" data-testid="find-your-spot">{td("ctaOver")}</Link>
+          : <button className={`btn btn-primary btn-sm max-sm:!px-3 sm:!min-h-10 sm:!px-5${doom ? " doom-cta" : ""}`} onClick={() => startBuy()} data-testid="find-your-spot">{doom ? td("cta") : t("findYourSpot")}</button>
         ) : null}
       />
       <div className="relative min-h-0 flex-1">

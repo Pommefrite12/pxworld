@@ -176,17 +176,17 @@ test("a slow machine makes no new tile while the camera moves, and makes the sha
   // the machine has just shown that it struggles (a long frame), and the visitor zooms in: one level further needs new tiles
   const during = await page.evaluate(async () => {
     const e = (window as unknown as { __pxEngine: SlowEng }).__pxEngine;
-    let baked = 0, frames = 0;
+    let bakedWhileMoving = 0, sawMoving = false;
     const orig = e.renderGeoTile.bind(e);
-    e.renderGeoTile = (...a: Parameters<typeof orig>) => { baked++; return orig(...a); };
+    e.renderGeoTile = (...a: Parameters<typeof orig>) => { if (e.anim !== null) bakedWhileMoving++; return orig(...a); };
     e.slowUntil = performance.now() + 60_000;
     e.flyTo({ x: e.cam.x, y: e.cam.y, scale: e.cam.scale * 4 }, 600);
     const t0 = performance.now();
-    while (performance.now() - t0 < 560) { await new Promise((r) => requestAnimationFrame(r)); frames++; }
-    return { baked, frames, stillMoving: e.anim !== null };
+    while (performance.now() - t0 < 900 && (e.anim !== null || !sawMoving)) { await new Promise((r) => requestAnimationFrame(r)); if (e.anim !== null) sawMoving = true; }
+    return { bakedWhileMoving, sawMoving };
   });
-  expect(during.stillMoving, "the test looked while the zoom was running").toBe(true);
-  expect(during.baked, "no tile is made during the movement").toBe(0);
+  expect(during.sawMoving, "the test looked while the zoom was running").toBe(true);
+  expect(during.bakedWhileMoving, "no tile is made during the movement").toBe(0);
   // once it stops, the sharp tiles come
   await expect.poll(() => page.evaluate(() => {
     const e = (window as unknown as { __pxEngine: SlowEng }).__pxEngine;
@@ -203,11 +203,11 @@ test("a fast machine is not made to wait: it makes tiles while the camera moves"
     const e = (window as unknown as { __pxEngine: SlowEng }).__pxEngine;
     let n = 0;
     const orig = e.renderGeoTile.bind(e);
-    e.renderGeoTile = (...a: Parameters<typeof orig>) => { n++; return orig(...a); };
+    e.renderGeoTile = (...a: Parameters<typeof orig>) => { if (e.anim !== null) n++; return orig(...a); };
     e.slowUntil = 0; // nothing slow was ever seen
     e.flyTo({ x: e.cam.x, y: e.cam.y, scale: e.cam.scale * 4 }, 600);
     const t0 = performance.now();
-    while (performance.now() - t0 < 560) await new Promise((r) => requestAnimationFrame(r));
+    while (performance.now() - t0 < 900 && e.anim !== null) await new Promise((r) => requestAnimationFrame(r));
     return n;
   });
   expect(baked, "tiles are made as usual").toBeGreaterThan(0);
