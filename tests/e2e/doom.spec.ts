@@ -49,7 +49,13 @@ test("a preview shows the countdown, the story and the interface that goes with 
   await expect(page.locator("header")).not.toContainText(/\b[DJ]-\d/);
   const plateBox = (await plate.boundingBox())!;
   expect(plateBox.width, "a small plate").toBeLessThanOrEqual(400);
-  expect(plateBox.height, "…in height too").toBeLessThanOrEqual(130);
+  // the tile is the whole story card (stripe, title, countdown, two buttons) and stays small, so that the map is what one sees; the countdown itself is small
+  expect(plateBox.height, "…in height too: title, countdown and buttons together").toBeLessThanOrEqual(215);
+  expect((await plate.locator(".doom-digits").boundingBox())!.height, "the digits themselves are small").toBeLessThanOrEqual(80);
+  await expect(page.getByTestId("doom-title")).toHaveText("Save the world. And the pizza with it.");
+  await expect(page.getByTestId("doom-save")).toHaveText("Save my plot");
+  await expect(page.getByTestId("comic-open")).toBeVisible();
+  await expect(plate.locator("p", { hasText: "When the countdown" })).toHaveCount(0); // no paragraph: the map stays visible
   await expect(page.getByTestId("latest-tile")).toContainText("Latest rescues");
   // and it counts down: the seconds move
   const sec = () => plate.locator(".doom-n").nth(3).innerText();

@@ -133,6 +133,8 @@
     "phase5": "{n, plural, =0 {The world has been deleted. No plot survived.} one {The world has been deleted. # plot survived.} other {The world has been deleted. # plots survived.}}",
     "ticker": "THE COUNTDOWN HAS BEGUN ▪ ONLY CLAIMED PLOTS WILL SURVIVE ▪ HOW MUCH OF THE WORLD WILL BE LEFT STANDING? ▪ ",
     "tickerOver": "THE WORLD HAS BEEN DELETED ▪ ONLY CLAIMED PLOTS SURVIVED ▪ ",
+    "titleA": "Save the world.",
+    "titleB": "And the pizza with it.",
     "cta": "Save my plot",
     "ctaOver": "Meet the survivors",
     "latest": "Latest rescues",

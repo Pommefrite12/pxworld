@@ -310,7 +310,7 @@ test("the sequence plays by itself when the countdown reaches zero in front of t
 });
 
 /* ------------------------------------------------------------------ the bug of the destroyed land, every 30 s */
-type GlitchEng = Eng & { glitch: { t0: number } | null; glitchNow(): boolean; setGlitchEvery(ms: number): void };
+type GlitchEng = Eng & { glitch: { t0: number; mag: boolean } | null; glitchNow(): boolean; setGlitchEvery(ms: number): void; setGlitchMagenta(mode: "auto" | "on" | "off"): void; geoTiles: Map<string, { calm?: unknown; glitch?: unknown }> };
 const engine = (page: Page) => page.evaluateHandle(() => (window as unknown as { __pxEngine: GlitchEng }).__pxEngine);
 /** A fingerprint of everything on the canvas (every 5th pixel is enough to see a band move). */
 const fingerprint = (page: Page) => page.getByRole("application").evaluate((c: HTMLCanvasElement) => {
@@ -363,4 +363,43 @@ test("no bug on the ordinary map, none for a visitor who asked for fewer animati
   await ready(page);
   await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
   expect(await (await engine(page)).evaluate((x) => x.glitchNow()), "reduced motion: the land stays still").toBe(false);
+});
+
+test("during the bug the magenta zones take six different places, one after the other, and a slow machine does without", async ({ page }) => {
+  await page.goto("/?preview=0");
+  await ready(page);
+  await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
+  await page.waitForTimeout(1500);
+  const e = await engine(page);
+  await e.evaluate((x) => x.setGlitchMagenta("on"));
+  const calm = await fingerprint(page);
+  // where the magenta is, on the canvas, at every picture of the burst: its centre
+  const centres = await page.getByRole("application").evaluate(async (c: HTMLCanvasElement) => {
+    const eng = (window as unknown as { __pxEngine: GlitchEng }).__pxEngine, g = c.getContext("2d")!, out: { n: number; x: number; y: number; made: number }[] = [];
+    eng.glitchNow();
+    const t0 = performance.now();
+    while (eng.glitch && performance.now() - t0 < 2500) {
+      await new Promise((r) => requestAnimationFrame(r));
+      const d = g.getImageData(0, 0, c.width, c.height).data;
+      let sx = 0, sy = 0, n = 0;
+      for (let i = 0, p = 0; i < d.length; i += 4, p++) if (d[i]! >= 200 && d[i + 2]! >= 90 && d[i + 2]! <= 225 && d[i]! - d[i + 1]! >= 80 && d[i + 2]! - d[i + 1]! >= 20) { sx += p % c.width; sy += Math.floor(p / c.width); n++; }
+      const made = [...eng.geoTiles.values()].filter((t) => t.glitch && t.calm).length;
+      if (n) out.push({ n: Math.floor((performance.now() - t0) / 90), x: sx / n, y: sy / n, made });
+    }
+    return out;
+  });
+  // once the tiles are ready (the burst's second half), the centre of the magenta goes round: several different places
+  const ready2 = centres.filter((c) => c.made >= 3);
+  expect(ready2.length, "the moving magenta was drawn").toBeGreaterThan(6);
+  const places = new Set(ready2.map((c) => `${Math.round(c.x / 4)},${Math.round(c.y / 4)}`));
+  expect(places.size, "at least five different places for the magenta").toBeGreaterThanOrEqual(5);
+  await expect.poll(() => e.evaluate((x) => x.glitch === null), { timeout: 5000 }).toBe(true);
+  await expect.poll(() => fingerprint(page), { timeout: 5000 }).toBe(calm); // and everything is back, pixel for pixel
+  expect(await e.evaluate((x) => [...x.geoTiles.values()].some((t) => t.calm)), "the memory is given back").toBe(false);
+
+  // a machine that struggles does without: no moving magenta, the rest of the bug as before
+  await e.evaluate((x) => { x.setGlitchMagenta("auto"); (x as unknown as { slowUntil: number }).slowUntil = performance.now() + 60_000; });
+  expect(await e.evaluate((x) => { x.glitchNow(); return x.glitch?.mag; })).toBe(false);
+  await expect.poll(() => e.evaluate((x) => x.glitch === null), { timeout: 5000 }).toBe(true);
+  await e.evaluate((x) => { (x as unknown as { slowUntil: number }).slowUntil = 0; });
 });

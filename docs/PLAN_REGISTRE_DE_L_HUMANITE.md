@@ -88,8 +88,8 @@
 | 4 | Marques | **Refusées par défaut** (liste de refus + modération). Une exception reste possible plus tard, par décision. |
 | 5 | Catégories | **La liste proposée** : animaux, gastronomie, culture, inventions, objets, nature, transports, loisirs, monuments, autre. |
 | 6 | Après zéro | **Modération poursuivie sans limite de date ; plus aucune nouvelle revendication après zéro** ; un paiement déjà en cours est honoré avec sa date. Le Registre devient une archive en lecture seule. |
-| 7 | Style des badges | **À décider sur maquettes** (2 ou 3 badges dessinés, sans toucher au site). |
-| 8 | Section principale de l'accueil | **À faire ensuite, avec de nouvelles maquettes** (en cours). |
+| 7 | Style des badges | **Circulaire** (décision du 2026-11-04 sur maquettes : carte sombre, carte claire, médaille). Une médaille ronde : anneau cyan/magenta, élément pixel-art au centre, nom de l'élément, pseudonyme, date et identifiant. À réaliser en phase 2 (page `/badge/[code]`, image de partage `/api/og/badge/[code]`). |
+| 8 | Section principale de l'accueil | **Fait** : maquette A (« Affiche ») en version compacte, sans paragraphe ni dessins, la plus petite possible pour laisser la carte visible (voir `ARCHITECTURE.md`, « The story tile »). |
 
 Conséquences sur le plan :
 * **Phase 1** : `px_review_asset` n'a plus à gérer « changer d'élément » ; une fois l'élément validé (`concept_id` + statut `approved`), `px_add_asset` pour une nouvelle version de la même parcelle **reprend l'élément de la version précédente** et refuse un autre (`px_concept_locked`). Un modérateur peut corriger (action journalisée).

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GLITCH_EVERY_MS, GLITCH_FOR_MS, GLITCH_FRAME_MS, GLITCH_MAX_PX, glitchFrame, glitchShift } from "@/lib/doom/glitch";
+import { GLITCH_EVERY_MS, GLITCH_FOR_MS, GLITCH_FRAME_MS, GLITCH_MAX_PX, GLITCH_ORBIT_PLACES, GLITCH_ORBIT_PX, glitchFrame, glitchShift, isMagenta, magentaOrbit, splitMagenta } from "@/lib/doom/glitch";
 
 describe("the bug of the destroyed land", () => {
   it("happens every 30 seconds and lasts about a second", () => {
@@ -52,5 +52,43 @@ describe("the bug of the destroyed land", () => {
     let differ = 0;
     for (let band = 0; band < 500; band++) if (glitchShift(band, a) !== glitchShift(band, b)) differ++;
     expect(differ).toBeGreaterThan(100);
+  });
+
+  describe("the magenta zones that change place", () => {
+    it("takes six different places, one after the other, round a circle, and starts again", () => {
+      expect(GLITCH_ORBIT_PLACES).toBe(6);
+      const at = (n: number) => magentaOrbit({ n, power: 1 });
+      const places = new Set(Array.from({ length: GLITCH_ORBIT_PLACES }, (_, n) => `${at(n).dx},${at(n).dy}`));
+      expect(places.size, "six distinct places").toBe(6);
+      for (let n = 0; n < 12; n++) expect(at(n)).toEqual(at(n + GLITCH_ORBIT_PLACES)); // it turns: after the sixth, the first again
+      for (let n = 0; n < 12; n++) expect(Math.hypot(at(n).dx, at(n).dy)).toBeLessThanOrEqual(GLITCH_ORBIT_PX + 1); // and never far
+    });
+    it("is nearer its place at the start and at the end of the burst", () => {
+      const far = Math.hypot(magentaOrbit({ n: 1, power: 1 }).dx, magentaOrbit({ n: 1, power: 1 }).dy);
+      const near = Math.hypot(magentaOrbit({ n: 1, power: 0 }).dx, magentaOrbit({ n: 1, power: 0 }).dy);
+      expect(near).toBeLessThan(far);
+    });
+    it("recognises the error magenta, whole or seen through a little transparency, and nothing else", () => {
+      expect(isMagenta(255, 46, 147)).toBe(true);
+      expect(isMagenta(253, 126, 180)).toBe(true); // magenta over the cream land at 60 %
+      for (const [r, g, b] of [[251, 245, 230], [233, 229, 255], [220, 214, 255], [25, 211, 255], [201, 223, 232], [31, 37, 64], [255, 255, 255], [240, 67, 22]] as const) expect(isMagenta(r, g, b), `${r},${g},${b}`).toBe(false);
+    });
+    it("takes the magenta out of a picture: the rest keeps the colour next to it, the magenta stays alone", () => {
+      const px = (...c: number[][]) => new Uint8ClampedArray(c.flatMap(([r, g, b, a]) => [r!, g!, b!, a ?? 255]));
+      const cream = [251, 245, 230], lav = [233, 229, 255], mag = [255, 46, 147];
+      const { calm, mag: layer, count } = splitMagenta(px(cream, mag, mag, lav), 4, 1);
+      expect(count).toBe(2);
+      expect([...calm]).toEqual([...px(cream, cream, cream, lav)]); // the two magenta pixels took the cream on their left
+      expect([...layer]).toEqual([0, 0, 0, 0, 255, 46, 147, 255, 255, 46, 147, 255, 0, 0, 0, 0]); // the magenta alone, the rest transparent
+      // at the start of a row there is nothing on the left: the neighbour on the right is taken
+      expect([...splitMagenta(px(mag, mag, lav), 3, 1).calm]).toEqual([...px(lav, lav, lav)]);
+      // transparent pixels (the sea) are never magenta, and a row of nothing but magenta leaves nothing
+      expect(splitMagenta(px([255, 46, 147, 0]), 1, 1).count).toBe(0);
+      expect([...splitMagenta(px(mag, mag), 2, 1).calm.filter((_, i) => i % 4 === 3)]).toEqual([0, 0]);
+      // no magenta: nothing changes
+      const plain = px(cream, lav);
+      expect(splitMagenta(plain, 2, 1).count).toBe(0);
+      expect([...splitMagenta(plain, 2, 1).calm]).toEqual([...plain]);
+    });
   });
 });

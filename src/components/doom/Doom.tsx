@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { routing } from "@/i18n/routing";
 import { pad2 } from "@/lib/doom/clock";
@@ -25,8 +25,12 @@ export function DoomTicker() {
   );
 }
 
-/** The countdown itself, top of the map: days, hours, minutes, seconds. */
-export function DoomPlate() {
+/**
+ * The countdown itself, top of the map: days, hours, minutes, seconds. It is also the whole tile of the story: with `heading` it carries
+ * the title ("Save the world. And the pizza with it.") above the digits, and `children` (the buttons) below them — one small card
+ * rather than several floating pieces, so that the map stays as visible as possible.
+ */
+export function DoomPlate({ heading = false, children }: { heading?: boolean; children?: ReactNode }) {
   const d = useDoom();
   const t = useTranslations("doom");
   if (!d) return null;
@@ -40,12 +44,14 @@ export function DoomPlate() {
   return (
     <section className="doom-plate" role="timer" aria-label={t("plateLabel")} data-phase={d.phase} data-testid="doom-plate">
       <div className="doom-plate-top"><span>{over ? t("warnOver") : t("warn")}</span><span>{d.preview ? t("preview") : t("fiction")}</span></div>
+      {heading && <p className="doom-title" data-testid="doom-title"><span>{t("titleA")}</span> <span className="m">{t("titleB")}</span></p>}
       <div className="doom-digits">
         {group(days, t("days"))}<span className="doom-sep" aria-hidden="true">:</span>
         {group(hours, t("hours"))}<span className="doom-sep" aria-hidden="true">:</span>
         {group(minutes, t("minutes"))}<span className="doom-sep" aria-hidden="true">:</span>
         {group(seconds, t("seconds"), true)}
       </div>
+      {children && <div className="doom-plate-actions">{children}</div>}
       <p className="sr-only">{over ? t("warnOver") : t("timeLeft", { days, hours, minutes })}</p>
     </section>
   );
@@ -58,7 +64,9 @@ export function DoomMessage({ survivors, className = "" }: { survivors: number; 
   const t = useTranslations("doom");
   if (!d) return null;
   const text = d.phase === 5 ? (during ? t("during") : t("phase5", { n: survivors })) : t(`phase${d.phase}`);
-  return <p className={`doom-msg ${className}`} data-testid="doom-message">{text}</p>;
+  // before the end the sentence of the chapter is for screen readers only (the strip above the header says the same things out loud): the map stays visible
+  const quiet = d.phase !== 5;
+  return <p className={quiet ? "sr-only" : `doom-msg ${className}`} data-testid="doom-message">{text}</p>;
 }
 
 /** After the end: play the destruction again (the countdown's big moment, for showing it to somebody). */

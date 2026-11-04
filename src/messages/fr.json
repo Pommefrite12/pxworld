@@ -133,6 +133,8 @@
     "phase5": "{n, plural, =0 {Le monde a été supprimé. Aucune parcelle n’a survécu.} one {Le monde a été supprimé. # parcelle a survécu.} other {Le monde a été supprimé. # parcelles ont survécu.}}",
     "ticker": "LE COMPTE À REBOURS EST LANCÉ ▪ SEULES LES PARCELLES ACQUISES SURVIVRONT ▪ QUELLE PARTIE DU MONDE RESTERA DEBOUT ? ▪ ",
     "tickerOver": "LE MONDE A ÉTÉ SUPPRIMÉ ▪ SEULES LES PARCELLES ACQUISES ONT SURVÉCU ▪ ",
+    "titleA": "Sauvez le monde.",
+    "titleB": "Et la pizza avec.",
     "cta": "Sauver ma parcelle",
     "ctaOver": "Voir les survivants",
     "latest": "Derniers sauvetages",

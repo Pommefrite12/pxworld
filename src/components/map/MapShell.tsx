@@ -232,8 +232,10 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
         {/* the countdown of the story, top of the map (not over a parcel card or the buy panel) */}
         {doom && mode === "explore" && !parcelCode && (
           <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex flex-col items-center gap-2 px-3 sm:top-4">
-            <DoomPlate />
-            <ComicButton ended={ended} onSave={() => startBuy()} />
+            <DoomPlate heading={!ended}>
+              {!ended && <button type="button" className="btn btn-primary btn-sm doom-cta" onClick={() => startBuy()} data-testid="doom-save">{td("cta")}</button>}
+              <ComicButton ended={ended} onSave={() => startBuy()} />
+            </DoomPlate>
             <DoomMessage survivors={stats?.parcels ?? 0} className="hidden sm:block" />
             <DoomActions survivors={stats?.parcels ?? 0} className="hidden sm:flex" />
           </div>

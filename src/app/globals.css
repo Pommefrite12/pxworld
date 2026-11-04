@@ -202,7 +202,7 @@
   font-family: var(--font-pixel); font-size: 14px; letter-spacing: 0.08em; color: var(--color-ink);
 }
 .doom-plate-top span { background: var(--color-paper); padding: 0 6px; border-radius: 3px; }
-.doom-digits { display: flex; justify-content: center; align-items: flex-start; gap: clamp(3px, 1.2vw, 8px); padding: 6px 10px 8px; }
+.doom-digits { display: flex; justify-content: center; align-items: flex-start; gap: clamp(3px, 1.2vw, 8px); padding: 4px 10px 6px; }
 .doom-group { position: relative; flex: 1 1 0; min-width: 0; max-width: 80px; text-align: center; }
 .doom-n {
   display: block; font-family: var(--font-pixel); font-weight: 400; font-size: clamp(1.9rem, 7vw, 2.9rem); line-height: 0.9; color: var(--color-ink);
@@ -218,6 +218,11 @@
 }
 .doom-plate[data-phase="5"] .doom-n { color: var(--color-glitch-magenta); text-shadow: none; }
 
+.doom-title { margin: 0; padding: 5px 10px 0; text-align: center; font-family: var(--font-pixel); font-size: clamp(1.05rem, 4.2vw, 1.4rem); line-height: 1.05; letter-spacing: 0.02em; color: var(--color-ink); }
+.doom-title span { display: block; }
+.doom-title .m { color: var(--color-glitch-magenta); text-shadow: -2px 0 var(--color-glitch-cyan); }
+.doom-plate-actions { display: flex; justify-content: center; gap: 8px; padding: 0 10px 7px; }
+.doom-plate-actions .btn { white-space: nowrap; }
 .doom-msg {
   pointer-events: auto; width: fit-content; max-width: min(36rem, 100%); padding: 0.5rem 1rem; border-radius: 8px; text-align: center;
   background: var(--color-ink); color: #fff; font-weight: 700; font-size: 0.95rem; box-shadow: 3px 3px 0 var(--color-glitch-magenta);
