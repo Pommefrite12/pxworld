@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { AUTO_MS, PANEL_COUNT, PANEL_HEIGHT, PANEL_WIDTH, PANELS, panelSrc } from "@/lib/doom/comic";
+import { PANEL_COUNT, PANEL_HEIGHT, PANEL_WIDTH, PANELS, WIPE_MS, panelSrc } from "@/lib/doom/comic";
 import { useDoom } from "./useDoom";
 
 /**
@@ -32,40 +32,46 @@ function ComicReader({ ended, onClose, onSave }: { ended: boolean; onClose: () =
   const dlg = useRef<HTMLDialogElement>(null);
   const touch = useRef<number | null>(null);
   const [index, setIndex] = useState(0);
-  const [playing, setPlaying] = useState(false);
+  /** A picture has just been replaced: the one that goes (still shown under the new one) and which way the new one comes in. */
+  const [wipe, setWipe] = useState<{ from: number; dir: "next" | "prev" } | null>(null);
   const last = PANEL_COUNT - 1;
   const n = index + 1; // the pictures are numbered from 1
-  const auto = playing && index < last; // automatic reading stops by itself on the last picture
 
-  const go = useCallback((to: number) => setIndex(Math.max(0, Math.min(last, to))), [last]);
+  const go = useCallback((to: number) => {
+    const next = Math.max(0, Math.min(last, to));
+    if (next === index) return;
+    setWipe({ from: index, dir: next > index ? "next" : "prev" });
+    setIndex(next);
+  }, [index, last]);
 
   useEffect(() => {
     const el = dlg.current;
     if (el && !el.open) el.showModal();
   }, []);
 
-  // the next picture is fetched while this one is read
+  // the pictures on each side are fetched while this one is read
   useEffect(() => {
-    if (index < last) { const img = new Image(); img.src = panelSrc(index + 2); }
-  }, [index, last]);
+    for (const k of [index + 2, index]) if (k >= 1 && k <= PANEL_COUNT) { const img = new Image(); img.src = panelSrc(k); }
+  }, [index]);
 
-  // automatic reading (off until asked for)
+  // once the new picture is in, the old one under it can go (also for those who asked for less motion: then it is there for nothing)
   useEffect(() => {
-    if (!auto) return;
-    const id = setTimeout(() => setIndex((i) => Math.min(last, i + 1)), AUTO_MS);
+    if (!wipe) return;
+    const id = setTimeout(() => setWipe(null), WIPE_MS + 250);
     return () => clearTimeout(id);
-  }, [auto, index, last]);
+  }, [wipe]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowRight") { e.preventDefault(); go(index + 1); }
     else if (e.key === "ArrowLeft") { e.preventDefault(); go(index - 1); }
   };
+  const arrow = "absolute top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-white/40 bg-black/55 text-2xl leading-none text-white transition-opacity hover:bg-black/75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white disabled:pointer-events-none disabled:opacity-0 sm:h-11 sm:w-11";
 
   return (
     <dialog ref={dlg} onCancel={(e) => { e.preventDefault(); onClose(); }} onKeyDown={onKeyDown} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} aria-labelledby="comic-title" data-testid="comic"
-      className="comic pointer-events-auto m-0 h-dvh max-h-none w-screen max-w-none overflow-y-auto bg-[#0b0a14] p-0 text-white backdrop:bg-black/80 md:m-auto md:h-auto md:max-h-[96dvh] md:w-[min(62rem,96vw)] md:rounded-[var(--radius-card)] md:shadow-[var(--shadow-float)]">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
-        <h2 id="comic-title" className="pixel-display text-xl tracking-wider text-[var(--color-glitch-cyan)] sm:text-2xl">{t("title")}</h2>
+      className="comic pointer-events-auto m-0 mx-auto mt-[2dvh] mb-0 max-h-[96dvh] max-w-none w-[min(62rem,calc(100vw-1rem),calc((100dvh-23rem)*1.7778+2.5rem))] overflow-y-auto rounded-[var(--radius-card)] bg-[#0b0a14] p-0 text-white shadow-[var(--shadow-float)] backdrop:bg-black/80">
+      <div className="flex items-center justify-between gap-3 px-4 py-2 sm:px-5">
+        <h2 id="comic-title" className="pixel-display text-lg tracking-wider text-[var(--color-glitch-cyan)] sm:text-xl">{t("title")}</h2>
         <button type="button" className="btn btn-secondary btn-icon btn-sm text-lg" aria-label={t("close")} onClick={onClose} data-testid="comic-close">×</button>
       </div>
 
@@ -77,46 +83,40 @@ function ComicReader({ ended, onClose, onSave }: { ended: boolean; onClose: () =
           if (from === null || to === undefined || Math.abs(to - from) < SWIPE_PX) return;
           go(index + (to < from ? 1 : -1));
         }}>
-        {/* the picture; the key restarts the fade at each change (still, for those who asked for less motion) */}
+        {/* the picture comes in with a wipe, from the right when going on and from the left when going back, over the one that goes (still, for those who asked for less motion) */}
         <div className="relative aspect-video w-full overflow-hidden rounded-[10px] bg-black shadow-[0_0_0_2px_var(--color-glitch-magenta),4px_4px_0_var(--color-glitch-cyan)]">
-          <img key={n} src={panelSrc(n)} alt={t(`panels.p${n}.alt`)} width={PANEL_WIDTH} height={PANEL_HEIGHT} className="comic-panel absolute inset-0 h-full w-full object-contain" data-testid="comic-image" draggable={false} />
+          {wipe && <img src={panelSrc(wipe.from + 1)} alt="" aria-hidden="true" width={PANEL_WIDTH} height={PANEL_HEIGHT} className="absolute inset-0 h-full w-full object-contain" data-testid="comic-image-old" draggable={false} />}
+          <img key={n} src={panelSrc(n)} alt={t(`panels.p${n}.alt`)} width={PANEL_WIDTH} height={PANEL_HEIGHT} className="comic-wipe absolute inset-0 h-full w-full object-contain" data-wipe={wipe?.dir} data-testid="comic-image" draggable={false} />
+          <button type="button" className={`${arrow} left-2`} aria-label={t("previous")} onClick={() => go(index - 1)} disabled={index === 0} data-testid="comic-prev"><span aria-hidden="true">‹</span></button>
+          <button type="button" className={`${arrow} right-2`} aria-label={t("next")} onClick={() => go(index + 1)} disabled={index === last} data-testid="comic-next"><span aria-hidden="true">›</span></button>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 px-4 pt-3 sm:px-6">
+        <p className="pixel-num text-sm text-white/80" data-testid="comic-position">{t("position", { n, total: PANEL_COUNT })}</p>
+        <ol className="flex items-center gap-1.5" aria-label={t("pictures")}>
+          {PANELS.map((p, i) => (
+            <li key={p}>
+              <button type="button" onClick={() => go(i)} aria-label={t("position", { n: p, total: PANEL_COUNT })} aria-current={i === index ? "step" : undefined}
+                className={`block h-3 w-3 rounded-[2px] ${i === index ? "bg-[var(--color-glitch-magenta)]" : "bg-white/35 hover:bg-white/60"}`} />
+            </li>
+          ))}
+        </ol>
       </div>
 
       {/* the caption is in the picture too (in French, small on a phone): here it is text, in the language of the page, readable at every size */}
-      <div className="px-4 pb-1 pt-3 sm:px-6" aria-live="polite" data-testid="comic-caption">
-        <p className="min-h-[4.5rem] max-w-prose text-base leading-relaxed text-white sm:min-h-[3.5rem] sm:text-lg" data-testid="comic-text">{t(`panels.p${n}.text`)}</p>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 pb-3 pt-2 sm:px-6">
-        <div className="flex items-center gap-2">
-          <button type="button" className="btn btn-secondary btn-sm" onClick={() => go(index - 1)} disabled={index === 0} data-testid="comic-prev">{t("previous")}</button>
-          <p className="pixel-num min-w-24 text-center text-sm text-white/80" data-testid="comic-position">{t("position", { n, total: PANEL_COUNT })}</p>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={() => go(index + 1)} disabled={index === last} data-testid="comic-next">{t("next")}</button>
-        </div>
-        <div className="flex items-center gap-3">
-          <ol className="flex items-center gap-1.5" aria-label={t("pictures")}>
-            {PANELS.map((p, i) => (
-              <li key={p}>
-                <button type="button" onClick={() => go(i)} aria-label={t("position", { n: p, total: PANEL_COUNT })} aria-current={i === index ? "step" : undefined}
-                  className={`block h-3 w-3 rounded-[2px] ${i === index ? "bg-[var(--color-glitch-magenta)]" : "bg-white/35 hover:bg-white/60"}`} />
-              </li>
-            ))}
-          </ol>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={() => { if (auto) setPlaying(false); else { if (index >= last) setIndex(0); setPlaying(true); } }} aria-pressed={auto} data-testid="comic-play">
-            {auto ? t("pause") : t("play")}
-          </button>
-        </div>
+      <div className="px-4 pb-3 pt-2 sm:px-6" aria-live="polite" data-testid="comic-caption">
+        <p className="text-base leading-relaxed text-white sm:text-lg" data-testid="comic-text">{t(`panels.p${n}.text`)}</p>
       </div>
 
       {index === last && (
-        <div className="px-4 pb-4 sm:px-6" data-testid="comic-cta">
+        <div className="px-4 pb-3 sm:px-6" data-testid="comic-cta">
           {ended
             ? <Link href="/discover" className="btn btn-primary w-full sm:w-auto" onClick={onClose} data-testid="comic-survivors">{td("ctaOver")}</Link>
             : <button type="button" className="btn btn-primary doom-cta w-full sm:w-auto" onClick={onSave} data-testid="comic-save">{td("cta")}</button>}
         </div>
       )}
-      <p className="px-4 pb-4 text-xs text-white/60 sm:px-6">{t("fiction")}</p>
+      <p className="px-4 pb-3 text-xs text-white/60 sm:px-6" data-testid="comic-fiction">{t("fiction")}</p>
     </dialog>
   );
 }

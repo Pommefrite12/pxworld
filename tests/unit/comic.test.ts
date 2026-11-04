@@ -4,7 +4,7 @@ import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 import en from "@/messages/en.json";
 import fr from "@/messages/fr.json";
-import { PANELS, PANEL_COUNT, PANEL_HEIGHT, PANEL_WIDTH, panelSrc } from "@/lib/doom/comic";
+import { PANELS, PANEL_COUNT, PANEL_HEIGHT, PANEL_WIDTH, WIPE_MS, panelSrc } from "@/lib/doom/comic";
 
 const dir = join(process.cwd(), "public", "story");
 const texts = { en: en.comic, fr: fr.comic } as const;
@@ -57,5 +57,11 @@ describe("the story (the owner's eight pictures)", () => {
   it("says in both languages that it is a fiction", () => {
     expect(texts.en.fiction).toMatch(/fiction/i);
     expect(texts.fr.fiction).toMatch(/fiction/i);
+  });
+
+  it("has no automatic reading in the texts, and a wipe that is short", () => {
+    for (const c of Object.values(texts)) { expect(Object.keys(c)).not.toContain("play"); expect(Object.keys(c)).not.toContain("pause"); }
+    expect(WIPE_MS).toBeGreaterThanOrEqual(300);
+    expect(WIPE_MS).toBeLessThanOrEqual(700);
   });
 });
