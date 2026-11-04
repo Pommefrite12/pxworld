@@ -193,7 +193,7 @@
 .doom-cta { box-shadow: 3px 0 0 var(--color-glitch-cyan), -3px 0 0 var(--color-glitch-magenta) !important; }
 
 .doom-plate {
-  pointer-events: auto; width: min(380px, 100%); margin-inline: auto; overflow: hidden;
+  pointer-events: auto; width: min(380px, 100%); margin-inline: auto; overflow: hidden; container-type: inline-size; /* the title is sized from the width of the tile (cqw) */
   background: rgb(255 253 248 / 0.97); border: 2px solid var(--color-ink); border-radius: 12px; box-shadow: 4px 4px 0 rgb(31 37 64 / 0.16);
 }
 .doom-plate-top {
@@ -218,8 +218,9 @@
 }
 .doom-plate[data-phase="5"] .doom-n { color: var(--color-glitch-magenta); text-shadow: none; }
 
-.doom-title { margin: 0; padding: 5px 10px 0; text-align: center; font-family: var(--font-pixel); font-size: clamp(1.05rem, 4.2vw, 1.4rem); line-height: 1.05; letter-spacing: 0.02em; color: var(--color-ink); }
-.doom-title span { display: block; }
+/* the title is ONE line ("Save the world. And the pizza with it." is the longest): its size follows the width of the tile, so that it never wraps (it saves a line of the map) */
+.doom-title { margin: 0; padding: 7px 6px 0; text-align: center; white-space: nowrap; font-family: var(--font-pixel); font-size: clamp(0.62rem, 4.05cqw, 1.02rem); line-height: 1.1; letter-spacing: 0.01em; color: var(--color-ink); }
+.doom-title span { display: inline; }
 .doom-title .m { color: var(--color-glitch-magenta); text-shadow: -2px 0 var(--color-glitch-cyan); }
 .doom-plate-actions { display: flex; justify-content: center; gap: 8px; padding: 0 10px 7px; }
 .doom-plate-actions .btn { white-space: nowrap; }

@@ -63,3 +63,19 @@ for (const width of [320, 360, 390, 412]) {
     });
   }
 }
+
+/** The title of the story tile ("Save the world. And the pizza with it." / "Sauvez le monde. Et la pizza avec.") is one line, whatever the screen, in both languages. */
+for (const width of [320, 360, 390, 412]) {
+  for (const path of ["/?preview=J-9", "/fr?preview=J-9"]) {
+    test(`the title of the story tile is one line on a ${width}px phone: ${path}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 780 });
+      await page.goto(path);
+      const title = page.getByTestId("doom-title");
+      await expect(title).toBeVisible();
+      const m = await title.evaluate((el) => { const r = el.getBoundingClientRect(), cs = getComputedStyle(el), lh = parseFloat(cs.lineHeight); return { lines: Math.round((r.height - parseFloat(cs.paddingTop)) / lh), overflow: el.scrollWidth > el.clientWidth, font: parseFloat(cs.fontSize) }; });
+      expect(m.lines, "one line").toBe(1);
+      expect(m.overflow, "it fits the tile").toBe(false);
+      expect(m.font, "and stays readable").toBeGreaterThanOrEqual(10);
+    });
+  }
+}

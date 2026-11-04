@@ -53,6 +53,9 @@ test("a preview shows the countdown, the story and the interface that goes with 
   expect(plateBox.height, "…in height too: title, countdown and buttons together").toBeLessThanOrEqual(215);
   expect((await plate.locator(".doom-digits").boundingBox())!.height, "the digits themselves are small").toBeLessThanOrEqual(80);
   await expect(page.getByTestId("doom-title")).toHaveText("Save the world. And the pizza with it.");
+  // the title is ONE line (it saves a line of the map), and it fits the tile
+  const oneLine = await page.getByTestId("doom-title").evaluate((el) => { const r = el.getBoundingClientRect(), lh = parseFloat(getComputedStyle(el).lineHeight) + 0; return { lines: Math.round((r.height - 7) / lh), overflow: el.scrollWidth > el.clientWidth }; });
+  expect(oneLine, "one line, not wider than the tile").toEqual({ lines: 1, overflow: false });
   await expect(page.getByTestId("doom-save")).toHaveText("Save my plot");
   await expect(page.getByTestId("comic-open")).toBeVisible();
   await expect(plate.locator("p", { hasText: "When the countdown" })).toHaveCount(0); // no paragraph: the map stays visible
