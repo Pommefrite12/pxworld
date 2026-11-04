@@ -6,11 +6,14 @@ import { stripe } from "./client";
 import { raiseAlert } from "@/lib/alerts";
 import { expireCheckoutSession } from "./checkout";
 import { fulfillSession, refundOrder } from "./events";
+import { reconcileContribution, refundDueContributions } from "./contributions";
 
 export interface MaintenanceReport {
   expiredReservations: number;
   /** Group projects whose time ran out (their zone is given back). */
   expiredCampaigns: number;
+  /** Contributions to group projects refunded in this run (projects ended unfunded, late payments). */
+  contributionRefunds: number;
   recoveredPayments: number;
   closedSessions: number;
   refundsRetried: number;
@@ -41,7 +44,7 @@ export async function reconcileOrder(orderId: string): Promise<"paid" | "expired
 
 /** Periodic job (Vercel Cron → /api/cron/maintenance). */
 export async function runMaintenance(): Promise<MaintenanceReport> {
-  const report: MaintenanceReport = { expiredReservations: 0, expiredCampaigns: 0, recoveredPayments: 0, closedSessions: 0, refundsRetried: 0 };
+  const report: MaintenanceReport = { expiredReservations: 0, expiredCampaigns: 0, contributionRefunds: 0, recoveredPayments: 0, closedSessions: 0, refundsRetried: 0 };
 
   // 1. Release lapsed reservations and close their checkout sessions.
   const expired = await query<{ order_id: string; stripe_checkout_session_id: string | null }>("select * from public.px_expire_reservations(500)");
@@ -58,6 +61,12 @@ export async function runMaintenance(): Promise<MaintenanceReport> {
   } catch (e) {
     console.error("expire campaigns failed", (e as Error).message);
   }
+  // 1c. Money to give back to the people who contributed to a project that ended unfunded (also retries the ones that failed before).
+  try {
+    report.contributionRefunds = await refundDueContributions();
+  } catch (e) {
+    console.error("contribution refunds failed", (e as Error).message);
+  }
 
   if (env().STRIPE_SECRET_KEY) {
     // 2. Pending orders whose webhook never arrived (older than 5 minutes, still within a day).
@@ -72,6 +81,23 @@ export async function runMaintenance(): Promise<MaintenanceReport> {
         console.error("reconcile failed", p.id, (e as Error).message);
         await raiseAlert("reconcile-failed", { order: p.id, error: (e as Error).message });
       }
+    }
+    // 2b. The same for contributions to group projects.
+    try {
+      const pendingContributions = await query<{ id: string }>(
+        `select id from public.contributions where status = 'pending' and stripe_checkout_session_id is not null
+           and created_at < now() - interval '5 minutes' and created_at > now() - interval '1 day' order by created_at limit 50`,
+      );
+      for (const p of pendingContributions) {
+        try {
+          if ((await reconcileContribution(p.id)) === "paid") report.recoveredPayments++;
+        } catch (e) {
+          console.error("reconcile contribution failed", p.id, (e as Error).message);
+          await raiseAlert("reconcile-failed", { contribution: p.id, error: (e as Error).message });
+        }
+      }
+    } catch (e) {
+      console.error("contribution reconciliation failed", (e as Error).message);
     }
     // 3. Paid-but-unattributable orders whose automatic refund failed earlier.
     const toRefund = await query<{ id: string; stripe_payment_intent_id: string }>(

@@ -1,4 +1,5 @@
-import { expect, test } from "@playwright/test";
+import { expect, request as pwRequest, test } from "@playwright/test";
+import sharp from "sharp";
 
 // Runs in the "mobile" Playwright project (Pixel 7 emulation: touch, small viewport).
 test.describe("mobile (touch)", () => {
@@ -79,3 +80,32 @@ for (const width of [320, 360, 390, 412]) {
     });
   }
 }
+
+/** The pages of the group projects fit a phone: no sideways scrolling, and the way to chip in is within reach. */
+test.describe("group projects on a phone", () => {
+  test("the list and the page of a project fit the screen, the button to chip in is near the top", async ({ page }) => {
+    const base = `http://localhost:${process.env.E2E_PORT ?? "3100"}`;
+    const login = async (email: string, role?: "moderator") => { const c = await pwRequest.newContext({ baseURL: base }); expect((await c.post("/api/dev/login", { data: { email, role } })).ok()).toBeTruthy(); return c; };
+    const [maker, mod] = [await login("maker.phone@example.test"), await login("mod.phone@example.test", "moderator")];
+    const image = await sharp({ create: { width: 100, height: 100, channels: 3, background: "#2b35e0" } }).png().toBuffer();
+    const sent = await maker.post("/api/campaigns", { multipart: { x: "25800", y: "10400", w: "100", h: "100", days: "14", title: "A wall seen from a phone", description: "A parcel for everybody, with a rather long description to check that the text wraps and never pushes the page sideways.", image: { name: "c.png", mimeType: "image/png", buffer: image } } });
+    expect(sent.status(), await sent.text()).toBe(201);
+    const { id, code } = await sent.json();
+    expect((await mod.post("/api/admin/action", { data: { action: "review_campaign", campaignId: id, decision: "approve" } })).status()).toBe(200);
+    await Promise.all([maker.dispose(), mod.dispose()]);
+
+    const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    for (const path of ["/projects", "/fr/projects", `/projects/${code}`, `/fr/projects/${code}`]) {
+      await page.goto(path);
+      await expect(page.locator("h1")).toBeVisible();
+      expect(await overflow(), `${path}: no sideways scrolling`).toBeLessThanOrEqual(0);
+    }
+    await page.goto(`/projects/${code}`);
+    const cta = page.getByTestId("contribute-signin");
+    await expect(cta).toBeVisible();
+    const box = (await cta.boundingBox())!;
+    const vh = page.viewportSize()!.height;
+    expect(box.y + box.height, "the button is on the first screen").toBeLessThan(vh);
+    expect(box.width).toBeGreaterThan(200);
+  });
+});

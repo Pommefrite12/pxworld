@@ -33,6 +33,7 @@ const child = spawn("npx", ["next", "dev", "-p", PORT], {
     NEXT_PUBLIC_SITE_URL: `http://localhost:${PORT}`,
     DEV_AUTH: "true", NEXT_PUBLIC_DEV_AUTH: "true", DEV_AUTH_SECRET: "e2e-secret",
     STRIPE_MOCK: "true", STRIPE_SECRET_KEY: "", STRIPE_WEBHOOK_SECRET: "",
+    CRON_SECRET: "e2e-cron-secret", // so that the maintenance job (ends projects, refunds contributions) can be called by the tests
     NEXT_PUBLIC_SUPABASE_URL: "", NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
     LOCAL_STORAGE_DIR: storage,
     NEXT_DIST_DIR: ".next-e2e",

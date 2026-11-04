@@ -49,7 +49,9 @@ export default async function AdminCampaigns({ params }: { params: Promise<{ loc
                 <tr key={c.id} className="border-t border-line first:border-t-0">
                   <td className="px-3 py-2 font-semibold">{c.title}</td>
                   <td className="px-3 py-2"><Link className="underline" href={`/u/${c.username}`}>{c.username}</Link></td>
-                  <td className="pixel-num px-3 py-2">{formatMoney(Number(c.goal_cents), locale, c.currency)}</td>
+                  <td className="pixel-num px-3 py-2" data-testid="campaign-money">{c.status === "rejected" ? formatMoney(Number(c.goal_cents), locale, c.currency) : `${formatMoney(Number(c.raised_cents), locale, c.currency)} / ${formatMoney(Number(c.goal_cents), locale, c.currency)}`}
+                    {c.contributors > 0 && <span className="block text-xs font-normal text-ink-soft">{t("contributors", { n: c.contributors })}</span>}
+                    {c.refunds_due > 0 && <span className="chip !bg-warn/15 !text-warn block" data-testid="campaign-refunds-due">{t("refundsDue", { n: c.refunds_due })}</span>}</td>
                   <td className="px-3 py-2"><span className="chip" data-testid="campaign-status">{t(`status.${c.status}`)}</span>{c.deadline && c.status === "open" && <span className="ml-2 text-xs text-ink-soft">{t("until", { date: f.dateTime(c.deadline, { dateStyle: "medium" }) })}</span>}</td>
                   <td className="px-3 py-2 text-xs text-ink-soft">{c.rejection_reason}</td>
                 </tr>

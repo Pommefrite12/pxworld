@@ -77,8 +77,8 @@ Autres valeurs par défaut (non discutées, modifiables) : taille minimale d'un 
 
 *(mis à jour à chaque étape)*
 
-- **Étape 1 — faite** (migration 17) : bouton « Financer à plusieurs » dans le panneau d'achat, même éditeur, envoi à la modération (rien n'est payé, rien n'est réservé), page admin « Projets collectifs » (approuver = la zone est réservée pour la durée choisie ; refuser = un motif lu par le créateur), page « Mes projets collectifs » (suivre, retirer), expiration par la tâche planifiée. **Personne ne peut encore participer.** À faire côté site de test : appliquer la migration 17 (`node scripts/migrate.mjs --env .env.production.local`).
-- Étape 2 : liste publique + fiche + participation (Stripe simulé) + attribution de la parcelle — à faire.
-- Étape 3 : remboursements automatiques (échéance, annulation) — à faire.
+- **Étape 1 — faite** (migration 17) : bouton « Financer à plusieurs » dans le panneau d'achat, même éditeur, envoi à la modération (rien n'est payé, rien n'est réservé), page admin « Projets collectifs » (approuver = la zone est réservée pour la durée choisie ; refuser = un motif lu par le créateur), page « Mes projets collectifs » (suivre, retirer), expiration par la tâche planifiée. (La participation vient avec l'étape 2.) À faire côté site de test : appliquer les migrations 17 et 18 (`node scripts/migrate.mjs --env .env.production.local`).
+- **Étape 2 — faite** (migration 18) : page publique `/projects` (`/fr/projects` en français) et fiche de chaque projet, participation (montant libre ou rapide, jamais au-dessus de l'objectif, minimum 2 €), paiement simulé, parcelle attribuée au créateur quand l'objectif est atteint (visible sur la carte). Les participations sont **anonymes** (décision du propriétaire) : seul le nombre est public.
+- **Étape 3 — faite** (migration 18) : remboursement automatique de tous les participants si le temps est écoulé ou si le créateur retire son projet (immédiat après un retrait, et par la tâche planifiée), paiement tardif remboursé, remboursement/litige signalés. Testé en base (21 tests dont deux courses simultanées) et en e2e.
 - Étape 4 : affichage sur la carte — à faire.
 - Étape 5 : essai réel Stripe (mode test) — quand Stripe sera possible.

@@ -138,7 +138,8 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind
           {t("collective.button")}
         </button>
         <p id="buy-collective-note" className="mt-1 text-[0.7rem] leading-snug text-ink-faint" data-testid="buy-collective-note">
-          {ready && tooSmall ? t("collective.tooSmall", { min: f.number(pricing.campaignMinArea) }) : t("collective.hint")}
+          {ready && tooSmall ? t("collective.tooSmall", { min: f.number(pricing.campaignMinArea) }) : t("collective.hint")}{" "}
+          <Link href="/projects" className="font-semibold text-cobalt underline" data-testid="buy-collective-browse">{t("collective.browse")}</Link>
         </p>
         <p className="mt-2 hidden text-[0.7rem] leading-snug text-ink-faint md:block">
           {t("legal")} <Link href="/terms" className="underline">{t("terms")}</Link> · <Link href="/rules" className="underline">{t("rules")}</Link>

@@ -321,7 +321,8 @@
       "moderationNote": "Moderators review your project (the creation, the title and the description) before it is shown. If it is refused, you will see why in your account.",
       "sentTitle": "Your project has been sent",
       "sentText": "Once moderators accept it, your zone is reserved for {days} days and your project appears in the list of group projects, where everybody can chip in. You can follow it, or withdraw it, from your account.",
-      "seeMine": "See my projects"
+      "seeMine": "See my projects",
+      "browse": "See the projects in progress"
     }
   },
   "editor": {
@@ -394,7 +395,8 @@
     "privacy": "Privacy",
     "credits": "Credits",
     "contact": "Contact",
-    "virtual": "Pixel World sells virtual placement on a digital map. It is not real-estate, geographic or intellectual property."
+    "virtual": "Pixel World sells virtual placement on a digital map. It is not real-estate, geographic or intellectual property.",
+    "projects": "Group projects"
   },
   "auth": {
     "email": "Email",
@@ -552,7 +554,11 @@
       "withdrawConfirm": "Withdraw this project? Its zone will be released.",
       "untitled": "Untitled",
       "water": "Water",
-      "back": "← My account"
+      "back": "← My account",
+      "raised": "{raised} raised of {goal}",
+      "contributors": "{n, plural, one {# contributor} other {# contributors}}",
+      "view": "Public page",
+      "refundsDue": "{n, plural, one {# refund in progress} other {# refunds in progress}}"
     },
     "myCampaigns": "My group projects"
   },
@@ -624,7 +630,16 @@
     "failedLead": "Your parcel was released and you have not been charged, or you will be refunded automatically.",
     "backToMap": "Back to the map",
     "cancelTitle": "Payment canceled",
-    "cancelLead": "No problem — we released your pixels. You can come back whenever you are ready."
+    "cancelLead": "No problem — we released your pixels. You can come back whenever you are ready.",
+    "contributionPaidTitle": "Thank you!",
+    "contributionPaidLead": "Your contribution is recorded. If the project does not reach its goal in time, you will be refunded automatically.",
+    "contributionFunded": "Your contribution completed the goal: the parcel is bought!",
+    "viewProject": "See the project",
+    "allProjects": "All projects",
+    "contributionSlowLead": "The confirmation is taking longer than usual. Your contribution will appear on the project page as soon as the payment is confirmed. Nothing is lost.",
+    "contributionFailedTitle": "The payment was not completed",
+    "contributionFailedLead": "Nothing was recorded for this payment. If you were charged, you will be refunded automatically.",
+    "contributionCancelLead": "Nothing was charged. You can try again from the project page."
   },
   "discover": {
     "title": "Discover",
@@ -641,7 +656,8 @@
     "empty": "Nothing here yet — be the first to leave your mark.",
     "emptyPopular": "No creation has been liked this month yet.",
     "emptyEditorial": "Our first picks will appear here.",
-    "contribution": "{parcels} parcels · {pixels} px"
+    "contribution": "{parcels} parcels · {pixels} px",
+    "projectsLink": "See the group projects"
   },
   "profile": {
     "since": "member since {date}",
@@ -1065,7 +1081,10 @@
         "expired": "Expired",
         "cancelled": "Withdrawn",
         "rejected": "Rejected"
-      }
+      },
+      "raised": "Raised",
+      "refundsDue": "{n} refund(s) due",
+      "contributors": "{n, plural, one {# contributor} other {# contributors}}"
     }
   },
   "errors": {
@@ -1075,5 +1094,99 @@
     "title": "Something went wrong",
     "lead": "An unexpected error happened. Please try again.",
     "retry": "Try again"
+  },
+  "projects": {
+    "title": "Group projects",
+    "lead": "Big parcels, paid for together. Pick a project and chip in: if it does not reach its goal in time, everybody is refunded.",
+    "how": {
+      "title": "How it works",
+      "s1": "A creator designs a big parcel, and a moderator checks it.",
+      "s2": "Anybody can chip in, from {min}. The zone is reserved meanwhile.",
+      "s3": "Goal reached: the parcel is bought and published. Time over: every contribution is refunded automatically."
+    },
+    "sortLabel": "Sort by",
+    "sort": {
+      "ending": "Ending soon",
+      "new": "Newest",
+      "funded": "Most funded"
+    },
+    "collecting": "Collecting now",
+    "recentlyFunded": "Recently funded",
+    "empty": "No project is collecting right now.",
+    "emptyFunded": "No project has reached its goal yet.",
+    "start": "Start a project",
+    "mine": "My projects",
+    "backToList": "← All projects",
+    "by": "by {name}",
+    "water": "Water",
+    "ad": "Advertisement",
+    "raisedOf": "{raised} of {goal}",
+    "percent": "{pct}% funded",
+    "contributors": "{n, plural, one {# contributor} other {# contributors}}",
+    "noContributors": "No contribution yet",
+    "left": {
+      "days": "{n, plural, one {# day left} other {# days left}}",
+      "hours": "{n, plural, one {# hour left} other {# hours left}}",
+      "minutes": "{n, plural, one {# minute left} other {# minutes left}}",
+      "over": "Time is over"
+    },
+    "endsOn": "Ends on {date}",
+    "status": {
+      "open": "Collecting",
+      "funded": "Funded",
+      "expired": "Ended without its goal",
+      "cancelled": "Withdrawn"
+    },
+    "banner": {
+      "funded": "Funded! The parcel has been bought and is now published.",
+      "expired": "This collection ended without reaching its goal. Everybody who contributed has been refunded.",
+      "cancelled": "This project was withdrawn by its creator. Everybody who contributed has been refunded.",
+      "seeParcel": "See the parcel"
+    },
+    "zone": "{w}×{h} px · {area} px",
+    "seeOnMap": "See the place on the map",
+    "link": "Link",
+    "goal": "Goal",
+    "form": {
+      "title": "Chip in",
+      "amount": "Your contribution",
+      "quick": "Quick amounts",
+      "rest": "The rest: {amount}",
+      "other": "Another amount ({currency})",
+      "hint": "At least {min}. {remaining} is still missing.",
+      "submit": "Contribute {amount}",
+      "submitEmpty": "Contribute",
+      "redirecting": "Redirecting to secure payment…",
+      "signIn": "Sign in to contribute",
+      "anonymous": "Your contribution is anonymous: only the number of contributors is shown.",
+      "refund": "If the goal is not reached before the end, every contribution is refunded automatically.",
+      "secure": "Secure payment by Stripe.",
+      "full": "The goal is covered: the last payments are being confirmed.",
+      "yours": "This is your own project: you can contribute to it too."
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "network": "Network error. Please check your connection and try again.",
+      "invalid": "Enter an amount, for example 25 or 12.50.",
+      "too_high": "That is more than what is still missing ({remaining}).",
+      "too_low": "The minimum contribution is {min}.",
+      "dust": "That would leave less than {dust} to fund. Choose another amount, or the exact rest ({remaining}).",
+      "full": "The goal is covered: the last payments are being confirmed. If one fails, you will be able to contribute again.",
+      "px_campaign_closed": "This project is no longer collecting.",
+      "px_campaign_full": "The goal is covered: the last payments are being confirmed. If one fails, you will be able to contribute again.",
+      "px_contribution_in_progress": "You already have a payment in progress for this project. Finish it, or try again in a few minutes.",
+      "px_amount_too_high": "That is more than what is still missing. Reload the page to see the new amount.",
+      "px_amount_too_low": "That amount is below the minimum contribution.",
+      "px_amount_leaves_dust": "That would leave too little to fund. Choose another amount, or the exact rest.",
+      "px_invalid_amount": "Enter an amount, for example 25 or 12.50.",
+      "px_sales_closed": "Sales are temporarily closed.",
+      "px_world_ended": "The world has been deleted: nothing can be bought or funded any more.",
+      "px_account_suspended": "Your account is suspended.",
+      "payments_not_configured": "Payments are not available yet.",
+      "rate_limited": "Too many attempts. Please wait a little."
+    },
+    "ofGoal": "of {goal}",
+    "size": "Size",
+    "creator": "Creator"
   }
 }

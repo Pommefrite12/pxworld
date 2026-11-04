@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import { invalidatePublicStats } from "@/lib/data/map";
 import { stripe } from "./client";
 import { raiseAlert } from "@/lib/alerts";
+import { fulfillContributionSession } from "./contributions";
 
 export type EventOutcome = "processed" | "duplicate" | "ignored";
 
@@ -44,6 +45,12 @@ async function dispatch(event: Stripe.Event): Promise<EventOutcome> {
     case "checkout.session.completed":
     case "checkout.session.async_payment_succeeded": {
       const session = event.data.object as Stripe.Checkout.Session;
+      if (session.metadata?.contribution_id) {
+        // a contribution to a group project: its share stays held until the final outcome, then it is placed (or refunded)
+        if (session.payment_status !== "paid") return "ignored";
+        await fulfillContributionSession(session);
+        return "processed";
+      }
       if (session.payment_status !== "paid") {
         // Asynchronous method still processing: keep the pixels held until Stripe reports the final outcome.
         const orderId = session.metadata?.order_id ?? session.client_reference_id;
@@ -56,6 +63,10 @@ async function dispatch(event: Stripe.Event): Promise<EventOutcome> {
     case "checkout.session.expired":
     case "checkout.session.async_payment_failed": {
       const session = event.data.object as Stripe.Checkout.Session;
+      if (session.metadata?.contribution_id) {
+        await query("select public.px_cancel_contribution($1, null, 'expired')", [session.metadata.contribution_id]);
+        return "processed";
+      }
       const orderId = session.metadata?.order_id ?? session.client_reference_id;
       if (orderId) await query("select public.px_cancel_order($1, null, 'expired')", [orderId]);
       return "processed";
@@ -72,7 +83,12 @@ async function dispatch(event: Stripe.Event): Promise<EventOutcome> {
       const charge = event.data.object as Stripe.Charge;
       const pi = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
       if (!pi) return "ignored";
-      await query("select public.px_record_refund($1, $2)", [pi, charge.amount_refunded]);
+      const r = await queryOne<{ r: string }>("select public.px_record_refund($1, $2) as r", [pi, charge.amount_refunded]);
+      if (r?.r === "unknown_payment") {
+        // not an order: perhaps a contribution to a group project
+        const c = await queryOne<{ r: string }>("select public.px_record_contribution_refund($1, $2) as r", [pi, charge.amount_refunded]);
+        if (c && c.r !== "unknown_payment") await auditAfterFundingRefund(pi);
+      }
       return "processed";
     }
     case "charge.dispute.created":
@@ -82,12 +98,23 @@ async function dispatch(event: Stripe.Event): Promise<EventOutcome> {
       if (!pi) return "ignored";
       const outcome = event.type === "charge.dispute.created" ? "opened" : d.status === "won" ? "won" : d.status === "lost" ? "lost" : null;
       if (!outcome) return "ignored";
-      await query("select public.px_record_dispute($1, $2)", [pi, outcome]);
+      const r = await queryOne<{ r: string }>("select public.px_record_dispute($1, $2) as r", [pi, outcome]);
+      if (r?.r === "unknown_payment") await query("select public.px_record_contribution_dispute($1, $2)", [pi, outcome]);
       return "processed";
     }
     default:
       return "ignored";
   }
+}
+
+/** A refund of a contribution to a project that is ALREADY funded does not touch the parcel: a human decides, so tell them. */
+async function auditAfterFundingRefund(paymentIntent: string): Promise<void> {
+  const k = await queryOne<{ id: string; after: boolean }>(
+    `select k.id, coalesce((select (l.metadata->>'after_funding')::boolean from public.audit_logs l
+                             where l.target_type = 'contribution' and l.target_id = k.id::text and l.action in ('contribution.refunded', 'contribution.partially_refunded')
+                             order by l.id desc limit 1), false) as after
+       from public.contributions k where k.stripe_payment_intent_id = $1`, [paymentIntent]);
+  if (k?.after) await raiseAlert("contribution-refunded-after-funding", { contribution: k.id });
 }
 
 /** Attribute the parcel for a PAID checkout session. Safe to call repeatedly. */

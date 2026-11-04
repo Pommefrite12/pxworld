@@ -13,6 +13,7 @@ export async function Footer() {
         </div>
         <nav aria-label={t("legal")} className="grid grid-cols-2 gap-x-10 gap-y-2 text-sm font-medium">
           <Link href="/discover" className="hover:underline">{t("discover")}</Link>
+          <Link href="/projects" className="hover:underline">{t("projects")}</Link>
           <Link href="/rules" className="hover:underline">{t("rules")}</Link>
           <Link href="/terms" className="hover:underline">{t("terms")}</Link>
           <Link href="/privacy" className="hover:underline">{t("privacy")}</Link>

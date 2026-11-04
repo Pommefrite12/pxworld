@@ -321,7 +321,8 @@
       "moderationNote": "Les modérateurs relisent votre projet (la création, le titre et la description) avant de le proposer. S'il est refusé, vous verrez pourquoi dans votre compte.",
       "sentTitle": "Votre projet est envoyé",
       "sentText": "Dès que les modérateurs l'acceptent, votre zone est réservée {days} jours et votre projet apparaît dans la liste des projets collectifs, où chacun peut participer. Vous pouvez le suivre, ou le retirer, depuis votre compte.",
-      "seeMine": "Voir mes projets"
+      "seeMine": "Voir mes projets",
+      "browse": "Voir les projets en cours"
     }
   },
   "editor": {
@@ -394,7 +395,8 @@
     "privacy": "Confidentialité",
     "credits": "Crédits",
     "contact": "Contact",
-    "virtual": "Pixel World vend un emplacement virtuel sur une carte numérique. Ce n'est ni un bien immobilier, ni un droit géographique ou de propriété intellectuelle."
+    "virtual": "Pixel World vend un emplacement virtuel sur une carte numérique. Ce n'est ni un bien immobilier, ni un droit géographique ou de propriété intellectuelle.",
+    "projects": "Projets collectifs"
   },
   "auth": {
     "email": "E-mail",
@@ -552,7 +554,11 @@
       "withdrawConfirm": "Retirer ce projet ? Sa zone sera libérée.",
       "untitled": "Sans titre",
       "water": "Eau",
-      "back": "← Mon compte"
+      "back": "← Mon compte",
+      "raised": "{raised} réunis sur {goal}",
+      "contributors": "{n, plural, one {# participant} other {# participants}}",
+      "view": "Page publique",
+      "refundsDue": "{n, plural, one {# remboursement en cours} other {# remboursements en cours}}"
     },
     "myCampaigns": "Mes projets collectifs"
   },
@@ -624,7 +630,16 @@
     "failedLead": "Votre parcelle a été libérée et vous n'avez pas été débité, ou vous serez remboursé automatiquement.",
     "backToMap": "Retour à la carte",
     "cancelTitle": "Paiement annulé",
-    "cancelLead": "Pas de problème : vos pixels ont été libérés. Revenez quand vous voulez."
+    "cancelLead": "Pas de problème : vos pixels ont été libérés. Revenez quand vous voulez.",
+    "contributionPaidTitle": "Merci !",
+    "contributionPaidLead": "Votre participation est enregistrée. Si le projet n'atteint pas son objectif à temps, vous serez remboursé automatiquement.",
+    "contributionFunded": "Votre participation a complété l'objectif : la parcelle est achetée !",
+    "viewProject": "Voir le projet",
+    "allProjects": "Tous les projets",
+    "contributionSlowLead": "La confirmation prend plus de temps que d'habitude. Votre participation apparaîtra sur la page du projet dès que le paiement sera confirmé. Rien n'est perdu.",
+    "contributionFailedTitle": "Le paiement n'a pas abouti",
+    "contributionFailedLead": "Rien n'a été enregistré pour ce paiement. Si vous avez été débité, vous serez remboursé automatiquement.",
+    "contributionCancelLead": "Rien n'a été débité. Vous pouvez réessayer depuis la page du projet."
   },
   "discover": {
     "title": "Découvrir",
@@ -641,7 +656,8 @@
     "empty": "Rien ici pour le moment — soyez le premier à laisser votre empreinte.",
     "emptyPopular": "Aucune création n'a encore reçu de « j'aime » ce mois-ci.",
     "emptyEditorial": "Nos premières sélections apparaîtront ici.",
-    "contribution": "{parcels} parcelles · {pixels} px"
+    "contribution": "{parcels} parcelles · {pixels} px",
+    "projectsLink": "Voir les projets collectifs"
   },
   "profile": {
     "since": "membre depuis le {date}",
@@ -1065,7 +1081,10 @@
         "expired": "Expiré",
         "cancelled": "Retiré",
         "rejected": "Refusé"
-      }
+      },
+      "raised": "Réuni",
+      "refundsDue": "{n} remboursement(s) à faire",
+      "contributors": "{n, plural, one {# participant} other {# participants}}"
     }
   },
   "errors": {
@@ -1075,5 +1094,99 @@
     "title": "Une erreur est survenue",
     "lead": "Une erreur inattendue s'est produite. Veuillez réessayer.",
     "retry": "Réessayer"
+  },
+  "projects": {
+    "title": "Projets collectifs",
+    "lead": "De grandes parcelles, payées à plusieurs. Choisissez un projet et participez : s'il n'atteint pas son objectif à temps, tout le monde est remboursé.",
+    "how": {
+      "title": "Comment ça marche",
+      "s1": "Un créateur dessine une grande parcelle, et un modérateur la vérifie.",
+      "s2": "Chacun peut participer, dès {min}. La zone est réservée pendant ce temps.",
+      "s3": "Objectif atteint : la parcelle est achetée et publiée. Temps écoulé : chaque participation est remboursée automatiquement."
+    },
+    "sortLabel": "Trier par",
+    "sort": {
+      "ending": "Bientôt terminés",
+      "new": "Les plus récents",
+      "funded": "Les plus financés"
+    },
+    "collecting": "En cours de collecte",
+    "recentlyFunded": "Récemment financés",
+    "empty": "Aucun projet n'est en cours de collecte pour le moment.",
+    "emptyFunded": "Aucun projet n'a encore atteint son objectif.",
+    "start": "Lancer un projet",
+    "mine": "Mes projets",
+    "backToList": "← Tous les projets",
+    "by": "par {name}",
+    "water": "Eau",
+    "ad": "Publicité",
+    "raisedOf": "{raised} sur {goal}",
+    "percent": "{pct} % financé",
+    "contributors": "{n, plural, one {# participant} other {# participants}}",
+    "noContributors": "Aucune participation pour l'instant",
+    "left": {
+      "days": "{n, plural, one {# jour restant} other {# jours restants}}",
+      "hours": "{n, plural, one {# heure restante} other {# heures restantes}}",
+      "minutes": "{n, plural, one {# minute restante} other {# minutes restantes}}",
+      "over": "Le temps est écoulé"
+    },
+    "endsOn": "Se termine le {date}",
+    "status": {
+      "open": "En collecte",
+      "funded": "Financé",
+      "expired": "Terminé sans atteindre l'objectif",
+      "cancelled": "Retiré"
+    },
+    "banner": {
+      "funded": "Financé ! La parcelle est achetée et publiée.",
+      "expired": "Cette collecte s'est terminée sans atteindre son objectif. Tous ceux qui avaient participé ont été remboursés.",
+      "cancelled": "Ce projet a été retiré par son créateur. Tous ceux qui avaient participé ont été remboursés.",
+      "seeParcel": "Voir la parcelle"
+    },
+    "zone": "{w}×{h} px · {area} px",
+    "seeOnMap": "Voir l'endroit sur la carte",
+    "link": "Lien",
+    "goal": "Objectif",
+    "form": {
+      "title": "Participer",
+      "amount": "Votre participation",
+      "quick": "Montants rapides",
+      "rest": "Le reste : {amount}",
+      "other": "Autre montant ({currency})",
+      "hint": "Au moins {min}. Il manque encore {remaining}.",
+      "submit": "Participer à hauteur de {amount}",
+      "submitEmpty": "Participer",
+      "redirecting": "Redirection vers le paiement sécurisé…",
+      "signIn": "Connectez-vous pour participer",
+      "anonymous": "Votre participation est anonyme : seul le nombre de participants est affiché.",
+      "refund": "Si l'objectif n'est pas atteint avant la fin, chaque participation est remboursée automatiquement.",
+      "secure": "Paiement sécurisé par Stripe.",
+      "full": "L'objectif est couvert : les derniers paiements sont en cours de confirmation.",
+      "yours": "C'est votre propre projet : vous pouvez aussi y participer."
+    },
+    "errors": {
+      "generic": "Une erreur est survenue. Veuillez réessayer.",
+      "network": "Erreur réseau. Vérifiez votre connexion et réessayez.",
+      "invalid": "Saisissez un montant, par exemple 25 ou 12,50.",
+      "too_high": "C'est plus que ce qu'il manque encore ({remaining}).",
+      "too_low": "La participation minimale est de {min}.",
+      "dust": "Il resterait moins de {dust} à financer. Choisissez un autre montant, ou le reste exact ({remaining}).",
+      "full": "L'objectif est couvert : les derniers paiements sont en cours de confirmation. Si l'un échoue, vous pourrez participer à nouveau.",
+      "px_campaign_closed": "Ce projet n'est plus en cours de collecte.",
+      "px_campaign_full": "L'objectif est couvert : les derniers paiements sont en cours de confirmation. Si l'un échoue, vous pourrez participer à nouveau.",
+      "px_contribution_in_progress": "Vous avez déjà un paiement en cours pour ce projet. Terminez-le, ou réessayez dans quelques minutes.",
+      "px_amount_too_high": "C'est plus que ce qu'il manque encore. Rechargez la page pour voir le nouveau montant.",
+      "px_amount_too_low": "Ce montant est inférieur à la participation minimale.",
+      "px_amount_leaves_dust": "Il resterait trop peu à financer. Choisissez un autre montant, ou le reste exact.",
+      "px_invalid_amount": "Saisissez un montant, par exemple 25 ou 12,50.",
+      "px_sales_closed": "Les ventes sont temporairement fermées.",
+      "px_world_ended": "Le monde a été supprimé : plus rien ne peut être acheté ni financé.",
+      "px_account_suspended": "Votre compte est suspendu.",
+      "payments_not_configured": "Les paiements ne sont pas encore disponibles.",
+      "rate_limited": "Trop de tentatives. Patientez un peu."
+    },
+    "ofGoal": "sur {goal}",
+    "size": "Taille",
+    "creator": "Créateur"
   }
 }

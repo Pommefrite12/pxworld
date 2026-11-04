@@ -40,11 +40,20 @@ export default async function MyCampaigns({ params }: { params: Promise<{ locale
                 <p className="text-sm text-ink-soft">
                   {t("goal", { goal: formatMoney(Number(c.goal_cents), locale, c.currency) })} · {t("zone", { w: c.w, h: c.h, x: c.x, y: c.y })} · {t("days", { n: c.duration_days })}
                 </p>
+                {(c.status === "open" || c.status === "funded") && (
+                  <p className="text-sm font-semibold" data-testid="campaign-raised">
+                    {t("raised", { raised: formatMoney(Number(c.raised_cents), locale, c.currency), goal: formatMoney(Number(c.goal_cents), locale, c.currency) })} · {t("contributors", { n: c.contributors })}
+                  </p>
+                )}
+                {c.refunds_due > 0 && <p className="text-xs font-semibold text-warn" data-testid="campaign-refunds">{t("refundsDue", { n: c.refunds_due })}</p>}
                 <p className="text-xs text-ink-faint">
                   {c.status === "open" && c.deadline ? t("until", { date: f.dateTime(c.deadline, { dateStyle: "long" }) }) : t("sent", { date: f.dateTime(c.created_at, { dateStyle: "long" }) })}
                 </p>
                 {c.status === "rejected" && c.rejection_reason && <p className="text-sm font-semibold text-danger" data-testid="campaign-reason">{t("reason", { reason: c.rejection_reason })}</p>}
-                {(c.status === "pending" || c.status === "open") && <div className="pt-1"><CancelCampaignButton id={c.id} /></div>}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {(c.status === "open" || c.status === "funded") && <Link href={`/projects/${c.code}`} className="btn btn-ghost btn-sm" data-testid="campaign-public">{t("view")}</Link>}
+                  {(c.status === "pending" || c.status === "open") && <CancelCampaignButton id={c.id} />}
+                </div>
               </div>
             </li>
           ))}

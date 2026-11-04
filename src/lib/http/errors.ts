@@ -34,6 +34,13 @@ const PX_STATUS: Record<string, number> = {
   px_invalid_campaign: 400,
   px_campaign_already_active: 409,
   px_not_cancellable: 409,
+  px_campaign_closed: 409,
+  px_campaign_full: 409,
+  px_contribution_in_progress: 409,
+  px_invalid_amount: 400,
+  px_amount_too_high: 422,
+  px_amount_too_low: 422,
+  px_amount_leaves_dust: 422,
 };
 
 export function statusForPx(code: string): number {
