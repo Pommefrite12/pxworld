@@ -1,6 +1,6 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { gridAlpha } from "@/lib/map/pixelGrid";
-import { GLITCH_EVERY_MS, GLITCH_FOR_MS, glitchFrame, glitchShift, type GlitchFrame } from "@/lib/doom/glitch";
+import { GLITCH_EVERY_MS, GLITCH_FOR_MS, glitchBand, glitchFrame, glitchJolt, glitchLift, glitchShift, glitchSplit, type GlitchFrame } from "@/lib/doom/glitch";
 import { cellDevicePx, cellLook, damage, destroyedRuns, field, fringeLook, fringeShift, hash2, levelAlpha, makeRanker, tearOffset, GLITCH } from "@/lib/doom/corruption";
 import { finaleAt, frontX, labelPlan, shakeOffset, shakeZoom, type FinaleFrame } from "@/lib/doom/finale";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
@@ -52,7 +52,8 @@ const TILE = 1000;
 const GEO_TILE_PX = 512;
 /** Where a tile's land is destroyed (rows of runs on an R × R lattice): the zones that can glitch. */
 type GeoGlitch = { runs: { j: number; i0: number; i1: number }[]; R: number };
-type GeoTile = { c: HTMLCanvasElement; used: number; complete: boolean; ver: number; step: number; glitch?: GeoGlitch };
+/** `cy` / `mg`: the tile's land as a flat cyan and a flat magenta silhouette, made while a burst of the bug needs them (`undefined`: not yet). */
+type GeoTile = { c: HTMLCanvasElement; used: number; complete: boolean; ver: number; step: number; glitch?: GeoGlitch; cy?: HTMLCanvasElement; mg?: HTMLCanvasElement };
 const GEO_CACHE_MAX = 64;
 /**
  * The coarsest geography level. Its handful of tiles covers the whole world, is drawn with the land fill ONLY (no lines: a line
@@ -81,6 +82,11 @@ const SLOW_MEMORY_MS = 8000;
 const SETTLE_MS = 140;
 /** The page (React) hears about the camera at most this often while it moves: the map itself is redrawn at every frame. */
 const CAMERA_NOTIFY_MS = 120;
+/** The bug's extras (cyan and magenta split, up and down jumps, jolts) are for a machine that is not struggling: average frame under this (ms). */
+const GLITCH_RICH_MAX_MS = 30;
+/** Making the silhouettes of the tiles may take this long in a frame (ms); a frame of the burst slower than `GLITCH_ABORT_MS` drops the extras. */
+const GLITCH_PREP_MS = 10;
+const GLITCH_ABORT_MS = 110;
 const MAX_IMAGES_IN_FLIGHT = 20; // over HTTP/2 (every host that matters) requests share one connection: more at once is faster, not slower
 const MAX_SCALE = 48;
 const RASTER_BELOW = 1; // below this zoom the server-composited rasters are shown; above it, parcels are drawn individually
@@ -706,7 +712,7 @@ export class MapEngine {
     if (sr && (sr.w < 28 || sr.h < 28)) { this.pulse = (t % 1400) / 1400; again = true; }
 
     if (this.glitch) { // the bug of the destroyed land: a still picture every 90 ms, then everything back in place
-      if (performance.now() - this.glitch.t0 >= GLITCH_FOR_MS) this.glitch = null;
+      if (performance.now() - this.glitch.t0 >= GLITCH_FOR_MS) { this.dropGlitchExtras(); this.glitch = null; }
       else again = true;
       this.dirty = true;
     }
@@ -728,6 +734,7 @@ export class MapEngine {
       const took = performance.now() - this.frameStart;
       if (took > SLOW_FRAME_MS) this.slowUntil = this.frameStart + SLOW_MEMORY_MS;
       this.drawMs = this.drawMs ? this.drawMs * 0.9 + took * 0.1 : took;
+      if (took > GLITCH_ABORT_MS && this.glitch?.rich && this.glitchRichMode === "auto") this.dropGlitchExtras(); // a slow frame during the burst: the plain tearing goes on, without the extras
       if (this.hud) { this.hudDraws.push(this.frameStart); while (this.hudDraws.length && this.frameStart - this.hudDraws[0]! > 1000) this.hudDraws.shift(); }
     }
   }
@@ -763,6 +770,7 @@ export class MapEngine {
     const { ctx, w, h, dpr, cam } = this;
     const s = cam.scale;
     this.updateFinale();
+    this.applyJolt(); // after it: the finale sets (or clears) the same transform
     this.geo?.tick(this.frameNo);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = COLORS.paper;
@@ -851,13 +859,17 @@ export class MapEngine {
   }
 
   /* ------------------------------------------------------------------ the bug of the destroyed land, every 30 s */
-  private glitch: { t0: number } | null = null;
+  /** `rich`: the extras (cyan and magenta split, up and down jumps, jolts) are on: only on a machine that is not struggling. */
+  private glitch: { t0: number; seed: number; rich: boolean } | null = null;
   private glitchTimer = 0;
   private glitchEvery = GLITCH_EVERY_MS;
+  /** `"auto"`: the extras only on a machine that is not struggling; tests force them `"on"` or `"off"`. */
+  private glitchRichMode: "auto" | "on" | "off" = "auto";
+  setGlitchRich(mode: "auto" | "on" | "off") { this.glitchRichMode = mode; }
 
   /** The picture of the burst to draw now (null: none going on). */
   private glitchPicture(): GlitchFrame | null {
-    return this.glitch ? glitchFrame(performance.now() - this.glitch.t0) : null;
+    return this.glitch ? glitchFrame(performance.now() - this.glitch.t0, this.glitch.seed) : null;
   }
 
   /** From now on a burst happens every `glitchEvery` ms while the story shows destroyed land (a test shortens the wait). */
@@ -867,40 +879,80 @@ export class MapEngine {
   }
   private stopGlitch() {
     if (this.glitchTimer) clearTimeout(this.glitchTimer);
-    this.glitchTimer = 0; this.glitch = null;
+    this.glitchTimer = 0; this.dropGlitchExtras(); this.glitch = null;
   }
   setGlitchEvery(ms: number) { this.glitchEvery = ms; if (this.glitchTimer) { this.stopGlitch(); this.armGlitch(); } }
 
   /**
-   * Starts a burst now: the destroyed zones tear sideways for about a second. Nothing happens for an ordinary map, before anything is
-   * destroyed, during the final sequence, in a hidden tab, or for a visitor who asked for fewer animations.
+   * Starts a burst now: the destroyed land tears for about a second and a half. Nothing happens for an ordinary map, before anything
+   * is destroyed, during the final sequence, in a hidden tab, or for a visitor who asked for fewer animations. The extras (an RGB
+   * split along the torn bands, bands that also jump up and down, a few jolts of the whole picture) are only for a machine that is
+   * not struggling (no slow frame seen lately, an average frame under 30 ms, 4 GB of memory or more).
    */
-  glitchNow(): boolean {
+  glitchNow(seed = Math.floor(Math.random() * 2_000_000_000)): boolean {
     if (!this.story || this.story.step < 1 || this.finale || this.fin || this.glitch || this.destroyed) return false;
     if (document.visibilityState === "hidden" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return false;
-    this.glitch = { t0: performance.now() };
+    const lean = ((navigator as { deviceMemory?: number }).deviceMemory ?? 8) < 4;
+    const rich = this.glitchRichMode === "auto" ? !lean && performance.now() >= this.slowUntil && this.drawMs < GLITCH_RICH_MAX_MS : this.glitchRichMode === "on";
+    this.glitch = { t0: performance.now(), seed, rich };
     this.invalidate();
     return true;
   }
 
+  /** Makes the tile's land a flat cyan and a flat magenta silhouette (two cheap canvas operations each, nothing read back), a few tiles per frame. */
+  private tint(tile: GeoTile) {
+    if (tile.cy || !this.glitch?.rich) return;
+    if (performance.now() - this.frameStart > GLITCH_PREP_MS) return; // the frame has no time left: the next one goes on
+    const T = GEO_TILE_PX;
+    const make = (color: string) => {
+      const c = Object.assign(document.createElement("canvas"), { width: T, height: T }), g = c.getContext("2d")!;
+      g.drawImage(tile.c, 0, 0);
+      g.globalCompositeOperation = "source-in"; // keeps the shape of the land (the sea is transparent), in one colour
+      g.fillStyle = color; g.fillRect(0, 0, T, T);
+      return c;
+    };
+    tile.cy = make(GLITCH.cyan); tile.mg = make(GLITCH.magenta);
+  }
+  /** Gives the memory back, drops the extras: the burst goes on as a plain tearing, or is over. */
+  private dropGlitchExtras() {
+    if (this.glitch) this.glitch.rich = false;
+    for (const t of this.geoTiles.values()) { t.cy = undefined; t.mg = undefined; }
+    if (this.jolted && !this.finale && !this.fin) { this.canvas.style.transform = ""; this.jolted = false; }
+  }
+  /** A jolt of the whole picture on some pictures of the burst (a few px: the canvas is scaled up a little so that its edges never show); put back at the next picture. */
+  private jolted = false;
+  private applyJolt() {
+    const gf = this.glitch?.rich ? this.glitchPicture() : null, j = gf ? glitchJolt(gf) : null;
+    if (j) { this.canvas.style.transform = `translate(${j.x}px, ${j.y}px) scale(1.015)`; this.jolted = true; }
+    else if (this.jolted && !this.finale && !this.fin) { this.canvas.style.transform = ""; this.jolted = false; }
+  }
+
   /**
-   * The bug itself, over one tile: bands of the destroyed zones (`glitch.runs`, in rows of the tile's lattice) are drawn again,
-   * slid sideways. Where a band slides over a coast, its magenta and cyan fringe moves with it. Bands that slide by the same amount
-   * and sit one above the other are drawn in one go.
+   * The bug itself, over one tile: bands of the destroyed land (`glitch.runs`, in rows of the tile's lattice) are drawn again, slid
+   * sideways by up to 110 px (some also up or down). With the extras, a flat cyan copy of the band goes further to one side and a
+   * magenta one to the other, under the band itself: where the band is torn off its place the two colours show at its ends (an RGB
+   * split, on the land only, since the silhouettes are the land). Bands that slide alike and sit one above the other are drawn in one go.
    */
-  private drawGlitch(tile: HTMLCanvasElement, glitch: GeoGlitch, x: number, y: number, size: number, ty: number, gf: GlitchFrame) {
-    const { runs, R } = glitch, cell = GEO_TILE_PX / R, f = size / GEO_TILE_PX, { ctx } = this;
-    let cur: { i0: number; i1: number; dx: number; j0: number; j1: number } | null = null;
+  private drawGlitch(tile: GeoTile, glitch: GeoGlitch, x: number, y: number, size: number, ty: number, gf: GlitchFrame) {
+    const { runs, R } = glitch, cell = GEO_TILE_PX / R, f = size / GEO_TILE_PX, { ctx } = this, rich = Boolean(this.glitch?.rich);
+    let cur: { i0: number; i1: number; dx: number; dy: number; j0: number; j1: number } | null = null;
     const flush = () => {
       if (!cur) return;
-      const sx = cur.i0 * cell, sw = (cur.i1 - cur.i0) * cell, sy = cur.j0 * cell, sh = (cur.j1 - cur.j0 + 1) * cell;
-      ctx.drawImage(tile, sx, sy, sw, sh, x + (sx + cur.dx) * f, y + sy * f, sw * f, sh * f);
+      const sx = cur.i0 * cell, sw = (cur.i1 - cur.i0) * cell, sy = cur.j0 * cell, sh = (cur.j1 - cur.j0 + 1) * cell, dy = y + (sy + cur.dy) * f;
+      if (rich && tile.cy && tile.mg) {
+        const split = glitchSplit(cur.dx);
+        ctx.globalAlpha = 0.8;
+        ctx.drawImage(tile.cy, sx, sy, sw, sh, x + (sx + cur.dx - split) * f, dy, sw * f, sh * f);
+        ctx.drawImage(tile.mg, sx, sy, sw, sh, x + (sx + cur.dx + split) * f, dy, sw * f, sh * f);
+        ctx.globalAlpha = 1;
+      }
+      ctx.drawImage(tile.c, sx, sy, sw, sh, x + (sx + cur.dx) * f, dy, sw * f, sh * f);
       cur = null;
     };
     for (const r of runs) {
-      const dx = glitchShift((ty * R + r.j) >> 1, gf);
-      if (!dx) { flush(); continue; }
-      if (cur && cur.i0 === r.i0 && cur.i1 === r.i1 && cur.dx === dx && cur.j1 === r.j - 1) cur.j1 = r.j; else { flush(); cur = { i0: r.i0, i1: r.i1, dx, j0: r.j, j1: r.j }; }
+      const band = glitchBand(ty * R + r.j), dx = glitchShift(band, gf), dy = rich ? glitchLift(band, gf) : 0;
+      if (!dx && !dy) { flush(); continue; }
+      if (cur && cur.i0 === r.i0 && cur.i1 === r.i1 && cur.dx === dx && cur.dy === dy && cur.j1 === r.j - 1) cur.j1 = r.j; else { flush(); cur = { i0: r.i0, i1: r.i1, dx, dy, j0: r.j, j1: r.j }; }
     }
     flush();
   }
@@ -1451,7 +1503,7 @@ export class MapEngine {
       if (tile) {
         tile.used = this.frameNo;
         ctx.drawImage(tile.c, a.x, a.y, px + 0.6, px + 0.6);
-        if (gf && tile.glitch) this.drawGlitch(tile.c, tile.glitch, a.x, a.y, px + 0.6, ty, gf);
+        if (gf && tile.glitch) { if (this.glitch?.rich) this.tint(tile); this.drawGlitch(tile, tile.glitch, a.x, a.y, px + 0.6, ty, gf); }
         if (!tile.complete && tile.ver !== this.geo.version) this.geoPending = true;
         continue;
       }

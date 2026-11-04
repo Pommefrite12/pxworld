@@ -310,7 +310,7 @@ test("the sequence plays by itself when the countdown reaches zero in front of t
 });
 
 /* ------------------------------------------------------------------ the bug of the destroyed land, every 30 s */
-type GlitchEng = Eng & { glitch: { t0: number } | null; glitchNow(): boolean; setGlitchEvery(ms: number): void };
+type GlitchEng = Eng & { glitch: { t0: number; rich: boolean } | null; glitchNow(seed?: number): boolean; setGlitchEvery(ms: number): void; setGlitchRich(mode: "auto" | "on" | "off"): void; geoTiles: Map<string, { cy?: unknown }> };
 const engine = (page: Page) => page.evaluateHandle(() => (window as unknown as { __pxEngine: GlitchEng }).__pxEngine);
 /** A fingerprint of everything on the canvas (every 5th pixel is enough to see a band move). */
 const fingerprint = (page: Page) => page.getByRole("application").evaluate((c: HTMLCanvasElement) => {
@@ -341,10 +341,10 @@ test("the bug comes by itself, again and again, on the schedule it is given", as
   await ready(page);
   await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
   const e = await engine(page);
-  await e.evaluate((x) => x.setGlitchEvery(700));
+  await e.evaluate((x) => x.setGlitchEvery(2300)); // longer than a burst, so that there is a calm between two
   const seen: number[] = [];
   for (let i = 0; i < 2; i++) {
-    await expect.poll(() => e.evaluate((x) => x.glitch !== null), { timeout: 8000, intervals: [50] }).toBe(true);
+    await expect.poll(() => e.evaluate((x) => x.glitch !== null), { timeout: 12_000, intervals: [50] }).toBe(true);
     seen.push(await e.evaluate((x) => x.glitch!.t0));
     await expect.poll(() => e.evaluate((x) => x.glitch === null), { timeout: 5000, intervals: [50] }).toBe(true);
   }
@@ -363,4 +363,65 @@ test("no bug on the ordinary map, none for a visitor who asked for fewer animati
   await ready(page);
   await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
   expect(await (await engine(page)).evaluate((x) => x.glitchNow()), "reduced motion: the land stays still").toBe(false);
+});
+
+/** Tears the destroyed world once and says what it did: the canvas pictures of the burst (cyan and magenta pixels, fingerprint) and what the page did to the canvas. */
+async function tear(page: Page, mode: "on" | "off", seed: number) {
+  return page.getByRole("application").evaluate(async (c: HTMLCanvasElement, [mode, seed]) => {
+    const eng = (window as unknown as { __pxEngine: GlitchEng }).__pxEngine, g = c.getContext("2d")!;
+    const colours = () => { const d = g.getImageData(0, 0, c.width, c.height).data; let cy = 0, mg = 0, h = 2166136261; for (let i = 0; i < d.length; i += 4) { const r = d[i]!, gr = d[i + 1]!, b = d[i + 2]!; if (r < 90 && gr > 170 && b > 220) cy++; else if (r > 220 && gr < 110 && b > 110 && b < 190) mg++; if (i % 20 === 0) h = Math.imul(h ^ (r | (gr << 8) | (b << 16)), 16777619) >>> 0; } return { cy, mg, h }; };
+    const calm = colours();
+    eng.setGlitchRich(mode as "on" | "off");
+    eng.glitchNow(seed as number);
+    let peak = 0, calmPictures = 0, transforms = 0, tinted = 0, pictures = 0;
+    const t0 = performance.now();
+    while (eng.glitch && performance.now() - t0 < 4000) {
+      await new Promise((r) => requestAnimationFrame(r));
+      const now = colours();
+      pictures++;
+      peak = Math.max(peak, now.cy + now.mg);
+      if (now.h === calm.h) calmPictures++;
+      if (c.style.transform.startsWith("translate(")) transforms++;
+      if ([...eng.geoTiles.values()].some((t) => t.cy)) tinted++;
+    }
+    return { calm: calm.cy + calm.mg, peak, calmPictures, transforms, tinted, pictures, transformAfter: c.style.transform, tintedAfter: [...eng.geoTiles.values()].some((t) => t.cy) };
+  }, [mode, seed] as const);
+}
+
+test("with the extras the torn land comes apart in cyan and magenta, and the picture takes jolts; at the end everything is put back", async ({ page }) => {
+  await page.goto("/?preview=0");
+  await ready(page);
+  await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
+  await page.waitForTimeout(1500);
+  const r = await tear(page, "on", 12345);
+  expect(r.peak, "far more cyan and magenta at the hardest moment than in the calm map").toBeGreaterThan(r.calm * 1.5);
+  expect(r.transforms, "the whole picture takes a jolt on some pictures of the burst").toBeGreaterThan(0);
+  expect(r.tinted, "the silhouettes were made for the burst").toBeGreaterThan(0);
+  expect(r.transformAfter, "and the canvas is put back").toBe("");
+  expect(r.tintedAfter, "the memory is given back").toBe(false);
+  expect(r.calmPictures, "a beat of calm in the middle: everything back in place for one picture").toBeGreaterThan(0);
+});
+
+test("without the extras (a machine that struggles) the land is only torn: no extra colour, no jolt, nothing made", async ({ page }) => {
+  await page.goto("/?preview=0");
+  await ready(page);
+  await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
+  await page.waitForTimeout(1500);
+  const r = await tear(page, "off", 12345);
+  expect(r.peak, "no more cyan and magenta than the calm map has").toBeLessThan(r.calm * 1.35 + 50);
+  expect(r.transforms, "no jolt").toBe(0);
+  expect(r.tinted, "no silhouette made").toBe(0);
+  expect(r.pictures, "it did run").toBeGreaterThan(5);
+});
+
+test("a machine that struggles does not get the extras by itself", async ({ page }) => {
+  await page.goto("/?preview=0");
+  await ready(page);
+  await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
+  const e = await engine(page);
+  await e.evaluate((x) => { x.setGlitchRich("auto"); (x as unknown as { slowUntil: number }).slowUntil = performance.now() + 60_000; });
+  expect(await e.evaluate((x) => { x.glitchNow(7); return x.glitch!.rich; }), "a slow frame was seen lately").toBe(false);
+  await expect.poll(() => e.evaluate((x) => x.glitch === null), { timeout: 5000 }).toBe(true);
+  await e.evaluate((x) => { (x as unknown as { slowUntil: number; drawMs: number }).slowUntil = 0; (x as unknown as { drawMs: number }).drawMs = 8; });
+  expect(await e.evaluate((x) => { x.glitchNow(8); return x.glitch!.rich; }), "a quick machine gets them").toBe(true);
 });
