@@ -20,7 +20,7 @@ export const POST = route(async (req, ctx: { params: Promise<{ id: string }> }) 
   const { id } = await ctx.params;
   if (!/^[0-9a-f-]{36}$/.test(id)) throw new HttpError(404, "px_not_found");
   const viewer = await requireActiveViewer();
-  await enforceRateLimit(req, LIMITS.checkout, viewer.user.id);
+  await enforceRateLimit(req, LIMITS.contribute, viewer.user.id);
   if (!stripeConfigured()) throw new HttpError(503, "payments_not_configured");
   const body = (await req.json().catch(() => null)) as { amountCents?: unknown; locale?: unknown } | null;
   const amount = typeof body?.amountCents === "number" && Number.isSafeInteger(body.amountCents) ? body.amountCents : null;

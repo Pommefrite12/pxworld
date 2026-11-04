@@ -36,6 +36,8 @@ export async function enforceRateLimit(req: Request, limit: Limit, userId?: stri
 
 export const LIMITS = {
   checkout: { name: "checkout", windowSeconds: 3600, max: 20 },
+  /** Contributions to group projects: their own counter (they must never use up the purchases' one, nor the other way round). One payment in progress per person and project already bounds what a person can hold. */
+  contribute: { name: "contribute", windowSeconds: 3600, max: 60 },
   /** Sending a project to moderation (a campaign): failed attempts count too; the abuse is bounded by "one active project per creator". */
   campaign: { name: "campaign", windowSeconds: 3600, max: 20 },
   upload: { name: "upload", windowSeconds: 3600, max: 30 },
