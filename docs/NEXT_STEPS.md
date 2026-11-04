@@ -17,6 +17,8 @@ Also for the test site: **demonstration data** (`npm run demo:seed` / `demo:stat
 
 Also done: **the oceans and seas can be bought** (water parcels: same customisation, shown in three blues, cut by the coast; the counter is the whole planet; **the destruction touches the seas too**). To decide: the price of water (today the same as land, `water_price_percent`), the first words of the water terms (legal, drafts).
 
+Also done: **"Fund it together", step 1** (group projects; plan and decisions in `PLAN_FINANCEMENT_COLLECTIF.md`): the creator designs a big parcel and sends it to moderation, a moderator approves (the zone is held for 7/14/30 days) or refuses with a reason, the creator can withdraw. **Nobody can contribute yet** (steps 2–4). Needs **migration 17** on the test site (`node scripts/migrate.mjs --env .env.production.local`) before the button is used.
+
 ## 1. Look at what changed today (owner, ~20 min, before anything else)
 
 A lot went in on one day. Pull the branch, restart (`npm run dev`: the comments migration 13 applies by itself) and go through:

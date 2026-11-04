@@ -300,7 +300,7 @@ npx tsx scripts/check-env.mts .env.production.local
 Deux avertissements sont normaux tant que Stripe n'est pas configuré : `STRIPE_SECRET_KEY` et `NEXT_PUBLIC_OPERATOR_*`.
 
 **Le même vérificateur peut aussi interroger Supabase et la base de données** (rien n'est écrit : il demande seulement « acceptez-vous cette clé ? ») : ajoutez `--online`.
-Il dit si Supabase **accepte** la clé publique et la clé secrète, si le dossier des images existe, si les inscriptions sont ouvertes, et si la base répond avec ses 15 migrations.
+Il dit si Supabase **accepte** la clé publique et la clé secrète, si le dossier des images existe, si les inscriptions sont ouvertes, et si la base répond avec toutes ses migrations (17 à ce jour).
 ```bash
 npx tsx scripts/check-env.mts .env.production.local --online
 ```

@@ -283,7 +283,10 @@
       "title_required": "Please give your creation a title (at least 3 characters).",
       "payments_not_configured": "Payments are not available yet.",
       "px_not_on_land": "This parcel does not have enough land. Choose a spot with more land, or switch to water.",
-      "px_not_on_water": "This parcel does not have enough water. Choose a spot with more sea or ocean, or switch to land."
+      "px_not_on_water": "This parcel does not have enough water. Choose a spot with more sea or ocean, or switch to land.",
+      "px_campaign_too_small": "This parcel is too small to be funded together.",
+      "px_invalid_campaign": "This duration is not available.",
+      "px_campaign_already_active": "You already have a project waiting for review or in progress. Finish or withdraw it first (My projects)."
     },
     "fineTune": "Custom size",
     "seaFree": "{sea} px of your parcel are sea, offered: you only pay for the {land} px of land.",
@@ -296,7 +299,30 @@
       "waterHint": "Oceans and seas. Whatever you create is shown in three tints of blue.",
       "landHint": "Continents and islands. Your creation is shown in its own colours."
     },
-    "seaDiscount": "{sea} px of your parcel are sea, charged {pct}% of a land pixel; {land} px are land."
+    "seaDiscount": "{sea} px of your parcel are sea, charged {pct}% of a land pixel; {land} px are land.",
+    "collective": {
+      "button": "Fund it together",
+      "hint": "Can't afford a big parcel alone? Start a project: others can chip in.",
+      "tooSmall": "Funding together starts at {min} px (for example 100×100).",
+      "designTitle": "Design your project",
+      "reviewTitle": "Describe your project",
+      "stepSend": "Send",
+      "goal": "Goal",
+      "goalLabel": "Goal to fund",
+      "goalNote": "The goal is the price of the parcel today, fixed when your project is accepted. Taxes, if any, are calculated at each payment.",
+      "designNote": "You are designing a parcel that several people will pay for together: {goal} to raise. Nothing is paid now.",
+      "duration": "How long should the collection last?",
+      "days": "{n} days",
+      "durationHint": "Once your project is accepted, the zone is reserved for {days} days. Nobody else can buy it meanwhile.",
+      "send": "Send to moderation",
+      "sending": "Sending…",
+      "nothingPaid": "Nothing is paid now. You can withdraw your project at any time from your account.",
+      "accept": "I accept the <terms>terms</terms> and the <rules>community rules</rules>, and I understand that my project is reviewed by moderation before it is shown to others.",
+      "moderationNote": "Moderators review your project (the creation, the title and the description) before it is shown. If it is refused, you will see why in your account.",
+      "sentTitle": "Your project has been sent",
+      "sentText": "Once moderators accept it, your zone is reserved for {days} days and your project appears in the list of group projects, where everybody can chip in. You can follow it, or withdraw it, from your account.",
+      "seeMine": "See my projects"
+    }
   },
   "editor": {
     "canvasLabel": "Parcel editor, {w} by {h} pixels",
@@ -502,7 +528,33 @@
         "superseded": "Replaced",
         "removed": "Removed"
       }
-    }
+    },
+    "campaigns": {
+      "title": "My group projects",
+      "lead": "Parcels you asked several people to fund together.",
+      "empty": "You have not started any project. Pick a big spot on the map, then choose “Fund it together”.",
+      "start": "Start a project",
+      "status": {
+        "pending": "Waiting for moderation",
+        "open": "Open: collecting",
+        "funded": "Funded",
+        "expired": "Ended without reaching the goal",
+        "cancelled": "Withdrawn",
+        "rejected": "Refused"
+      },
+      "goal": "Goal: {goal}",
+      "until": "Open until {date}",
+      "sent": "Sent {date}",
+      "reason": "Reason: {reason}",
+      "zone": "{w}×{h} px at {x}, {y}",
+      "days": "{n} days",
+      "withdraw": "Withdraw",
+      "withdrawConfirm": "Withdraw this project? Its zone will be released.",
+      "untitled": "Untitled",
+      "water": "Water",
+      "back": "← My account"
+    },
+    "myCampaigns": "My group projects"
   },
   "draw": {
     "title": "Draw together",
@@ -805,7 +857,8 @@
       "settings": "Settings",
       "audit": "Audit log",
       "role": "Signed in as {role}",
-      "reservations": "Reservations"
+      "reservations": "Reservations",
+      "campaigns": "Group projects"
     },
     "common": {
       "reason": "Reason",
@@ -961,7 +1014,11 @@
       "minWater": "Minimum water share of a water parcel (%)",
       "minWaterHint": "A water parcel may include some land along a coast, but at least this share of its pixels must be water (1–100).",
       "landCut": "Price of the land cut away from a water parcel (% of a land pixel)",
-      "landCutHint": "0 = the land pixels of a coastal water parcel are offered; 50 = half price; 100 = same price as land."
+      "landCutHint": "0 = the land pixels of a coastal water parcel are offered; 50 = half price; 100 = same price as land.",
+      "campaignMinArea": "Smallest parcel of a group project (px)",
+      "campaignMinAreaHint": "Below this surface a parcel is bought alone: no group project.",
+      "campaignMinContribution": "Smallest contribution to a group project (cents)",
+      "campaignMinContributionHint": "{price} — used from the next step on, when people can contribute."
     },
     "audit": {
       "title": "Audit log",
@@ -984,6 +1041,31 @@
       "status": "Status",
       "lapsed": "lapsed",
       "empty": "No reservation."
+    },
+    "campaigns": {
+      "title": "Group projects",
+      "lead": "Parcels that several people will pay for together. Approving reserves the zone for the project's duration and opens the collection; rejecting needs a reason the creator will read.",
+      "empty": "No project is waiting for review.",
+      "by": "by",
+      "goal": "Goal",
+      "duration": "{n} days",
+      "zone": "{w}×{h} px at {x}, {y}",
+      "approve": "Approve and reserve the zone",
+      "reject": "Reject",
+      "ad": "Advertisement",
+      "water": "Water",
+      "handled": "Already handled",
+      "none": "Nothing yet.",
+      "untitled": "Untitled",
+      "until": "until {date}",
+      "status": {
+        "pending": "Waiting",
+        "open": "Open",
+        "funded": "Funded",
+        "expired": "Expired",
+        "cancelled": "Withdrawn",
+        "rejected": "Rejected"
+      }
     }
   },
   "errors": {

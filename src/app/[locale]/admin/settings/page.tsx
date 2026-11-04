@@ -18,6 +18,7 @@ export default async function Settings({ params }: { params: Promise<{ locale: s
         reservation_ttl_minutes: Number(m.reservation_ttl_minutes ?? 35), max_active_reservations_per_user: Number(m.max_active_reservations_per_user ?? 3), sales_open: m.sales_open !== false,
         sea_price_percent: Number(m.sea_price_percent ?? 0), min_land_percent: Number(m.min_land_percent ?? 50),
         water_price_percent: Number(m.water_price_percent ?? 100), min_water_percent: Number(m.min_water_percent ?? 50), land_cut_price_percent: Number(m.land_cut_price_percent ?? 0),
+        campaign_min_area: Number(m.campaign_min_area ?? 10000), campaign_min_contribution_cents: Number(m.campaign_min_contribution_cents ?? 200),
       }} />
     </div>
   );

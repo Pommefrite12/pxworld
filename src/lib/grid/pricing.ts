@@ -42,11 +42,15 @@ export interface Pricing {
   waterPercent: number;
   /** One land pixel cut away from a water parcel costs this percentage of a land pixel (0 = free). */
   landCutPercent: number;
+  /** The smallest parcel that can be funded by several people (a campaign is for big parcels). */
+  campaignMinArea: number;
+  /** The smallest contribution to a campaign, in minor units (cents). */
+  campaignMinContributionCents: number;
 }
 
 export const DEFAULT_PRICING: Pricing = {
   unitPriceCents: DEFAULT_UNIT_PRICE_CENTS, currency: "eur", minArea: MIN_AREA, maxArea: 250_000, salesOpen: false,
-  minLandPercent: 50, seaPercent: 0, minWaterPercent: 50, waterPercent: 100, landCutPercent: 0,
+  minLandPercent: 50, seaPercent: 0, minWaterPercent: 50, waterPercent: 100, landCutPercent: 0, campaignMinArea: 10_000, campaignMinContributionCents: 200,
 };
 
 /** Same arithmetic as `px_start_order`: at least `minLandPercent` % of the pixels (and at least one) must be land. */

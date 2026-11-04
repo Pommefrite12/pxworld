@@ -9,6 +9,8 @@ import { fulfillSession, refundOrder } from "./events";
 
 export interface MaintenanceReport {
   expiredReservations: number;
+  /** Group projects whose time ran out (their zone is given back). */
+  expiredCampaigns: number;
   recoveredPayments: number;
   closedSessions: number;
   refundsRetried: number;
@@ -39,7 +41,7 @@ export async function reconcileOrder(orderId: string): Promise<"paid" | "expired
 
 /** Periodic job (Vercel Cron → /api/cron/maintenance). */
 export async function runMaintenance(): Promise<MaintenanceReport> {
-  const report: MaintenanceReport = { expiredReservations: 0, recoveredPayments: 0, closedSessions: 0, refundsRetried: 0 };
+  const report: MaintenanceReport = { expiredReservations: 0, expiredCampaigns: 0, recoveredPayments: 0, closedSessions: 0, refundsRetried: 0 };
 
   // 1. Release lapsed reservations and close their checkout sessions.
   const expired = await query<{ order_id: string; stripe_checkout_session_id: string | null }>("select * from public.px_expire_reservations(500)");
@@ -47,6 +49,14 @@ export async function runMaintenance(): Promise<MaintenanceReport> {
   for (const e of expired) {
     await expireCheckoutSession(e.stripe_checkout_session_id);
     report.closedSessions++;
+  }
+
+  // 1b. Group projects whose deadline has passed. Never allowed to break the rest of the job (the database may not have the migration yet).
+  try {
+    const [n] = await query<{ n: number }>("select public.px_expire_campaigns(100) as n");
+    report.expiredCampaigns = Number(n?.n ?? 0);
+  } catch (e) {
+    console.error("expire campaigns failed", (e as Error).message);
   }
 
   if (env().STRIPE_SECRET_KEY) {

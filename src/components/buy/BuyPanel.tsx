@@ -27,12 +27,14 @@ interface Props {
   /** An account is needed to buy: anonymous visitors are sent to sign in (the spot is kept). */
   signedIn: boolean;
   onContinue: () => void;
+  /** "Fund it together": the same design step, then the project goes to moderation instead of to the payment. */
+  onCollective: () => void;
   onClose: () => void;
 }
 
 const num = (v: string) => (v === "" ? 0 : Math.max(0, Math.min(99999, Math.floor(Number(v)) || 0)));
 
-export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind, onKind, landPixels, serverFree, signedIn, onContinue, onClose }: Props) {
+export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind, onKind, landPixels, serverFree, signedIn, onContinue, onCollective, onClose }: Props) {
   const t = useTranslations("buy");
   const f = useFormatter();
   const [fine, setFine] = useState(false); // mobile: position fine-tuning is folded away to keep the map visible
@@ -43,6 +45,8 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind
   const unit = water ? Math.floor((pricing.unitPriceCents * pricing.waterPercent) / 100) : pricing.unitPriceCents; // what one pixel costs (the shown rate)
   const blocked = state === "blocked" || state === "out" || state === "water" || state === "land" || serverFree === false;
   const ready = Boolean(selection && !sizeErr && !blocked && state === "ok" && serverFree !== "checking" && pricing.salesOpen);
+  // a project funded by several people is for BIG parcels: below this area one pays alone
+  const tooSmall = size.w * size.h < pricing.campaignMinArea;
 
   const status = !pricing.salesOpen ? { tone: "bad", text: t("status.closed") }
     : sizeErr ? { tone: "bad", text: t(`sizeError.${sizeErr}`, { min: f.number(pricing.minArea), max: f.number(pricing.maxArea), side: MAX_SIDE }) }
@@ -130,6 +134,12 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind
         <button className="btn btn-primary mt-2.5 w-full" disabled={!ready} onClick={onContinue} data-testid="buy-continue">
           {signedIn ? t("continue") : t("signInToContinue")}
         </button>
+        <button className="btn btn-secondary mt-1.5 w-full" disabled={!ready || tooSmall} onClick={onCollective} data-testid="buy-collective" aria-describedby="buy-collective-note">
+          {t("collective.button")}
+        </button>
+        <p id="buy-collective-note" className="mt-1 text-[0.7rem] leading-snug text-ink-faint" data-testid="buy-collective-note">
+          {ready && tooSmall ? t("collective.tooSmall", { min: f.number(pricing.campaignMinArea) }) : t("collective.hint")}
+        </p>
         <p className="mt-2 hidden text-[0.7rem] leading-snug text-ink-faint md:block">
           {t("legal")} <Link href="/terms" className="underline">{t("terms")}</Link> · <Link href="/rules" className="underline">{t("rules")}</Link>
         </p>

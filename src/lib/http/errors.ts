@@ -30,6 +30,10 @@ const PX_STATUS: Record<string, number> = {
   px_bad_setting: 400,
   px_comment_invalid: 400,
   px_comment_duplicate: 409,
+  px_campaign_too_small: 422,
+  px_invalid_campaign: 400,
+  px_campaign_already_active: 409,
+  px_not_cancellable: 409,
 };
 
 export function statusForPx(code: string): number {

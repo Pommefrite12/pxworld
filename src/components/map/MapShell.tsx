@@ -58,6 +58,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
   const [kind, setKind] = useState<ParcelKind>(initial.kind ?? "land"); // what the buyer is acquiring: land, or water (the sea)
   const [parcelCode, setParcelCode] = useState<string | null>(initial.parcelCode);
   const [dialog, setDialog] = useState(false);
+  const [collective, setCollective] = useState(false); // the dialog sends a project to moderation (funded by several people) instead of paying
   const [toast, setToast] = useState<string | null>(null);
   const engine = () => mapRef.current?.engine ?? null;
 
@@ -141,9 +142,10 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
   }, [selection, selState, kind]);
 
   const buyUrl = (r: Rect) => `/map?bx=${r.x}&by=${r.y}&bw=${r.w}&bh=${r.h}${kind === "water" ? "&bk=water" : ""}`;
-  const continueBuy = () => {
+  const continueBuy = (asProject = false) => {
     if (!selection) return;
     if (!viewer) { window.location.assign(`/auth/sign-in?next=${encodeURIComponent(buyUrl(selection))}`); return; }
+    setCollective(asProject);
     setDialog(true);
   };
 
@@ -258,7 +260,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
         {mode === "buy" && (
           <BuyPanel
             pricing={pricing} locale={locale} size={size} onSize={changeSize} selection={selection}
-            state={selState} kind={kind} onKind={(k) => { setServerFree(null); setKind(k); }} landPixels={selLand} serverFree={serverFree} signedIn={Boolean(viewer)} onContinue={continueBuy} onClose={stopBuy}
+            state={selState} kind={kind} onKind={(k) => { setServerFree(null); setKind(k); }} landPixels={selLand} serverFree={serverFree} signedIn={Boolean(viewer)} onContinue={() => continueBuy(false)} onCollective={() => continueBuy(true)} onClose={stopBuy}
           />
         )}
 
@@ -278,8 +280,9 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
 
       {dialog && selection && (
         <CheckoutDialog
-          rect={selection} kind={kind} pricing={pricing} landPixels={selLand}
+          rect={selection} kind={kind} pricing={pricing} landPixels={selLand} mode={collective ? "collective" : "buy"}
           onClose={() => { engine()?.setPreviewImage(null); setDialog(false); }}
+          onSent={() => { engine()?.setPreviewImage(null); stopBuy(); }}
           onPreviewOnMap={(img) => { const e = engine(); e?.setPreviewImage(img); if (img && e) e.fitRect(selection, { padding: 110, maxScale: 14 }); }}
           onUnavailable={() => { setDialog(false); setToast(t("spotTaken")); engine()?.setPreviewImage(null); setSelState(null); applySelection({ ...selection }); }}
         />

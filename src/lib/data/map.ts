@@ -106,7 +106,7 @@ export function invalidatePublicStats(): void {
  */
 export async function getPricing(currency?: SaleCurrency): Promise<Pricing> {
   const rows = await query<{ key: string; value: unknown }>(
-    "select key, value from public.app_settings where key in ('price_unit_cents','price_unit_cents_usd','currency','min_area','max_area','sales_open','sea_price_percent','min_land_percent','water_price_percent','min_water_percent','land_cut_price_percent')",
+    "select key, value from public.app_settings where key in ('price_unit_cents','price_unit_cents_usd','currency','min_area','max_area','sales_open','sea_price_percent','min_land_percent','water_price_percent','min_water_percent','land_cut_price_percent','campaign_min_area','campaign_min_contribution_cents')",
   );
   const m = Object.fromEntries(rows.map((r) => [r.key, r.value]));
   const base = String(m.currency ?? "eur").toLowerCase();
@@ -123,6 +123,8 @@ export async function getPricing(currency?: SaleCurrency): Promise<Pricing> {
     minWaterPercent: Number(m.min_water_percent ?? 50),
     waterPercent: Number(m.water_price_percent ?? 100),
     landCutPercent: Number(m.land_cut_price_percent ?? 0),
+    campaignMinArea: Number(m.campaign_min_area ?? 10_000),
+    campaignMinContributionCents: Number(m.campaign_min_contribution_cents ?? 200),
   };
 }
 

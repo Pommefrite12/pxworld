@@ -283,7 +283,10 @@
       "title_required": "Donnez un titre à votre création (3 caractères minimum).",
       "payments_not_configured": "Les paiements ne sont pas encore disponibles.",
       "px_not_on_land": "Cette parcelle n'a pas assez de terre. Choisissez un emplacement avec plus de terre, ou passez en mode eau.",
-      "px_not_on_water": "Cette parcelle n'a pas assez d'eau. Choisissez un emplacement avec plus de mer ou d'océan, ou passez en mode terre."
+      "px_not_on_water": "Cette parcelle n'a pas assez d'eau. Choisissez un emplacement avec plus de mer ou d'océan, ou passez en mode terre.",
+      "px_campaign_too_small": "Cette parcelle est trop petite pour être financée à plusieurs.",
+      "px_invalid_campaign": "Cette durée n'est pas disponible.",
+      "px_campaign_already_active": "Vous avez déjà un projet en attente ou en cours. Terminez-le ou retirez-le d'abord (Mes projets)."
     },
     "fineTune": "Taille personnalisée",
     "seaFree": "{sea} px de votre parcelle sont en mer, offerts : vous ne payez que les {land} px de terre.",
@@ -296,7 +299,30 @@
       "waterHint": "Les océans et les mers. Tout ce que vous créez s'affiche en trois teintes de bleu.",
       "landHint": "Les continents et les îles. Votre création s'affiche dans ses propres couleurs."
     },
-    "seaDiscount": "{sea} px de votre parcelle sont en mer, facturés {pct} % d'un pixel de terre ; {land} px sont de la terre."
+    "seaDiscount": "{sea} px de votre parcelle sont en mer, facturés {pct} % d'un pixel de terre ; {land} px sont de la terre.",
+    "collective": {
+      "button": "Financer à plusieurs",
+      "hint": "Une grande parcelle seul, c'est trop ? Lancez un projet : d'autres peuvent y participer.",
+      "tooSmall": "Le financement à plusieurs commence à {min} px (par exemple 100×100).",
+      "designTitle": "Dessinez votre projet",
+      "reviewTitle": "Présentez votre projet",
+      "stepSend": "Envoi",
+      "goal": "Objectif",
+      "goalLabel": "Objectif à financer",
+      "goalNote": "L'objectif est le prix de la parcelle aujourd'hui, figé à l'acceptation du projet. Les taxes éventuelles sont calculées à chaque paiement.",
+      "designNote": "Vous dessinez une parcelle que plusieurs personnes financeront ensemble : {goal} à réunir. Rien n'est payé maintenant.",
+      "duration": "Combien de temps dure la collecte ?",
+      "days": "{n} jours",
+      "durationHint": "Une fois votre projet accepté, la zone est réservée {days} jours. Personne d'autre ne peut l'acheter pendant ce temps.",
+      "send": "Envoyer à la modération",
+      "sending": "Envoi…",
+      "nothingPaid": "Rien n'est payé maintenant. Vous pouvez retirer votre projet à tout moment depuis votre compte.",
+      "accept": "J'accepte les <terms>conditions d'utilisation</terms> et les <rules>règles de la communauté</rules>, et je comprends que mon projet est relu par la modération avant d'être proposé aux autres.",
+      "moderationNote": "Les modérateurs relisent votre projet (la création, le titre et la description) avant de le proposer. S'il est refusé, vous verrez pourquoi dans votre compte.",
+      "sentTitle": "Votre projet est envoyé",
+      "sentText": "Dès que les modérateurs l'acceptent, votre zone est réservée {days} jours et votre projet apparaît dans la liste des projets collectifs, où chacun peut participer. Vous pouvez le suivre, ou le retirer, depuis votre compte.",
+      "seeMine": "Voir mes projets"
+    }
   },
   "editor": {
     "canvasLabel": "Éditeur de parcelle, {w} sur {h} pixels",
@@ -502,7 +528,33 @@
         "superseded": "Remplacée",
         "removed": "Retirée"
       }
-    }
+    },
+    "campaigns": {
+      "title": "Mes projets collectifs",
+      "lead": "Les parcelles que vous avez proposé de financer à plusieurs.",
+      "empty": "Vous n'avez lancé aucun projet. Choisissez un grand emplacement sur la carte, puis « Financer à plusieurs ».",
+      "start": "Lancer un projet",
+      "status": {
+        "pending": "En attente de la modération",
+        "open": "En cours de collecte",
+        "funded": "Financé",
+        "expired": "Terminé sans atteindre l'objectif",
+        "cancelled": "Retiré",
+        "rejected": "Refusé"
+      },
+      "goal": "Objectif : {goal}",
+      "until": "Ouvert jusqu'au {date}",
+      "sent": "Envoyé le {date}",
+      "reason": "Motif : {reason}",
+      "zone": "{w}×{h} px en {x}, {y}",
+      "days": "{n} jours",
+      "withdraw": "Retirer",
+      "withdrawConfirm": "Retirer ce projet ? Sa zone sera libérée.",
+      "untitled": "Sans titre",
+      "water": "Eau",
+      "back": "← Mon compte"
+    },
+    "myCampaigns": "Mes projets collectifs"
   },
   "draw": {
     "title": "Dessiner ensemble",
@@ -805,7 +857,8 @@
       "settings": "Paramètres",
       "audit": "Journal d'audit",
       "role": "Connecté en tant que {role}",
-      "reservations": "Réservations"
+      "reservations": "Réservations",
+      "campaigns": "Projets collectifs"
     },
     "common": {
       "reason": "Motif",
@@ -961,7 +1014,11 @@
       "minWater": "Part minimale d'eau d'une parcelle d'eau (%)",
       "minWaterHint": "Une parcelle d'eau peut inclure un peu de terre le long d'une côte, mais au moins cette part de ses pixels doit être de l'eau (1–100).",
       "landCut": "Prix de la terre coupée d'une parcelle d'eau (% d'un pixel de terre)",
-      "landCutHint": "0 = les pixels de terre d'une parcelle d'eau côtière sont offerts ; 50 = moitié prix ; 100 = même prix que la terre."
+      "landCutHint": "0 = les pixels de terre d'une parcelle d'eau côtière sont offerts ; 50 = moitié prix ; 100 = même prix que la terre.",
+      "campaignMinArea": "Plus petite parcelle d'un projet collectif (px)",
+      "campaignMinAreaHint": "En dessous de cette surface, une parcelle s'achète seul(e) : pas de projet collectif.",
+      "campaignMinContribution": "Plus petite participation à un projet collectif (centimes)",
+      "campaignMinContributionHint": "{price} — utilisée dès l'étape suivante, quand on pourra participer."
     },
     "audit": {
       "title": "Journal d'audit",
@@ -984,6 +1041,31 @@
       "status": "Statut",
       "lapsed": "périmée",
       "empty": "Aucune réservation."
+    },
+    "campaigns": {
+      "title": "Projets collectifs",
+      "lead": "Des parcelles que plusieurs personnes paieront ensemble. Approuver réserve la zone pendant la durée du projet et ouvre la collecte ; refuser demande un motif que le créateur lira.",
+      "empty": "Aucun projet n'attend de relecture.",
+      "by": "par",
+      "goal": "Objectif",
+      "duration": "{n} jours",
+      "zone": "{w}×{h} px en {x}, {y}",
+      "approve": "Approuver et réserver la zone",
+      "reject": "Refuser",
+      "ad": "Publicité",
+      "water": "Eau",
+      "handled": "Déjà traités",
+      "none": "Rien pour l'instant.",
+      "untitled": "Sans titre",
+      "until": "jusqu'au {date}",
+      "status": {
+        "pending": "En attente",
+        "open": "Ouvert",
+        "funded": "Financé",
+        "expired": "Expiré",
+        "cancelled": "Retiré",
+        "rejected": "Refusé"
+      }
     }
   },
   "errors": {

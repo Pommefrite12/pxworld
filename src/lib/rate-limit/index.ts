@@ -36,6 +36,8 @@ export async function enforceRateLimit(req: Request, limit: Limit, userId?: stri
 
 export const LIMITS = {
   checkout: { name: "checkout", windowSeconds: 3600, max: 20 },
+  /** Sending a project to moderation (a campaign): failed attempts count too; the abuse is bounded by "one active project per creator". */
+  campaign: { name: "campaign", windowSeconds: 3600, max: 20 },
   upload: { name: "upload", windowSeconds: 3600, max: 30 },
   report: { name: "report", windowSeconds: 3600, max: 10 },
   like: { name: "like", windowSeconds: 600, max: 60 },

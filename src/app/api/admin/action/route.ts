@@ -13,6 +13,7 @@ const reason = z.string().max(500).optional();
 
 const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("review_asset"), assetId: uuid, decision: z.enum(["approve", "reject"]), reason }),
+  z.object({ action: z.literal("review_campaign"), campaignId: uuid, decision: z.enum(["approve", "reject"]), reason }),
   z.object({ action: z.literal("hide_parcel"), parcelId: uuid, hidden: z.boolean(), reason }),
   z.object({ action: z.literal("revoke_parcel"), parcelId: uuid, reason: z.string().min(3).max(500) }),
   z.object({ action: z.literal("suspend_user"), userId: uuid, suspended: z.boolean(), reason }),
@@ -40,6 +41,9 @@ export const POST = route(async (req) => {
   switch (a.action) {
     case "review_asset":
       await query("select public.px_review_asset($1, $2, $3, $4)", [actor, a.assetId, a.decision, clean(a.reason)]);
+      break;
+    case "review_campaign":
+      await query("select public.px_review_campaign($1, $2, $3, $4)", [actor, a.campaignId, a.decision, clean(a.reason)]);
       break;
     case "hide_parcel":
       await query("select public.px_set_parcel_hidden($1, $2, $3, $4)", [actor, a.parcelId, a.hidden, clean(a.reason)]);

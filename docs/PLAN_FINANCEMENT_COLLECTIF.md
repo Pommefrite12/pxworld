@@ -75,4 +75,10 @@ Autres valeurs par défaut (non discutées, modifiables) : taille minimale d'un 
 
 ## 7. État d'avancement
 
-*(mis à jour à chaque étape)* — étape 1 : à faire.
+*(mis à jour à chaque étape)*
+
+- **Étape 1 — faite** (migration 17) : bouton « Financer à plusieurs » dans le panneau d'achat, même éditeur, envoi à la modération (rien n'est payé, rien n'est réservé), page admin « Projets collectifs » (approuver = la zone est réservée pour la durée choisie ; refuser = un motif lu par le créateur), page « Mes projets collectifs » (suivre, retirer), expiration par la tâche planifiée. **Personne ne peut encore participer.** À faire côté site de test : appliquer la migration 17 (`node scripts/migrate.mjs --env .env.production.local`).
+- Étape 2 : liste publique + fiche + participation (Stripe simulé) + attribution de la parcelle — à faire.
+- Étape 3 : remboursements automatiques (échéance, annulation) — à faire.
+- Étape 4 : affichage sur la carte — à faire.
+- Étape 5 : essai réel Stripe (mode test) — quand Stripe sera possible.

@@ -13,7 +13,7 @@ export default async function AdminLayout({ children, params }: { children: Reac
   const staff = await requirePageStaff(locale); // role re-read from the database on every request
   const t = await getTranslations("admin.nav");
   const items = [
-    ["/admin", t("dashboard")], ["/admin/moderation", t("moderation")], ["/admin/reports", t("reports")], ["/admin/parcels", t("parcels")],
+    ["/admin", t("dashboard")], ["/admin/moderation", t("moderation")], ["/admin/campaigns", t("campaigns")], ["/admin/reports", t("reports")], ["/admin/parcels", t("parcels")],
     ["/admin/users", t("users")], ["/admin/orders", t("orders")], ["/admin/reservations", t("reservations")], ["/admin/settings", t("settings")], ["/admin/audit", t("audit")],
   ] as const;
   return (

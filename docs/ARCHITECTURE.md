@@ -173,12 +173,25 @@ The owner of a parcel (in *My parcels → Draw together*) creates a **secret lin
 * **The link is the capability** (160-bit random token). The owner can renew it (the old one dies, the drawing is kept), switch it off (the drawing is kept), reset the drawing (connected pages reload it), and publish. A parcel hidden by moderation, revoked, or whose owner is suspended stops accepting strokes at once; unknown, closed and hidden links all answer the same 404.
 * **Abuse limits.** Per address: 120 paint requests and 240 reads a minute; per link: 6 000 paint requests a minute; the database refuses anything outside the parcel; owner actions are written to `audit_logs`. The page is `noindex` and sends no referrer, since the URL is a secret.
 
+## 3c. Fund it together (group projects)
+
+A parcel that **several people pay for** (plan and decisions: `PLAN_FINANCEMENT_COLLECTIF.md`). **Step 1 is built: the project and its moderation. Nobody can contribute yet** (steps 2 to 4 come next).
+
+* **The creator** picks a big spot (at least `campaign_min_area`, default 10 000 px), clicks **"Fund it together"** in the buy panel, designs in the **same editor** as a purchase, then gives a title, a description and a duration (**7, 14 or 30 days**) and sends the project to moderation (`POST /api/campaigns`). **Nothing is paid and nothing is held.** The server checks the rectangle and the creation like a purchase does, and **PostgreSQL prices the parcel** (`px_create_campaign`, the same settings and land/water rules as `px_start_order`): that is the goal, frozen in `campaigns.goal_cents`, in the creator's currency (euro in the euro area, dollar elsewhere).
+* **One active project per creator** (`pending` or `open`): a partial unique index is the guarantee, the function gives the clean error `px_campaign_already_active`. A refused, withdrawn or finished project frees the creator.
+* **A moderator decides** (`/admin/campaigns`, `px_review_campaign`, journalled in `audit_logs`). *Approve*: the zone is **held until the deadline** — a `reserved` parcel owned by the creator plus a `held` reservation without an order, so the existing overlap guarantee and the "someone is reserving this area" message work unchanged — and the creation becomes the parcel's first **approved** version, **published only when the parcel is paid for** (the moderator has seen it: no second review). If the zone was taken while the project waited, approval fails cleanly (`px_parcel_unavailable`) and the project stays pending, to be refused with a reason. *Reject*: needs a reason, which the creator reads in *My group projects* (`/account/campaigns`).
+* **Withdrawing** (`px_cancel_campaign`, from the account page): a pending project is simply cancelled; an open one gives its zone back at once. **Time running out**: the maintenance job (`px_expire_campaigns`, called by `runMaintenance` and harmless if the migration is missing) closes an open project past its deadline and releases its zone. Nothing can be contributed yet, so there is nothing to refund; step 3 adds the refunds before a project is closed this way.
+* **The creation of a project** is stored as sent under `campaigns/<user>/…` and served only to its creator and to the staff (`GET /api/campaigns/:id/image`, never cached); the public gets pictures with the list, in step 2. The tables are server-only (RLS on, nothing granted to the browser's roles).
+* **Settings** (admin): `campaign_min_area` (≥ 25) and `campaign_min_contribution_cents` (≥ 50; used from step 2). The durations are fixed (7, 14, 30) in `lib/campaign.ts` and in a CHECK of the table.
+* **A held zone is not a sold one**: it does not count in the public counters, and it is not drawn on the map (the map shows what is active).
+
 ## 4. Modules
 
 * `lib/grid` — pure geometry/pricing shared by client and server (tested exhaustively).
 * `lib/db` — `pg` pool, transactions with deadlock retry. All business writes call `px_*` SQL functions.
 * `lib/auth` — Supabase SSR session (production) or a signed dev cookie (development only, impossible in production).
 * `lib/stripe` — checkout creation, event handling (idempotency ledger), reconciliation, auto-refund.
+* `lib/campaign.ts`, `lib/data/campaigns.ts` — group projects ("Fund it together"): durations and states; the creator's and the moderators' read models.
 * `lib/collab.ts` — drawing together: state/delta reads, validated paint batches, snapshot publishing.
 * `lib/images` — content sniffing, decompression-bomb guard, canonical PNG re-encode, average colour, hash.
 * `lib/storage` — private object store: Supabase Storage in production, local files in development.

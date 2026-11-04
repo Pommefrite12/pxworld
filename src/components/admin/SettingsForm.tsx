@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/grid/pricing";
 
-export function SettingsForm({ values, locale, canEdit }: { values: { price_unit_cents: number; price_unit_cents_usd: number; min_area: number; max_area: number; reservation_ttl_minutes: number; max_active_reservations_per_user: number; sales_open: boolean; sea_price_percent: number; min_land_percent: number; water_price_percent: number; min_water_percent: number; land_cut_price_percent: number }; locale: string; canEdit: boolean }) {
+export function SettingsForm({ values, locale, canEdit }: { values: { price_unit_cents: number; price_unit_cents_usd: number; min_area: number; max_area: number; reservation_ttl_minutes: number; max_active_reservations_per_user: number; sales_open: boolean; sea_price_percent: number; min_land_percent: number; water_price_percent: number; min_water_percent: number; land_cut_price_percent: number; campaign_min_area: number; campaign_min_contribution_cents: number }; locale: string; canEdit: boolean }) {
   const t = useTranslations("admin.settings");
   const router = useRouter();
   const [v, setV] = useState(values);
@@ -36,6 +36,8 @@ export function SettingsForm({ values, locale, canEdit }: { values: { price_unit
       {num("min_water_percent", t("minWater"), t("minWaterHint"))}
       {num("land_cut_price_percent", t("landCut"), t("landCutHint"))}
       {num("max_area", t("maxArea"))}
+      {num("campaign_min_area", t("campaignMinArea"), t("campaignMinAreaHint"))}
+      {num("campaign_min_contribution_cents", t("campaignMinContribution"), t("campaignMinContributionHint", { price: formatMoney(v.campaign_min_contribution_cents, locale, "eur") }))}
       {num("reservation_ttl_minutes", t("ttl"), t("ttlHint"))}
       {num("max_active_reservations_per_user", t("maxHolds"))}
       <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" disabled={!canEdit} checked={v.sales_open} onChange={(e) => setV({ ...v, sales_open: e.target.checked })} />{t("salesOpen")}</label>
