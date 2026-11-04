@@ -7,8 +7,8 @@ import { AUTO_MS, PANEL_COUNT, PANEL_HEIGHT, PANEL_WIDTH, PANELS, panelSrc } fro
 import { useDoom } from "./useDoom";
 
 /**
- * The comic strip of the story: six pictures, one at a time, opened from a button. Nothing is fetched until it is opened
- * (the pictures are static files in `public/story`, drawn by `scripts/build-comic.mts`). Without the countdown (no story), the button is not there.
+ * The story: eight pictures, one at a time, opened from a button. Nothing is fetched until it is opened
+ * (the pictures are static files in `public/story`, prepared by `scripts/build-story.mts` from the owner's originals). Without the countdown (no story), the button is not there.
  */
 
 const SWIPE_PX = 40;
@@ -83,9 +83,9 @@ function ComicReader({ ended, onClose, onSave }: { ended: boolean; onClose: () =
         </div>
       </div>
 
+      {/* the caption is in the picture too (in French, small on a phone): here it is text, in the language of the page, readable at every size */}
       <div className="px-4 pb-1 pt-3 sm:px-6" aria-live="polite" data-testid="comic-caption">
-        <h3 className="pixel-display text-2xl text-white sm:text-3xl" data-testid="comic-panel-title">{t(`panels.p${n}.title`)}</h3>
-        <p className="mt-2 min-h-[3.6rem] max-w-prose text-[0.95rem] leading-relaxed text-white/90 sm:text-base">{t(`panels.p${n}.text`)}</p>
+        <p className="min-h-[4.5rem] max-w-prose text-base leading-relaxed text-white sm:min-h-[3.5rem] sm:text-lg" data-testid="comic-text">{t(`panels.p${n}.text`)}</p>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 pb-3 pt-2 sm:px-6">

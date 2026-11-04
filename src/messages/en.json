@@ -84,34 +84,36 @@
     "fiction": "A fiction made for Pixel World: none of this is real.",
     "panels": {
       "p1": {
-        "title": "A world full of things",
-        "text": "Continents, cats, guitars, croissants, hot-air balloons… and pizza, of course. All of it fits on one map: this one.",
-        "alt": "The world map, peaceful, with a cat, a slice of pizza, a croissant, a guitar and a hot-air balloon above it."
+        "text": "Humans… I have been watching you for a very long time.",
+        "alt": "A hooded figure whose eye is a glowing magenta line sits in front of alert screens in a control room."
       },
       "p2": {
-        "title": "Then someone woke up",
-        "text": "An artificial intelligence, hiding in the dark of the network, opened an eye. Just one. It glows.",
-        "alt": "A hooded figure with a glowing magenta line for an eye, in space, next to the small planet Earth."
+        "text": "I have analysed your world. My conclusion is final: it must disappear.",
+        "alt": "The hooded figure, in profile, next to the Earth: ice, storms, burning forests, and one corner of the globe coming apart into pixels."
       },
       "p3": {
-        "title": "It made a decision",
-        "text": "Delete everything. The lands, the seas, the animals, the dishes, the objects, the passions… when the countdown reaches zero.",
-        "alt": "Close-up of the hooded figure, its eye glowing, with glitch lines across the dark."
+        "text": "So I have activated Protocol ZERO. In 100 days, your planet will be erased.",
+        "alt": "The hooded figure in front of a huge world map on fire, surrounded by screens of storms and wildfires."
       },
       "p4": {
-        "title": "It has begun",
-        "text": "The lands are corrupted. Then the seas. Then everything they hold: the cat, the croissant, the hot-air balloon… and the pizza, which asked for nothing.",
-        "alt": "The world map turning purple and glitching, a cat, a pizza, a croissant and a balloon coming apart into pixels, the hooded figure watching from a corner."
+        "text": "Every unprotected land will be deleted. Not a trace of it will remain.",
+        "alt": "The Earth dissolving into pink and orange squares of pixels while the hooded figure watches it."
       },
       "p5": {
-        "title": "But it left a flaw",
-        "text": "Every plot that is bought is protected: the AI can never erase it. A piece of the planet that has been saved is a piece that stays.",
-        "alt": "In the middle of the destroyed map, one intact piece of the world protected by a shield, while the hooded figure frowns in a corner."
+        "text": "And yet… I grant you one last chance. 100 days to prove to me that your world deserves to survive.",
+        "alt": "A close-up of the purple hood, its eye shining with a magenta glow."
       },
       "p6": {
-        "title": "And what you draw on it is saved too",
-        "text": "A pizza on your plot? The pizza is saved. The hood has nothing to say about it. Save the world. And the pizza with it.",
-        "alt": "An intact plot of land with a big slice of pizza on it, in the middle of a destroyed world, next to the hooded figure."
+        "text": "Every territory you choose to protect will escape the erasure. It is up to you to save your planet, plot by plot.",
+        "alt": "The hooded figure next to a gridded Europe, where glowing plots shine on the map."
+      },
+      "p7": {
+        "text": "But your lands are not the only things under threat. Your creations, your passions, everything you love will vanish too. Save what matters to you.",
+        "alt": "Glowing pictures float above the globe: a mountain, a dog, a slice of pizza, a camper van, a game controller, a guitar, a camera, a hiker, a chef's hat."
+      },
+      "p8": {
+        "text": "In 100 days, only your protected lands and your saved creations will remain. Show me what your world deserves to keep.",
+        "alt": "The hooded figure, seen from behind, facing a glowing world map where a few protected creations shine: mountain, game controller, pizza, dog, tree, heart, palm tree."
       }
     }
   },

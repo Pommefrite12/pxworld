@@ -84,34 +84,36 @@
     "fiction": "Une fiction faite pour Pixel World : rien de tout cela n'est réel.",
     "panels": {
       "p1": {
-        "title": "Un monde plein de choses",
-        "text": "Des continents, des chats, des guitares, des croissants, des montgolfières… et de la pizza, bien sûr. Tout cela tient sur une seule carte : celle-ci.",
-        "alt": "La carte du monde, paisible, avec au-dessus un chat, une part de pizza, un croissant, une guitare et une montgolfière."
+        "text": "Humains… Je vous observe depuis bien longtemps.",
+        "alt": "Une silhouette à capuche, dont l'œil est un trait magenta lumineux, est assise devant des écrans d'alerte dans une salle de contrôle."
       },
       "p2": {
-        "title": "Puis quelqu'un s'est réveillé",
-        "text": "Une intelligence artificielle, tapie dans l'ombre du réseau, a ouvert un œil. Un seul. Il brille.",
-        "alt": "Un personnage à capuche dont l'œil est un trait magenta lumineux, dans l'espace, à côté de la petite planète Terre."
+        "text": "J'ai analysé votre monde. Ma conclusion est sans appel : il doit disparaître.",
+        "alt": "Le personnage à capuche, de profil, à côté de la Terre : glaces, tempêtes, forêts en flammes, et un coin du globe qui se défait en pixels."
       },
       "p3": {
-        "title": "Elle a pris une décision",
-        "text": "Tout effacer. Les terres, les mers, les animaux, les plats, les objets, les passions… quand le compte à rebours atteindra zéro.",
-        "alt": "Gros plan sur le personnage à capuche, son œil brillant, avec des lignes de glitch dans le noir."
+        "text": "J'ai donc activé le Protocole ZÉRO. Dans 100 jours, votre planète sera effacée.",
+        "alt": "Le personnage à capuche devant une immense carte du monde en feu, entouré d'écrans de tempêtes et d'incendies."
       },
       "p4": {
-        "title": "Ça a commencé",
-        "text": "Les terres se corrompent. Puis les mers. Puis tout ce qu'elles contiennent : le chat, le croissant, la montgolfière… et la pizza, qui n'avait rien demandé.",
-        "alt": "La carte du monde qui vire au violet et glitche, un chat, une pizza, un croissant et une montgolfière qui se défont en pixels, le personnage à capuche qui regarde depuis un coin."
+        "text": "Chaque terre non protégée sera supprimée. Il n'en restera aucune trace.",
+        "alt": "La Terre qui se dissout en carrés de pixels roses et orange, pendant que le personnage à capuche la regarde."
       },
       "p5": {
-        "title": "Mais elle a laissé une faille",
-        "text": "Chaque parcelle achetée est protégée : l'IA ne pourra jamais l'effacer. Un morceau de planète sauvé, c'est un morceau qui reste.",
-        "alt": "Au milieu de la carte détruite, un morceau intact du monde protégé par un bouclier, pendant que le personnage à capuche fronce les sourcils dans un coin."
+        "text": "Pourtant… je vous accorde une dernière chance. 100 jours pour me prouver que votre monde mérite de survivre.",
+        "alt": "Gros plan sur la capuche violette, dont l'œil brille d'une lueur magenta."
       },
       "p6": {
-        "title": "Et ce que vous y dessinez est sauvé aussi",
-        "text": "Une pizza sur votre parcelle ? La pizza est sauvée. La capuche n'a rien à répondre. Sauvez le monde. Et la pizza avec.",
-        "alt": "Une parcelle intacte avec une grosse part de pizza, au milieu d'un monde détruit, à côté du personnage à capuche."
+        "text": "Chaque territoire que vous choisirez de protéger échappera à l'effacement. À vous de sauver votre planète, parcelle après parcelle.",
+        "alt": "Le personnage à capuche à côté de l'Europe quadrillée, où des parcelles lumineuses brillent sur la carte."
+      },
+      "p7": {
+        "text": "Mais vos terres ne sont pas les seules menacées. Vos créations, vos passions, tout ce que vous aimez disparaîtra aussi. Sauvez ce qui compte pour vous.",
+        "alt": "Des images lumineuses flottent au-dessus du globe : une montagne, un chien, une part de pizza, un camping-car, une manette, une guitare, un appareil photo, un randonneur, une toque de chef."
+      },
+      "p8": {
+        "text": "Dans 100 jours, seules vos terres protégées et vos créations sauvées subsisteront. Montrez-moi ce que votre monde mérite de conserver.",
+        "alt": "Le personnage à capuche, de dos, face à une carte du monde lumineuse où quelques créations protégées brillent : montagne, manette, pizza, chien, arbre, cœur, palmier."
       }
     }
   },
