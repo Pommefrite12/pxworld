@@ -1,6 +1,6 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { gridAlpha } from "@/lib/map/pixelGrid";
-import { GLITCH_EVERY_MS, GLITCH_FOR_MS, glitchFrame, glitchShift, magentaOrbit, splitMagenta, type GlitchFrame } from "@/lib/doom/glitch";
+import { GLITCH_EVERY_MS, GLITCH_FOR_MS, glitchFrame, glitchReach, glitchShift, magentaOrbit, pickSpots, splitMagenta, type GlitchFrame, type GlitchSpot } from "@/lib/doom/glitch";
 import { cellDevicePx, cellLook, damage, destroyedRuns, field, fringeLook, fringeShift, hash2, levelAlpha, makeRanker, tearOffset, GLITCH } from "@/lib/doom/corruption";
 import { finaleAt, frontX, labelPlan, shakeOffset, shakeZoom, type FinaleFrame } from "@/lib/doom/finale";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
@@ -858,13 +858,13 @@ export class MapEngine {
   }
 
   /* ------------------------------------------------------------------ the bug of the destroyed land, every 30 s */
-  private glitch: { t0: number; mag: boolean } | null = null;
+  private glitch: { t0: number; mag: boolean; seed: number; spots: GlitchSpot[] | null } | null = null;
   private glitchTimer = 0;
   private glitchEvery = GLITCH_EVERY_MS;
 
   /** The picture of the burst to draw now (null: none going on). */
   private glitchPicture(): GlitchFrame | null {
-    return this.glitch ? glitchFrame(performance.now() - this.glitch.t0) : null;
+    return this.glitch ? glitchFrame(performance.now() - this.glitch.t0, this.glitch.seed) : null;
   }
 
   /** From now on a burst happens every `glitchEvery` ms while the story shows destroyed land (a test shortens the wait). */
@@ -882,10 +882,13 @@ export class MapEngine {
    * Starts a burst now: the destroyed zones tear sideways for about a second. Nothing happens for an ordinary map, before anything is
    * destroyed, during the final sequence, in a hidden tab, or for a visitor who asked for fewer animations.
    */
-  glitchNow(): boolean {
+  glitchNow(seed = Math.floor(Math.random() * 2_000_000_000)): boolean {
     if (!this.story || this.story.step < 1 || this.finale || this.fin || this.glitch || this.destroyed) return false;
     if (document.visibilityState === "hidden" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return false;
-    this.glitch = { t0: performance.now(), mag: this.magentaAllowed() };
+    // every burst touches a few zones of the screen drawn anew (its seed), not always the same ones; `glitchEverywhere` (tests) touches all of it
+    const v = this.visibleWorld();
+    const spots = this.glitchEverywhere ? null : pickSpots(seed, v).map((q) => ({ ...q, x: ((q.x % W) + W) % W }));
+    this.glitch = { t0: performance.now(), mag: this.magentaAllowed(), seed, spots };
     this.invalidate();
     return true;
   }
@@ -894,6 +897,8 @@ export class MapEngine {
    * The magenta zones change place during a burst — only when the machine is not struggling (no slow frame lately, an average frame
    * under 30 ms, enough memory), and it stops by itself if a frame of the burst turns out slow. `"on"` / `"off"` force it (tests).
    */
+  private glitchEverywhere = false;
+  setGlitchEverywhere(on: boolean) { this.glitchEverywhere = on; }
   private glitchMagenta: "auto" | "on" | "off" = "auto";
   setGlitchMagenta(mode: "auto" | "on" | "off") { this.glitchMagenta = mode; }
   private magentaAllowed(): boolean {
@@ -928,8 +933,8 @@ export class MapEngine {
    * slid sideways. Where a band slides over a coast, its magenta and cyan fringe moves with it. Bands that slide by the same amount
    * and sit one above the other are drawn in one go.
    */
-  private drawGlitch(tile: HTMLCanvasElement, glitch: GeoGlitch, x: number, y: number, size: number, ty: number, gf: GlitchFrame) {
-    const { runs, R } = glitch, cell = GEO_TILE_PX / R, f = size / GEO_TILE_PX, { ctx } = this;
+  private drawGlitch(tile: HTMLCanvasElement, glitch: GeoGlitch, x: number, y: number, size: number, tx: number, ty: number, grid: number, gf: GlitchFrame) {
+    const { runs, R } = glitch, cell = GEO_TILE_PX / R, f = size / GEO_TILE_PX, { ctx } = this, spots = this.glitch?.spots ?? null;
     let cur: { i0: number; i1: number; dx: number; j0: number; j1: number } | null = null;
     const flush = () => {
       if (!cur) return;
@@ -938,7 +943,9 @@ export class MapEngine {
       cur = null;
     };
     for (const r of runs) {
-      const dx = glitchShift((ty * R + r.j) >> 1, gf);
+      // how much this stretch of the tile is touched by the burst (where it is, in the world): not at all outside the burst's zones
+      const reach = spots ? glitchReach((tx + (r.i0 + r.i1) / 2 / R) * grid, (ty + (r.j + 0.5) / R) * grid, spots) : 1;
+      const dx = glitchShift((ty * R + r.j) >> 1, gf, reach);
       if (!dx) { flush(); continue; }
       if (cur && cur.i0 === r.i0 && cur.i1 === r.i1 && cur.dx === dx && cur.j1 === r.j - 1) cur.j1 = r.j; else { flush(); cur = { i0: r.i0, i1: r.i1, dx, j0: r.j, j1: r.j }; }
     }
@@ -1494,7 +1501,7 @@ export class MapEngine {
         if (gf && tile.glitch && this.glitch?.mag) this.prepareMagenta(tile);
         const base = gf && tile.calm ? tile.calm : tile.c; // the tile without its magenta, while the magenta travels
         ctx.drawImage(base, a.x, a.y, px + 0.6, px + 0.6);
-        if (gf && tile.glitch) this.drawGlitch(base, tile.glitch, a.x, a.y, px + 0.6, ty, gf);
+        if (gf && tile.glitch) this.drawGlitch(base, tile.glitch, a.x, a.y, px + 0.6, tx, ty, size, gf);
         if (gf && tile.mag) travelling.push({ c: tile.mag, x: a.x, y: a.y, size: px + 0.6 });
         if (!tile.complete && tile.ver !== this.geo.version) this.geoPending = true;
         continue;
@@ -1503,8 +1510,14 @@ export class MapEngine {
       this.drawGeoStandIn(k, tx, ty, a.x, a.y, px);
     }
     if (gf && travelling.length) { // the magenta zones, in their place of the moment (one of six round a circle), over the neighbouring tiles too
-      const o = magentaOrbit(gf), f = 1 / GEO_TILE_PX;
-      for (const m of travelling) ctx.drawImage(m.c, m.x + o.dx * m.size * f, m.y + o.dy * m.size * f, m.size, m.size);
+      const o = magentaOrbit(gf), f = 1 / GEO_TILE_PX, zones = this.glitch?.spots ?? null;
+      const put = (dx: number, dy: number) => { for (const m of travelling) ctx.drawImage(m.c, m.x + dx * m.size * f, m.y + dy * m.size * f, m.size, m.size); };
+      if (!zones) put(o.dx, o.dy);
+      else { // only in the burst's zones does the magenta change place; elsewhere it stays where it is
+        const circles = () => { for (const q of zones) { const c = this.worldToScreen(q.x, q.y), r = q.r * s * 0.9; ctx.moveTo(c.x + r, c.y); ctx.arc(c.x, c.y, r, 0, Math.PI * 2); } };
+        ctx.save(); ctx.beginPath(); ctx.rect(0, 0, this.w, this.h); circles(); ctx.clip("evenodd"); put(0, 0); ctx.restore(); // the zones do not overlap: even-odd cuts them out cleanly
+        ctx.save(); ctx.beginPath(); circles(); ctx.clip(); put(o.dx, o.dy); ctx.restore();
+      }
     }
     const fin = this.fin;
     if (fin && this.finTiles.size) { // the final sequence: the end state of the land, behind the front of the sweep (or fading in)

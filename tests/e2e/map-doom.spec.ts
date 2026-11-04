@@ -310,7 +310,7 @@ test("the sequence plays by itself when the countdown reaches zero in front of t
 });
 
 /* ------------------------------------------------------------------ the bug of the destroyed land, every 30 s */
-type GlitchEng = Eng & { glitch: { t0: number; mag: boolean } | null; glitchNow(): boolean; setGlitchEvery(ms: number): void; setGlitchMagenta(mode: "auto" | "on" | "off"): void; geoTiles: Map<string, { calm?: unknown; glitch?: unknown }> };
+type GlitchEng = Eng & { glitch: { t0: number; mag: boolean } | null; glitchNow(seed?: number): boolean; setGlitchEverywhere(on: boolean): void; setGlitchEvery(ms: number): void; setGlitchMagenta(mode: "auto" | "on" | "off"): void; geoTiles: Map<string, { calm?: unknown; glitch?: unknown }> };
 const engine = (page: Page) => page.evaluateHandle(() => (window as unknown as { __pxEngine: GlitchEng }).__pxEngine);
 /** A fingerprint of everything on the canvas (every 5th pixel is enough to see a band move). */
 const fingerprint = (page: Page) => page.getByRole("application").evaluate((c: HTMLCanvasElement) => {
@@ -371,7 +371,7 @@ test("during the bug the magenta zones take six different places, one after the 
   await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
   await page.waitForTimeout(1500);
   const e = await engine(page);
-  await e.evaluate((x) => x.setGlitchMagenta("on"));
+  await e.evaluate((x) => { x.setGlitchMagenta("on"); x.setGlitchEverywhere(true); }); // the whole screen is touched: the centre of all the magenta tells where it goes
   const calm = await fingerprint(page);
   // where the magenta is, on the canvas, at every picture of the burst: its centre
   const centres = await page.getByRole("application").evaluate(async (c: HTMLCanvasElement) => {
@@ -402,4 +402,39 @@ test("during the bug the magenta zones take six different places, one after the 
   expect(await e.evaluate((x) => { x.glitchNow(); return x.glitch?.mag; })).toBe(false);
   await expect.poll(() => e.evaluate((x) => x.glitch === null), { timeout: 5000 }).toBe(true);
   await e.evaluate((x) => { (x as unknown as { slowUntil: number }).slowUntil = 0; });
+});
+
+test("each burst touches other zones of the map, not always the same ones", async ({ page }) => {
+  await page.goto("/?preview=0");
+  await ready(page);
+  await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
+  await page.waitForTimeout(1500);
+  const e = await engine(page);
+  await e.evaluate((x) => { x.setGlitchMagenta("off"); x.setGlitchEverywhere(false); });
+  /** The cells (64 px) of the screen that changed at any moment of the burst `seed`, compared with the calm map. */
+  const touched = async (seed: number) => {
+    const cells = await page.getByRole("application").evaluate(async (c: HTMLCanvasElement, seed) => {
+      const eng = (window as unknown as { __pxEngine: GlitchEng }).__pxEngine, g = c.getContext("2d")!, cell = 64, cols = Math.ceil(c.width / cell);
+      const before = g.getImageData(0, 0, c.width, c.height).data, hit = new Set<number>();
+      eng.glitchNow(seed);
+      const t0 = performance.now();
+      while (eng.glitch && performance.now() - t0 < 2500) {
+        await new Promise((r) => requestAnimationFrame(r));
+        const d = g.getImageData(0, 0, c.width, c.height).data, count = new Map<number, number>();
+        for (let i = 0, p = 0; i < d.length; i += 4, p++) if (d[i] !== before[i] || d[i + 1] !== before[i + 1] || d[i + 2] !== before[i + 2]) { const k = Math.floor(p / c.width / cell) * cols + Math.floor((p % c.width) / cell); count.set(k, (count.get(k) ?? 0) + 1); }
+        for (const [k, n] of count) if (n > 20) hit.add(k);
+      }
+      return { hit: [...hit], total: cols * Math.ceil(c.height / cell) };
+    }, seed);
+    await expect.poll(() => e.evaluate((x) => x.glitch === null), { timeout: 5000 }).toBe(true);
+    return cells;
+  };
+  const a = await touched(111), b = await touched(222), c = await touched(333);
+  for (const r of [a, b, c]) {
+    expect(r.hit.length, "the burst did something").toBeGreaterThan(8);
+    expect(r.hit.length / r.total, "and not on the whole screen").toBeLessThan(0.75);
+  }
+  const different = (x: number[], y: number[]) => { const sx = new Set(x), sy = new Set(y), both = x.filter((k) => sy.has(k)).length; return 1 - both / new Set([...sx, ...sy]).size; };
+  expect(different(a.hit, b.hit), "two bursts touch other zones").toBeGreaterThan(0.25);
+  expect(different(b.hit, c.hit), "and the next one too").toBeGreaterThan(0.25);
 });

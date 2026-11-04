@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GLITCH_EVERY_MS, GLITCH_FOR_MS, GLITCH_FRAME_MS, GLITCH_MAX_PX, GLITCH_ORBIT_PLACES, GLITCH_ORBIT_PX, glitchFrame, glitchShift, isMagenta, magentaOrbit, splitMagenta } from "@/lib/doom/glitch";
+import { GLITCH_EVERY_MS, GLITCH_FOR_MS, GLITCH_FRAME_MS, GLITCH_MAX_PX, GLITCH_ORBIT_PLACES, GLITCH_ORBIT_PX, GLITCH_SPOTS, glitchFrame, glitchReach, glitchShift, isMagenta, magentaOrbit, pickSpots, splitMagenta } from "@/lib/doom/glitch";
 
 describe("the bug of the destroyed land", () => {
   it("happens every 30 seconds and lasts about a second", () => {
@@ -82,6 +82,8 @@ describe("the bug of the destroyed land", () => {
       expect([...layer]).toEqual([0, 0, 0, 0, 255, 46, 147, 255, 255, 46, 147, 255, 0, 0, 0, 0]); // the magenta alone, the rest transparent
       // at the start of a row there is nothing on the left: the neighbour on the right is taken
       expect([...splitMagenta(px(mag, mag, lav), 3, 1).calm]).toEqual([...px(lav, lav, lav)]);
+      // a magenta pixel seen through transparency (a coast over the sea) covered nothing: nothing is left in the tile, whatever its neighbour
+      expect([...splitMagenta(px(cream, [253, 126, 180, 153]), 2, 1).calm]).toEqual([...px(cream, [0, 0, 0, 0])]);
       // transparent pixels (the sea) are never magenta, and a row of nothing but magenta leaves nothing
       expect(splitMagenta(px([255, 46, 147, 0]), 1, 1).count).toBe(0);
       expect([...splitMagenta(px(mag, mag), 2, 1).calm.filter((_, i) => i % 4 === 3)]).toEqual([0, 0]);
@@ -89,6 +91,74 @@ describe("the bug of the destroyed land", () => {
       const plain = px(cream, lav);
       expect(splitMagenta(plain, 2, 1).count).toBe(0);
       expect([...splitMagenta(plain, 2, 1).calm]).toEqual([...plain]);
+    });
+  });
+
+  describe("every burst touches other places", () => {
+    const peak = (seed: number) => glitchFrame(GLITCH_FOR_MS / 2, seed)!;
+    const view = { x0: 18_000, y0: 11_000, x1: 24_800, y1: 15_300 }; // a desktop screen at 0.2×
+
+    it("tears other rows from one burst to the next, though each burst is the same every time it is drawn", () => {
+      const moved = (seed: number) => new Set(Array.from({ length: 2000 }, (_, b) => b).filter((b) => glitchShift(b, peak(seed)) !== 0));
+      const a = moved(1), b = moved(2), a2 = moved(1);
+      expect([...a].filter((x) => a2.has(x)).length).toBe(a.size); // same burst, same rows
+      const same = [...a].filter((x) => b.has(x)).length;
+      expect(same / a.size, "two bursts do not tear the same rows").toBeLessThan(0.6);
+    });
+
+    it("touches nothing where the burst does not reach", () => {
+      for (let band = 0; band < 500; band++) expect(glitchShift(band, peak(5), 0)).toBe(0);
+      let moved = 0;
+      for (let band = 0; band < 2000; band++) if (glitchShift(band, peak(5), 1)) moved++;
+      let half = 0;
+      for (let band = 0; band < 2000; band++) if (glitchShift(band, peak(5), 0.5)) half++;
+      expect(half).toBeLessThan(moved); // less is touched at the edge of a zone
+    });
+
+    it("draws a few zones that do not overlap, inside the view, and other ones for another burst", () => {
+      for (let seed = 1; seed <= 40; seed++) {
+        const spots = pickSpots(seed, view);
+        expect(spots, `seed ${seed}`).toHaveLength(GLITCH_SPOTS);
+        for (const s of spots) { expect(s.x).toBeGreaterThanOrEqual(view.x0); expect(s.x).toBeLessThanOrEqual(view.x1); expect(s.y).toBeGreaterThanOrEqual(view.y0); expect(s.y).toBeLessThanOrEqual(view.y1); }
+        for (let i = 0; i < spots.length; i++) for (let j = i + 1; j < spots.length; j++) expect(Math.hypot(spots[i]!.x - spots[j]!.x, spots[i]!.y - spots[j]!.y), `seed ${seed}: zones apart`).toBeGreaterThanOrEqual(1.9 * spots[0]!.r - 1e-6);
+      }
+      expect(pickSpots(7, view)).toEqual(pickSpots(7, view)); // the same burst, the same zones
+      const first = new Set(Array.from({ length: 30 }, (_, seed) => `${Math.round(pickSpots(seed, view)[0]!.x / 100)},${Math.round(pickSpots(seed, view)[0]!.y / 100)}`));
+      expect(first.size, "other zones from one burst to the next").toBeGreaterThan(20);
+      expect(pickSpots(1, { x0: 0, y0: 0, x1: 10, y1: 10 }).length, "even a tiny view gets one").toBeGreaterThanOrEqual(1);
+    });
+
+    it("reaches a share of the view, not all of it and not nothing", () => {
+      const shares = Array.from({ length: 30 }, (_, seed) => {
+        const spots = pickSpots(seed + 1, view);
+        let touched = 0, n = 0;
+        for (let x = view.x0; x < view.x1; x += 100) for (let y = view.y0; y < view.y1; y += 100) { n++; if (glitchReach(x, y, spots) > 0.5) touched++; }
+        return touched / n;
+      });
+      const mean = shares.reduce((p, c) => p + c, 0) / shares.length;
+      expect(mean).toBeGreaterThan(0.1);
+      expect(mean).toBeLessThan(0.4);
+      expect(Math.max(...shares)).toBeLessThan(0.7);
+    });
+
+    it("is full inside a zone, nothing far from it, smooth between, and the world wraps round", () => {
+      const spot = [{ x: 1000, y: 1000, r: 500 }];
+      expect(glitchReach(1000, 1000, spot)).toBe(1);
+      expect(glitchReach(1000 + 0.6 * 500, 1000, spot)).toBe(1);
+      expect(glitchReach(1000 + 2 * 500, 1000, spot)).toBe(0);
+      const edge = glitchReach(1000 + 0.9 * 500, 1000, spot);
+      expect(edge).toBeGreaterThan(0); expect(edge).toBeLessThan(1);
+      expect(glitchReach(39_900, 1000, [{ x: 100, y: 1000, r: 500 }]), "200 px away across the antimeridian").toBe(1);
+    });
+
+    it("starts the magenta from another of the six places, turning one way or the other, but always through six places", () => {
+      const places = (seed: number) => Array.from({ length: 6 }, (_, n) => { const o = magentaOrbit({ n, power: 1, seed }); return `${o.dx},${o.dy}`; });
+      for (let seed = 0; seed < 8; seed++) expect(new Set(places(seed)).size, `seed ${seed}`).toBe(6);
+      expect(places(1)[0], "another start").not.toBe(places(0)[0]);
+      expect(places(2)[0], "another start").not.toBe(places(0)[0]);
+      expect(places(1).join("|"), "the other way round").not.toBe(places(0).join("|"));
+      const seq = (seed: number) => Array.from({ length: 6 }, (_, n) => magentaOrbit({ n, power: 1, seed }).dy);
+      expect(seq(1)).not.toEqual(seq(0));
     });
   });
 });
