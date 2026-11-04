@@ -25,7 +25,7 @@
 ## 3. Les trois phases
 
 ### Phase 1 — Fonctionnement essentiel : « Que souhaitez-vous sauver ? »
-**Migration 16**
+**Migration 18** *(numéro mis à jour : 16 = prix à 0,25, 17 = projets collectifs)*
 - `concept_categories` (clé, noms FR/EN, ordre) remplie : animaux, gastronomie, culture, inventions, objets, nature, transports, loisirs, monuments, autre.
 - `concepts` (id, catégorie, statut `proposed | approved | rejected | merged`, `merged_into`, auteur, dates, motif de refus).
 - `concept_labels` (concept, langue, texte affiché, texte normalisé ; **unique (langue, texte normalisé)**).
@@ -38,7 +38,7 @@
 **Tests :** normalisation (variantes, accents, pluriels, langues), recherche, rattachement, refus, droits (un non-modérateur ne peut rien valider), compatibilité des parcours existants (achat sans élément).
 
 ### Phase 2 — Rareté et collection : Premier Sauveur
-**Migration 17**
+**Migration 19**
 - `parcel_assets.claim_at` : l'instant de **soumission complète** = le plus tardif de « création déposée » et « parcelle payée » (une création sur une réservation non payée ne compte pas).
 - `concept_badges` (id, **code public** de 10 caractères, concept, création, parcelle, utilisateur, date, statut `active | revoked | merged`, motif) avec l'index unique **`unique (concept_id) where status = 'active'`**.
 - `concept_disputes` (contestations de badge) ; journalisation dans `audit_logs`.

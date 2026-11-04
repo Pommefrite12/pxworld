@@ -27,7 +27,7 @@ parcelle côtière peut contenir de la mer (offerte) mais doit être à moitié 
   administrateurs, journal d'audit non modifiable). Commentaires, signalements, galerie « Découvrir », aperçus de partage sur les réseaux.
 - **Sécurité :** limites de débit, contrôle d'origine, images ré-encodées, politique de sécurité du navigateur, alertes sur les échecs de paiement.
 - **Chiffres réels uniquement :** aucun compteur, utilisateur ou transaction fictif.
-- Environ **340 tests automatiques** (unitaires et base de données) et **100 tests de bout en bout** passent.
+- Environ **460 tests automatiques** (unitaires et base de données) et **170 tests de bout en bout** passent.
 
 ## L'histoire « 100 jours pour sauver le monde » (optionnelle, éteinte tant qu'une date n'est pas fixée)
 

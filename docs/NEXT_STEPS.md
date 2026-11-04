@@ -46,7 +46,7 @@ Anything that is not as you wanted goes to the top of the list.
 ## 4. Deploy in TEST mode (me with you, ~half a day) — **needs your accounts; I never invent keys**
 
 What I need from you, in this order (each one is yours to create; paste nothing secret in the chat — set them in the dashboards, I will tell you where):
-1. A **Supabase** project (region near your Vercel one): I give you the migrations 1–15 and `storage.sql` to run, you tell me when it is done.
+1. A **Supabase** project (region near your Vercel one): I give you the migrations 1–17 and `storage.sql` to run, you tell me when it is done.
 2. A **Vercel** project linked to this repository (branch `claude/funny-bell-k7v5xf` or `main`), with the environment variables of `.env.example` (production block only). `scripts/check-env.mts` tells you what is missing.
 3. A **Stripe account in test mode**: the test secret key, and the webhook endpoint pointing at `https://<domain>/api/stripe/webhook` with its signing secret.
 4. Then, together: one full purchase with a test card (in euros, then — with a VPN or by asking Stripe's test mode — in dollars), a parcel at sea refused (`422 px_not_on_land`), one on land accepted, `node scripts/smoke.mjs https://<domain>`.
