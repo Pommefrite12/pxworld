@@ -165,6 +165,20 @@ test.describe("map interaction", () => {
     await expect(page.getByRole("listbox").getByRole("option").first()).toContainText("Japon"); // country names follow the interface language
   });
 
+  test("typing in the search box never breaks the page: places without a country (Somaliland, Kashmir…) and every single letter", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    await page.goto("/fr");
+    const search = page.getByRole("combobox").first();
+    await search.fill("Somaliland");
+    await expect(page.getByRole("listbox").getByRole("option").first()).toContainText("Somaliland");
+    for (const letter of "abcdefghijklmnopqrstuvwxyz") await search.fill(letter);
+    await search.fill("k");
+    await expect(page.getByRole("listbox").getByRole("option").first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Une erreur est survenue" })).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
   test("buy mode: clicking the map places a parcel, collisions and bounds are reported", async ({ page }) => {
     await page.goto("/map?x=26000&y=11000&z=0.6"); // Kazakhstan: dry land all around
     // the button works once the page is interactive: a click before hydration does nothing

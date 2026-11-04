@@ -30,7 +30,15 @@ export function SearchBox({ onGo, className = "" }: { onGo: (t: SearchTarget) =>
   const [extra, setExtra] = useState<Awaited<ReturnType<typeof loadSearchIndex>> | null>(null);
   const id = useId();
   const box = useRef<HTMLDivElement>(null);
-  const regions = useMemo(() => new Intl.DisplayNames([locale], { type: "region" }), [locale]);
+  // the country of a place, in the language of the page. A few places of the index have no country ("-1": Somaliland, Kashmir, Baikonur…) and
+  // `Intl.DisplayNames.of` throws on a code that is not two letters: it crashed the whole page as soon as a query matched one of them.
+  const regionOf = useMemo(() => {
+    const names = new Intl.DisplayNames([locale], { type: "region" });
+    return (cc: string) => {
+      if (!/^[A-Za-z]{2}$/.test(cc)) return "";
+      try { return names.of(cc) ?? cc; } catch { return cc; }
+    };
+  }, [locale]);
 
   useEffect(() => {
     if (!open) return;
@@ -77,7 +85,7 @@ export function SearchBox({ onGo, className = "" }: { onGo: (t: SearchTarget) =>
     const cityScale = (pop: number) => (pop >= 1_000_000 ? 3 : pop >= 100_000 ? 5 : 8);
     const city = (name: string, cc: string, pop: number, x: number, y: number) => {
       const nn = norm(name);
-      if (nn.includes(n)) hits.push({ starts: nn.startsWith(n), weight: pop, r: { key: `p-${name}-${cc}-${x}`, label: name, sub: `${t("city")} · ${regions.of(cc) ?? cc}`, target: { kind: "point", x, y, scale: cityScale(pop) } } });
+      if (nn.includes(n)) hits.push({ starts: nn.startsWith(n), weight: pop, r: { key: `p-${name}-${cc}-${x}`, label: name, sub: [t("city"), regionOf(cc)].filter(Boolean).join(" · "), target: { kind: "point", x, y, scale: cityScale(pop) } } });
     };
     for (const c of places.cities) city(c.en, c.cc, c.pop, c.x, c.y);
     if (extra) {
@@ -87,7 +95,7 @@ export function SearchBox({ onGo, className = "" }: { onGo: (t: SearchTarget) =>
         if (!nn.includes(n) && !norm(l.en).includes(n)) continue;
         hits.push({
           starts: nn.startsWith(n), weight: l.s * 400, // a unit is a "bigger hit" than a town of the same name
-          r: { key: `a-${l.en}-${l.cc}-${l.x}`, label: name, sub: `${l.dep ? t("department") : t("region")} · ${regions.of(l.cc) ?? l.cc}`, target: { kind: "point", x: l.x, y: l.y, scale: Math.min(8, Math.max(0.5, 380 / Math.max(l.s, 1))) } },
+          r: { key: `a-${l.en}-${l.cc}-${l.x}`, label: name, sub: [l.dep ? t("department") : t("region"), regionOf(l.cc)].filter(Boolean).join(" · "), target: { kind: "point", x: l.x, y: l.y, scale: Math.min(8, Math.max(0.5, 380 / Math.max(l.s, 1))) } },
         });
       }
       for (const c of extra.towns) city(c.name, c.cc, c.pop, c.x, c.y);
@@ -95,7 +103,7 @@ export function SearchBox({ onGo, className = "" }: { onGo: (t: SearchTarget) =>
     hits.sort((a, b) => Number(b.starts) - Number(a.starts) || b.weight - a.weight);
     for (const h of hits) { if (out.length >= 8) break; if (!out.some((o) => o.key === h.r.key)) out.push(h.r); }
     return out;
-  }, [q, places, extra, locale, regions, t]);
+  }, [q, places, extra, locale, regionOf, t]);
 
   const go = (r: Result | undefined) => {
     if (!r) return;

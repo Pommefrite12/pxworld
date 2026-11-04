@@ -177,11 +177,29 @@ test("under the picture there are only the dots: no caption, no \"picture x of y
   expect(m.below).toBeLessThanOrEqual(20);
 });
 
+test("the button says \"Learn more\"; the window has no visible title: it starts with the picture, the close button sits on it", async ({ page }) => {
+  await page.goto("/?preview=J-9");
+  await expect(page.getByTestId("comic-open")).toHaveText("Learn more");
+  await page.getByTestId("comic-open").click();
+  const comic = page.getByTestId("comic");
+  await expect(comic.getByRole("heading", { name: "The story" })).toBeAttached(); // it names the window for screen readers…
+  expect((await comic.getByRole("heading", { name: "The story" }).boundingBox())?.width ?? 0, "…but is not shown").toBeLessThan(3);
+  await expect(comic).toHaveAccessibleName("The story");
+  const m = await comic.evaluate((d) => {
+    const dlg = d.getBoundingClientRect(), img = d.querySelector('[data-testid="comic-image"]')!.getBoundingClientRect(), x = d.querySelector('[data-testid="comic-close"]')!.getBoundingClientRect();
+    return { above: img.top - dlg.top, onPicture: x.top >= img.top && x.right <= img.right && x.bottom <= img.bottom && x.left >= img.left };
+  });
+  expect(m.above, "nothing above the picture but a margin").toBeLessThanOrEqual(20);
+  expect(m.onPicture, "the close button is on the picture").toBe(true);
+  await page.goto("/fr?preview=J-9");
+  await expect(page.getByTestId("comic-open")).toHaveText("En savoir plus");
+});
+
 test("the map keeps its colours when the window opens: nothing is darkened behind it", async ({ page }) => {
   await page.setViewportSize({ width: 1360, height: 860 });
   await page.goto("/?preview=J-9");
   await page.waitForTimeout(1500);
-  const strip = { x: 0, y: 300, width: 190, height: 300 }; // the left edge of the map, beside the window
+  const strip = { x: 0, y: 300, width: 140, height: 300 }; // the left edge of the map, beside the window (it starts about 180 px from the edge)
   const mean = async () => (await sharp(await page.screenshot({ clip: strip })).stats()).channels.map((c) => c.mean);
   const before = await mean();
   await page.getByTestId("comic-open").click();

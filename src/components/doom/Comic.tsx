@@ -70,12 +70,10 @@ function ComicReader({ ended, onClose, onSave }: { ended: boolean; onClose: () =
   return (
     <dialog ref={dlg} onCancel={(e) => { e.preventDefault(); onClose(); }} onKeyDown={onKeyDown} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} aria-labelledby="comic-title" data-testid="comic"
       className="comic pointer-events-auto m-0 mx-auto mt-[2dvh] mb-0 max-h-[96dvh] max-w-none w-[min(62rem,calc(100vw-1rem),calc((100dvh-23rem)*1.7778+2.5rem))] overflow-y-auto rounded-[var(--radius-card)] bg-[#0b0a14] p-0 text-white shadow-[var(--shadow-float)] backdrop:bg-transparent">
-      <div className="flex items-center justify-between gap-3 px-4 py-2 sm:px-5">
-        <h2 id="comic-title" className="pixel-display text-lg tracking-wider text-[var(--color-glitch-cyan)] sm:text-xl">{t("title")}</h2>
-        <button type="button" className="btn btn-secondary btn-icon btn-sm text-lg" aria-label={t("close")} onClick={onClose} data-testid="comic-close">×</button>
-      </div>
+      {/* no visible title (the owner asked for it to go); it stays as the window's name for screen readers, and the close button sits on the picture */}
+      <h2 id="comic-title" className="sr-only">{t("title")}</h2>
 
-      <div className="px-3 sm:px-5"
+      <div className="px-3 pt-3 sm:px-5 sm:pt-4"
         onTouchStart={(e) => { touch.current = e.touches[0]?.clientX ?? null; }}
         onTouchEnd={(e) => {
           const from = touch.current; touch.current = null;
@@ -87,6 +85,7 @@ function ComicReader({ ended, onClose, onSave }: { ended: boolean; onClose: () =
         <div className="relative aspect-video w-full overflow-hidden rounded-[10px] bg-black shadow-[0_0_0_2px_var(--color-glitch-magenta),4px_4px_0_var(--color-glitch-cyan)]">
           {wipe && <img src={panelSrc(wipe.from + 1)} alt="" aria-hidden="true" width={PANEL_WIDTH} height={PANEL_HEIGHT} className="absolute inset-0 h-full w-full object-contain" data-testid="comic-image-old" draggable={false} />}
           <img key={n} src={panelSrc(n)} alt={t(`panels.p${n}.alt`)} width={PANEL_WIDTH} height={PANEL_HEIGHT} className="comic-wipe absolute inset-0 h-full w-full object-contain" data-wipe={wipe?.dir} data-testid="comic-image" draggable={false} />
+          <button type="button" className="absolute right-2 top-2 z-10 grid h-9 w-9 place-items-center rounded-full border border-white/40 bg-black/55 text-xl leading-none text-white hover:bg-black/75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:h-10 sm:w-10" aria-label={t("close")} onClick={onClose} data-testid="comic-close"><span aria-hidden="true">×</span></button>
           <button type="button" className={`${arrow} left-2`} aria-label={t("previous")} onClick={() => go(index - 1)} disabled={index === 0} data-testid="comic-prev"><span aria-hidden="true">‹</span></button>
           <button type="button" className={`${arrow} right-2`} aria-label={t("next")} onClick={() => go(index + 1)} disabled={index === last} data-testid="comic-next"><span aria-hidden="true">›</span></button>
         </div>

@@ -1,4 +1,4 @@
-// Prepares the pictures of the story ("Read the story" button) from the owner's originals.
+// Prepares the pictures of the story ("Learn more" button) from the owner's originals.
 //
 //   npx tsx scripts/build-story.mts
 //
