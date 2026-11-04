@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { metersPerPixel, pixelToLonLat } from "@/lib/grid/geometry";
 import { assetUrl } from "@/lib/images/sizes";
@@ -116,18 +116,5 @@ export function MapControls({ cam, onZoomIn, onZoomOut, onFit, className = "" }:
         </button>
       </div>
     </div>
-  );
-}
-
-export function CursorReadout({ x, y }: { x: number; y: number }) {
-  const f = useFormatter();
-  const locale = useLocale();
-  const { lon, lat } = pixelToLonLat(x, y);
-  const dir = (v: number, pos: string, neg: string) => `${Math.abs(v).toFixed(3)}°${v >= 0 ? pos : neg}`;
-  void locale;
-  return (
-    <p className="pixel-num pointer-events-none hidden badge-px px-3 py-1 text-[0.7rem] md:block" aria-hidden data-testid="cursor-readout">
-      x {f.number(Math.floor(x))} · y {f.number(Math.floor(y))} <span className="text-ink-faint">| {dir(lat, "N", "S")} {dir(lon, "E", "W")}</span>
-    </p>
   );
 }

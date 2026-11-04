@@ -195,6 +195,25 @@ test("the button says \"Learn more\"; the window has no visible title: it starts
   await expect(page.getByTestId("comic-open")).toHaveText("En savoir plus");
 });
 
+test("the arrows and the close button are pixel buttons: stair-step corners, a pixel-grid glyph with no smoothing, no text arrow", async ({ page }) => {
+  await page.goto("/?preview=J-9");
+  await page.getByTestId("comic-open").click();
+  for (const [id, glyph] of [["comic-prev", "prev"], ["comic-next", "next"], ["comic-close", "close"]] as const) {
+    const b = page.getByTestId(id);
+    await expect(b).toHaveClass(/btn-comic/);
+    await expect(b.getByTestId(`comic-glyph-${glyph}`)).toHaveAttribute("shape-rendering", "crispEdges");
+    await expect(b).not.toContainText(/[‹›×]/);
+    expect(await b.evaluate((e) => getComputedStyle(e, "::before").clipPath), `${id}: stepped corners`).toContain("polygon");
+    const box = (await b.boundingBox())!;
+    expect(Math.abs(box.width - box.height), `${id}: square`).toBeLessThanOrEqual(1);
+  }
+  // they still work
+  await page.getByTestId("comic-next").click();
+  await expect(page.getByTestId("comic-position")).toHaveText("Picture 2 of 8");
+  await page.getByTestId("comic-prev").click();
+  await expect(page.getByTestId("comic-position")).toHaveText("Picture 1 of 8");
+});
+
 test("the map keeps its colours when the window opens: nothing is darkened behind it", async ({ page }) => {
   await page.setViewportSize({ width: 1360, height: 860 });
   await page.goto("/?preview=J-9");

@@ -13,6 +13,28 @@ import { useDoom } from "./useDoom";
 
 const SWIPE_PX = 40;
 
+/**
+ * The arrows and the cross of the story are drawn on a pixel grid (1 unit = 2 px, no smoothing), in white with the cyan and magenta of the
+ * glitch split half a unit to each side. An arrow is a run of two squares per row, moving one square right then back.
+ */
+const ARROW = [0, 1, 2, 3, 4, 3, 2, 1, 0];
+const GLYPHS = {
+  next: { w: 6, h: 9, d: ARROW.map((x, y) => `M${x} ${y}h2v1h-2z`).join("") },
+  prev: { w: 6, h: 9, d: ARROW.map((x, y) => `M${4 - x} ${y}h2v1h-2z`).join("") },
+  close: { w: 7, h: 7, d: Array.from({ length: 7 }, (_, i) => `M${i} ${i}h1v1h-1zM${6 - i} ${i}h1v1h-1z`).join("") },
+} as const;
+
+function PixelGlyph({ name }: { name: keyof typeof GLYPHS }) {
+  const { w, h, d } = GLYPHS[name];
+  return (
+    <svg aria-hidden="true" viewBox={`-1 0 ${w + 2} ${h}`} width={(w + 2) * 2} height={h * 2} shapeRendering="crispEdges" data-testid={`comic-glyph-${name}`}>
+      <path d={d} transform="translate(-0.5 0)" fill="var(--color-glitch-cyan)" />
+      <path d={d} transform="translate(0.5 0)" fill="var(--color-glitch-magenta)" />
+      <path d={d} fill="#fff" />
+    </svg>
+  );
+}
+
 export function ComicButton({ onSave, ended = false, className = "" }: { onSave: () => void; ended?: boolean; className?: string }) {
   const d = useDoom();
   const t = useTranslations("comic");
@@ -65,7 +87,7 @@ function ComicReader({ ended, onClose, onSave }: { ended: boolean; onClose: () =
     if (e.key === "ArrowRight") { e.preventDefault(); go(index + 1); }
     else if (e.key === "ArrowLeft") { e.preventDefault(); go(index - 1); }
   };
-  const arrow = "absolute top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-white/40 bg-black/55 text-2xl leading-none text-white transition-opacity hover:bg-black/75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white disabled:pointer-events-none disabled:opacity-0 sm:h-11 sm:w-11";
+  const arrow = "btn btn-comic absolute top-1/2 z-10 -translate-y-1/2 !min-h-0 !h-10 !w-10 !p-0 disabled:pointer-events-none disabled:opacity-0 sm:!h-11 sm:!w-11";
 
   return (
     <dialog ref={dlg} onCancel={(e) => { e.preventDefault(); onClose(); }} onKeyDown={onKeyDown} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} aria-labelledby="comic-title" data-testid="comic"
@@ -85,9 +107,9 @@ function ComicReader({ ended, onClose, onSave }: { ended: boolean; onClose: () =
         <div className="relative aspect-video w-full overflow-hidden rounded-[10px] bg-black shadow-[0_0_0_2px_var(--color-glitch-magenta),4px_4px_0_var(--color-glitch-cyan)]">
           {wipe && <img src={panelSrc(wipe.from + 1)} alt="" aria-hidden="true" width={PANEL_WIDTH} height={PANEL_HEIGHT} className="absolute inset-0 h-full w-full object-contain" data-testid="comic-image-old" draggable={false} />}
           <img key={n} src={panelSrc(n)} alt={t(`panels.p${n}.alt`)} width={PANEL_WIDTH} height={PANEL_HEIGHT} className="comic-wipe absolute inset-0 h-full w-full object-contain" data-wipe={wipe?.dir} data-testid="comic-image" draggable={false} />
-          <button type="button" className="absolute right-2 top-2 z-10 grid h-9 w-9 place-items-center rounded-full border border-white/40 bg-black/55 text-xl leading-none text-white hover:bg-black/75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:h-10 sm:w-10" aria-label={t("close")} onClick={onClose} data-testid="comic-close"><span aria-hidden="true">×</span></button>
-          <button type="button" className={`${arrow} left-2`} aria-label={t("previous")} onClick={() => go(index - 1)} disabled={index === 0} data-testid="comic-prev"><span aria-hidden="true">‹</span></button>
-          <button type="button" className={`${arrow} right-2`} aria-label={t("next")} onClick={() => go(index + 1)} disabled={index === last} data-testid="comic-next"><span aria-hidden="true">›</span></button>
+          <button type="button" className="btn btn-comic absolute right-2 top-2 z-10 !min-h-0 !h-9 !w-9 !p-0 sm:!h-10 sm:!w-10" aria-label={t("close")} onClick={onClose} data-testid="comic-close"><PixelGlyph name="close" /></button>
+          <button type="button" className={`${arrow} left-2`} aria-label={t("previous")} onClick={() => go(index - 1)} disabled={index === 0} data-dir="prev" data-testid="comic-prev"><PixelGlyph name="prev" /></button>
+          <button type="button" className={`${arrow} right-2`} aria-label={t("next")} onClick={() => go(index + 1)} disabled={index === last} data-dir="next" data-testid="comic-next"><PixelGlyph name="next" /></button>
         </div>
       </div>
 

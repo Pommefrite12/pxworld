@@ -179,6 +179,16 @@ test.describe("map interaction", () => {
     expect(errors).toEqual([]);
   });
 
+  test("there is no tile of GPS coordinates following the cursor", async ({ page }) => {
+    await page.goto("/map");
+    const box = (await page.getByRole("application").boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.move(box.x + box.width / 2 + 40, box.y + box.height / 2 + 20);
+    await page.waitForTimeout(400);
+    await expect(page.getByTestId("cursor-readout")).toHaveCount(0);
+    await expect(page.locator("body")).not.toContainText(/°\s?[NS]\b/);
+  });
+
   test("buy mode: clicking the map places a parcel, collisions and bounds are reported", async ({ page }) => {
     await page.goto("/map?x=26000&y=11000&z=0.6"); // Kazakhstan: dry land all around
     // the button works once the page is interactive: a click before hydration does nothing

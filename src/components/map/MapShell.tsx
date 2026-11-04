@@ -8,11 +8,11 @@ import { BuyPanel, type ServerFree } from "@/components/buy/BuyPanel";
 import type { ParcelKind, Pricing } from "@/lib/grid/pricing";
 import { CheckoutDialog } from "@/components/buy/CheckoutDialog";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
-import { centeredRect, clampToGrid, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
+import { centeredRect, clampToGrid, type Rect } from "@/lib/grid/geometry";
 import type { PublicStats } from "@/lib/data/map";
 import { MapView, type MapViewHandle } from "./MapView";
 import type { Camera, MapParcel, Mode, SelectionState } from "./engine";
-import { CursorReadout, LatestTile, MapControls, StatsCard, type LatestCreation } from "./Hud";
+import { LatestTile, MapControls, StatsCard, type LatestCreation } from "./Hud";
 import { ParcelCard } from "./ParcelCard";
 import { DoomActions, DoomMessage, DoomPlate } from "@/components/doom/Doom";
 import { endFinale, finaleInfo, useFinaleDuring } from "@/components/doom/finaleStore";
@@ -49,7 +49,6 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
   const [engineReady, setEngineReady] = useState(false);
   const [stats, setStats] = useState(initialStats);
   const [cam, setCam] = useState<Camera>(initial.camera ?? { x: GRID_WIDTH / 2, y: GRID_HEIGHT / 2, scale: 0.03 });
-  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [mode, setMode] = useState<Mode>("explore");
   const [size, setSize] = useState(initial.buy ? { w: initial.buy.w, h: initial.buy.h } : DEFAULT_SIZE);
   const [selection, setSelection] = useState<Rect | null>(null);
@@ -218,7 +217,6 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
           mapVersion={stats?.mapVersion ?? 1}
           onReady={() => setEngineReady(true)}
           onCamera={setCam}
-          onCursor={(x, y) => setCursor({ x, y })}
           onSelectParcel={onSelectParcel}
           onPlace={(r) => setSelection(r)}
           onSelectionState={setSelState}
@@ -246,7 +244,6 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
           <div className="flex max-w-[calc(100%-4.5rem)] flex-col items-start gap-2 sm:max-w-none">
             {mode === "explore" && <LatestTile items={latest} onPick={pickLatest} />}
             {stats ? <StatsCard stats={stats} compact={!fullStats} /> : <p className="card pointer-events-auto px-4 py-3 text-sm text-ink-soft">{t("statsUnavailable")}</p>}
-            {cursor && <CursorReadout x={cursor.x} y={cursor.y} />}
             <p className="pointer-events-auto badge-px px-3 py-1 text-[0.65rem] text-ink-faint">
               © Natural Earth · GeoNames · <Link href="/credits" className="underline">{t("credits")}</Link>
             </p>

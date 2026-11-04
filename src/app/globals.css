@@ -119,6 +119,15 @@
   .btn-ink:is(:hover, .is-hover):not(:disabled):not([aria-disabled="true"]) { --face: #2d3768; }
   .btn-ink:is(:active, .is-active):not(:disabled):not([aria-disabled="true"]) { --face: #161b34; }
 
+  /* the story's buttons (arrows, close): the same stair-step pixel button, but dark with a magenta edge and a hard cyan shadow, like the frame of the pictures */
+  .btn-comic { --s: 3px; --edge: var(--color-glitch-magenta); --edge-dark: #a8135f; --face: linear-gradient(#2a1d57, #170f33); --hl: rgb(180 160 255 / 0.4); --ink: #fff; filter: drop-shadow(3px 3px 0 var(--color-glitch-cyan)); }
+  .btn-comic:is(:hover, .is-hover):not(:disabled) { --face: linear-gradient(#41307f, #2a1d57); --hl: rgb(255 255 255 / 0.55); }
+  .btn.btn-comic:is(:active, .is-active):not(:disabled) { --face: linear-gradient(#170f33, #120b2a); filter: drop-shadow(1px 1px 0 var(--color-glitch-cyan)); }
+  .btn.btn-comic:focus-visible { outline-color: #fff; }
+  .btn-comic svg { transition: translate 0.1s ease-out; }
+  .btn-comic[data-dir="next"]:hover:not(:disabled) svg { translate: 2px 0; }
+  .btn-comic[data-dir="prev"]:hover:not(:disabled) svg { translate: -2px 0; }
+
   /* secondary (cream) and ghost (white): hover goes sky, pressed goes deeper sky */
   .btn-secondary { --edge: #dccfb6; --edge-dark: #cdbfa4; --face: #f7f2e6; }
   .btn-ghost { --edge: var(--color-line); --edge-dark: #d9ccb4; --face: #fff; }
@@ -241,4 +250,4 @@
 .comic-wipe[data-wipe="prev"] { animation: comic-wipe-prev 0.45s ease-out both; }
 @keyframes comic-wipe-next { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0 0 0 0); } }
 @keyframes comic-wipe-prev { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
-@media (prefers-reduced-motion: reduce) { .comic-wipe { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .comic-wipe { animation: none !important; } .btn-comic svg { transition: none; } }

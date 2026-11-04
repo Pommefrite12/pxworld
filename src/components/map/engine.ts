@@ -35,7 +35,6 @@ export interface EngineCallbacks {
   onCamera?: (c: Camera) => void;
   onHover?: (p: MapParcel | null) => void;
   onSelectParcel?: (p: MapParcel | null, screen: { x: number; y: number }) => void;
-  onCursor?: (wx: number, wy: number) => void;
   onPlace?: (r: Rect) => void;
   onSelectionState?: (s: SelectionState) => void;
   /** Land pixels inside the selection (null while unknown or when nothing is selected). */
@@ -596,7 +595,6 @@ export class MapEngine {
 
   private hover(sx: number, sy: number, type: string) {
     const w = this.screenToWorld(sx, sy);
-    this.cb.onCursor?.(w.x, w.y);
     if (type !== "mouse") return;
     if (this.mode === "buy" && this.brush && !this.selection) {
       this.ghost = centeredRect(w.x, w.y, this.brush.w, this.brush.h);

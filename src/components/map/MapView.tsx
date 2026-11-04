@@ -31,7 +31,6 @@ export const MapView = forwardRef<MapViewHandle, Props>(function MapView({ label
       onCamera: (c) => cbRef.current.onCamera?.(c),
       onHover: (p) => cbRef.current.onHover?.(p),
       onSelectParcel: (p, s) => cbRef.current.onSelectParcel?.(p, s),
-      onCursor: (x, y) => cbRef.current.onCursor?.(x, y),
       onPlace: (r) => cbRef.current.onPlace?.(r),
       onSelectionState: (s) => cbRef.current.onSelectionState?.(s),
       onSelectionLand: (l) => cbRef.current.onSelectionLand?.(l),
