@@ -58,7 +58,7 @@
 | Parcours | Effet |
 |---|---|
 | Achat (`/api/checkout`, boîte d'achat) | un champ facultatif en plus ; **le prix, Stripe et la réservation ne changent pas** ; un élément refusé ne bloque jamais la parcelle |
-| Modification d'une création | l'élément peut être changé : une nouvelle création = une nouvelle revendication ; un badge déjà attribué reste attaché à **la création qui l'a obtenu** (conservée, même remplacée) |
+| Modification d'une création | l'image et le texte restent modifiables ; **l'élément est figé une fois validé** (décision du propriétaire) ; un badge reste attaché à la création qui l'a obtenu |
 | Modération | la file affiche l'élément revendiqué ; une décision peut valider la création et l'élément en un geste |
 | Carte, rasters, tuiles | aucun changement |
 | Remboursement / contestation de paiement | la parcelle redevient libre → ses revendications tombent → le badge éventuel est révoqué avec motif et passe à la revendication suivante |
@@ -78,8 +78,27 @@
 9. **Partage** → les images ne montrent « Premier Sauveur » que pour un badge actif ; le reste est « en attente de validation ».
 10. **Déploiement** → colonnes ajoutées facultatives (l'existant reste intact) ; migrations à appliquer sur Supabase **avant** le déploiement (même procédure que la migration 15).
 
-## 6. Décisions à prendre avant la phase 1
+## 6. Décisions du propriétaire (prises le 2026-11-04)
 
+| # | Question | Décision |
+|---|---|---|
+| 1 | Date de priorité | **Le plus tardif de « création déposée » et « parcelle payée »** : une création sur une réservation non payée ne compte pas. |
+| 2 | Changer d'élément après validation | **Non : l'élément est figé une fois validé** pour cette parcelle. La création (image, texte) reste modifiable, l'élément ne change plus. Corriger une erreur = demande au support/à un modérateur (journalisée), pas un champ libre. *(Différent de ma recommandation, qui permettait le changement avec une nouvelle revendication : le plan est ajusté en conséquence, voir ci-dessous.)* |
+| 3 | Fusion de deux éléments qui ont chacun un badge | **Décision de l'administrateur, au cas par cas** (pas de règle automatique). Chaque fusion est journalisée ; aucun badge n'est supprimé en silence (il reste visible, marqué « fusionné » ou « révoqué » avec motif). |
+| 4 | Marques | **Refusées par défaut** (liste de refus + modération). Une exception reste possible plus tard, par décision. |
+| 5 | Catégories | **La liste proposée** : animaux, gastronomie, culture, inventions, objets, nature, transports, loisirs, monuments, autre. |
+| 6 | Après zéro | **Modération poursuivie sans limite de date ; plus aucune nouvelle revendication après zéro** ; un paiement déjà en cours est honoré avec sa date. Le Registre devient une archive en lecture seule. |
+| 7 | Style des badges | **À décider sur maquettes** (2 ou 3 badges dessinés, sans toucher au site). |
+| 8 | Section principale de l'accueil | **À faire ensuite, avec de nouvelles maquettes** (en cours). |
+
+Conséquences sur le plan :
+* **Phase 1** : `px_review_asset` n'a plus à gérer « changer d'élément » ; une fois l'élément validé (`concept_id` + statut `approved`), `px_add_asset` pour une nouvelle version de la même parcelle **reprend l'élément de la version précédente** et refuse un autre (`px_concept_locked`). Un modérateur peut corriger (action journalisée).
+* **Phase 2** : plus de « nouvelle revendication à chaque changement » : une revendication par (parcelle, élément), donc moins de cas limites pour `px_resolve_first_saviour`.
+* **Phase 3** : l'écran d'administration des fusions est un **outil de décision manuelle** (aperçu des deux éléments, des deux badges, bouton « fusionner vers… » avec motif obligatoire), pas une règle.
+
+*(Section d'origine, gardée pour mémoire : les questions avec ma recommandation.)*
+
+## 6 bis. Les questions telles qu'elles étaient posées
 1. **Date de priorité** : « le plus tardif de création déposée et parcelle payée » (recommandé) ?
 2. **Changer d'élément après validation** : permis, avec nouvelle revendication, le badge restant à la création d'origine (recommandé) ?
 3. **Fusion de deux badges** : le plus ancien gagne, l'autre devient « fusionné » visible (recommandé) ?
