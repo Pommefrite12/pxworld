@@ -69,7 +69,7 @@ function ComicReader({ ended, onClose, onSave }: { ended: boolean; onClose: () =
 
   return (
     <dialog ref={dlg} onCancel={(e) => { e.preventDefault(); onClose(); }} onKeyDown={onKeyDown} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} aria-labelledby="comic-title" data-testid="comic"
-      className="comic pointer-events-auto m-0 mx-auto mt-[2dvh] mb-0 max-h-[96dvh] max-w-none w-[min(62rem,calc(100vw-1rem),calc((100dvh-23rem)*1.7778+2.5rem))] overflow-y-auto rounded-[var(--radius-card)] bg-[#0b0a14] p-0 text-white shadow-[var(--shadow-float)] backdrop:bg-black/80">
+      className="comic pointer-events-auto m-0 mx-auto mt-[2dvh] mb-0 max-h-[96dvh] max-w-none w-[min(62rem,calc(100vw-1rem),calc((100dvh-23rem)*1.7778+2.5rem))] overflow-y-auto rounded-[var(--radius-card)] bg-[#0b0a14] p-0 text-white shadow-[var(--shadow-float)] backdrop:bg-transparent">
       <div className="flex items-center justify-between gap-3 px-4 py-2 sm:px-5">
         <h2 id="comic-title" className="pixel-display text-lg tracking-wider text-[var(--color-glitch-cyan)] sm:text-xl">{t("title")}</h2>
         <button type="button" className="btn btn-secondary btn-icon btn-sm text-lg" aria-label={t("close")} onClick={onClose} data-testid="comic-close">×</button>
@@ -92,22 +92,19 @@ function ComicReader({ ended, onClose, onSave }: { ended: boolean; onClose: () =
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3 px-4 pt-3 sm:px-6">
-        <p className="pixel-num text-sm text-white/80" data-testid="comic-position">{t("position", { n, total: PANEL_COUNT })}</p>
-        <ol className="flex items-center gap-1.5" aria-label={t("pictures")}>
-          {PANELS.map((p, i) => (
-            <li key={p}>
-              <button type="button" onClick={() => go(i)} aria-label={t("position", { n: p, total: PANEL_COUNT })} aria-current={i === index ? "step" : undefined}
-                className={`block h-3 w-3 rounded-[2px] ${i === index ? "bg-[var(--color-glitch-magenta)]" : "bg-white/35 hover:bg-white/60"}`} />
-            </li>
-          ))}
-        </ol>
+      {/* the words are in the picture: nothing to read under it, only the dots; screen readers get the position and the caption as text (in the language of the page) */}
+      <div className="sr-only" aria-live="polite" data-testid="comic-caption">
+        <p data-testid="comic-position">{t("position", { n, total: PANEL_COUNT })}</p>
+        <p data-testid="comic-text">{t(`panels.p${n}.text`)}</p>
       </div>
-
-      {/* the caption is in the picture too (in French, small on a phone): here it is text, in the language of the page, readable at every size */}
-      <div className="px-4 pb-3 pt-2 sm:px-6" aria-live="polite" data-testid="comic-caption">
-        <p className="text-base leading-relaxed text-white sm:text-lg" data-testid="comic-text">{t(`panels.p${n}.text`)}</p>
-      </div>
+      <ol className="flex items-center justify-center gap-1.5 px-4 pb-3 pt-3" aria-label={t("pictures")}>
+        {PANELS.map((p, i) => (
+          <li key={p}>
+            <button type="button" onClick={() => go(i)} aria-label={t("position", { n: p, total: PANEL_COUNT })} aria-current={i === index ? "step" : undefined}
+              className={`block h-3 w-3 rounded-[2px] ${i === index ? "bg-[var(--color-glitch-magenta)]" : "bg-white/35 hover:bg-white/60"}`} />
+          </li>
+        ))}
+      </ol>
 
       {index === last && (
         <div className="px-4 pb-3 sm:px-6" data-testid="comic-cta">
@@ -116,7 +113,6 @@ function ComicReader({ ended, onClose, onSave }: { ended: boolean; onClose: () =
             : <button type="button" className="btn btn-primary doom-cta w-full sm:w-auto" onClick={onSave} data-testid="comic-save">{td("cta")}</button>}
         </div>
       )}
-      <p className="px-4 pb-3 text-xs text-white/60 sm:px-6" data-testid="comic-fiction">{t("fiction")}</p>
     </dialog>
   );
 }

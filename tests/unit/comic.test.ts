@@ -37,7 +37,7 @@ describe("the story (the owner's eight pictures)", () => {
     expect(readdirSync(join(process.cwd(), "assets", "story-source")).length, "but they are kept (the pictures are made from them)").toBe(8);
   });
 
-  it("writes each caption as text, in both languages, and describes each picture for those who cannot see it", () => {
+  it("keeps each caption as text for screen readers, in both languages, and describes each picture for those who cannot see it", () => {
     for (const [lang, c] of Object.entries(texts)) {
       expect(Object.keys(c.panels), lang).toHaveLength(PANEL_COUNT);
       for (const n of PANELS) {
@@ -52,11 +52,6 @@ describe("the story (the owner's eight pictures)", () => {
 
   it("keeps the owner's French captions word for word (they are the ones written in the pictures)", () => {
     PANELS.forEach((n, i) => expect((fr.comic.panels as Record<string, { text: string }>)[`p${n}`]!.text).toBe(FRENCH_CAPTIONS[i]));
-  });
-
-  it("says in both languages that it is a fiction", () => {
-    expect(texts.en.fiction).toMatch(/fiction/i);
-    expect(texts.fr.fiction).toMatch(/fiction/i);
   });
 
   it("has no automatic reading in the texts, and a wipe that is short", () => {

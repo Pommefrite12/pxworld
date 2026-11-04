@@ -1,4 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
+import sharp from "sharp";
 import { expect, test } from "@playwright/test";
 
 /**
@@ -57,7 +58,6 @@ test("the last picture ends on the call to action, which closes the strip and op
   await page.getByRole("button", { name: "Picture 8 of 8" }).click();
   await expect(page.getByTestId("comic-next")).toBeDisabled();
   await expect(page.getByTestId("comic-text")).toContainText("Show me what your world deserves to keep.");
-  await expect(page.getByTestId("comic")).toContainText("A fiction made for Pixel World");
   await page.getByTestId("comic-save").click();
   await expect(page.getByTestId("comic")).toHaveCount(0);
   await expect(page.getByTestId("buy-panel")).toBeVisible();
@@ -158,4 +158,38 @@ test("it fits a phone: no sideways scrolling, the picture and the buttons are al
     expect(b!.x + b!.width, id).toBeLessThanOrEqual(390);
     expect(b!.x, id).toBeGreaterThanOrEqual(0);
   }
+});
+
+test("under the picture there are only the dots: no caption, no \"picture x of y\", no line about fiction; screen readers still get them", async ({ page }) => {
+  await page.goto("/?preview=J-9");
+  await page.getByTestId("comic-open").click();
+  const shown = async (id: string) => { const b = await page.getByTestId(id).boundingBox(); return b ? b.width > 3 && b.height > 3 : false; };
+  expect(await shown("comic-text"), "the caption is not shown").toBe(false);
+  expect(await shown("comic-position"), "nor the position").toBe(false);
+  await expect(page.getByTestId("comic-fiction")).toHaveCount(0);
+  await expect(page.getByTestId("comic")).not.toContainText("fiction"); // the plate above says it already
+  // …but they are there for screen readers, in the language of the page
+  await expect(page.getByTestId("comic-text")).toHaveText("Humans… I have been watching you for a very long time.");
+  await expect(page.getByTestId("comic-position")).toHaveText("Picture 1 of 8");
+  // what is under the picture is the dots, and they fill the row: nothing else takes room
+  const m = await page.getByTestId("comic").evaluate((d) => { const dots = d.querySelector("ol")!.getBoundingClientRect(), img = d.querySelector('[data-testid="comic-image"]')!.getBoundingClientRect(); return { gap: dots.top - img.bottom, below: d.getBoundingClientRect().bottom - dots.bottom }; });
+  expect(m.gap).toBeLessThanOrEqual(24);
+  expect(m.below).toBeLessThanOrEqual(20);
+});
+
+test("the map keeps its colours when the window opens: nothing is darkened behind it", async ({ page }) => {
+  await page.setViewportSize({ width: 1360, height: 860 });
+  await page.goto("/?preview=J-9");
+  await page.waitForTimeout(1500);
+  const strip = { x: 0, y: 300, width: 190, height: 300 }; // the left edge of the map, beside the window
+  const mean = async () => (await sharp(await page.screenshot({ clip: strip })).stats()).channels.map((c) => c.mean);
+  const before = await mean();
+  await page.getByTestId("comic-open").click();
+  await page.waitForTimeout(700);
+  const after = await mean();
+  for (let i = 0; i < 3; i++) expect(Math.abs(after[i]! - before[i]!), `channel ${i}: the map is as bright as before`).toBeLessThan(3);
+  expect(await page.getByTestId("comic").evaluate((d) => getComputedStyle(d, "::backdrop").backgroundColor), "no tint").toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+  // a click on the map still closes it
+  await page.mouse.click(60, 450);
+  await expect(page.getByTestId("comic")).toHaveCount(0);
 });
