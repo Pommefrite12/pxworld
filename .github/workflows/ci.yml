@@ -1,7 +1,8 @@
 name: CI
 on:
   push:
-    branches: [main]
+    # main, and the working branches of this project: the site lives on `claude/*` branches until the owner picks a reference branch
+    branches: [main, "claude/**"]
   pull_request:
 
 jobs:
