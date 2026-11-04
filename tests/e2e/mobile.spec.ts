@@ -75,7 +75,7 @@ for (const width of [320, 360, 390, 412]) {
       const m = await title.evaluate((el) => { const r = el.getBoundingClientRect(), cs = getComputedStyle(el), lh = parseFloat(cs.lineHeight); return { lines: Math.round((r.height - parseFloat(cs.paddingTop)) / lh), overflow: el.scrollWidth > el.clientWidth, font: parseFloat(cs.fontSize) }; });
       expect(m.lines, "one line").toBe(1);
       expect(m.overflow, "it fits the tile").toBe(false);
-      expect(m.font, "and stays readable").toBeGreaterThanOrEqual(10);
+      expect(m.font, "and stays readable").toBeGreaterThanOrEqual(12.8);
     });
   }
 }

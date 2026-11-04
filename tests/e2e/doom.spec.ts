@@ -56,6 +56,11 @@ test("a preview shows the countdown, the story and the interface that goes with 
   // the title is ONE line (it saves a line of the map), and it fits the tile
   const oneLine = await page.getByTestId("doom-title").evaluate((el) => { const r = el.getBoundingClientRect(), lh = parseFloat(getComputedStyle(el).lineHeight) + 0; return { lines: Math.round((r.height - 7) / lh), overflow: el.scrollWidth > el.clientWidth }; });
   expect(oneLine, "one line, not wider than the tile").toEqual({ lines: 1, overflow: false });
+  // …and big enough to read, with a second half that is not smeared by its effect
+  const look = await page.getByTestId("doom-title").evaluate((el) => { const m = el.querySelector(".m")!, cs = getComputedStyle(m); return { font: parseFloat(getComputedStyle(el).fontSize), shadow: cs.textShadow, color: cs.color }; });
+  expect(look.font, "the title is big enough to read").toBeGreaterThanOrEqual(19);
+  const offsets = [...look.shadow.matchAll(/(-?\d+(?:\.\d+)?)px (-?\d+(?:\.\d+)?)px/g)].map((m) => Math.max(Math.abs(Number(m[1])), Math.abs(Number(m[2]))));
+  expect(Math.max(0, ...offsets), "the effect on the second half is a 1 px edge, not a smear").toBeLessThanOrEqual(1);
   await expect(page.getByTestId("doom-save")).toHaveText("Save my plot");
   await expect(page.getByTestId("comic-open")).toBeVisible();
   await expect(plate.locator("p", { hasText: "When the countdown" })).toHaveCount(0); // no paragraph: the map stays visible

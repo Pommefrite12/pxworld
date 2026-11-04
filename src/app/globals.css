@@ -228,9 +228,10 @@
 .doom-plate[data-phase="5"] .doom-n { color: var(--color-glitch-magenta); text-shadow: none; }
 
 /* the title is ONE line ("Save the world. And the pizza with it." is the longest): its size follows the width of the tile, so that it never wraps (it saves a line of the map) */
-.doom-title { margin: 0; padding: 7px 6px 0; text-align: center; white-space: nowrap; font-family: var(--font-pixel); font-size: clamp(0.62rem, 4.05cqw, 1.02rem); line-height: 1.1; letter-spacing: 0.01em; color: var(--color-ink); }
+.doom-title { margin: 0; padding: 7px 6px 0; text-align: center; white-space: nowrap; font-family: var(--font-pixel); font-size: clamp(0.8rem, 5.5cqw, 1.35rem); line-height: 1.1; letter-spacing: 0.01em; color: var(--color-ink); }
 .doom-title span { display: inline; }
-.doom-title .m { color: var(--color-glitch-magenta); text-shadow: -2px 0 var(--color-glitch-cyan); }
+/* the second half keeps a whisper of the glitch (a deeper magenta, a 1 px cyan edge) but stays easy to read */
+.doom-title .m { color: #d01a74; text-shadow: -1px 0 rgb(25 211 255 / 0.5); }
 .doom-plate-actions { display: flex; justify-content: center; gap: 8px; padding: 0 10px 7px; }
 .doom-plate-actions .btn { white-space: nowrap; }
 .doom-msg {
