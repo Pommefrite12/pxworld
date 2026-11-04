@@ -60,11 +60,19 @@ Le paiement réel reste désactivé tant que vous n'avez pas donné votre accord
 
 Je ne fixe aucune règle juridique ou fiscale. Points à faire examiner : la **détention temporaire de l'argent des participants** (et si un statut ou un agrément est requis dans votre pays), le **droit de rétractation** et la politique de remboursement à écrire dans les conditions d'utilisation, la TVA sur chaque participation, la communication « votre argent est remboursé si l'objectif n'est pas atteint ».
 
-## 6. Décisions à prendre
+## 6. Décisions du propriétaire (prises)
 
-1. **Durée de la collecte** : fixe (14 ou 30 jours) ou choisie par le créateur parmi 7 / 14 / 30 jours ?
-2. **Ce que reçoit un participant** : son nom sur la fiche (au choix) · rien · ou en plus un badge « mécène » (lié au badge du Registre).
-3. **Participation minimale** : 1 € · 2 € · 5 € · aucune.
-4. **Apport et limites du créateur** : apport obligatoire (par exemple 10 % de l'objectif) ou non ; nombre de projets actifs en même temps.
+| # | Question | Décision |
+|---|---|---|
+| 1 | Durée de la collecte | **Au choix du créateur : 7, 14 ou 30 jours** (modifiable dans l'administration) |
+| 2 | Contrepartie d'un participant | **Rien : participation anonyme.** Seul le *nombre* de participants est affiché ; aucun nom, aucun badge |
+| 3 | Participation minimale | **2 €** (et 2 $ en dollar), modifiable dans l'administration |
+| 4 | Limites du créateur | **Un seul projet actif à la fois, aucun apport obligatoire** ; la modération filtre avant toute réservation |
 
-Valeurs par défaut proposées : durée choisie par le créateur (7 / 14 / 30 j) ; nom affiché au choix ; minimum 2 € ; pas d'apport obligatoire, **un seul projet actif** par créateur ; taille minimale 10 000 px (2 500 €) ; modération avant toute réservation.
+Conséquences : pas de nom de participant à stocker côté public (la table `contributions` garde le contributeur pour les remboursements et la comptabilité, mais **rien n'en est exposé** : ni l'API publique, ni la fiche) ; pas de lien avec le badge du Registre ; pas d'apport du créateur à gérer.
+
+Autres valeurs par défaut (non discutées, modifiables) : taille minimale d'un projet 10 000 px (2 500 €) ; réservation de la part d'un paiement en cours : 30 minutes ; modération avant toute réservation.
+
+## 7. État d'avancement
+
+*(mis à jour à chaque étape)* — étape 1 : à faire.
