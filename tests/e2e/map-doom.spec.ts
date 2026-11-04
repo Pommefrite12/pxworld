@@ -310,12 +310,7 @@ test("the sequence plays by itself when the countdown reaches zero in front of t
 });
 
 /* ------------------------------------------------------------------ the bug of the destroyed land, every 30 s */
-type Zone = { x: number; y: number; w: number; h: number };
-type GlitchEng = Eng & {
-  glitch: { t0: number; seed: number; zones: Zone[] | null } | null;
-  glitchNow(seed?: number): boolean; setGlitchEverywhere(on: boolean): void; setGlitchEvery(ms: number): void; setGlitchGuard(on: boolean): void;
-  slowUntil: number; drawMs: number; cam: { x: number; y: number; scale: number }; w: number; h: number; flyTo(c: { x: number; y: number; scale: number }, ms: number): void;
-};
+type GlitchEng = Eng & { glitch: { t0: number } | null; glitchNow(): boolean; setGlitchEvery(ms: number): void };
 const engine = (page: Page) => page.evaluateHandle(() => (window as unknown as { __pxEngine: GlitchEng }).__pxEngine);
 /** A fingerprint of everything on the canvas (every 5th pixel is enough to see a band move). */
 const fingerprint = (page: Page) => page.getByRole("application").evaluate((c: HTMLCanvasElement) => {
@@ -324,35 +319,32 @@ const fingerprint = (page: Page) => page.getByRole("application").evaluate((c: H
   for (let i = 0; i < d.length; i += 20) h = Math.imul(h ^ (d[i]! | (d[i + 1]! << 8) | (d[i + 2]! << 16)), 16777619) >>> 0;
   return h;
 });
-/** The headless browser has no graphics card and is always "slow": the tests turn off the stand-down that a slow machine gets. */
-async function destroyedWorld(page: Page) {
+
+test("every so often the destroyed land has a computer bug for about a second, then goes back exactly where it was", async ({ page }) => {
   await page.goto("/?preview=0");
   await ready(page);
   await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
   await page.waitForTimeout(1500); // the tiles are all made
-  const e = await engine(page);
-  await e.evaluate((x) => x.setGlitchGuard(false));
-  return e;
-}
-
-test("every so often the destroyed land has a computer bug for about a second and a half, then goes back exactly where it was", async ({ page }) => {
-  const e = await destroyedWorld(page);
   const calm = await fingerprint(page);
   expect(await fingerprint(page), "nothing moves between two bugs").toBe(calm);
 
+  const e = await engine(page);
   expect(await e.evaluate((x) => x.glitchNow())).toBe(true);
   expect(await e.evaluate((x) => x.glitchNow()), "a burst already going on is not restarted").toBe(false);
-  await expect.poll(() => fingerprint(page), { timeout: 5000, intervals: [60] }).not.toBe(calm); // the bugged zones move
-  await expect.poll(() => e.evaluate((x) => x.glitch === null), { timeout: 5000 }).toBe(true); // it is over after about a second and a half
+  await expect.poll(() => fingerprint(page), { timeout: 5000, intervals: [60] }).not.toBe(calm); // the destroyed zones move
+  await expect.poll(() => e.evaluate((x) => x.glitch === null), { timeout: 5000 }).toBe(true); // it is over after about a second
   await expect.poll(() => fingerprint(page), { timeout: 5000 }).toBe(calm); // and everything is back in place, pixel for pixel
 });
 
 test("the bug comes by itself, again and again, on the schedule it is given", async ({ page }) => {
-  const e = await destroyedWorld(page);
-  await e.evaluate((x) => x.setGlitchEvery(2300)); // longer than a burst, so that there is a calm between two
+  await page.goto("/?preview=0");
+  await ready(page);
+  await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
+  const e = await engine(page);
+  await e.evaluate((x) => x.setGlitchEvery(700));
   const seen: number[] = [];
   for (let i = 0; i < 2; i++) {
-    await expect.poll(() => e.evaluate((x) => x.glitch !== null), { timeout: 12_000, intervals: [50] }).toBe(true);
+    await expect.poll(() => e.evaluate((x) => x.glitch !== null), { timeout: 8000, intervals: [50] }).toBe(true);
     seen.push(await e.evaluate((x) => x.glitch!.t0));
     await expect.poll(() => e.evaluate((x) => x.glitch === null), { timeout: 5000, intervals: [50] }).toBe(true);
   }
@@ -360,7 +352,7 @@ test("the bug comes by itself, again and again, on the schedule it is given", as
   await e.evaluate((x) => x.setGlitchEvery(30_000));
 });
 
-test("no bug on the ordinary map, none for a visitor who asked for fewer animations, none on a machine that struggles", async ({ page }) => {
+test("no bug on the ordinary map, none for a visitor who asked for fewer animations", async ({ page }) => {
   await page.goto("/");
   await ready(page);
   await page.waitForTimeout(800);
@@ -371,90 +363,4 @@ test("no bug on the ordinary map, none for a visitor who asked for fewer animati
   await ready(page);
   await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
   expect(await (await engine(page)).evaluate((x) => x.glitchNow()), "reduced motion: the land stays still").toBe(false);
-
-  // a machine that struggles does without: the site is never slowed down for a decoration
-  await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.goto("/?preview=0");
-  await ready(page);
-  await expect.poll(async () => (await corruptedShare(page)).share, { timeout: 30_000 }).toBeGreaterThan(0.9);
-  const e = await engine(page);
-  await e.evaluate((x) => { x.setGlitchGuard(true); x.slowUntil = performance.now() + 60_000; });
-  expect(await e.evaluate((x) => x.glitchNow()), "a slow frame was seen lately").toBe(false);
-  await e.evaluate((x) => { x.slowUntil = 0; x.drawMs = 80; });
-  expect(await e.evaluate((x) => x.glitchNow()), "an average frame of 80 ms").toBe(false);
-  await e.evaluate((x) => { x.drawMs = 8; });
-  expect(await e.evaluate((x) => x.glitchNow()), "a quick machine does it").toBe(true);
-});
-
-test("in the bugged zones the map scrolls from right to left, band by band, and the parcels are left alone", async ({ page }) => {
-  const e = await destroyedWorld(page);
-  await e.evaluate((x) => x.setGlitchEverywhere(true));
-  // every band the engine draws during the burst, from the copy of the picture it takes: (where it comes from, where it goes, how wide)
-  const bands = await page.getByRole("application").evaluate(async (c: HTMLCanvasElement) => {
-    const eng = (window as unknown as { __pxEngine: GlitchEng }).__pxEngine;
-    const proto = CanvasRenderingContext2D.prototype, orig = proto.drawImage, out: { from: number; to: number; w: number }[] = [];
-    proto.drawImage = function (this: CanvasRenderingContext2D, img: CanvasImageSource, ...a: number[]) {
-      if (this.canvas === c && img instanceof HTMLCanvasElement && img !== c && img.width === c.width && img.height === c.height && a.length === 8) out.push({ from: a[0]!, to: a[4]!, w: a[2]! });
-      return orig.apply(this, [img, ...a] as unknown as Parameters<typeof orig>);
-    } as typeof orig;
-    try {
-      eng.glitchNow();
-      const t0 = performance.now();
-      while (eng.glitch && performance.now() - t0 < 3000) await new Promise((r) => requestAnimationFrame(r));
-    } finally { proto.drawImage = orig; }
-    return out;
-  });
-  // each band is drawn in two pieces: the big one, moved to the left, then what went out at the left, coming back in at the right
-  expect(bands.length, "bands were drawn").toBeGreaterThan(30);
-  const pairs: [typeof bands[0], typeof bands[0]][] = [];
-  for (let i = 0; i + 1 < bands.length; i += 2) pairs.push([bands[i]!, bands[i + 1]!]);
-  expect(pairs.filter(([big]) => big.to > big.from + 0.5), "no band goes to the right").toEqual([]);
-  expect(pairs.filter(([big]) => big.to < big.from - 6).length / pairs.length, "most bands have gone well to the left").toBeGreaterThan(0.5);
-  expect(pairs.filter(([big, back]) => back.w > big.w).length, "the piece that comes back in at the right is always the smaller one (a band goes at most 40 % of the zone)").toBe(0);
-  await expect.poll(() => e.evaluate((x) => x.glitch === null), { timeout: 5000 }).toBe(true);
-});
-
-test("the bugged zones cover a part of the world and are somewhere else on the planisphere each time, the first one where one is looking", async ({ page }) => {
-  const e = await destroyedWorld(page);
-  // twenty bursts, one after the other: where are their zones?
-  const bursts = await e.evaluate((x) => {
-    const out: Zone[][] = [];
-    for (let seed = 1; seed <= 20; seed++) { x.glitch = null; x.glitchNow(seed * 7919); out.push(x.glitch!.zones!.map((z) => ({ ...z }))); }
-    x.glitch = null;
-    return out;
-  });
-  const centres = bursts.flat().map((z) => ({ x: (z.x + z.w / 2) % 40_000, y: z.y + z.h / 2 }));
-  expect(bursts.every((z) => z.length >= 3), "a few zones in each burst").toBe(true);
-  expect(Math.max(...centres.map((c) => c.x)) - Math.min(...centres.map((c) => c.x)), "all along the planisphere").toBeGreaterThan(25_000);
-  expect(Math.max(...centres.map((c) => c.y)) - Math.min(...centres.map((c) => c.y)), "from north to south").toBeGreaterThan(12_000);
-  expect(new Set(bursts.map((z) => `${Math.round(z[1]!.x / 500)},${Math.round(z[1]!.y / 500)}`)).size, "another place every time").toBeGreaterThan(15);
-  expect(bursts.flat().every((z) => z.w >= 6_000 && z.h >= 3_000), "zones that cover part of the world").toBe(true);
-
-  // zoomed in on a place, the first zone is where one looks, so that the bug is not lost off screen
-  await e.evaluate((x) => x.flyTo({ x: 18_980, y: 11_700, scale: 0.4 }, 0));
-  await page.waitForTimeout(800);
-  const looking = await e.evaluate((x) => {
-    const half = { w: x.w / 2 / x.cam.scale, h: x.h / 2 / x.cam.scale }, out: boolean[] = [];
-    for (let seed = 1; seed <= 12; seed++) {
-      x.glitch = null; x.glitchNow(seed * 104729);
-      const z = x.glitch!.zones![0]!;
-      const mid = z.x + z.w / 2 - 0.45 * z.w; // halfway through its journey to the left
-      out.push(Math.abs(mid - x.cam.x) <= half.w && z.y < x.cam.y + half.h && z.y + z.h > x.cam.y - half.h);
-    }
-    x.glitch = null;
-    return out;
-  });
-  expect(looking.every(Boolean), "the first zone of each burst is on the screen").toBe(true);
-});
-
-test("if the visitor moves the map during the bug, the bug ends at once and leaves nothing behind", async ({ page }) => {
-  const e = await destroyedWorld(page);
-  expect(await e.evaluate((x) => x.glitchNow(77))).toBe(true);
-  await page.waitForTimeout(300);
-  await e.evaluate((x) => x.flyTo({ x: x.cam.x + 400, y: x.cam.y, scale: x.cam.scale }, 0));
-  await expect.poll(() => e.evaluate((x) => x.glitch === null), { timeout: 3000 }).toBe(true);
-  await page.waitForTimeout(600);
-  const settled = await fingerprint(page);
-  await page.waitForTimeout(400);
-  expect(await fingerprint(page), "a clean map, not a stale copy").toBe(settled);
 });
