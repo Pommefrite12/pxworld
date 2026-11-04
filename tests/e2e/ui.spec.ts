@@ -189,6 +189,19 @@ test.describe("map interaction", () => {
     await expect(page.locator("body")).not.toContainText(/°\s?[NS]\b/);
   });
 
+  test("the account page hydrates cleanly in both languages (the list of countries is the browser's own)", async ({ page }) => {
+    const problems: string[] = [];
+    page.on("console", (m) => { if (m.type() === "error" && /hydrat/i.test(m.text())) problems.push(m.text().slice(0, 160)); });
+    page.on("pageerror", (e) => { if (/hydrat/i.test(e.message)) problems.push(e.message.slice(0, 160)); });
+    await page.request.post("/api/dev/login", { data: { email: "hydrate@example.test" } });
+    for (const path of ["/account", "/fr/account"]) {
+      await page.goto(path);
+      await expect(page.locator("#pf-country")).toBeVisible();
+      await expect.poll(() => page.locator("#pf-country option").count()).toBeGreaterThan(150); // the full list appears once the page is alive
+    }
+    expect(problems).toEqual([]);
+  });
+
   test("buy mode: clicking the map places a parcel, collisions and bounds are reported", async ({ page }) => {
     await page.goto("/map?x=26000&y=11000&z=0.6"); // Kazakhstan: dry land all around
     // the button works once the page is interactive: a click before hydration does nothing

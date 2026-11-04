@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { COUNTRY_CODES } from "@/lib/countries";
 
@@ -12,8 +12,16 @@ export function ProfileForm({ initial }: { initial: { username: string; country:
   const [bio, setBio] = useState(initial.bio ?? "");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
-  const names = new Intl.DisplayNames([locale], { type: "region" });
-  const sorted = [...COUNTRY_CODES].sort((a, b) => (names.of(a) ?? a).localeCompare(names.of(b) ?? b, locale));
+  // The names of the countries come from the browser's own language data, which differs from the server's (a few names, and the order):
+  // building the list while rendering made the server's page and the browser's disagree ("hydration failed"). The server and the first
+  // render of the browser now show the same thing (the current country only); the full list appears once the page is alive.
+  const [countries, setCountries] = useState<{ code: string; name: string }[] | null>(null);
+  useEffect(() => {
+    const names = new Intl.DisplayNames([locale], { type: "region" });
+    const list = COUNTRY_CODES.map((code) => ({ code, name: names.of(code) ?? code })).sort((a, b) => a.name.localeCompare(b.name, locale));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the list can only be built in the browser (see above)
+    setCountries(list);
+  }, [locale]);
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +50,7 @@ export function ProfileForm({ initial }: { initial: { username: string; country:
       <div><label className="label" htmlFor="pf-country">{t("country")}</label>
         <select id="pf-country" className="field" value={country} onChange={(e) => setCountry(e.target.value)}>
           <option value="">—</option>
-          {sorted.map((c) => <option key={c} value={c}>{names.of(c) ?? c}</option>)}
+          {countries ? countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>) : country && <option value={country}>{country}</option>}
         </select></div>
       <div><label className="label" htmlFor="pf-bio">{t("bio")}</label><textarea id="pf-bio" className="field !min-h-24" rows={3} maxLength={280} value={bio} onChange={(e) => setBio(e.target.value)} /></div>
       {msg && <p role="status" className={`text-sm font-semibold ${msg.ok ? "text-mint" : "text-danger"}`}>{msg.text}</p>}
