@@ -68,6 +68,8 @@ const RASTER_PX = 256;
 const MAX_Z = 8;
 /** What a water parcel shows while nothing better is known: the medium blue. */
 const WATER_FILL = "#2f8fd8";
+/** Parcels on the water are drawn a little see-through: the sea around shows through, and the LAND — the opaque cream over it — stands out. */
+const WATER_ALPHA = 0.62;
 const BAKE_BUDGET_MS = 10;
 /**
  * A machine that struggles is recognised by its own frames: one that takes longer than `SLOW_FRAME_MS` marks it as slow for
@@ -848,7 +850,7 @@ export class MapEngine {
     this.invalidate();
   }
 
-  /* ------------------------------------------------------------------ the bug of the destroyed land, every 45 s */
+  /* ------------------------------------------------------------------ the bug of the destroyed land, every 30 s */
   private glitch: { t0: number } | null = null;
   private glitchTimer = 0;
   private glitchEvery = GLITCH_EVERY_MS;
@@ -1679,6 +1681,14 @@ export class MapEngine {
    * already serves the blue pictures and the blue average colours.
    */
   private drawParcels(s: number, water = false) {
+    if (!water) { this.drawParcelsOf(s, false); return; }
+    const { ctx } = this;
+    ctx.save();
+    ctx.globalAlpha = WATER_ALPHA;
+    try { this.drawParcelsOf(s, true); } finally { ctx.restore(); }
+  }
+
+  private drawParcelsOf(s: number, water: boolean) {
     const v = this.visibleWorld(), layer = water ? "w" : "l";
     if (s < RASTER_BELOW) this.drawRasters(s, v, true, layer);
     // metadata tiles (needed for hit-testing and, when zoomed in, for per-parcel rendering)

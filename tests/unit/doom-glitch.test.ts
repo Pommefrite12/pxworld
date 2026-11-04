@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { GLITCH_EVERY_MS, GLITCH_FOR_MS, GLITCH_FRAME_MS, GLITCH_MAX_PX, glitchFrame, glitchShift } from "@/lib/doom/glitch";
 
 describe("the bug of the destroyed land", () => {
-  it("happens every 45 seconds and lasts about a second", () => {
-    expect(GLITCH_EVERY_MS).toBe(45_000);
+  it("happens every 30 seconds and lasts about a second", () => {
+    expect(GLITCH_EVERY_MS).toBe(30_000);
     expect(GLITCH_FOR_MS).toBeGreaterThanOrEqual(800);
     expect(GLITCH_FOR_MS).toBeLessThanOrEqual(2000);
   });

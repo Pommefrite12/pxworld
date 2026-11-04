@@ -5,7 +5,7 @@ import { hash2 } from "./corruption";
  * coasts' magenta and cyan fringes jump with them), then everything goes back to where it was. It is drawn over the tiles, never
  * baked into them. The envelope rises and falls so that it starts and ends softly.
  */
-export const GLITCH_EVERY_MS = 45_000;
+export const GLITCH_EVERY_MS = 30_000;
 export const GLITCH_FOR_MS = 1_300;
 /** The picture changes at about 11 images a second: a stutter, not a smooth movement. */
 export const GLITCH_FRAME_MS = 90;

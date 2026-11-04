@@ -309,7 +309,7 @@ test("the sequence plays by itself when the countdown reaches zero in front of t
   expect(await hasFront(page)).toBe(false);
 });
 
-/* ------------------------------------------------------------------ the bug of the destroyed land, every 45 s */
+/* ------------------------------------------------------------------ the bug of the destroyed land, every 30 s */
 type GlitchEng = Eng & { glitch: { t0: number } | null; glitchNow(): boolean; setGlitchEvery(ms: number): void };
 const engine = (page: Page) => page.evaluateHandle(() => (window as unknown as { __pxEngine: GlitchEng }).__pxEngine);
 /** A fingerprint of everything on the canvas (every 5th pixel is enough to see a band move). */
@@ -349,7 +349,7 @@ test("the bug comes by itself, again and again, on the schedule it is given", as
     await expect.poll(() => e.evaluate((x) => x.glitch === null), { timeout: 5000, intervals: [50] }).toBe(true);
   }
   expect(seen[1]!, "a second burst, after the first").toBeGreaterThan(seen[0]!);
-  await e.evaluate((x) => x.setGlitchEvery(45_000));
+  await e.evaluate((x) => x.setGlitchEvery(30_000));
 });
 
 test("no bug on the ordinary map, none for a visitor who asked for fewer animations", async ({ page }) => {

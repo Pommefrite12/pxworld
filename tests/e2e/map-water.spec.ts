@@ -10,6 +10,12 @@ import { lonLatToPixel } from "../../src/lib/grid/geometry";
  */
 const BASE = `http://localhost:${process.env.E2E_PORT ?? "3100"}`;
 const TINTS = ["127,200,240", "47,143,216", "27,79,156"];
+/** A water parcel is drawn a little see-through (the engine's WATER_ALPHA), so that the land stands out: what is on the canvas is the blue blended with what is under it. */
+const WATER_ALPHA = 0.62, OCEAN = [201, 223, 232];
+const blend = (rgb: number[], under: number[]) => rgb.map((v, i) => v * WATER_ALPHA + under[i]! * (1 - WATER_ALPHA));
+/** Is the canvas pixel `px` ("r,g,b") the blue `rgb` seen through `WATER_ALPHA` over `under`? (a few levels of rounding allowed) */
+const seenAs = (px: string, rgb: number[], under: number[]) => { const want = blend(rgb, under); return px.split(",").map(Number).every((v, i) => Math.abs(v - want[i]!) <= 3); };
+const isWater = (px: string, under: number[][] = [OCEAN]) => TINTS.some((t) => under.some((u) => seenAs(px, t.split(",").map(Number), u)));
 
 type Eng = { geoPending: boolean; geo: unknown; worldToScreen(x: number, y: number): { x: number; y: number } };
 const ready = (page: Page) => page.waitForFunction(() => { const e = (window as unknown as { __pxEngine?: Eng }).__pxEngine; return Boolean(e && e.geo && !e.geoPending); }, undefined, { timeout: 60_000 });
@@ -72,8 +78,9 @@ test("water is bought like land: priced for its water, refused on land, shown in
   await page.setViewportSize({ width: 1360, height: 860 });
   await page.goto(`/?x=${mid.x}&y=${mid.y}&z=14&preview=off`);
   await ready(page);
-  await expect.poll(() => pixelAt(page, mid.x, mid.y), { timeout: 30_000 }).toBe("27,79,156");
-  expect(TINTS).toContain(await pixelAt(page, mid.x, mid.y));
+  await expect.poll(async () => seenAs(await pixelAt(page, mid.x, mid.y), [27, 79, 156], OCEAN), { timeout: 30_000 }).toBe(true);
+  expect(isWater(await pixelAt(page, mid.x, mid.y)), "one of the three blues, seen through the sea").toBe(true);
+  expect(await pixelAt(page, mid.x, mid.y), "see-through: it is not the raw blue").not.toBe("27,79,156");
   const ocean = await pixelAt(page, SEA.x - 20, mid.y);
   expect(ocean, "the free sea around it is the ocean colour").toBe("201,223,232");
 
@@ -94,7 +101,8 @@ test("water is bought like land: priced for its water, refused on land, shown in
   // the end of the world: the sea is destroyed as well, the water parcel is not
   await page.goto(`/?x=${mid.x}&y=${mid.y}&z=14&preview=0`);
   await ready(page);
-  await expect.poll(() => pixelAt(page, mid.x, mid.y), { timeout: 30_000 }).toBe("27,79,156");
+  // still blue in the destroyed sea: far bluer than the lavender around it (red 100, blue 190 where the raw blue is 27 / 156), and not the raw blue either
+  await expect.poll(async () => { const [r, , b] = (await pixelAt(page, mid.x, mid.y)).split(",").map(Number) as [number, number, number]; return b - r > 60 && !(r === 27 && b === 156); }, { timeout: 30_000 }).toBe(true);
   await expect.poll(async () => { const c = await pixelAt(page, SEA.x - 20, mid.y); return c !== "201,223,232"; }, { timeout: 30_000 }).toBe(true); // the sea around it is gone
   await Promise.all([api.dispose(), admin.dispose(), anon.dispose()]);
 });
@@ -124,7 +132,7 @@ test("a water parcel on a coast: the land inside is cut away, free, and still fo
   await expect.poll(async () => { // somewhere in the rectangle there is blue, and somewhere there is the cream of the land
     const seen = new Set<string>();
     for (let i = 0; i < 20; i++) seen.add(await pixelAt(page, c.x + i + 0.5, c.y + 10.5));
-    return [seen.has("27,79,156"), seen.has("251,245,230")];
+    return [[...seen].some((px) => seenAs(px, [27, 79, 156], OCEAN)), seen.has("251,245,230")];
   }, { timeout: 30_000 }).toEqual([true, true]);
   // who owns the pixel under a point: the water parcel on its water, nobody on the land that was cut away from it (the land stays free)
   const owners = await page.evaluate(([x0, y]) => {
