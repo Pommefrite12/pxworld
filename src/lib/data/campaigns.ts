@@ -85,3 +85,13 @@ export const publicCampaign = (code: string) =>
   queryOne<PublicCampaign>(
     `select ${PUBLIC_COLUMNS} ${PUBLIC_FROM} where c.code = $1 and c.opens_at is not null and c.status in ('open', 'funded', 'expired', 'cancelled') ${PUBLIC_GROUP}`,
     [code.toLowerCase()]);
+
+/** The projects the map draws: collecting right now, with just what a pin, a hatched zone and a small card need. Anonymous like everything public. */
+export const mapProjects = () =>
+  query<{ id: string; code: string; title: string; x: number; y: number; w: number; h: number; kind: string; currency: string; goal_cents: string; raised_cents: string; contributors: number; seconds_left: number }>(
+    `select c.id, c.code, c.title, c.x, c.y, c.w, c.h, c.kind, c.currency, c.goal_cents::text,
+            coalesce(sum(k.amount_cents) filter (where k.status in ('paid', 'disputed')), 0)::text as raised_cents,
+            (count(distinct k.user_id) filter (where k.status in ('paid', 'disputed')))::int as contributors,
+            greatest(0, extract(epoch from (c.deadline - now())))::float8 as seconds_left
+       from public.campaigns c left join public.contributions k on k.campaign_id = c.id
+      where c.status = 'open' and c.deadline > now() group by c.id order by c.opens_at limit 300`);

@@ -14,6 +14,8 @@ import { MapView, type MapViewHandle } from "./MapView";
 import type { Camera, MapParcel, Mode, SelectionState } from "./engine";
 import { LatestTile, MapControls, StatsCard, type LatestCreation } from "./Hud";
 import { ParcelCard } from "./ParcelCard";
+import { ProjectMapCard } from "./ProjectMapCard";
+import type { MapProject } from "@/lib/map/projects";
 import { DoomActions, DoomMessage, DoomPlate } from "@/components/doom/Doom";
 import { endFinale, finaleInfo, useFinaleDuring } from "@/components/doom/finaleStore";
 import { useDoom } from "@/components/doom/useDoom";
@@ -60,6 +62,10 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
   const [dialog, setDialog] = useState(false);
   const [collective, setCollective] = useState(false); // the dialog sends a project to moderation (funded by several people) instead of paying
   const [toast, setToast] = useState<string | null>(null);
+  // the group projects that are collecting: drawn on the map (hatched zones and pins); a click opens their card
+  const [projects, setProjects] = useState<MapProject[]>([]);
+  const [projectCode, setProjectCode] = useState<string | null>(null);
+  const project = projectCode ? projects.find((p) => p.code === projectCode) ?? null : null;
   const engine = () => mapRef.current?.engine ?? null;
 
   /* ---------- live stats (real numbers, refreshed; a purchase bumps mapVersion and the map reloads its tiles) ---------- */
@@ -68,6 +74,17 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
     const id = setInterval(tick, 30_000);
     return () => clearInterval(id);
   }, []);
+
+  /* ---------- the group projects on the map (public list, refreshed every minute; an empty list on any trouble) ---------- */
+  useEffect(() => {
+    let alive = true;
+    const load = () => fetch("/api/map/projects").then((r) => (r.ok ? r.json() : [])).then((l: MapProject[]) => { if (alive && Array.isArray(l)) setProjects(l); }).catch(() => undefined);
+    void load();
+    const id = setInterval(load, 60_000);
+    return () => { alive = false; clearInterval(id); };
+  }, []);
+  useEffect(() => { if (engineReady) engine()?.setProjects(projects); }, [engineReady, projects]);
+  useEffect(() => { if (engineReady) engine()?.setProjectHighlight(project?.code ?? null); }, [engineReady, project]);
 
   /* ---------- keep the URL shareable: ?x=…&y=…&z=… ---------- */
   const urlTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -95,7 +112,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
   const startBuy = useCallback((preset?: Rect | null) => {
     const e = engine();
     if (!e || ended) return; // the story is over: nothing can be bought any more
-    setParcelCode(null); e.setHighlight(null);
+    setParcelCode(null); e.setHighlight(null); setProjectCode(null);
     setMode("buy"); e.setMode("buy");
     const sz = preset ? { w: preset.w, h: preset.h } : size;
     setSize(sz); e.setBrush(sz);
@@ -184,6 +201,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
   }, [engineReady, initial, startBuy]);
 
   const onSelectParcel = useCallback((p: MapParcel | null) => {
+    setProjectCode(null); // a click elsewhere closes the card of a project (the engine calls onSelectProject right after, when it was a project that was clicked)
     setParcelCode(p?.code ?? null);
     engine()?.setHighlight(p?.code ?? null);
   }, []);
@@ -220,6 +238,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
           onReady={() => setEngineReady(true)}
           onCamera={setCam}
           onSelectParcel={onSelectParcel}
+          onSelectProject={(p) => setProjectCode(p.code)}
           onPlace={(r) => setSelection(r)}
           onSelectionState={setSelState}
           onSelectionLand={setSelLand}
@@ -267,6 +286,12 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
         {parcelCode && mode === "explore" && (
           <div className="pointer-events-none absolute inset-x-2 bottom-2 z-20 flex justify-center sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-4 sm:block">
             <ParcelCard code={parcelCode} signedIn={Boolean(viewer)} onClose={() => { setParcelCode(null); engine()?.setHighlight(null); }} />
+          </div>
+        )}
+
+        {project && mode === "explore" && !parcelCode && (
+          <div className="pointer-events-none absolute inset-x-2 bottom-2 z-20 flex justify-center sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-4 sm:block">
+            <ProjectMapCard p={project} onClose={() => setProjectCode(null)} />
           </div>
         )}
 

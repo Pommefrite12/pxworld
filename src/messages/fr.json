@@ -1240,6 +1240,8 @@
     },
     "ofGoal": "sur {goal}",
     "size": "Taille",
-    "creator": "Créateur"
+    "creator": "Créateur",
+    "viewProject": "Voir le projet",
+    "close": "Fermer"
   }
 }

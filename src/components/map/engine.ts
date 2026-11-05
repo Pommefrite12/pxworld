@@ -7,6 +7,7 @@ import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from 
 import { enoughLand, enoughWater } from "@/lib/grid/pricing";
 import { ASSET_SIZES, assetSizeFor, assetUrl } from "@/lib/images/sizes";
 import { tintPixels } from "@/lib/images/waterTint";
+import { PROJECT_BAR_FROM_PX, projectAt, projectLook, projectProgress, type MapProject } from "@/lib/map/projects";
 import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
 
 /**
@@ -35,6 +36,8 @@ export interface EngineCallbacks {
   onCamera?: (c: Camera) => void;
   onHover?: (p: MapParcel | null) => void;
   onSelectParcel?: (p: MapParcel | null, screen: { x: number; y: number }) => void;
+  /** A click on a group project that is collecting (a hatched zone or a pin). Called right after `onSelectParcel(null)`. */
+  onSelectProject?: (p: MapProject, screen: { x: number; y: number }) => void;
   onPlace?: (r: Rect) => void;
   onSelectionState?: (s: SelectionState) => void;
   /** Land pixels inside the selection (null while unknown or when nothing is selected). */
@@ -174,6 +177,11 @@ export class MapEngine {
   private selectionLand: number | null = null;
   private highlight: string | null = null;
   private hovered: MapParcel | null = null;
+  /** The group projects that are collecting ("Fund it together"): a hatched zone on the map, a pin when it is a speck; a click opens its card. */
+  private projects: MapProject[] = [];
+  private hoveredProject: MapProject | null = null;
+  private highlightProject: string | null = null;
+  private projectPattern: CanvasPattern | null = null;
   private pulse = 0;
 
   private pointers = new Map<number, { x: number; y: number; sx: number; sy: number; type: string; moved: boolean }>();
@@ -213,6 +221,17 @@ export class MapEngine {
   setMode(mode: Mode) { this.mode = mode; if (mode === "explore") { this.ghost = null; this.brush = null; } this.invalidate(); }
   setBrush(b: { w: number; h: number } | null) { this.brush = b; this.ghost = null; this.invalidate(); }
   setHighlight(code: string | null) { this.highlight = code; this.invalidate(); }
+  /** The projects to draw (replaces the previous list). */
+  setProjects(list: MapProject[]) {
+    this.projects = list;
+    if (this.hoveredProject && !list.some((p) => p.code === this.hoveredProject!.code)) this.hoveredProject = null;
+    this.invalidate();
+  }
+  setProjectHighlight(code: string | null) { this.highlightProject = code; this.invalidate(); }
+  /** For tests and diagnostics: where the projects are on the screen now (CSS px) and how they are drawn. */
+  projectScreenRects() {
+    return this.projects.map((p) => { const a = this.worldToScreen(p.x, p.y), w = p.w * this.cam.scale, h = p.h * this.cam.scale; return { code: p.code, x: a.x, y: a.y, w, h, look: projectLook(w, h) }; });
+  }
   /** Shows the buyer's creation, pixel-exact, inside the selection rectangle ("preview on the map"). */
   setPreviewImage(img: CanvasImageSource | null) { this.previewImage = img; this.previewShown = this.shownPreview(img); this.invalidate(); }
   /** What the preview shows: the creation as it is, or — on water — in the three blues it will have (made once, not at every frame). */
@@ -581,7 +600,7 @@ export class MapEngine {
     return { x: cam.x + (sx - this.w / 2) / scale, y: cam.y + (sy - this.h / 2) / scale };
   }
 
-  private setCursor(v?: string) { this.canvas.style.cursor = v ?? (this.mode === "buy" ? "crosshair" : this.hovered ? "pointer" : "grab"); }
+  private setCursor(v?: string) { this.canvas.style.cursor = v ?? (this.mode === "buy" ? "crosshair" : this.hovered || this.hoveredProject ? "pointer" : "grab"); }
 
   private startInertia(t: number) {
     const recent = this.trail.filter((s) => t - s.t < 90);
@@ -603,7 +622,14 @@ export class MapEngine {
       return;
     }
     this.setHovered(this.cam.scale >= JSON_ABOVE ? this.parcelAt(w.x, w.y) : null);
+    this.setHoveredProject(this.mode === "explore" && !this.hovered && this.projects.length > 0 ? projectAt(this.projects, w.x, w.y, this.cam.scale) : null);
     this.setCursor();
+  }
+
+  private setHoveredProject(p: MapProject | null) {
+    if (p?.code === this.hoveredProject?.code) return;
+    this.hoveredProject = p;
+    this.invalidate();
   }
 
   private setHovered(p: MapParcel | null) {
@@ -654,6 +680,11 @@ export class MapEngine {
     }
     this.lastTap = { t: now, x: sx, y: sy };
     const parcel = this.cam.scale >= JSON_ABOVE ? this.parcelAt(w.x, w.y) : null;
+    if (!parcel && this.mode === "explore" && this.projects.length > 0) {
+      // a group project that is collecting (a parcel always wins: it is already somebody's)
+      const project = projectAt(this.projects, w.x, w.y, this.cam.scale);
+      if (project) { this.cb.onSelectParcel?.(null, { x: sx, y: sy }); this.cb.onSelectProject?.(project, { x: sx, y: sy }); return; }
+    }
     if (!parcel && this.cam.scale < 0.4 && !this.parcelAt(w.x, w.y)) {
       // Zoomed far out: a tap zooms towards that spot instead of selecting nothing.
       if (this.cam.scale < JSON_ABOVE) { this.flyTo({ x: w.x, y: w.y, scale: Math.max(this.cam.scale * 4, 0.3) }, 700); return; }
@@ -1853,8 +1884,62 @@ export class MapEngine {
     ctx.stroke();
   }
 
+  /** The pattern of a project's zone: light diagonal stripes of the accent colour (a held zone, not a sold one). */
+  private projectHatch() {
+    if (this.projectPattern) return this.projectPattern;
+    const c = document.createElement("canvas");
+    c.width = c.height = 10;
+    const g = c.getContext("2d")!;
+    g.fillStyle = `rgba(${COLORS.accent},0.09)`; g.fillRect(0, 0, 10, 10);
+    g.strokeStyle = `rgba(${COLORS.accent},0.42)`; g.lineWidth = 1.6;
+    g.beginPath(); g.moveTo(-1, 11); g.lineTo(11, -1); g.moveTo(-1, 1); g.lineTo(1, -1); g.moveTo(9, 11); g.lineTo(11, 9); g.stroke();
+    return (this.projectPattern = this.ctx.createPattern(c, "repeat"));
+  }
+
+  /**
+   * The group projects that are collecting. Cheap on purpose: a handful of rectangles, solid lines (dashes are expensive), clipped to the
+   * screen, a flat tint instead of the pattern on a machine that struggles, nothing at all when there is no project.
+   */
+  private drawProjects(s: number) {
+    if (this.projects.length === 0) return;
+    const { ctx, w, h } = this, v = this.visibleWorld(), pad = 40 / s;
+    const struggling = performance.now() < this.slowUntil || ((navigator as { deviceMemory?: number }).deviceMemory ?? 8) < 4;
+    for (const p of this.projects) {
+      if (p.x + p.w < v.x0 - pad || p.x > v.x1 + pad || p.y + p.h < v.y0 - pad || p.y > v.y1 + pad) continue;
+      const a = this.worldToScreen(p.x, p.y), rw = p.w * s, rh = p.h * s;
+      const hot = p.code === this.highlightProject || p.code === this.hoveredProject?.code;
+      if (projectLook(rw, rh) === "pin") { this.projectPin(a.x + rw / 2, a.y + rh / 2, hot, projectProgress(p)); continue; }
+      const x = Math.round(a.x), y = Math.round(a.y), pw = Math.max(1, Math.round(rw)), ph = Math.max(1, Math.round(rh));
+      // only the part that is on the screen is filled (a project can be much bigger than the screen)
+      const fx = Math.max(x, -2), fy = Math.max(y, -2), fr = Math.min(x + pw, w + 2), fb = Math.min(y + ph, h + 2);
+      if (fr > fx && fb > fy) {
+        ctx.fillStyle = struggling ? `rgba(${COLORS.accent},0.16)` : this.projectHatch() ?? `rgba(${COLORS.accent},0.16)`;
+        ctx.fillRect(fx, fy, fr - fx, fb - fy);
+      }
+      ctx.strokeStyle = `rgb(${COLORS.accent})`; ctx.lineWidth = hot ? 3.5 : 2;
+      ctx.strokeRect(x + 1, y + 1, pw - 2, ph - 2);
+      if (Math.min(rw, rh) >= PROJECT_BAR_FROM_PX) {
+        // the progress, along the bottom edge: what is paid of what is asked
+        const bh = 7, bx = x + 5, bw = pw - 10, by = y + ph - bh - 5, done = Math.round(bw * projectProgress(p));
+        ctx.fillStyle = `rgba(${COLORS.ink},0.55)`; ctx.fillRect(bx, by, bw, bh);
+        ctx.fillStyle = `rgb(${COLORS.accent})`; ctx.fillRect(bx, by, done, bh);
+      }
+    }
+  }
+
+  /** A project that is only a speck at this zoom: a pin, with its progress as an arc. */
+  private projectPin(cx: number, cy: number, hot: boolean, progress: number) {
+    const { ctx } = this, r = hot ? 9 : 7;
+    ctx.fillStyle = `rgb(${COLORS.accent})`;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+    if (progress > 0) { ctx.beginPath(); ctx.arc(cx, cy, r - 3.5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.02, progress)); ctx.stroke(); }
+  }
+
   private drawOverlays(s: number) {
     const { ctx } = this;
+    this.drawProjects(s);
     const rectPath = (r: Rect) => {
       const a = this.worldToScreen(r.x, r.y);
       return { x: Math.round(a.x), y: Math.round(a.y), w: Math.max(1, Math.round(r.w * s)), h: Math.max(1, Math.round(r.h * s)) };

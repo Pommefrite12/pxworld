@@ -46,6 +46,8 @@ for (const path of ["/api/map/tiles/0/0", "/api/map/raster/5/0/0", "/api/map/ras
   const x = await get(path);
   check(`endpoint ${path}`, x.status === 200 && x.body.length > 0, `${x.status}, ${x.body.length} bytes`);
 }
+const projectsList = await get("/api/map/projects");
+check("/api/map/projects answers with a list (empty if no project is collecting)", projectsList.status === 200 && (() => { try { return Array.isArray(JSON.parse(text(projectsList))); } catch { return false; } })(), `${projectsList.status}`);
 const geo = await get("/data/geo/index.json");
 check("map reference data is served (public/data/geo)", geo.status === 200 || geo.status === 404 /* the index name may differ */, `${geo.status}`);
 const quoteIn = async (country) => { try { return JSON.parse(text(await get("/api/availability?x=19000&y=11700&w=10&h=10", { headers: { "x-vercel-ip-country": country } }))).price?.currency; } catch { return undefined; } };

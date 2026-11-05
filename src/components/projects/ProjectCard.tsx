@@ -3,15 +3,9 @@ import { Link } from "@/i18n/navigation";
 import { fundedPercent, timeLeft } from "@/lib/campaign";
 import type { PublicCampaign } from "@/lib/data/campaigns";
 import { formatMoney } from "@/lib/grid/pricing";
+import { Progress } from "./Progress";
 
-/** The bar of a project: how much of the goal is paid. */
-export function Progress({ percent, label }: { percent: number; label: string }) {
-  return (
-    <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-label={label} className="h-3 w-full overflow-hidden rounded-[4px] bg-paper-2 shadow-[inset_0_0_0_1.5px_var(--color-line)]">
-      <div className="h-full bg-signal" style={{ width: `${percent}%` }} />
-    </div>
-  );
-}
+export { Progress };
 
 /** What is left, in the most useful unit. */
 export async function timeLeftLabel(seconds: number): Promise<string> {
