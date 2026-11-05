@@ -1,5 +1,6 @@
 import { clipPolygonToRect, clipPolylineToRect, outlineWithoutClipEdges, type Rect4 } from "@/lib/geo/clip";
 import { cellWindows, landPixelsInWindow, type CellRect } from "@/lib/geo/landmask";
+import { indexCommunes, indexPlaces, type CommuneRow, type IndexedCommune, type IndexedPlace, type PlaceRow } from "@/lib/geo/placeSearch";
 import { SEAM_X } from "@/lib/grid/projection";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 
@@ -25,6 +26,8 @@ export interface Places { countries: Country[]; cities: City[] }
 export interface Town { x: number; y: number; pop: number; name: string }
 /** An admin-1 unit (département, state, province…): label anchor, size in grid px, names, country code. */
 export interface AdminLabel { x: number; y: number; s: number; en: string; fr: string; cc: string; dep: boolean }
+/** The small places of the search: communes of France (with their département) and small places of the world, names already normalised. */
+export interface MorePlaces { communes: IndexedCommune[]; places: IndexedPlace[] }
 /** A city of 15 000+ inhabitants, for search. */
 export interface SearchTown { x: number; y: number; pop: number; name: string; cc: string }
 
@@ -348,6 +351,16 @@ export function loadGeo(): Promise<Geo> {
 let placesPromise: Promise<Places> | undefined;
 export function loadPlaces(): Promise<Places> {
   return (placesPromise ??= fetch("/data/places.json").then((r) => r.json() as Promise<Places>));
+}
+
+let morePromise: Promise<MorePlaces> | undefined;
+/** The villages and small towns: every commune of France, and the small places of the world. Downloaded when somebody types three letters. */
+export function loadMorePlaces(): Promise<MorePlaces> {
+  return (morePromise ??= Promise.all([
+    fetch("/data/search-communes.json").then((r) => r.json() as Promise<CommuneRow[]>),
+    fetch("/data/search-places.json").then((r) => r.json() as Promise<PlaceRow[]>),
+  ]).then(([communes, places]) => ({ communes: indexCommunes(communes), places: indexPlaces(places) }))
+    .catch((e) => { morePromise = undefined; throw e; })); // a network failure is not remembered: the next try starts again
 }
 
 let searchPromise: Promise<{ admin: AdminLabel[]; towns: SearchTown[] }> | undefined;

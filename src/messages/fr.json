@@ -155,7 +155,8 @@
     "pixelPosition": "Position en pixels",
     "parcelCode": "Code de parcelle",
     "department": "Département",
-    "region": "Région"
+    "region": "Région",
+    "commune": "Commune"
   },
   "parcel": {
     "water": "Eau",

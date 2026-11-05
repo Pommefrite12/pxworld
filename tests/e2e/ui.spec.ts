@@ -179,6 +179,44 @@ test.describe("map interaction", () => {
     expect(errors).toEqual([]);
   });
 
+  test("the search finds villages: any commune of France (with its département), without accents or hyphens; the big files only come with the third letter", async ({ page }) => {
+    const fetched: string[] = [];
+    page.on("request", (r) => { const u = new URL(r.url()); if (/search-(communes|places)\.json$/.test(u.pathname)) fetched.push(u.pathname); });
+    await page.goto("/fr/map");
+    const search = page.getByRole("combobox").first();
+    const options = page.getByRole("listbox").getByRole("option");
+    await search.fill("ce");
+    await page.waitForTimeout(800);
+    expect(fetched, "two letters do not download the villages").toEqual([]);
+
+    // a small commune of the Ain, typed with its accent, then without
+    await search.fill("Ceyzérieu");
+    await expect(options.first()).toContainText("Ceyzérieu");
+    await expect(options.first()).toContainText("Commune · Ain (01)");
+    expect(fetched.length, "the villages came with the third letter").toBe(2);
+    await search.fill("ceyzerieu");
+    await expect(options.first()).toContainText("Ceyzérieu");
+    // hyphens and spaces are the same thing
+    await search.fill("saint jean de luz");
+    await expect(options.filter({ hasText: "Saint-Jean-de-Luz" }).first()).toBeVisible();
+    await search.fill("Saint-Jean-de-Luz");
+    await expect(options.filter({ hasText: "Saint-Jean-de-Luz" }).first()).toBeVisible();
+    // a big city is listed once, not again as a commune
+    await search.fill("Paris");
+    await expect(options.first()).toContainText("Paris");
+    await expect(options.first()).toContainText("France"); // the French capital first (many places in the world are called Paris, they follow)
+    expect(await options.filter({ hasText: /Commune · Paris/ }).count(), "the capital is not listed again as a commune").toBe(0);
+    // something that exists nowhere says so
+    await search.fill("xqzjkv");
+    await expect(page.getByRole("listbox")).toContainText("Aucun résultat");
+
+    // choosing the village flies there
+    await search.fill("Ceyzérieu");
+    await options.first().click();
+    const row = JSON.parse(await (await page.request.get("/data/search-communes.json")).text()).find((r: [number, number, string]) => r[2] === "Ceyzérieu") as [number, number];
+    await expect.poll(async () => { const c = await camera(page); return c.scale > 6 && Math.abs(c.x - row[0]) < 60 && Math.abs(c.y - row[1]) < 60; }, { timeout: 15_000 }).toBe(true);
+  });
+
   test("there is no tile of GPS coordinates following the cursor", async ({ page }) => {
     await page.goto("/map");
     const box = (await page.getByRole("application").boundingBox())!;

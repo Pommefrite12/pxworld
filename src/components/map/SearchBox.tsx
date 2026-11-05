@@ -5,7 +5,8 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { lonLatToPixel, type Rect } from "@/lib/grid/geometry";
-import { loadPlaces, loadSearchIndex, type Places } from "./geo";
+import { departmentLabel, findSmall, isShownAsCity, normName } from "@/lib/geo/placeSearch";
+import { loadMorePlaces, loadPlaces, loadSearchIndex, type MorePlaces, type Places } from "./geo";
 
 export type SearchTarget =
   | { kind: "rect"; rect: Rect }
@@ -14,11 +15,12 @@ export type SearchTarget =
 
 interface Result { key: string; label: string; sub: string; target: SearchTarget }
 
-const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+const norm = normName; // no accents, no capitals, hyphens and apostrophes read as spaces: "saint jean de luz" finds "Saint-Jean-de-Luz"
 
 /**
  * Geographic search over an offline index (Natural Earth countries and départements/states, GeoNames cities of
- * 15 000+ inhabitants), plus x,y / lat,lon / parcel codes.
+ * 15 000+ inhabitants), plus x,y / lat,lon / parcel codes. From three letters on it also looks into the villages: every commune of France
+ * and the small places of the world (two more files, downloaded then).
  */
 export function SearchBox({ onGo, className = "" }: { onGo: (t: SearchTarget) => void; className?: string }) {
   const t = useTranslations("search");
@@ -28,6 +30,8 @@ export function SearchBox({ onGo, className = "" }: { onGo: (t: SearchTarget) =>
   const [active, setActive] = useState(0);
   const [places, setPlaces] = useState<Places | null>(null);
   const [extra, setExtra] = useState<Awaited<ReturnType<typeof loadSearchIndex>> | null>(null);
+  const [more, setMore] = useState<MorePlaces | null>(null);
+  const [moreFailed, setMoreFailed] = useState(false);
   const id = useId();
   const box = useRef<HTMLDivElement>(null);
   // the country of a place, in the language of the page. A few places of the index have no country ("-1": Somaliland, Kashmir, Baikonur…) and
@@ -45,6 +49,14 @@ export function SearchBox({ onGo, className = "" }: { onGo: (t: SearchTarget) =>
     if (!places) void loadPlaces().then(setPlaces);
     if (!extra) void loadSearchIndex().then(setExtra);
   }, [open, places, extra]);
+  // the villages are only fetched once somebody types three letters
+  const wantMore = open && q.trim().length >= 3;
+  useEffect(() => {
+    if (!wantMore || more) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a new attempt starts again after a failure
+    setMoreFailed(false);
+    void loadMorePlaces().then(setMore).catch(() => setMoreFailed(true));
+  }, [wantMore, more]);
   useEffect(() => {
     const away = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
     document.addEventListener("pointerdown", away);
@@ -80,12 +92,12 @@ export function SearchBox({ onGo, className = "" }: { onGo: (t: SearchTarget) =>
       out.push({ key: `c-${c.code ?? c.en}`, label: name, sub: t("country"), target: { kind: "rect", rect: { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } } });
     }
     // départements/states/provinces and cities, best match first: names starting with the query, then the bigger place
-    type Hit = { r: Result; starts: boolean; weight: number };
+    type Hit = { r: Result; starts: boolean; exact: boolean; weight: number };
     const hits: Hit[] = [];
     const cityScale = (pop: number) => (pop >= 1_000_000 ? 3 : pop >= 100_000 ? 5 : 8);
     const city = (name: string, cc: string, pop: number, x: number, y: number) => {
       const nn = norm(name);
-      if (nn.includes(n)) hits.push({ starts: nn.startsWith(n), weight: pop, r: { key: `p-${name}-${cc}-${x}`, label: name, sub: [t("city"), regionOf(cc)].filter(Boolean).join(" · "), target: { kind: "point", x, y, scale: cityScale(pop) } } });
+      if (nn.includes(n)) hits.push({ starts: nn.startsWith(n), exact: nn === n, weight: pop, r: { key: `p-${name}-${cc}-${x}`, label: name, sub: [t("city"), regionOf(cc)].filter(Boolean).join(" · "), target: { kind: "point", x, y, scale: cityScale(pop) } } });
     };
     for (const c of places.cities) city(c.en, c.cc, c.pop, c.x, c.y);
     if (extra) {
@@ -94,16 +106,30 @@ export function SearchBox({ onGo, className = "" }: { onGo: (t: SearchTarget) =>
         const nn = norm(name);
         if (!nn.includes(n) && !norm(l.en).includes(n)) continue;
         hits.push({
-          starts: nn.startsWith(n), weight: l.s * 400, // a unit is a "bigger hit" than a town of the same name
+          starts: nn.startsWith(n), exact: nn === n, weight: l.s * 400, // a unit is a "bigger hit" than a town of the same name
           r: { key: `a-${l.en}-${l.cc}-${l.x}`, label: name, sub: [l.dep ? t("department") : t("region"), regionOf(l.cc)].filter(Boolean).join(" · "), target: { kind: "point", x: l.x, y: l.y, scale: Math.min(8, Math.max(0.5, 380 / Math.max(l.s, 1))) } },
         });
       }
       for (const c of extra.towns) city(c.name, c.cc, c.pop, c.x, c.y);
     }
-    hits.sort((a, b) => Number(b.starts) - Number(a.starts) || b.weight - a.weight);
+    // the villages (three letters or more): the communes of France, with their département, and the small places of the world
+    if (more && n.length >= 3) {
+      const frCities = new Map<string, { x: number; y: number }[]>(); // the French cities that are already listed above: not listed twice
+      const note = (name: string, x: number, y: number) => { const k = norm(name); const l = frCities.get(k); if (l) l.push({ x, y }); else frCities.set(k, [{ x, y }]); };
+      for (const c of places.cities) if (c.cc === "FR") note(c.en, c.x, c.y);
+      for (const c of extra?.towns ?? []) if (c.cc === "FR") note(c.name, c.x, c.y);
+      const found = findSmall(more.communes, n);
+      for (const c of [...found.exact, ...found.starts, ...found.contains]) {
+        if (isShownAsCity(c, frCities)) continue;
+        hits.push({ starts: c.n.startsWith(n), exact: c.n === n, weight: 1500, r: { key: `m-${c.name}-${c.dep}-${c.x}`, label: c.name, sub: `${t("commune")} · ${departmentLabel(c.dep)}`, target: { kind: "point", x: c.x, y: c.y, scale: 10 } } });
+      }
+      const small = findSmall(more.places, n);
+      for (const c of [...small.exact, ...small.starts, ...small.contains]) city(c.name, c.cc, c.pop, c.x, c.y);
+    }
+    hits.sort((a, b) => Number(b.exact) - Number(a.exact) || Number(b.starts) - Number(a.starts) || b.weight - a.weight);
     for (const h of hits) { if (out.length >= 8) break; if (!out.some((o) => o.key === h.r.key)) out.push(h.r); }
     return out;
-  }, [q, places, extra, locale, regionOf, t]);
+  }, [q, places, extra, more, locale, regionOf, t]);
 
   const go = (r: Result | undefined) => {
     if (!r) return;
@@ -132,7 +158,7 @@ export function SearchBox({ onGo, className = "" }: { onGo: (t: SearchTarget) =>
       </div>
       {open && q.trim() && (
         <ul id={`${id}-list`} role="listbox" className="card absolute left-0 right-0 top-12 z-40 max-h-80 overflow-auto p-1.5">
-          {results.length === 0 && <li className="px-3 py-2.5 text-sm text-ink-soft">{places ? t("none") : t("loading")}</li>}
+          {results.length === 0 && <li className="px-3 py-2.5 text-sm text-ink-soft">{places && (!wantMore || more || moreFailed) ? t("none") : t("loading")}</li>}
           {results.map((r, i) => (
             <li key={r.key} id={`${id}-${i}`} role="option" aria-selected={i === active} onMouseEnter={() => setActive(i)} onPointerDown={(e) => { e.preventDefault(); go(r); }}
               className={`flex cursor-pointer items-baseline justify-between gap-3 rounded-lg px-3 py-2 ${i === active ? "bg-paper-2" : ""}`}>
