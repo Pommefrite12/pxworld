@@ -560,7 +560,20 @@
       "view": "Public page",
       "refundsDue": "{n, plural, one {# refund in progress} other {# refunds in progress}}"
     },
-    "myCampaigns": "My group projects"
+    "myCampaigns": "My group projects",
+    "news": {
+      "title": "Recent news",
+      "projectOpen": "Your project “{title}” was approved: the collection is open.",
+      "until": "It ends on {date}.",
+      "projectRejected": "Your project “{title}” was refused.",
+      "reason": "Reason: {reason}",
+      "projectFunded": "Your project “{title}” was funded: the parcel is yours!",
+      "projectExpired": "Your project “{title}” ended without reaching its goal. Everybody who contributed was refunded.",
+      "comments": "{n, plural, one {# new comment} other {# new comments}} on “{title}” this week.",
+      "see": "See my projects",
+      "seeParcel": "See the parcel",
+      "read": "Read"
+    }
   },
   "draw": {
     "title": "Draw together",
@@ -744,6 +757,14 @@
           ]
         },
         {
+          "h": "Group projects",
+          "p": [
+            "A group project lets several people pay together for one parcel. Its creator designs the parcel and sends it to moderation; once it is accepted, the zone is reserved for the duration the creator chose (7, 14 or 30 days) and anybody with an account may contribute, from the minimum amount shown on the project page.",
+            "A contribution is paid through the same payment provider as a purchase, in the currency of the project. The contributions to a project can never exceed the price of its parcel. If the goal is reached before the end, the parcel becomes the creator's, as if they had bought it, and the contributions are kept as the payment for it. If the goal is not reached by the end, or if the creator withdraws the project, every contribution is refunded automatically to the payment method that was used. Contributions are not displayed publicly: only the total and the number of contributors are shown.",
+            "A contributor receives no ownership, share or right over the parcel. The creator alone owns the parcel and is alone responsible for its content, which is reviewed by moderators like any other creation. [To be reviewed by a lawyer: the holding of funds between a contribution and the end of the project, the right of withdrawal, who issues the invoice, the VAT on each contribution, and the information to give before payment.]"
+          ]
+        },
+        {
           "h": "Taxes and invoices",
           "p": [
             "Taxes, where applicable, are calculated and shown at checkout. [Tax treatment, invoicing details and consumer withdrawal or refund rules: to be defined by the operator with legal counsel.]"
@@ -874,7 +895,8 @@
       "audit": "Audit log",
       "role": "Signed in as {role}",
       "reservations": "Reservations",
-      "campaigns": "Group projects"
+      "campaigns": "Group projects",
+      "comments": "Comments"
     },
     "common": {
       "reason": "Reason",
@@ -903,7 +925,14 @@
       "rev7": "Last 7 days",
       "tax": "Tax collected",
       "daily": "Pixels sold per day (30 days)",
-      "ordersByStatus": "Orders by status"
+      "ordersByStatus": "Orders by status",
+      "projects": "Group projects",
+      "projectsToReview": "Projects to review",
+      "projectsOpen": "Projects collecting",
+      "contributionRefunds": "Contribution refunds due",
+      "projectsFunded": "Funded projects: raised",
+      "projectsCollecting": "Collecting: raised so far",
+      "projectsHint": "Money raised by group projects is not in the order revenue above: it counts as revenue once the parcel is bought (funded projects). What is collecting may still be refunded."
     },
     "moderation": {
       "title": "Moderation queue",
@@ -1085,6 +1114,30 @@
       "raised": "Raised",
       "refundsDue": "{n} refund(s) due",
       "contributors": "{n, plural, one {# contributor} other {# contributors}}"
+    },
+    "comments": {
+      "title": "Comments",
+      "lead": "The latest comments left under parcels. A comment can be removed by moderators (the row is kept, with who removed it, so that a report about it can still be handled).",
+      "filter": "Filter",
+      "status": {
+        "visible": "Visible",
+        "removed": "Removed"
+      },
+      "empty": "No comment here.",
+      "by": "by",
+      "on": "on",
+      "owner": "owner",
+      "hidden": "parcel hidden",
+      "remove": "Remove",
+      "removedBy": "removed by {role}",
+      "roles": {
+        "author": "its author",
+        "owner": "the parcel's owner",
+        "moderator": "a moderator",
+        "admin": "an administrator"
+      },
+      "newer": "Newer",
+      "older": "Older"
     }
   },
   "errors": {

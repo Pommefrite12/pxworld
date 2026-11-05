@@ -189,6 +189,12 @@ A parcel that **several people pay for** (plan and decisions: `PLAN_FINANCEMENT_
 * **Settings** (admin): `campaign_min_area` (≥ 25) and `campaign_min_contribution_cents` (≥ 50; used from step 2). The durations are fixed (7, 14, 30) in `lib/campaign.ts` and in a CHECK of the table.
 * **A held zone is not a sold one**: it does not count in the public counters, and it is not drawn on the map (the map shows what is active).
 
+### What the people involved are told, and what the staff sees
+
+* **Account page — "Recent news"** (`lib/data/news.ts`): the moderators' decision on one's project (approved with its end date, refused with the reason), a project funded (link to the parcel) or ended without its goal (everybody refunded), and the new comments on one's parcels this week. Time-based (14 days for projects, 7 for comments), so nothing needs marking as read; it never breaks the page (an error is logged and the card is simply absent). No e-mail is sent by the site itself yet.
+* **Admin dashboard** (`campaignStats`): projects to review, projects collecting, contribution refunds due (lit when above zero), and, **per currency**, the money of funded projects and of those still collecting. The money of group projects is **not** in the order revenue: it counts as revenue once the parcel is bought. Soft-failing like the news (the tiles are absent if the migrations are missing).
+* **Admin comments** (`/admin/comments`): the latest comments (visible or removed), with the author, the parcel, its owner, and a removal button with a reason (`remove_comment`, journalled).
+
 ## 4. Modules
 
 * `lib/grid` — pure geometry/pricing shared by client and server (tested exhaustively).

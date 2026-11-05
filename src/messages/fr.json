@@ -560,7 +560,20 @@
       "view": "Page publique",
       "refundsDue": "{n, plural, one {# remboursement en cours} other {# remboursements en cours}}"
     },
-    "myCampaigns": "Mes projets collectifs"
+    "myCampaigns": "Mes projets collectifs",
+    "news": {
+      "title": "Nouveautés",
+      "projectOpen": "Votre projet « {title} » a été approuvé : la collecte est ouverte.",
+      "until": "Elle se termine le {date}.",
+      "projectRejected": "Votre projet « {title} » a été refusé.",
+      "reason": "Motif : {reason}",
+      "projectFunded": "Votre projet « {title} » est financé : la parcelle est à vous !",
+      "projectExpired": "Votre projet « {title} » s'est terminé sans atteindre son objectif. Tous les participants ont été remboursés.",
+      "comments": "{n, plural, one {# nouveau commentaire} other {# nouveaux commentaires}} sur « {title} » cette semaine.",
+      "see": "Voir mes projets",
+      "seeParcel": "Voir la parcelle",
+      "read": "Lire"
+    }
   },
   "draw": {
     "title": "Dessiner ensemble",
@@ -744,6 +757,14 @@
           ]
         },
         {
+          "h": "Projets collectifs",
+          "p": [
+            "Un projet collectif permet à plusieurs personnes de payer ensemble une même parcelle. Son créateur dessine la parcelle et l'envoie à la modération ; une fois acceptée, la zone est réservée pendant la durée choisie par le créateur (7, 14 ou 30 jours) et toute personne ayant un compte peut participer, à partir du montant minimum indiqué sur la page du projet.",
+            "Une participation est payée par le même prestataire de paiement qu'un achat, dans la devise du projet. Les participations à un projet ne peuvent jamais dépasser le prix de sa parcelle. Si l'objectif est atteint avant la fin, la parcelle devient celle du créateur, comme s'il l'avait achetée, et les participations sont conservées comme paiement de cette parcelle. Si l'objectif n'est pas atteint à la fin, ou si le créateur retire son projet, chaque participation est remboursée automatiquement sur le moyen de paiement utilisé. Les participations ne sont pas affichées publiquement : seuls le total et le nombre de participants le sont.",
+            "Un participant ne reçoit aucune propriété, part ni droit sur la parcelle. Le créateur seul est propriétaire de la parcelle et seul responsable de son contenu, qui est relu par les modérateurs comme toute autre création. [À faire relire par un juriste : la détention des fonds entre une participation et la fin du projet, le droit de rétractation, qui émet la facture, la TVA sur chaque participation, et les informations à donner avant le paiement.]"
+          ]
+        },
+        {
           "h": "Taxes et factures",
           "p": [
             "Les taxes, le cas échéant, sont calculées et affichées au paiement. [Traitement fiscal, facturation, droit de rétractation et règles de remboursement : à définir par l'exploitant avec son conseil juridique.]"
@@ -874,7 +895,8 @@
       "audit": "Journal d'audit",
       "role": "Connecté en tant que {role}",
       "reservations": "Réservations",
-      "campaigns": "Projets collectifs"
+      "campaigns": "Projets collectifs",
+      "comments": "Commentaires"
     },
     "common": {
       "reason": "Motif",
@@ -903,7 +925,14 @@
       "rev7": "7 derniers jours",
       "tax": "Taxes collectées",
       "daily": "Pixels acquis par jour (30 jours)",
-      "ordersByStatus": "Commandes par statut"
+      "ordersByStatus": "Commandes par statut",
+      "projects": "Projets collectifs",
+      "projectsToReview": "Projets à relire",
+      "projectsOpen": "Projets en collecte",
+      "contributionRefunds": "Remboursements de participations à faire",
+      "projectsFunded": "Projets financés : réuni",
+      "projectsCollecting": "En collecte : réuni pour l'instant",
+      "projectsHint": "L'argent réuni par les projets collectifs n'est pas dans le chiffre d'affaires des commandes ci-dessus : il compte comme chiffre d'affaires une fois la parcelle achetée (projets financés). Ce qui est en collecte peut encore être remboursé."
     },
     "moderation": {
       "title": "File de modération",
@@ -1085,6 +1114,30 @@
       "raised": "Réuni",
       "refundsDue": "{n} remboursement(s) à faire",
       "contributors": "{n, plural, one {# participant} other {# participants}}"
+    },
+    "comments": {
+      "title": "Commentaires",
+      "lead": "Les derniers commentaires laissés sous les parcelles. Un modérateur peut en retirer un (la ligne est gardée, avec qui l'a retiré, pour qu'un signalement puisse encore être traité).",
+      "filter": "Filtre",
+      "status": {
+        "visible": "Visibles",
+        "removed": "Retirés"
+      },
+      "empty": "Aucun commentaire ici.",
+      "by": "par",
+      "on": "sur",
+      "owner": "propriétaire",
+      "hidden": "parcelle masquée",
+      "remove": "Retirer",
+      "removedBy": "retiré par {role}",
+      "roles": {
+        "author": "son auteur",
+        "owner": "le propriétaire de la parcelle",
+        "moderator": "un modérateur",
+        "admin": "un administrateur"
+      },
+      "newer": "Plus récents",
+      "older": "Plus anciens"
     }
   },
   "errors": {

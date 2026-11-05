@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, request as pwRequest, test, type APIRequestContext, type Page } from "@playwright/test";
 import pg from "pg";
 import sharp from "sharp";
@@ -110,6 +111,10 @@ test.describe.serial("group projects: contribute, fund, refund", () => {
     await expect(page.getByTestId("contribute-signin")).toBeVisible();
     await expect(page.getByTestId("contribute-form")).toHaveCount(0);
     // a project that does not exist, or that nobody opened, is a 404
+    const scan = () => new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+    expect((await scan()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`), "the project page is accessible (axe)").toEqual([]);
+    await page.goto("/projects");
+    expect((await scan()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`), "the list is accessible (axe)").toEqual([]);
     expect((await page.goto("/projects/0123456789"))!.status()).toBe(404);
     expect((await page.goto("/projects/not-a-code"))!.status()).toBe(404);
   });
@@ -220,6 +225,9 @@ test.describe.serial("group projects: contribute, fund, refund", () => {
     await expect(item.getByTestId("campaign-raised")).toContainText("3 contributors");
     await expect(item.getByTestId("campaign-public")).toBeVisible();
     await expect(item.getByTestId("campaign-withdraw")).toHaveCount(0); // a bought parcel cannot be withdrawn
+    await page.goto("/account");
+    await expect(page.getByTestId("news-project_funded")).toContainText("The big blue wall");
+    await expect(page.getByTestId("news-project_funded")).toContainText("the parcel is yours");
   });
 
   test("the creator withdraws a project that has money: everybody is refunded at once and the zone is free", async ({ page }) => {
@@ -259,6 +267,9 @@ test.describe.serial("group projects: contribute, fund, refund", () => {
     await page.goto(`/projects/${p.code}`);
     await expect(page.getByTestId("project-status")).toHaveText("Ended without its goal");
     await expect(page.getByTestId("project-ended")).toContainText("refunded");
+    await signIn(page, "maker2.fund@example.test");
+    await page.goto("/account");
+    await expect(page.getByTestId("news-project_expired")).toContainText("Out of time");
     const audit = await sql<{ action: string }>("select action from public.audit_logs where target_id = $1 or target_id = $2 order by id", [p.id, k]);
     expect(audit.map((a) => a.action)).toEqual(expect.arrayContaining(["campaign.expired", "contribution.paid", "contribution.refunded"]));
     await other.dispose();
@@ -278,5 +289,12 @@ test.describe.serial("group projects: contribute, fund, refund", () => {
     const row = page.getByTestId("campaign-handled").locator("tr").filter({ hasText: "The big blue wall" });
     await expect(row.getByTestId("campaign-money")).toContainText("3 contributors");
     await expect(row.getByTestId("campaign-status")).toHaveText("Funded");
+    // the dashboard counts the projects, and the money of the funded ones (not in the order revenue)
+    await page.goto("/admin");
+    const stats = page.getByTestId("campaign-stats");
+    await expect(stats).toBeVisible();
+    await expect(stats).toContainText("Projects to review");
+    await expect(stats).toContainText("Funded projects: raised (EUR)");
+    await expect(stats).toContainText("Contribution refunds due");
   });
 });

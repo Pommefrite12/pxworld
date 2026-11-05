@@ -448,6 +448,31 @@ la base contient déjà un paiement réel ; ou l'identifiant du projet Supabase 
 > Je n'ai pu essayer la création de comptes par l'API d'administration de Supabase que sur une base locale, pas sur un vrai projet : si Supabase refuse un compte, le message est affiché tel quel (collez-le moi).
 > Si c'est l'adresse `…@demo.invalid` qui est refusée, ajoutez `--email-domain exemple.test` (même option pour `demo:clear`).
 
+## Étape 10 : essayer les projets collectifs sur le site de test (15 min)
+
+Un **projet collectif** est une grande parcelle payée par plusieurs personnes (voir `PLAN_FINANCEMENT_COLLECTIF.md`). L'essai se fait en deux temps : la partie **sans paiement** marche tout de suite ; la **participation** demande Stripe en mode test (étape 6).
+
+**Avant tout : mettre la base de données à jour.** Les projets collectifs ont deux migrations (17 et 18). Dans le Codespace, avec le fichier `.env.production.local` (comme à l'étape 1F) :
+```bash
+git pull origin claude/funny-bell-k7v5xf
+node scripts/migrate.mjs --env .env.production.local
+```
+Résultat attendu : des lignes `applying …_campaigns.sql … ok` et `applying …_contributions.sql … ok` (et peut-être d'autres migrations en retard, comme le prix à 0,25 €), ou `Nothing to apply: this database is up to date.` si tout était déjà fait. **Sans cela, le bouton « Financer à plusieurs » s'affiche mais l'envoi échoue, et les pages `/projects` sont vides.**
+
+**Partie 1 — sans paiement (deux comptes : le vôtre, administrateur, et un compte de test) :**
+1. Avec le compte de test, ouvrez la carte, choisissez un grand emplacement sur la terre (au moins **100 × 100**), dessinez ou importez une image, puis cliquez sur **« Financer à plusieurs »**. Donnez un titre, choisissez la durée (7, 14 ou 30 jours), acceptez les conditions et envoyez. Résultat attendu : « Votre projet est envoyé ». **Rien n'est payé.**
+2. Avec votre compte administrateur : menu **Administration → Projets collectifs**. Le projet attend. Cliquez sur **« Approuver et réserver la zone »**.
+3. Ouvrez la page **Projets collectifs** (pied de page). Le projet apparaît avec sa barre de progression à 0 %. Cliquez dessus : la fiche montre l'objectif, le temps restant, le bouton pour participer.
+4. Avec le compte de test, **Mon compte** affiche la carte « Nouveautés » (« votre projet a été approuvé ») ; **Mes projets collectifs** permet de le retirer (la zone est alors libérée).
+
+**Partie 2 — la participation (Stripe en mode test, étape 6 faite) :**
+5. Avec un **troisième compte** (ou le vôtre), ouvrez la fiche du projet et participez de 5 € avec la carte de test `4242 4242 4242 4242`. Résultat attendu : « Merci ! », et le total du projet passe à 5 €, **sans aucun nom affiché** (les participations sont anonymes).
+6. Pour voir un **remboursement** : retirez le projet depuis le compte du créateur. La participation est remboursée automatiquement (visible dans le tableau de bord Stripe, et sur la ligne du projet dans l'administration).
+7. Pour voir un **projet financé**, il faut réunir tout l'objectif : prenez une petite parcelle de 100 × 100 si vous voulez limiter le montant de test (2 500 € à 0,25 € le pixel, en monnaie de test).
+
+> Tant que Stripe n'est pas configuré, la participation répond « Les paiements ne sont pas encore disponibles » : c'est normal.
+> L'**échéance** d'un projet est traitée chaque nuit par la tâche planifiée (`CRON_SECRET` doit être réglé, voir l'étape 3D) : un projet dont le temps est écoulé est fermé, sa zone libérée, et tous les participants remboursés.
+
 ## Quand c'est fait
 
 - **Ne partagez pas encore l'adresse publiquement** : c'est un site de test (paiements fictifs).

@@ -60,7 +60,7 @@ Left, because each needs the deployed site or a dashboard:
 - MFA for admins (Supabase Auth setting); Vercel Firewall rules on sign-up and checkout.
 - A restore drill from a backup (`BACKUP_RESTORE.md`) and the alert webhook tested for real.
 - Load test **against the deployed site behind its CDN** (`scripts/loadtest.mjs <url>`); try the map on a real mid-range phone (my timings come from a headless browser without a GPU).
-- Comments: an admin view of recent comments, and a notification to the parcel's owner (today they only see them on the card).
+- Comments: **done** — an admin view of the latest comments (`/admin/comments`, removal with a reason) and a "Recent news" card on the account page (new comments on one's parcels this week; the decisions on one's group projects, 14 days). Time-based, nothing to mark as read. There is still **no e-mail** sent by the site itself (a sender account and a domain are needed first).
 
 ## 6. Launch assets
 

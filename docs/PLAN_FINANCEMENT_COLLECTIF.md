@@ -69,7 +69,7 @@ Je ne fixe aucune règle juridique ou fiscale. Points à faire examiner : la **d
 | 3 | Participation minimale | **2 €** (et 2 $ en dollar), modifiable dans l'administration |
 | 4 | Limites du créateur | **Un seul projet actif à la fois, aucun apport obligatoire** ; la modération filtre avant toute réservation |
 
-Conséquences : pas de nom de participant à stocker côté public (la table `contributions` garde le contributeur pour les remboursements et la comptabilité, mais **rien n'en est exposé** : ni l'API publique, ni la fiche) ; pas de lien avec le badge du Registre ; pas d'apport du créateur à gérer.
+Conséquences : pas de nom de participant à stocker côté public (la table `contributions` garde le contributeur pour les remboursements et la comptabilité, mais **rien n'en est exposé** : ni l'API publique, ni la fiche)  ; pas d'apport du créateur à gérer.
 
 Autres valeurs par défaut (non discutées, modifiables) : taille minimale d'un projet 10 000 px (2 500 €) ; réservation de la part d'un paiement en cours : 30 minutes ; modération avant toute réservation.
 

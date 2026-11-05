@@ -29,6 +29,10 @@ parcelle côtière peut contenir de la mer (offerte) mais doit être à moitié 
 - **Chiffres réels uniquement :** aucun compteur, utilisateur ou transaction fictif.
 - Environ **460 tests automatiques** (unitaires et base de données) et **170 tests de bout en bout** passent.
 
+## Les projets collectifs (« Financer à plusieurs »)
+
+Quelqu'un qui veut une grande parcelle sans en avoir les moyens la dessine, l'envoie à la modération (rien n'est payé), et, une fois acceptée, la zone est **réservée 7, 14 ou 30 jours** et le projet entre dans une liste publique où **chacun peut participer** (minimum 2 €, participations **anonymes**). Objectif atteint : la parcelle devient celle du créateur. Temps écoulé ou projet retiré : **tout le monde est remboursé automatiquement**. La base de données garantit que l'objectif n'est jamais dépassé, même si beaucoup de gens paient en même temps (testé). Les paiements restent simulés tant que Stripe n'est pas branché.
+
 ## L'histoire « 100 jours pour sauver le monde » (optionnelle, éteinte tant qu'une date n'est pas fixée)
 
 Un compte à rebours de 100 jours annonce la **« suppression du monde numérique »**. Au fur et à mesure, la terre non achetée se **corrompt** (style

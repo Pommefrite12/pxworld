@@ -83,3 +83,32 @@ export const reservationsList = (status: string, offset = 0) =>
     `select r.id, r.status, r.expires_at, r.created_at, u.username, p.x, p.y, p.w, p.h, o.status as order_status, o.amount_cents, o.currency, (r.expires_at <= now()) as expired
        from public.parcel_reservations r join public.profiles u on u.id = r.user_id join public.parcels p on p.id = r.parcel_id left join public.orders o on o.id = r.order_id
       where ($1 = 'all' or r.status = $1) order by r.created_at desc limit ${PAGE_SIZE} offset $2`, [status, offset]);
+
+/** The group projects, at a glance (the dashboard). Never allowed to break the dashboard: without the migrations it simply returns nothing. */
+export async function campaignStats() {
+  try {
+    const counts = await queryOne<{ pending: number; open: number; refunds_due: number }>(
+      `select (select count(*) from public.campaigns where status = 'pending')::int as pending,
+              (select count(*) from public.campaigns where status = 'open')::int as open,
+              (select count(*) from public.contributions where status = 'refund_required')::int as refunds_due`);
+    const money = await query<{ currency: string; funded: string; collecting: string }>(
+      `select c.currency,
+              coalesce(sum(k.amount_cents) filter (where c.status = 'funded'), 0)::text as funded,
+              coalesce(sum(k.amount_cents) filter (where c.status = 'open'), 0)::text as collecting
+         from public.contributions k join public.campaigns c on c.id = k.campaign_id
+        where k.status in ('paid', 'disputed') and c.status in ('funded', 'open') group by c.currency order by c.currency`);
+    return counts ? { ...counts, money } : null;
+  } catch (e) {
+    console.error("campaign stats failed", (e as Error).message);
+    return null;
+  }
+}
+
+/** The latest comments (everything the public may read, plus what was removed), for the back office. */
+export const recentComments = (status: "visible" | "removed", offset = 0) =>
+  query<{ id: string; body: string; status: string; created_at: Date; removed_role: string | null; removed_at: Date | null; author: string; author_id: string; owner: string; code: string; title: string | null; hidden: boolean }>(
+    `select c.id, c.body, c.status, c.created_at, c.removed_role, c.removed_at, a.username as author, a.id as author_id, o.username as owner, p.code, s.title,
+            (p.hidden_at is not null) as hidden
+       from public.parcel_comments c join public.profiles a on a.id = c.author_id join public.parcels p on p.id = c.parcel_id
+       join public.profiles o on o.id = p.owner_id left join public.parcel_assets s on s.id = p.published_asset_id
+      where c.status = $1 order by c.created_at desc limit ${PAGE_SIZE} offset $2`, [status, offset]);

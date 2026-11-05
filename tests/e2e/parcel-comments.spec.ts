@@ -177,3 +177,42 @@ test("limits: empty or too long comments, bad cursors, a slow-down, and the list
   expect(all.length).toBe(first.total);
   expect(second.next).toBeNull();
 });
+
+test("the owner is told about new comments on their account page; the admin sees all comments and removes one", async ({ page }) => {
+  const [author, admin] = [await as("newsauthor@example.test"), await as("admin.wall@example.test", "admin")];
+  const said = await say(author, "a comment for the news and the back office");
+  const id = (await said.json()).comment.id as string;
+  expect((await say(author, "a second one, so that it says two")).status()).toBe(201);
+
+  // the owner finds it on the account page (and the author of a comment is not "told" about their own words)
+  expect((await page.context().request.post("/api/dev/login", { data: { email: "wallowner@example.test" } })).ok()).toBeTruthy();
+  await page.goto("/account");
+  const news = page.getByTestId("news-comments");
+  await expect(news).toBeVisible();
+  await expect(news).toContainText("new comments");
+  await expect(news).toContainText(TITLE);
+  await news.getByRole("link").click();
+  await expect(page).toHaveURL(new RegExp(`/p/${code}$`));
+  await page.context().clearCookies();
+  expect((await page.context().request.post("/api/dev/login", { data: { email: "newsauthor@example.test" } })).ok()).toBeTruthy();
+  await page.goto("/account");
+  await expect(page.getByTestId("news-comments")).toHaveCount(0);
+
+  // the back office lists the comments and can remove one
+  await page.context().clearCookies();
+  expect((await page.context().request.post("/api/dev/login", { data: { email: "admin.wall@example.test", role: "admin" } })).ok()).toBeTruthy();
+  await page.goto("/admin/comments");
+  const row = page.getByTestId("admin-comment").filter({ hasText: "a comment for the news and the back office" });
+  await expect(row).toBeVisible();
+  await expect(row).toContainText("newsauthor");
+  await expect(row).toContainText(TITLE);
+  await row.getByTestId("remove-comment").click();
+  await row.getByRole("textbox").fill("off topic");
+  await row.getByTestId("remove-comment").click();
+  await expect(page.getByTestId("admin-comment").filter({ hasText: "a comment for the news and the back office" })).toHaveCount(0);
+  await page.getByTestId("comments-removed").click();
+  const gone = page.getByTestId("admin-comment").filter({ hasText: "a comment for the news and the back office" });
+  await expect(gone).toBeVisible();
+  await expect(gone).toContainText("removed by an administrator");
+  expect((await comments(admin)).comments.map((c) => c.id)).not.toContain(id);
+});

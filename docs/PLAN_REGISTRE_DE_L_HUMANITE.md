@@ -1,5 +1,7 @@
 # « Sauvez le monde. Et la pizza avec. » — plan en trois phases
 
+> **ABANDONNÉ le 2026-11-05, sur décision du propriétaire.** Aucun code de ce plan n'a été écrit (ni migration, ni page, ni badge) : le site n'en contient aucune trace. Le document est gardé pour mémoire seulement ; il ne fait partie d'aucune étape à venir.
+
 *Analyse du code existant et proposition. **Rien de ce qui suit n'est codé** : on attend votre accord sur les points de la section 6.*
 
 ## 1. Ce qui existe déjà et que l'on réutilise

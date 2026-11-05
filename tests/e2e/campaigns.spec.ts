@@ -124,6 +124,12 @@ test.describe.serial("group projects: send, moderate, hold, withdraw", () => {
     await expect(page.getByTestId("campaign-handled").getByTestId("campaign-status").first()).toHaveText("Open");
     const [row] = await sql<{ status: string; parcel_id: string; deadline: Date }>("select status, parcel_id, deadline from public.campaigns where id = $1", [aliceCampaign]);
     expect(row!.status).toBe("open");
+    // the decision is also announced to the creator, on her account page
+    await page.context().clearCookies();
+    await signIn(page, "alice.group@example.test");
+    await page.goto("/account");
+    await expect(page.getByTestId("news-project_open")).toContainText("The wall of Alice");
+    await expect(page.getByTestId("news-project_open")).toContainText("was approved");
     const days = (new Date(row!.deadline).getTime() - Date.now()) / 86_400_000;
     expect(days).toBeGreaterThan(13.9);
     expect(days).toBeLessThan(14.01);
@@ -211,6 +217,9 @@ test.describe.serial("group projects: send, moderate, hold, withdraw", () => {
     await page.reload();
     await expect(item.getByTestId("campaign-status")).toHaveText("Refused");
     await expect(item.getByTestId("campaign-reason")).toHaveText("Reason: Please remove the logo");
+    await page.goto("/account");
+    await expect(page.getByTestId("news-project_rejected")).toContainText("Bob's mural");
+    await expect(page.getByTestId("news-project_rejected")).toContainText("Reason: Please remove the logo");
     expect(await free(alice, B)).toBe(true);
     // refused: bob may try again (one active project at a time, and this one is over)
     expect((await send(bob, C, "Bob's second try")).status()).toBe(201);

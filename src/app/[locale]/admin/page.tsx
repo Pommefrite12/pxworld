@@ -1,6 +1,6 @@
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { dashboard } from "@/lib/data/admin";
+import { campaignStats, dashboard } from "@/lib/data/admin";
 import { TOTAL_PIXELS } from "@/lib/grid/constants";
 import { formatMoney } from "@/lib/grid/pricing";
 
@@ -12,7 +12,7 @@ function Tile({ label, value, href, alert }: { label: string; value: string; hre
 export default async function AdminHome({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const [t, f, d] = await Promise.all([getTranslations("admin.dashboard"), getFormatter(), dashboard()]);
+  const [t, f, d, cs] = await Promise.all([getTranslations("admin.dashboard"), getFormatter(), dashboard(), campaignStats()]);
   const max = Math.max(1, ...d.daily.map((x) => x.pixels));
   return (
     <div className="space-y-8">
@@ -23,6 +23,19 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
         <Tile label={t("refundsDue")} value={f.number(d.queues?.refunds ?? 0)} href="/admin/orders" alert={(d.queues?.refunds ?? 0) > 0} />
         <Tile label={t("heldReservations")} value={f.number(d.queues?.held ?? 0)} />
       </section>
+      {cs && (
+        <section aria-label={t("projects")} data-testid="campaign-stats">
+          <h2 className="text-xl font-bold">{t("projects")}</h2>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Tile label={t("projectsToReview")} value={f.number(cs.pending)} href="/admin/campaigns" alert={cs.pending > 0} />
+            <Tile label={t("projectsOpen")} value={f.number(cs.open)} href="/admin/campaigns" />
+            <Tile label={t("contributionRefunds")} value={f.number(cs.refunds_due)} href="/admin/campaigns" alert={cs.refunds_due > 0} />
+            {cs.money.map((m) => <Tile key={m.currency} label={`${t("projectsFunded")} (${m.currency.toUpperCase()})`} value={formatMoney(Number(m.funded), locale, m.currency)} />)}
+            {cs.money.map((m) => <Tile key={`c-${m.currency}`} label={`${t("projectsCollecting")} (${m.currency.toUpperCase()})`} value={formatMoney(Number(m.collecting), locale, m.currency)} />)}
+          </div>
+          <p className="mt-2 text-xs text-ink-faint">{t("projectsHint")}</p>
+        </section>
+      )}
       <section aria-label={t("figures")} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Tile label={t("pixelsSold")} value={f.number(d.stats?.sold_pixels ?? 0)} />
         <Tile label={t("fill")} value={`${f.number(((d.stats?.sold_pixels ?? 0) / TOTAL_PIXELS) * 100, { maximumFractionDigits: 4 })} %`} />
