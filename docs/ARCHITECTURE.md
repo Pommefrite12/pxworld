@@ -173,6 +173,17 @@ The owner of a parcel (in *My parcels → Draw together*) creates a **secret lin
 * **The link is the capability** (160-bit random token). The owner can renew it (the old one dies, the drawing is kept), switch it off (the drawing is kept), reset the drawing (connected pages reload it), and publish. A parcel hidden by moderation, revoked, or whose owner is suspended stops accepting strokes at once; unknown, closed and hidden links all answer the same 404.
 * **Abuse limits.** Per address: 120 paint requests and 240 reads a minute; per link: 6 000 paint requests a minute; the database refuses anything outside the parcel; owner actions are written to `audit_logs`. The page is `noindex` and sends no referrer, since the URL is a secret.
 
+## 3d. The ranking by likes
+
+`/ranking` (`/fr/ranking`; linked from the footer and from Discover) ranks the **creations** and the **creators** by the number of likes they received, over **all time, this month (30 days) or this week (7 days)** (`?board=creations|creators&period=all|month|week`, anything else falls back to the defaults). The SQL is in `lib/ranking.ts` (no server-only import) so that `tests/db/ranking.test.ts` runs exactly what the page runs. Rules, so that the ranking stays honest:
+
+* **The owner's own like does not count** (liking one's own creation is still allowed, it is just ignored), nor a like from an account that is **suspended or deleted**.
+* Only what the public can see is ranked: an active parcel, **not hidden by moderation**, with a published creation, whose owner is active. A creation with only its owner's like is not ranked.
+* **Ties share a rank** (1, 2, 2, 4); inside a rank the earlier published comes first. Only the first 50 are shown.
+* A creator's score is the **sum of the likes of all their visible creations**; their best one is shown next to them.
+
+It reads `parcel_likes` (already indexed by parcel and date). At a very large number of likes a materialised view or a cached result would be the next step (not needed now). The page is dynamic (it depends on the query string) and never breaks on a query error (an empty list is shown).
+
 ## 3c. Fund it together (group projects)
 
 A parcel that **several people pay for** (plan and decisions: `PLAN_FINANCEMENT_COLLECTIF.md`). **Built: the project and its moderation (step 1), the public pages, the contributions, the purchase of the parcel when the goal is reached, and the refunds (steps 2 and 3).** The map display (step 4) is built too; the real Stripe test (step 5) comes when Stripe is possible. Payments stay simulated (`STRIPE_MOCK`) until you approve Stripe.

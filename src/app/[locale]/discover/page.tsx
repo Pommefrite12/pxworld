@@ -35,7 +35,10 @@ export default async function Discover({ params }: { params: Promise<{ locale: s
     <PageShell>
       <h1 className="text-4xl font-extrabold">{t("title")}</h1>
       <p className="mt-2 max-w-2xl text-lg text-ink-soft">{t("lead")}</p>
-      <Link href="/projects" className="btn btn-secondary btn-sm mt-4" data-testid="discover-projects">{t("projectsLink")}</Link>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link href="/ranking" className="btn btn-secondary btn-sm" data-testid="discover-ranking">{t("rankingLink")}</Link>
+        <Link href="/projects" className="btn btn-secondary btn-sm" data-testid="discover-projects">{t("projectsLink")}</Link>
+      </div>
       <Section id="latest" title={t("latest")}><CreationGrid items={latest} empty={t("empty")} /></Section>
       <Section id="large" title={t("large")} hint={t("largeHint")}><CreationGrid items={large} empty={t("empty")} /></Section>
       <Section id="popular" title={t("popular")} hint={t("popularHint")}><CreationGrid items={popular} empty={t("emptyPopular")} /></Section>

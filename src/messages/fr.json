@@ -396,7 +396,8 @@
     "credits": "Crédits",
     "contact": "Contact",
     "virtual": "Pixel World vend un emplacement virtuel sur une carte numérique. Ce n'est ni un bien immobilier, ni un droit géographique ou de propriété intellectuelle.",
-    "projects": "Projets collectifs"
+    "projects": "Projets collectifs",
+    "ranking": "Classement"
   },
   "auth": {
     "email": "E-mail",
@@ -670,7 +671,8 @@
     "emptyPopular": "Aucune création n'a encore reçu de « j'aime » ce mois-ci.",
     "emptyEditorial": "Nos premières sélections apparaîtront ici.",
     "contribution": "{parcels} parcelles · {pixels} px",
-    "projectsLink": "Voir les projets collectifs"
+    "projectsLink": "Voir les projets collectifs",
+    "rankingLink": "Voir le classement"
   },
   "profile": {
     "since": "membre depuis le {date}",
@@ -1243,5 +1245,26 @@
     "creator": "Créateur",
     "viewProject": "Voir le projet",
     "close": "Fermer"
+  },
+  "ranking": {
+    "title": "Classement",
+    "lead": "Les créations et les créateurs les plus aimés de Pixel World.",
+    "boardLabel": "Classement des",
+    "periodLabel": "Période",
+    "boards": {
+      "creations": "Créations",
+      "creators": "Créateurs"
+    },
+    "periods": {
+      "all": "Depuis toujours",
+      "month": "Ce mois-ci",
+      "week": "Cette semaine"
+    },
+    "empty": "Personne n'a encore reçu de « j'aime » sur cette période.",
+    "by": "par {name}",
+    "likes": "{n, plural, one {# j'aime} other {# j'aime}}",
+    "creationsCount": "{n, plural, one {# création} other {# créations}}",
+    "best": "meilleure : {title}",
+    "rules": "Seuls comptent les « j'aime » d'autres comptes actifs : le « j'aime » du propriétaire sur sa propre création, et ceux des comptes suspendus, sont ignorés. Une création masquée par la modération n'est pas classée. Les égalités partagent le même rang ; la création publiée en premier passe devant. Le score d'un créateur est la somme des « j'aime » de toutes ses créations."
   }
 }

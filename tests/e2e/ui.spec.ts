@@ -14,7 +14,7 @@ const camera = async (page: import("@playwright/test").Page) => {
 };
 
 test.describe("accessibility (axe, WCAG 2.1 A/AA)", () => {
-  for (const path of ["/", "/fr", "/map", "/discover", "/projects", "/rules", "/terms", "/auth/sign-in", "/auth/sign-up"]) {
+  for (const path of ["/", "/fr", "/map", "/discover", "/projects", "/ranking", "/rules", "/terms", "/auth/sign-in", "/auth/sign-up"]) {
     test(`no serious violation on ${path}`, async ({ page }) => {
       await page.goto(path);
       await page.waitForLoadState("networkidle");

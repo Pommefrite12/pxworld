@@ -396,7 +396,8 @@
     "credits": "Credits",
     "contact": "Contact",
     "virtual": "Pixel World sells virtual placement on a digital map. It is not real-estate, geographic or intellectual property.",
-    "projects": "Group projects"
+    "projects": "Group projects",
+    "ranking": "Ranking"
   },
   "auth": {
     "email": "Email",
@@ -670,7 +671,8 @@
     "emptyPopular": "No creation has been liked this month yet.",
     "emptyEditorial": "Our first picks will appear here.",
     "contribution": "{parcels} parcels · {pixels} px",
-    "projectsLink": "See the group projects"
+    "projectsLink": "See the group projects",
+    "rankingLink": "See the ranking"
   },
   "profile": {
     "since": "member since {date}",
@@ -1243,5 +1245,26 @@
     "creator": "Creator",
     "viewProject": "See the project",
     "close": "Close"
+  },
+  "ranking": {
+    "title": "Ranking",
+    "lead": "The most liked creations and creators of Pixel World.",
+    "boardLabel": "Ranking of",
+    "periodLabel": "Period",
+    "boards": {
+      "creations": "Creations",
+      "creators": "Creators"
+    },
+    "periods": {
+      "all": "All time",
+      "month": "This month",
+      "week": "This week"
+    },
+    "empty": "Nobody has been liked in this period yet.",
+    "by": "by {name}",
+    "likes": "{n, plural, one {# like} other {# likes}}",
+    "creationsCount": "{n, plural, one {# creation} other {# creations}}",
+    "best": "best: {title}",
+    "rules": "Only likes from other, active accounts count: the owner's own like on their creation, and likes from suspended accounts, are ignored. A creation that is hidden by moderation is not ranked. Ties share a rank; the earlier creation comes first. The creators' score is the sum of the likes of all their creations."
   }
 }
