@@ -12,7 +12,18 @@ export const metadata: Metadata = { robots: { index: false } };
  * forced with the `is-hover` / `is-active` helper classes), the palette and the pixel details. 404 in production.
  */
 const STATES = [["Par défaut", ""], ["Hover", "is-hover"], ["Cliqué", "is-active"]] as const;
-const SWATCHES = [["Orange CTA", "#f04316"], ["Fond chaud", "#fcf9f2"], ["Bordure", "#e6dccb"], ["Hover / accent", "#e6f2ff"], ["Cliqué / actif", "#cfe6ff"], ["Texte principal", "#1f2540"]] as const;
+/** The colours of the CURRENT theme, read from its variables (so the page is always true to `globals.css`): [name, variable]. */
+const TOKENS = [["Page (paper)", "--color-paper"], ["Surface", "--surface"], ["Bordure (line)", "--color-line"], ["Texte (ink)", "--color-ink"], ["Texte secondaire", "--color-ink-soft"], ["Or / accent (signal)", "--color-signal"], ["Cyan / lien (cobalt)", "--color-cobalt"], ["Survol (sky)", "--color-sky"], ["Appuyé (sky-2)", "--color-sky-2"], ["Océan de la carte", "--color-ocean"], ["Terre de la carte", "--color-land"]] as const;
+
+function Swatches() {
+  return (
+    <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {TOKENS.map(([name, v]) => (
+        <li key={v} className="text-sm"><span className="block h-10 rounded-[6px] shadow-[inset_0_0_0_1.5px_var(--color-line)]" style={{ background: `var(${v})` }} /><span className="mt-1 block font-semibold">{name}</span><span className="pixel-num text-xs text-ink-faint">{v}</span></li>
+      ))}
+    </ul>
+  );
+}
 
 function Row({ title, hint, render }: { title: string; hint: string; render: (state: string) => React.ReactNode }) {
   return (
@@ -44,18 +55,20 @@ export default async function DesignPage({ params }: { params: Promise<{ locale:
         <Row title="Bouton de navigation (pilule)" hint="Onglet / filtre / section (ex. Acheter une parcelle, Mes parcelles)." render={(s) => <button className={`btn btn-nav ${s}`}>Acheter une parcelle <span aria-hidden>›</span></button>} />
         <Row title="Bouton sombre" hint="Action forte et neutre (ex. Enregistrer, Importer une image)." render={(s) => <button className={`btn btn-ink ${s}`}>Enregistrer</button>} />
         <section className="card p-5">
-          <h2 className="text-lg font-bold">Palette</h2>
-          <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {SWATCHES.map(([name, hex]) => (
-              <li key={hex} className="text-sm"><span className="block h-10 rounded-[6px] shadow-[inset_0_0_0_1.5px_rgb(31_37_64/0.15)]" style={{ background: hex }} /><span className="mt-1 block font-semibold">{name}</span><span className="pixel-num text-ink-soft">{hex}</span></li>
-            ))}
-          </ul>
+          <h2 className="text-lg font-bold">Palette — nuit (côté public)</h2>
+          <Swatches />
+          <h2 className="mt-6 text-lg font-bold">Palette — lumière (administration)</h2>
+          <p className="text-sm text-ink-soft">Le même jeu de variables, redéclaré par <code>data-theme=&quot;light&quot;</code> : l&apos;administration reste claire, au milieu d&apos;une page de nuit.</p>
+          <div data-theme="light" className="mt-3 rounded-xl bg-paper p-4 text-ink">
+            <Swatches />
+            <div className="mt-4 flex flex-wrap gap-3"><button className="btn btn-primary">Principal</button><button className="btn btn-secondary">Secondaire</button><button className="btn btn-ghost">Fantôme</button><button className="btn btn-ink">Sombre</button></div>
+          </div>
           <h2 className="mt-6 text-lg font-bold">Détails pixel</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-soft">
             <li>Coins en escalier (2 marches de 2 px) au lieu d&apos;arrondis.</li>
             <li>Highlight de 1 px sur le haut de chaque face, ressaut plus sombre dessous (relief).</li>
-            <li>Ombre 8-bit douce <span className="pixel-num">0 2px 0 rgba(31,37,64,.12)</span> qui suit le contour en escalier.</li>
-            <li>Hover clair (bleu pâle), cliqué plus profond avec un enfoncement de 2 px, focus net de 3 px.</li>
+            <li>Ombre 8-bit douce (<span className="pixel-num">--shadow-8bit</span>, noire la nuit) qui suit le contour en escalier.</li>
+            <li>Hover : teinte du thème (violet clair la nuit, bleu pâle le jour) ; cliqué plus profond avec un enfoncement de 2 px ; focus net de 3 px (cyan la nuit).</li>
           </ul>
         </section>
       </div>

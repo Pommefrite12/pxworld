@@ -69,8 +69,11 @@ test.describe.serial("group projects on the map", () => {
     expect(far!.look).toBe("pin");
     const c2 = (await page.getByRole("application").boundingBox())!;
     const dot = await mean(page, { x: c2.x + far!.x + far!.w / 2 - 2, y: c2.y + far!.y + far!.h / 2 - 2, width: 4, height: 4 });
-    expect(dot[0]!, "the pin is the accent colour").toBeGreaterThan(190);
-    expect(dot[2]!, "the pin is the accent colour").toBeLessThan(110);
+    // the accent of a project that is collecting is the soft gold of the night theme (214, 171, 114): warm, and neither the cyan of a selection nor the ivory of a name
+    expect(dot[0]!, "the pin is the accent colour: warm (red high)").toBeGreaterThan(190);
+    expect(dot[1]!, "the pin is the accent colour: gold (green in the middle)").toBeGreaterThan(130);
+    expect(dot[2]!, "the pin is the accent colour: gold, not ivory (blue low)").toBeLessThan(150);
+    expect(dot[0]! - dot[2]!, "the pin is the accent colour: gold").toBeGreaterThan(60);
   });
 
   test("hovering shows a hand, a click opens the card with its progress, the card leads to the project; a click elsewhere closes it", async ({ page }) => {

@@ -188,6 +188,10 @@ Offline, no search service. **Always loaded when the box opens**: the countries,
 
 It reads `parcel_likes` (already indexed by parcel and date). At a very large number of likes a materialised view or a cached result would be the next step (not needed now). The page is dynamic (it depends on the query string) and never breaks on a query error (an empty list is shown).
 
+## 3h. Themes: night for the public, light for the back office
+
+The look is a set of CSS variables per theme (`<html data-theme="night">`, `data-theme="light"` on the admin layout), declared in `src/app/globals.css`; components never name a colour (`docs/DESIGN.md`). The map engine has its own palette (`NIGHT`, with the ocean kept BLUE) chosen once when it starts; while the old countdown story is on (`src/lib/doom/active.ts`) it keeps the light one, which goes away with the story (step D6).
+
 ## 3f. The edition (the 100 days) — decided by the database (migration 19)
 
 The 100 days are an **edition** (`editions`, one row: the founding edition). Three recorded states, `prelaunch` → `open` → `closed`; the dates stay **empty** until an administrator opens it, so **the 100 days never start by themselves** (not by a deployment, a setting, an environment variable or a test). A unique index allows ONE edition for now: nothing can create a second one; that is a decision and a future migration.
