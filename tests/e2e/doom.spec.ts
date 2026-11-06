@@ -10,7 +10,7 @@ const doomParts = ['[data-testid="doom-ticker"]', '[data-testid="doom-plate"]', 
 test.beforeEach(async ({ page }) => { await page.setViewportSize({ width: 1360, height: 860 }); });
 
 test("it is off by default: the site is exactly what it was", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/map");
   await expect(page.getByTestId("find-your-spot")).toHaveText("Find your spot");
   await expect(page.getByTestId("sold-pixels")).toBeVisible(); // the ordinary counter card
   await page.waitForTimeout(1500); // the countdown mounts after hydration: give it the chance to (wrongly) appear

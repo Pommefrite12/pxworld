@@ -31,7 +31,7 @@ const corruptedShare = (page: Page) => page.getByRole("application").evaluate((c
 test.beforeEach(async ({ page }) => { await page.setViewportSize({ width: 1360, height: 860 }); });
 
 test("without the story the land is never corrupted; with it, more and more of it as the days pass, all of it at the end", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/map");
   await ready(page);
   await page.waitForTimeout(1500);
   expect((await corruptedShare(page)).lav, "the ordinary map has no lavender at all").toBe(0);
@@ -353,7 +353,7 @@ test("the bug comes by itself, again and again, on the schedule it is given", as
 });
 
 test("no bug on the ordinary map, none for a visitor who asked for fewer animations", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/map");
   await ready(page);
   await page.waitForTimeout(800);
   expect(await (await engine(page)).evaluate((x) => x.glitchNow()), "no story, no bug").toBe(false);

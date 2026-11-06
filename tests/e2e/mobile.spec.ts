@@ -4,7 +4,7 @@ import sharp from "sharp";
 // Runs in the "mobile" Playwright project (Pixel 7 emulation: touch, small viewport).
 test.describe("mobile (touch)", () => {
   test("the map is immediately usable, and a spot can be chosen with a tap", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/map");
     await expect(page.getByRole("application")).toBeVisible(); // the home page is the map
     await expect(page.getByTestId("find-your-spot")).toBeVisible();
     await page.waitForFunction(() => Boolean((window as unknown as { __pxEngine?: unknown }).__pxEngine)); // interactive
@@ -26,6 +26,31 @@ test.describe("mobile (touch)", () => {
     }
   });
 });
+
+/** The home page on a phone: the planisphere above the sentence, both buttons inside the screen and reachable, nothing wider than the screen. */
+for (const width of [320, 390, 412]) {
+  for (const path of ["/", "/fr", "/about"]) {
+    test(`the home page fits a ${width}px phone: ${path}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 780 });
+      await page.goto(path);
+      await page.waitForTimeout(400);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), "no horizontal scrolling").toBe(true);
+      if (path === "/about") return;
+      const title = (await page.getByTestId("home-title").boundingBox())!;
+      const world = (await page.getByTestId("hero-world").boundingBox())!;
+      expect(world.y + world.height, "the planisphere is above the sentence").toBeLessThanOrEqual(title.y + 40);
+      for (const id of ["home-leave-trace", "home-explore"]) {
+        const b = (await page.getByTestId(id).boundingBox())!;
+        expect(b.x, id).toBeGreaterThanOrEqual(0);
+        expect(b.x + b.width, id).toBeLessThanOrEqual(width + 0.5);
+        expect(b.height, `${id} is easy to tap`).toBeGreaterThanOrEqual(44);
+      }
+      // the primary action is on the first screen, or one short scroll away
+      const cta = (await page.getByTestId("home-leave-trace").boundingBox())!;
+      expect(cta.y + cta.height).toBeLessThanOrEqual(900);
+    });
+  }
+}
 
 test("the countdown fits a phone: no horizontal scrolling, the plate inside the screen, the strip above the header", async ({ page }) => {
   await page.goto("/?preview=J-9");

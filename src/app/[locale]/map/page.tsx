@@ -12,7 +12,7 @@ import { requestCurrency } from "@/lib/currency-server";
 
 export const dynamic = "force-dynamic";
 
-/** The flat map: where pixels are bought and drawn. It is the home page (`/`) too; this address stays for existing links. */
+/** The flat map: where pixels are bought and drawn. `/` is the home page; the old addresses `/?x=…`, `/?p=…`, `/?buy=1`… still open this map (lib/home.ts). */
 
 const num = (v: string | string[] | undefined) => (typeof v === "string" && /^-?\d+(\.\d+)?$/.test(v) ? Number(v) : null);
 

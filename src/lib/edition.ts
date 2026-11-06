@@ -32,6 +32,7 @@ export interface EditionInfo {
 
 /** What anybody may read (no snapshot hash, no identifiers). */
 export interface PublicEdition {
+  slug: string;
   name: string;
   state: EditionState;
   frozen: boolean;
@@ -42,7 +43,15 @@ export interface PublicEdition {
 }
 
 export function toPublicEdition(i: EditionInfo): PublicEdition {
-  return { name: i.name, state: i.state, frozen: i.frozen, opensAt: i.opensAt, closesAt: i.closesAt, closedAt: i.closedAt, serverNow: i.serverNow };
+  return { slug: i.slug, name: i.name, state: i.state, frozen: i.frozen, opensAt: i.opensAt, closesAt: i.closesAt, closedAt: i.closedAt, serverNow: i.serverNow };
+}
+
+/** Share of the edition already gone: 0 before the opening, 1 once closed, on the SERVER's clock in between. */
+export function editionProgress(e: Pick<PublicEdition, "state" | "opensAt" | "closesAt" | "serverNow">): number {
+  if (e.state === "prelaunch" || !e.opensAt || !e.closesAt) return 0;
+  if (e.state === "closed") return 1;
+  const a = Date.parse(e.opensAt), b = Date.parse(e.closesAt), n = Date.parse(e.serverNow);
+  return b <= a ? 1 : Math.max(0, Math.min(1, (n - a) / (b - a)));
 }
 
 /** Whole days left until the closing, counted on the SERVER's clock (null before the opening, 0 once closed). */

@@ -66,6 +66,12 @@ test.describe.serial("the edition: pre-launch, opening, postponing, closing", ()
     await openBuyPanel(page);
     await expect(page.getByTestId("buy-status")).toContainText(/archive opens soon/i);
     await expect(page.getByTestId("buy-continue")).toBeDisabled();
+    // the home page tells the same, from the same database: no date, no countdown, and the map can already be explored
+    await page.goto("/");
+    await expect(page.getByTestId("home-time")).toHaveAttribute("data-state", "prelaunch");
+    await expect(page.getByTestId("home-plate-title")).toHaveText("Opening soon");
+    await expect(page.getByTestId("home-days-left")).toHaveCount(0);
+    await expect(page.getByTestId("home-plate")).toContainText("The map can already be explored");
   });
 
   test("an administrator opens the edition from the back office, by typing its name; the 100 days start at that moment", async ({ page }) => {
@@ -125,6 +131,12 @@ test.describe.serial("the edition: pre-launch, opening, postponing, closing", ()
     await openBuyPanel(page);
     await expect(page.getByTestId("buy-status")).toContainText(/edition is closed/i);
     await expect(page.getByTestId("buy-continue")).toBeDisabled();
+    // the home page says it too: the edition is a historical archive, explorable, with no days left to count
+    await page.goto("/");
+    await expect(page.getByTestId("home-time")).toHaveAttribute("data-state", "closed");
+    await expect(page.getByTestId("home-plate-title")).toHaveText("Historical archive");
+    await expect(page.getByTestId("home-days-left")).toHaveCount(0);
+    await expect(page.getByTestId("home-plate").getByRole("link", { name: "Explore the archive" })).toHaveAttribute("href", "/map");
     expect((await sql<{ status: string }>(`select status from public.editions`))[0]!.status).toBe("open"); // nothing recorded it: the clock decided
   });
 });

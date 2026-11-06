@@ -8,6 +8,7 @@
     "home": "pixelworld — accueil",
     "main": "Navigation principale",
     "discover": "Découvrir",
+    "leaveTrace": "Laisser ma trace",
     "signIn": "Connexion",
     "signOut": "Se déconnecter",
     "myParcels": "Mes parcelles",
@@ -158,6 +159,68 @@
     "department": "Département",
     "region": "Région",
     "commune": "Commune"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "Archive collective",
+      "title": "Dans <gold>100 ans</gold>, <nb>que restera-t-il</nb> <nb>de nous\u00a0?</nb>",
+      "subtitle": "Une archive collective où chacun peut laisser une trace de notre époque pour les générations futures.",
+      "primary": "Laisser ma trace",
+      "secondary": "Explorer les archives",
+      "fine": "Paiement unique · <b>{price} le pixel</b> · à partir de {from} ({px} pixels)",
+      "peek": "Chaque cadre cyan est une trace laissée par quelqu'un",
+      "mapLabel": "Planisphère : la carte du monde, où chaque trace est à sa place"
+    },
+    "steps": {
+      "eyebrow": "En trois gestes",
+      "title": "Laisser sa trace, c'est simple.",
+      "one": { "title": "Choisissez une parcelle", "text": "Tracez un rectangle sur la carte du monde, là où vous voulez que votre trace se trouve." },
+      "two": { "title": "Archivez ce qui compte", "text": "Une image, un dessin, un texte : donnez-lui un titre et dites pourquoi il compte pour vous." },
+      "three": { "title": "Transmettez", "text": "Partagez votre page, invitez d'autres personnes à co-créer. Votre trace entre dans l'archive." }
+    },
+    "recent": {
+      "eyebrow": "La communauté",
+      "title": "Archivées récemment",
+      "lead": "Les dernières traces validées par la modération.",
+      "all": "Tout explorer",
+      "by": "par {author}"
+    },
+    "time": {
+      "title": "Une époque. 100 jours pour la raconter.",
+      "lead": "À la clôture, l'édition deviendra une archive historique consultable.",
+      "opening": "Ouverture",
+      "span": "100 jours",
+      "closing": "Clôture",
+      "archive": "Archive",
+      "onDate": "le {date}",
+      "toArchive": "pour archiver",
+      "explorable": "consultable",
+      "prelaunchTitle": "Ouverture prochainement",
+      "prelaunchNote": "La carte est déjà consultable. Les 100 jours n'ont pas démarré.",
+      "openLeft": "Il reste",
+      "dayOne": "jour",
+      "dayMany": "jours",
+      "openNote": "Clôture le <b>{date}</b>. Après cette date, plus rien ne peut être acheté ni modifié ; la carte reste consultable.",
+      "closedTitle": "Archive historique",
+      "closedNote": "Édition close le <b>{date}</b>. Les créations sont gelées : on peut les explorer, plus les modifier.",
+      "explore": "Explorer l'archive"
+    },
+    "manifest": {
+      "a": "Nos conversations s'effacent, nos photos dorment dans des téléphones.",
+      "b": "Ici, chaque trace choisie devient un fragment lisible de notre époque.",
+      "more": "En savoir plus"
+    }
+  },
+  "about": {
+    "title": "Dans 100 ans, que restera-t-il de nous\u00a0?",
+    "lead": "Pixel World est une archive collective : une carte du monde sur laquelle chacun peut laisser une trace de notre époque, pour ceux qui viendront après nous.",
+    "why": { "title": "Pourquoi", "text": "Nos conversations s'effacent, nos photos dorment dans des téléphones, nos sites disparaissent. Peu de ce que nous vivons chaque jour est conservé sous une forme que quelqu'un pourrait lire dans cent ans. Ici, chaque trace est choisie : une image, un dessin, quelques mots, avec un titre, un auteur, une date et un lieu. Ensemble, elles forment un fragment lisible de notre époque." },
+    "how": { "title": "Comment ça marche", "text": "Vous choisissez un rectangle sur la carte, vous créez votre trace dans l'éditeur (une image, un dessin, un texte), vous lui donnez un titre, une catégorie et, si vous le souhaitez, le lieu dont elle parle. Après un coup d'œil rapide des modérateurs, elle a sa propre page, que vous pouvez partager, et vous pouvez inviter d'autres personnes à dessiner dessus avec vous." },
+    "time": { "title": "Un temps pour la raconter", "text": "La première édition dure 100 jours. À sa clôture, plus rien ne peut être acheté ni modifié : l'édition devient une archive historique, conservée telle qu'elle était et ouverte à tous. L'ouverture et la clôture sont décidées par nous, annoncées, et appliquées par le serveur, jamais par un navigateur." },
+    "buy": { "title": "Ce que vous payez", "text": "Un paiement unique de {price} le pixel (soit {from} pour la plus petite parcelle, 25 pixels). Vous obtenez un emplacement virtuel sur une carte numérique, avec un droit d'usage numérique. Ce n'est ni un bien immobilier, ni un droit de propriété intellectuelle, et ce n'est pas la promesse que l'archive sera conservée éternellement : les conditions disent exactement ce qui est promis.", "terms": "Lire les conditions" },
+    "draft": "Ce texte est une première version, écrite pour le lancement : il sera relu avec le texte juridique.",
+    "cta": "Laisser ma trace",
+    "explore": "Explorer les archives"
   },
   "archive": {
     "fields": {
@@ -449,6 +512,7 @@
   "footer": {
     "tagline": "Une carte collaborative de la Terre en un milliard de pixels.",
     "legal": "Mentions",
+    "about": "En savoir plus",
     "discover": "Découvrir",
     "rules": "Règles de la communauté",
     "terms": "Conditions",

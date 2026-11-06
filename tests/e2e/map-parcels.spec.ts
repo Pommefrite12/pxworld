@@ -112,7 +112,7 @@ test("the latest-creations tile shows real published creations; one click flies 
   expect((await admin.post("/api/admin/action", { data: { action: "review_asset", assetId: rows[0]!.id, decision: "approve" } })).status()).toBe(200);
 
   await page.setViewportSize({ width: 1360, height: 860 });
-  await page.goto("/");
+  await page.goto("/map");
   // the % is the real share: what has been sold so far (this and the other tests' parcels) over the land total, never rounded to 0
   const stats = await (await api.get("/api/stats")).json();
   expect(stats.soldPixels).toBeGreaterThan(0);

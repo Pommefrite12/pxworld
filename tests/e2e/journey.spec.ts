@@ -29,7 +29,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
   let assetId = "";
 
   test("the counter is real: nothing is sold at the start", async ({ page, request }) => {
-    await page.goto("/");
+    await page.goto("/map");
     await expect(page.getByTestId("sold-pixels")).toHaveText("0");
     await expect(page.getByTestId("sold-percent")).toHaveText(/^0\s?%$/); // the share of the land sold sits on the progress bar
     await page.setViewportSize({ width: 1360, height: 860 });
@@ -139,7 +139,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     expect(tile).toHaveLength(1);
     expect(tile[0].slice(0, 5)).toEqual([parcelCode, SPOT.x, SPOT.y, SPOT.w, SPOT.h]);
     expect(tile[0][5]).toBeNull(); // no public asset yet
-    await page.goto("/");
+    await page.goto("/map");
     await expect(page.getByTestId("sold-pixels")).toHaveText("400");
   });
 
@@ -252,7 +252,9 @@ test.describe.serial("buy → pay → moderate → publish", () => {
 
   test("the interface is bilingual", async ({ page }) => {
     await page.goto("/fr");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Un milliard de pixels");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(/Dans 100 ans, que restera-t-il de nous/);
+    await expect(page.getByTestId("home-leave-trace")).toHaveText("Laisser ma trace");
+    await page.goto("/fr/map");
     await expect(page.getByTestId("find-your-spot")).toHaveText("Trouvez votre place");
     await page.goto("/fr/discover");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Découvrir");

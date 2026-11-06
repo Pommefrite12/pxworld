@@ -34,6 +34,10 @@ the "ok" green has its own variable (`--color-mint-ink`) because the light and t
 
 The previous palette, unchanged: `paper #fcf9f2`, `ink #1f2540`, `signal #f04316` (orange), `sky #e6f2ff`, `cobalt #2457c5`, `line #e6dccb`.
 
+## The home page
+
+`components/home/Home.tsx`: a hero (the night planisphere under a veil, `.hero-veil`, a few `.spark`s), the eyebrow style `.eyebrow` (small, spaced, gold), cards `.px-card` (with `.px-card-gold` and `.px-card-glass` variants), the big day counter `.clock-n` (pixel font, gold) and the 50-segment bar `.seg-bar` (`data-tone="off"` before the opening, `"dim"` after the closing). The four icons of the three gestures are drawn on a pixel grid (`PixelIcon`). One gold word per title at most (`text-signal`): the rest is ivory. Everything uses the theme variables, so nothing here is specific to the night theme.
+
 ## Pixel details
 
 * **Stair-step corners** (two steps of 2 px, `--s`) instead of rounded ones. A button is two stacked layers (`::before` = outline, `::after` = face) clipped with the same stepped polygon; the element itself is not clipped, so the focus ring and the shadow stay clean.

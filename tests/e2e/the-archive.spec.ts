@@ -108,6 +108,19 @@ test.describe.serial("a trace in the archive: category, place, and a page of its
     await expect(card.getByTestId("card-archive-page")).toHaveAttribute("href", `/archive/${code}`);
   });
 
+  test("the home page lists it, among the recently archived, with its category and place, and leads to its page", async ({ page }) => {
+    await page.goto("/");
+    const tile = page.getByTestId("home-trace").and(page.locator(`[data-code="${code}"]`));
+    await expect(tile).toBeVisible();
+    await expect(tile).toContainText("La pizza du dimanche");
+    await expect(tile).toContainText("Food and traditions");
+    await expect(tile).toContainText("Naples, Italy");
+    await expect(tile).toContainText(`by ${author}`);
+    await tile.click();
+    await expect(page).toHaveURL(new RegExp(`/archive/${code}$`));
+    await expect(page.getByTestId("archive-title")).toHaveText("La pizza du dimanche");
+  });
+
   test("the public JSON carries the archive fields and the edition", async ({ request }) => {
     const j = await (await request.get(`/api/parcels/${code}`)).json();
     expect(j.creation).toMatchObject({ category: "food", placeLabel: "Naples", placeCountry: "IT" });
@@ -148,6 +161,8 @@ test.describe.serial("a trace in the archive: category, place, and a page of its
     await expect(page.getByTestId("archive-pending")).toContainText(/hidden by moderation/i);
     await expect(page.getByTestId("archive-image")).toHaveCount(0);
     await expect(page.getByTestId("archive-category")).toHaveCount(0);
+    await page.goto("/");
+    await expect(page.locator(`[data-testid="home-trace"][data-code="${code}"]`)).toHaveCount(0); // nor does the home page list it
     expect((await request.get("/archive/0000000000")).status()).toBe(404);
     expect((await request.get("/archive/not-a-code")).status()).toBe(404);
   });

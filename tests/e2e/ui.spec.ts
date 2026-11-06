@@ -109,7 +109,7 @@ test.describe("map interaction", () => {
   });
 
   test("the planet is 2D only: the home page is the map, zooming all the way out stays on it, and there is no globe button", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/map");
     await expect(page.getByRole("application")).toBeVisible();
     await expect(page.getByTestId("zoom-level")).toBeVisible(); // the map's own controls are on the home page
     await expect(page.getByTestId("open-globe")).toHaveCount(0);
@@ -160,7 +160,7 @@ test.describe("map interaction", () => {
     await search.fill("48.85, 2.35");
     await page.getByRole("listbox").getByRole("option").first().click();
     await expect.poll(async () => Math.round((await camera(page)).scale)).toBe(6);
-    await page.goto("/fr");
+    await page.goto("/fr/map");
     await page.getByRole("combobox").first().fill("Japon");
     await expect(page.getByRole("listbox").getByRole("option").first()).toContainText("Japon"); // country names follow the interface language
   });
@@ -168,7 +168,7 @@ test.describe("map interaction", () => {
   test("typing in the search box never breaks the page: places without a country (Somaliland, Kashmir…) and every single letter", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
-    await page.goto("/fr");
+    await page.goto("/fr/map");
     const search = page.getByRole("combobox").first();
     await search.fill("Somaliland");
     await expect(page.getByRole("listbox").getByRole("option").first()).toContainText("Somaliland");

@@ -9,7 +9,7 @@ import { expect, test } from "@playwright/test";
 test.beforeEach(async ({ page }) => { await page.setViewportSize({ width: 1360, height: 860 }); });
 
 test("it is not there without the story", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/map");
   await expect(page.getByTestId("sold-pixels")).toBeVisible();
   await page.waitForTimeout(1500);
   await expect(page.getByTestId("comic-open")).toHaveCount(0);

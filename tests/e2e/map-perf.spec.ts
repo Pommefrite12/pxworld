@@ -141,7 +141,7 @@ test("zooming out or panning over land never flashes the ocean colour while the 
 test("after a long zoom the tiles of the view are not queued behind the hundred tiles of the way", async ({ page }) => {
   // every metadata tile takes 250 ms to arrive (a real network): in a first-come queue the last ones wait for seconds
   await page.route(/\/api\/map\/tiles\//, async (route) => { await new Promise((r) => setTimeout(r, 250)); await route.continue(); });
-  await page.goto("/");
+  await page.goto("/map");
   await engine(page);
   const frames = () => page.evaluate(() => new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done()))));
   await page.evaluate(() => (window as unknown as { __pxEngine: Eng }).__pxEngine.flyTo({ x: 20_000, y: 12_500, scale: 0.12 }, 0)); // a hundred tiles in view…
@@ -159,7 +159,7 @@ test("after a long zoom the tiles of the view are not queued behind the hundred 
 test("the water layer of the raster tiles is only asked for where there is water (none anywhere: not at all)", async ({ page }) => {
   const asked: string[] = [];
   page.on("request", (r) => { if (/\/api\/map\/raster\/.*[?&]k=w/.test(r.url())) asked.push(r.url()); });
-  await page.goto("/");
+  await page.goto("/map");
   await engine(page);
   await page.waitForTimeout(2500);
   expect(await (await page.request.get("/api/map/water")).json()).toEqual({ cell: 512, c: [] });

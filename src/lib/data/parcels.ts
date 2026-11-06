@@ -145,6 +145,14 @@ const CARD = `select p.code, p.w, p.h, p.x, p.y, p.area, a.id as asset_id, a.tit
                 from public.parcels p join public.parcel_assets a on a.id = p.published_asset_id join public.profiles u on u.id = p.owner_id
                where p.status = 'active' and p.hidden_at is null and u.status = 'active'`;
 
+/** The traces the home page shows: what the public can see (validated, not hidden, a visible author), with what the archive says about each. */
+export interface Trace { code: string; x: number; y: number; w: number; h: number; asset_id: string; title: string | null; username: string; activated_at: Date | null; category: string | null; place_label: string | null; place_country: string | null }
+export const recentTraces = (limit = 6) => query<Trace>(
+  `select p.code, p.x, p.y, p.w, p.h, a.id as asset_id, a.title, u.username, p.activated_at, a.category, a.place_label, a.place_country
+     from public.parcels p join public.parcel_assets a on a.id = p.published_asset_id join public.profiles u on u.id = p.owner_id
+    where p.status = 'active' and p.hidden_at is null and u.status = 'active' and u.deleted_at is null
+    order by a.published_at desc nulls last limit $1`, [limit]);
+
 export const latestCreations = (limit = 12) => query<Card>(`${CARD} order by a.published_at desc nulls last limit $1`, [limit]);
 export const largestParcels = (limit = 12) => query<Card>(`${CARD} order by p.area desc, a.published_at desc limit $1`, [limit]);
 

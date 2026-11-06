@@ -60,6 +60,7 @@
   --surface: #fff; --surface-hover: #fffdf9; --surface-soft: #f5efe2;
   --prose: #2d3348;
   --shadow-ink: 31 37 64;
+  --ocean-rgb: 201 223 232;
   --selection-ink: #fff;
   --checker-a: #fff; --checker-b: #ece4d3;
   --badge-bg: rgb(252 249 242 / 0.92);
@@ -97,6 +98,7 @@
   --surface: #21102f; --surface-hover: #2a1740; --surface-soft: #2b1640;
   --prose: #e4d9e0;
   --shadow-ink: 0 0 0;
+  --ocean-rgb: 13 26 62;
   --selection-ink: #190921;
   --checker-a: #1c0d29; --checker-b: #2a1740;
   --badge-bg: rgb(25 9 33 / 0.86);
@@ -231,6 +233,45 @@
   .prose-pw ul { list-style: disc; padding-left: 1.3rem; margin: 0.5rem 0; }
   .prose-pw a { color: var(--color-cobalt); text-decoration: underline; text-underline-offset: 3px; }
 }
+
+/* ---------- the stair-step panel: the geometry of a button, for the cards and plates of the home page ---------- */
+@layer components {
+  .px-card {
+    --s: 2px; --c: 4px; --edge: var(--color-line); --face: var(--surface);
+    --poly: 0 var(--c), var(--s) var(--c), var(--s) var(--s), var(--c) var(--s), var(--c) 0,
+      calc(100% - var(--c)) 0, calc(100% - var(--c)) var(--s), calc(100% - var(--s)) var(--s), calc(100% - var(--s)) var(--c), 100% var(--c),
+      100% calc(100% - var(--c)), calc(100% - var(--s)) calc(100% - var(--c)), calc(100% - var(--s)) calc(100% - var(--s)), calc(100% - var(--c)) calc(100% - var(--s)), calc(100% - var(--c)) 100%,
+      var(--c) 100%, var(--c) calc(100% - var(--s)), var(--s) calc(100% - var(--s)), var(--s) calc(100% - var(--c)), 0 calc(100% - var(--c));
+    position: relative; isolation: isolate; filter: drop-shadow(0 4px 0 rgb(var(--shadow-ink) / 0.35));
+  }
+  .px-card::before, .px-card::after { content: ""; position: absolute; z-index: -1; clip-path: polygon(var(--poly)); pointer-events: none; }
+  .px-card::before { inset: 0; background: var(--edge); }
+  .px-card::after { inset: 2px; background: linear-gradient(rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.08)) top / 100% 2px no-repeat, var(--face); }
+  .px-card-gold { --edge: var(--color-signal-dark); }
+  .px-card-glass { --face: rgb(var(--ocean-rgb) / 0.82); }
+  a.px-card { text-decoration: none; transition: transform 0.12s var(--ease-out-expo); }
+  a.px-card:hover { transform: translateY(-3px); --edge: var(--color-cobalt); }
+  /* the small headings in the pixel font, in the gold of time and heritage */
+  .eyebrow { font-family: var(--font-pixel); font-size: 1.25rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-signal); line-height: 1.1; }
+  /* the pixel counter of the edition */
+  .clock-n { font-family: var(--font-pixel); line-height: 0.9; color: var(--color-signal); letter-spacing: 0.02em; text-shadow: 0 0 18px rgb(214 171 114 / 0.35); }
+  .seg-bar { display: flex; gap: 2px; height: 10px; }
+  .seg-bar i { flex: 1; background: var(--color-sky-2); }
+  .seg-bar i.on { background: var(--color-signal); box-shadow: 0 0 6px rgb(214 171 114 / 0.45); }
+  .seg-bar[data-tone="dim"] i.on { background: var(--color-ink-faint); box-shadow: none; opacity: 0.8; }
+  .seg-bar[data-tone="off"] i { background: transparent; box-shadow: inset 0 0 0 1px var(--color-line); }
+  /* a few points of light over the planisphere */
+  .spark { position: absolute; width: 3px; height: 3px; background: var(--color-signal); opacity: 0.8; animation: twinkle 3.4s ease-in-out infinite; pointer-events: none; }
+  .spark.c { background: var(--color-cobalt); }
+}
+/* the home page: the ocean fades into the page, from the left (where the title sits) and from below; on a phone the map is above the text, fading downwards */
+.hero-veil {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgb(var(--ocean-rgb) / 0.94) 0, rgb(var(--ocean-rgb) / 0.84) 36%, rgb(var(--ocean-rgb) / 0.25) 55%, transparent 68%), linear-gradient(0deg, var(--color-paper) 0, transparent 22%);
+}
+@media (max-width: 639px) { .hero-veil { background: linear-gradient(0deg, var(--color-paper) 0, rgb(var(--ocean-rgb) / 0.6) 22%, transparent 55%); } }
+@keyframes twinkle { 0%, 100% { opacity: 0.15; transform: scale(0.7); } 50% { opacity: 0.95; transform: scale(1.2); } }
+@media (prefers-reduced-motion: reduce) { .spark { animation: none; opacity: 0.5; } }
 
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.9; } 100% { transform: scale(2.2); opacity: 0; } }

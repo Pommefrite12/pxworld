@@ -9,6 +9,7 @@ import { ASSET_SIZES, assetSizeFor, assetUrl } from "@/lib/images/sizes";
 import { tintPixels } from "@/lib/images/waterTint";
 import { PROJECT_BAR_FROM_PX, projectAt, projectLook, projectProgress, type MapProject } from "@/lib/map/projects";
 import { storyIsOn } from "@/lib/doom/active";
+import { LIGHT_PALETTE, NIGHT_PALETTE, type MapPalette } from "@/lib/map/palette";
 import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
 
 /**
@@ -95,28 +96,7 @@ const MAX_SCALE = 48;
 const RASTER_BELOW = 1; // below this zoom the server-composited rasters are shown; above it, parcels are drawn individually
 const JSON_ABOVE = 0.1; // below this zoom parcels are sub-2px: no metadata needed
 
-/**
- * The colours of the map. NIGHT is the archive's own (the ocean stays BLUE, a deep night blue; the land is violet; the coasts and the borders are
- * drawn in soft gold; what is active, selected or free is cyan; what is collecting is gold). LIGHT is the previous look: it is only used while the old
- * countdown story is on (its corrupted land was drawn for it) and goes away with it. Strings of "r,g,b" are for `rgba(${…}, alpha)`.
- */
-const NIGHT = {
-  paper: "#190921", ocean: "#0d1a3e", land: "#382050",
-  ink: "214,171,114",   // coasts, borders, grid: gold, at the strength each line needs
-  text: "241,232,223", halo: "25,9,33", // the names of the places: ivory with a night halo
-  hover: "241,232,223", bar: "25,9,33", markerEdge: "#190921",
-  free: "85,199,209", accent: "214,171,114", danger: "255,122,112",
-  hatchA: "#2e1a45", hatchB: "#4a3069", hatchFallback: "#3a2358",
-};
-const LIGHT: typeof NIGHT = {
-  paper: "#fcf9f2", ocean: "#c9dfe8", land: "#fbf5e6",
-  ink: "31,37,64",
-  text: "31,37,64", halo: "251,245,230",
-  hover: "31,37,64", bar: "31,37,64", markerEdge: "#fff",
-  free: "18,184,134", accent: "240,67,22", danger: "217,45,32",
-  hatchA: "#e3ddcf", hatchB: "#c9c1ae", hatchFallback: "#ddd",
-};
-let COLORS: typeof NIGHT = NIGHT; // chosen when the engine starts
+let COLORS: MapPalette = NIGHT_PALETTE; // chosen when the engine starts (the palettes live in lib/map/palette.ts)
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const rasterSpan = (z: number) => RASTER_PX * 2 ** z;
@@ -209,7 +189,7 @@ export class MapEngine {
   private cleanup: (() => void)[] = [];
 
   constructor(private canvas: HTMLCanvasElement, private cb: EngineCallbacks = {}) {
-    COLORS = storyIsOn() ? LIGHT : NIGHT; // before anything is drawn or cached
+    COLORS = storyIsOn() ? LIGHT_PALETTE : NIGHT_PALETTE; // before anything is drawn or cached
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) throw new Error("Canvas 2D unavailable");
     this.ctx = ctx;

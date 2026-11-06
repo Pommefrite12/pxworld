@@ -57,7 +57,7 @@ Supabase (Auth + Storage), Stripe **test** keys, and `CRON_SECRET`. Step-by-step
 * **Grid:** 40 000 × 25 000 = 10⁹ exactly. 10⁹ = 2⁹·5⁹, so a 2:1 grid is impossible; 8:5 is the closest to a world map. It is
   drawn with the **Web Mercator** projection (56.7°S → 83.8°N, ≈ 1 km per pixel at the equator), so countries keep their
   familiar shape and none is cut (the map's edge is in the Bering Strait). Zoom reveals more detail: borders,
-  départements/states, commune boundaries (France), then cities and towns. The map wraps around horizontally. The home page is the flat map itself (2D only, no globe), where pixels are bought and drawn.
+  départements/states, commune boundaries (France), then cities and towns. The map wraps around horizontally. The home page presents the archive (planisphere, three gestures, the state of the edition); the flat map (2D only, no globe), where pixels are bought and drawn, is at `/map`, and the old `/?x=…` links still open it.
 * **Land and water are for sale**, as two categories (the whole 10⁹-pixel planet): a land parcel owns the land pixels of its rectangle, a water parcel its water pixels; the rest is cut away (free or discounted, admin settings), and a land and a water parcel may share a rectangle. A creation on water is shown in three tints of blue. The server counts the land; the counters count every pixel owned.
 * **Nothing scales with a billion.** Only purchased rectangles exist (rows in PostgreSQL). The map renders from a static
   vector layer + server-composited raster tiles when zoomed out + per-viewport JSON tiles and the parcels' own PNGs when

@@ -5,7 +5,7 @@ import { siteUrl } from "@/lib/env";
 
 export const revalidate = 3600;
 
-const STATIC = ["", "/discover", "/rules", "/terms", "/privacy", "/credits", "/contact"];
+const STATIC = ["", "/map", "/about", "/discover", "/rules", "/terms", "/privacy", "/credits", "/contact"];
 const url = (locale: string, p: string) => `${siteUrl()}${locale === "en" ? "" : `/${locale}`}${p}` || siteUrl();
 
 /**

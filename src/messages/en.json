@@ -8,6 +8,7 @@
     "home": "pixelworld — home",
     "main": "Main navigation",
     "discover": "Discover",
+    "leaveTrace": "Leave my trace",
     "signIn": "Sign in",
     "signOut": "Sign out",
     "myParcels": "My parcels",
@@ -158,6 +159,68 @@
     "department": "Département",
     "region": "Region",
     "commune": "Commune"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "Collective archive",
+      "title": "In <gold>100 years</gold>, <nb>what will remain</nb> <nb>of us?</nb>",
+      "subtitle": "A collective archive where everyone can leave a trace of our time for future generations.",
+      "primary": "Leave my trace",
+      "secondary": "Explore the archives",
+      "fine": "One-time payment · <b>{price} per pixel</b> · from {from} ({px} pixels)",
+      "peek": "Every cyan frame is a trace left by someone",
+      "mapLabel": "Planisphere: the world map, where every trace sits at its place"
+    },
+    "steps": {
+      "eyebrow": "In three gestures",
+      "title": "Leaving a trace is simple.",
+      "one": { "title": "Choose a parcel", "text": "Draw a rectangle on the world map, where you want your trace to be." },
+      "two": { "title": "Archive what matters", "text": "An image, a drawing, a text: give it a title and say why it matters to you." },
+      "three": { "title": "Hand it down", "text": "Share your page, invite other people to co-create. Your trace enters the archive." }
+    },
+    "recent": {
+      "eyebrow": "The community",
+      "title": "Recently archived",
+      "lead": "The latest traces validated by moderation.",
+      "all": "Explore everything",
+      "by": "by {author}"
+    },
+    "time": {
+      "title": "An era. 100 days to tell it.",
+      "lead": "At the closing, the edition becomes a historical archive that can be explored.",
+      "opening": "Opening",
+      "span": "100 days",
+      "closing": "Closing",
+      "archive": "Archive",
+      "onDate": "on {date}",
+      "toArchive": "to archive",
+      "explorable": "explorable",
+      "prelaunchTitle": "Opening soon",
+      "prelaunchNote": "The map can already be explored. The 100 days have not started.",
+      "openLeft": "Time left",
+      "dayOne": "day",
+      "dayMany": "days",
+      "openNote": "Closing on <b>{date}</b>. After that nothing can be bought or changed any more; the map stays open to explore.",
+      "closedTitle": "Historical archive",
+      "closedNote": "Edition closed on <b>{date}</b>. The creations are frozen: they can be explored, no longer changed.",
+      "explore": "Explore the archive"
+    },
+    "manifest": {
+      "a": "Our conversations fade, our photos sleep in phones.",
+      "b": "Here, every trace we choose becomes a readable fragment of our time.",
+      "more": "Learn more"
+    }
+  },
+  "about": {
+    "title": "In 100 years, what will remain of us?",
+    "lead": "Pixel World is a collective archive: a map of the world on which anyone can leave one trace of our time, for the people who will come after us.",
+    "why": { "title": "Why", "text": "Our conversations fade, our photos sleep in phones, our websites disappear. Little of what we live every day is kept in a form that someone could read in a hundred years. Here, each trace is chosen: a picture, a drawing, a few words, with a title, an author, a date and a place. Together they make a readable fragment of our era." },
+    "how": { "title": "How it works", "text": "You choose a rectangle on the map, you create your trace in the editor (an image, a drawing, a text), you give it a title, a category and, if you want, the place it is about. After a quick look by the moderators, it has a page of its own, that you can share, and you can invite other people to draw on it with you." },
+    "time": { "title": "A time to tell it", "text": "The first edition lasts 100 days. When it closes, nothing can be bought or changed any more: the edition becomes a historical archive, kept as it was and open to everybody. The opening and the closing are decided by us, announced, and enforced by the server, never by a browser." },
+    "buy": { "title": "What you pay for", "text": "A one-time payment of {price} per pixel (so {from} for the smallest parcel, 25 pixels). You get a virtual placement on a digital map, with a digital right to use it. It is not real estate, nor an intellectual property right, and it is not a promise that the archive will be kept for ever: the terms say exactly what is promised.", "terms": "Read the terms" },
+    "draft": "This text is a first version, written for the launch: it will be reviewed with the legal text.",
+    "cta": "Leave my trace",
+    "explore": "Explore the archives"
   },
   "archive": {
     "fields": {
@@ -449,6 +512,7 @@
   "footer": {
     "tagline": "A collaborative map of the Earth in one billion pixels.",
     "legal": "Legal",
+    "about": "Learn more",
     "discover": "Discover",
     "rules": "Community rules",
     "terms": "Terms",
