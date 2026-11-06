@@ -89,7 +89,7 @@ src/lib/stripe            checkout, webhook processing, reconciliation
 src/messages              en.json, fr.json
 supabase/migrations       schema, business functions, RLS, admin extras
 tests/{unit,db,e2e}       test suites
-docs/                     architecture, design system, database, payments, security, deployment, backup, launch checklist
+docs/                     architecture, design system, database, payments, security, deployment, backup, launch checklist, the refonte plan (`PLAN_REFONTE_ARCHIVE.md`), the badges design study (`BADGES_PREMIERS_GARDIENS.md`)
 ```
 
 ## What is verified, and what needs your credentials

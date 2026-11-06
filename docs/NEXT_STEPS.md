@@ -8,6 +8,10 @@ launch checklist is `LAUNCH_CHECKLIST.md`; this list is what to do *first*.
 
 Migration 19 puts the 100 days in the database (`docs/ARCHITECTURE.md` §3f). A site is in **pre-launch** (nothing for sale, no date) until an administrator opens the edition in `/admin/edition` (type its name, click). On the test site, after applying the migration: open it, then try "close the sales now" to see the closing. `NEXT_PUBLIC_WORLD_END_AT` no longer sells or refuses anything (it only drives the old countdown's look, which the redesign removes: `PLAN_REFONTE_ARCHIVE.md`, steps D5–D6).
 
+## 0000. "Premiers Gardiens" badges — studied, **not built** (`docs/BADGES_PREMIERS_GARDIENS.md`) **(owner: the 12 decisions of §9)**
+
+A design study only: no table, no migration, no screen, no public text (the site does not mention badges). A badge is symbolic, awarded **by a human moderator** to the author of the first *validated* trace on a subject the moderators name, per edition; never automatic; nothing public before the decision; one active holder per subject guaranteed by the database. The round gold-on-violet medallion exists as three SVG files in `docs/img/`. To build it later: five phases (§11), after the owner's decisions and a lawyer's look at the wording.
+
 ## 000. Preserving the archive — done (migration 21, step 9c of `DEPLOIEMENT_PAS_A_PAS.md`) **(owner: run the rehearsal on the test site)**
 
 `npm run archive:export -- --env .env.production.local --preview --zip` makes a rehearsal of the export (a folder readable without our software + a ZIP), `npm run archive:verify -- --dir …` checks it, and after the closing the same two commands without `--preview` make and check the real archive; `npm run archive:verify -- --env …` checks the live site's pictures against the closing snapshot. **Before the real launch:** the real export, copied to a second place (another provider), and the yearly drill (`BACKUP_RESTORE.md`). Needs the owner: where the second copy lives, and what is promised about keeping the archive (the wording is for a lawyer).
