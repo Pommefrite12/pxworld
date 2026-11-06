@@ -159,6 +159,56 @@
     "region": "Région",
     "commune": "Commune"
   },
+  "archive": {
+    "fields": {
+      "legend": "Pour l'archive",
+      "category": "Catégorie",
+      "categoryPlaceholder": "Choisissez une catégorie…",
+      "place": "Le lieu concerné (facultatif)",
+      "placeHint": "Une ville, un village, un pays… pas une adresse : rien de précis.",
+      "country": "Pays (facultatif)",
+      "countryNone": "—"
+    },
+    "categories": {
+      "arts": "Arts et culture",
+      "daily": "Vie quotidienne",
+      "family": "Famille et souvenirs",
+      "nature": "Nature et climat",
+      "science": "Science et technologie",
+      "sport": "Sport",
+      "food": "Cuisine et traditions",
+      "tribute": "Hommage et mémoire",
+      "humor": "Humour et internet",
+      "future": "Message aux générations futures",
+      "other": "Autre"
+    },
+    "page": {
+      "eyebrow": "Archive collective",
+      "untitled": "Trace sans titre",
+      "by": "Par",
+      "archivedOn": "Archivée le {date}",
+      "category": "Catégorie",
+      "place": "Lieu",
+      "edition": "Édition",
+      "size": "Taille",
+      "size_value": "{w} × {h} px",
+      "kindWater": "Une parcelle de mer",
+      "seeOnMap": "La voir sur la carte",
+      "share": "Partager cette trace",
+      "copied": "Lien copié.",
+      "likes": "{n, plural, =0 {Aucun j'aime pour l'instant} one {# j'aime} other {# j'aime}}",
+      "pending": "Cette trace sera publique dès qu'un modérateur l'aura validée.",
+      "hidden": "Le contenu de cette trace est actuellement masqué par la modération.",
+      "closedNote": "Cette édition est close : ses traces sont conservées telles qu'elles étaient et ne peuvent plus être modifiées.",
+      "shareText": "{title}, une trace laissée dans l'archive collective de notre époque.",
+      "descriptionFallback": "Une trace laissée par {author} dans l'archive collective de notre époque.",
+      "backToArchive": "L'archive",
+      "imageAlt": "La création « {title} »"
+    },
+    "editions": {
+      "fondatrice": "Édition fondatrice"
+    }
+  },
   "parcel": {
     "water": "Eau",
     "label": "Détails de la parcelle",
@@ -171,6 +221,7 @@
     "size": "Taille",
     "area": "Surface",
     "published": "Publiée le",
+    "archivePage": "Page d'archive",
     "share": "Partager",
     "copied": "Lien copié",
     "report": "Signaler",
@@ -271,6 +322,9 @@
       "px_edition_not_open": "L'archive n'est pas encore ouverte : rien ne peut encore être acheté.",
       "px_edition_closed": "Cette édition est close : plus rien ne peut être acheté. L'archive reste consultable.",
       "px_edition_frozen": "Cette édition est close : les créations ne peuvent plus être modifiées.",
+      "invalid_category": "Choisissez l'une des catégories de la liste.",
+      "invalid_country": "Ce pays n'est pas valide.",
+      "px_invalid_archive": "La catégorie ou le lieu n'est pas valide.",
       "px_currency_changed": "Les prix ont changé de devise (votre connexion semble avoir changé de pays). Rechargez la page pour voir le nouveau prix.",
       "px_bad_currency": "La boutique ne vend qu'en euros et en dollars.",
       "px_account_suspended": "Votre compte est suspendu.",
@@ -643,9 +697,9 @@
   "checkout": {
     "confirming": "Confirmation de votre paiement…",
     "confirmingLead": "Nous attendons la confirmation du prestataire de paiement. Cela prend en général quelques secondes.",
-    "paidTitle": "Elle est à vous !",
-    "paidLead": "Votre parcelle vous est attribuée. Votre création apparaîtra sur la carte dès qu'elle aura été modérée.",
-    "viewParcel": "Voir ma parcelle",
+    "paidTitle": "Votre trace fait désormais partie de l'archive collective de notre époque.",
+    "paidLead": "Elle sera publique, sur sa propre page, dès qu'un modérateur l'aura validée. Vous pouvez déjà la partager avec les personnes qui comptent.",
+    "viewParcel": "Voir ma page d'archive",
     "myParcels": "Mes parcelles",
     "slowTitle": "Confirmation toujours en attente",
     "slowLead": "Votre paiement peut mettre un peu plus de temps à être confirmé. Vous retrouverez votre parcelle dans votre compte dès que ce sera fait. Si vous avez été débité et que rien ne se passe, contactez-nous avec votre numéro de commande.",

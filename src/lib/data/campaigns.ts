@@ -5,6 +5,7 @@ import type { CampaignStatus } from "@/lib/campaign";
 /** What the creator sees of a project of theirs, and what a moderator needs to decide. Nothing public yet: the list comes with the next step. */
 export interface CampaignRow {
   id: string; code: string; title: string; description: string | null; link_url: string | null; is_commercial: boolean;
+  category: string | null; place_label: string | null; place_country: string | null;
   status: CampaignStatus; rejection_reason: string | null; kind: "land" | "water";
   x: number; y: number; w: number; h: number; area: number; width: number; height: number;
   goal_cents: string; currency: string; duration_days: number;
@@ -13,7 +14,7 @@ export interface CampaignRow {
   raised_cents: string; contributors: number; refunds_due: number;
 }
 
-const COLUMNS = `c.id, c.code, c.title, c.description, c.link_url, c.is_commercial, c.status, c.rejection_reason, c.kind,
+const COLUMNS = `c.id, c.code, c.title, c.description, c.link_url, c.is_commercial, c.category, c.place_label, c.place_country, c.status, c.rejection_reason, c.kind,
   c.x, c.y, c.w, c.h, c.area, c.width, c.height, c.goal_cents, c.currency, c.duration_days, c.created_at, c.opens_at, c.deadline, c.closed_at,
   coalesce((select sum(k.amount_cents) from public.contributions k where k.campaign_id = c.id and k.status in ('paid', 'disputed')), 0)::text as raised_cents,
   (select count(distinct k.user_id) from public.contributions k where k.campaign_id = c.id and k.status in ('paid', 'disputed'))::int as contributors,

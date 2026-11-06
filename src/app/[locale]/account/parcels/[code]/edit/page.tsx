@@ -21,8 +21,8 @@ export default async function EditParcel({ params }: { params: Promise<{ locale:
   if (!parcel || parcel.status !== "active") notFound();
   const [t, f, versions, collab, published] = await Promise.all([
     getTranslations("account.edit"), getFormatter(), getLatestAssetsOf(parcel.id), ownerCollab(parcel.id),
-    queryOne<{ id: string; title: string | null; description: string | null; link_url: string | null }>(
-      "select a.id, a.title, a.description, a.link_url from public.parcels p join public.parcel_assets a on a.id = p.published_asset_id where p.id = $1", [parcel.id]),
+    queryOne<{ id: string; title: string | null; description: string | null; link_url: string | null; category: string | null; place_label: string | null; place_country: string | null }>(
+      "select a.id, a.title, a.description, a.link_url, a.category, a.place_label, a.place_country from public.parcels p join public.parcel_assets a on a.id = p.published_asset_id where p.id = $1", [parcel.id]),
   ]);
   return (
     <PageShell>
@@ -30,7 +30,7 @@ export default async function EditParcel({ params }: { params: Promise<{ locale:
       <h1 className="mt-2 text-3xl font-extrabold">{t("title")}</h1>
       <p className="pixel-num mt-1 text-ink-soft">{parcel.w}×{parcel.h} · @{parcel.x},{parcel.y}</p>
       <div className="mt-8">
-        <EditCreation code={code} w={parcel.w} h={parcel.h} current={{ assetId: published?.id ?? versions[0]?.id ?? null, title: published?.title ?? null, description: published?.description ?? null, link: published?.link_url ?? null }} />
+        <EditCreation code={code} w={parcel.w} h={parcel.h} current={{ assetId: published?.id ?? versions[0]?.id ?? null, title: published?.title ?? null, description: published?.description ?? null, link: published?.link_url ?? null, category: published?.category ?? null, placeLabel: published?.place_label ?? null, placeCountry: published?.place_country ?? null }} />
       </div>
       <CollabPanel code={code} initial={collab && { enabled: collab.enabled, token: collab.token, pixels: collab.pixels }} />
       <section className="mt-12" aria-label={t("history")}>

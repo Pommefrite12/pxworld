@@ -11,6 +11,7 @@ import type { Rect } from "@/lib/grid/geometry";
 import { TITLE_MAX, TITLE_MIN, isValidTitle } from "@/lib/security/text";
 import { CAMPAIGN_DAYS, DEFAULT_CAMPAIGN_DAYS, type CampaignDays } from "@/lib/campaign";
 import type { Pricing } from "./BuyPanel";
+import { ArchiveFields, EMPTY_ARCHIVE, type ArchiveValue } from "@/components/archive/ArchiveFields";
 
 interface Props {
   rect: Rect;
@@ -47,6 +48,7 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
   const [description, setDescription] = useState("");
   const [link, setLink] = useState("");
   const [commercial, setCommercial] = useState(false);
+  const [archive, setArchive] = useState<ArchiveValue>(EMPTY_ARCHIVE);
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +87,7 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
       const fd = new FormData();
       fd.set("kind", kind); fd.set("x", String(rect.x)); fd.set("y", String(rect.y)); fd.set("w", String(rect.w)); fd.set("h", String(rect.h));
       fd.set("image", new File([blob], "creation.png", { type: "image/png" }));
-      fd.set("title", title); fd.set("description", description); fd.set("link", link); fd.set("commercial", String(commercial)); fd.set("locale", locale); fd.set("currency", pricing.currency);
+      fd.set("title", title); fd.set("description", description); fd.set("link", link); fd.set("commercial", String(commercial)); fd.set("category", archive.category); fd.set("placeLabel", archive.placeLabel); fd.set("placeCountry", archive.placeCountry); fd.set("locale", locale); fd.set("currency", pricing.currency);
       if (collective) fd.set("days", String(days));
       const r = await fetch(collective ? "/api/campaigns" : "/api/checkout", { method: "POST", body: fd });
       const j = await r.json().catch(() => ({}));
@@ -157,6 +159,7 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
               <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void pay(); }}>
                 <div><label className="label" htmlFor="co-title-in">{t("fields.title")}</label><input id="co-title-in" className="field" required minLength={TITLE_MIN} maxLength={TITLE_MAX} autoComplete="off" value={title} onChange={(e) => setTitle(e.target.value)} data-testid="co-title" /><p className="mt-1 text-xs text-ink-faint">{t("fields.titleHint", { min: TITLE_MIN })}</p></div>
                 <div><label className="label" htmlFor="co-desc">{t("fields.description")}</label><textarea id="co-desc" className="field !min-h-20" maxLength={280} rows={3} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+                <ArchiveFields id="co" value={archive} onChange={setArchive} />
                 <div><label className="label" htmlFor="co-link">{t("fields.link")}</label><input id="co-link" className="field" type="url" inputMode="url" placeholder="https://" maxLength={500} value={link} onChange={(e) => setLink(e.target.value)} /><p className="mt-1 text-xs text-ink-faint">{t("fields.linkHint")}</p></div>
                 {collective && (
                   <fieldset data-testid="co-days">
@@ -194,7 +197,7 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
                 <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} data-testid="co-accept" />
                   <span>{t.rich(collective ? "collective.accept" : "accept", { terms: (c) => <Link href="/terms" target="_blank" className="underline">{c}</Link>, rules: (c) => <Link href="/rules" target="_blank" className="underline">{c}</Link> })}</span></label>
                 {error && <p role="alert" className="rounded-xl bg-danger/10 px-3 py-2 text-sm font-semibold text-danger" data-testid="co-error">{error}</p>}
-                <button className="btn btn-primary w-full" type="submit" disabled={busy || !accepted || !isValidTitle(title)} data-testid="co-pay">{collective ? (busy ? t("collective.sending") : t("collective.send")) : busy ? t("redirecting") : t("pay", { price: formatMoney(q.totalCents, locale, pricing.currency) })}</button>
+                <button className="btn btn-primary w-full" type="submit" disabled={busy || !accepted || !isValidTitle(title) || !archive.category} data-testid="co-pay">{collective ? (busy ? t("collective.sending") : t("collective.send")) : busy ? t("redirecting") : t("pay", { price: formatMoney(q.totalCents, locale, pricing.currency) })}</button>
                 <p className="text-center text-xs text-ink-faint">{collective ? t("collective.nothingPaid") : t("securePayment")}</p>
               </form>
             </div>

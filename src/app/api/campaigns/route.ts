@@ -58,6 +58,7 @@ export const POST = route(async (req) => {
       [viewer.user.id, r.x, r.y, r.w, r.h, landPx, currency, kind, days, key, img.sha256, img.width, img.height, img.bytes, img.avgColor, meta.title, meta.description, meta.link, meta.commercial],
     );
     if (!c) throw new HttpError(500, "campaign_not_created");
+    await query("select public.px_set_campaign_archive($1, $2, $3, $4, $5)", [viewer.user.id, c.id, meta.category, meta.placeLabel, meta.placeCountry]);
     return json({ id: c.id, code: c.code, goalCents: Number(c.goal_cents), currency: c.currency }, { status: 201, cache: "no-store" });
   } catch (e) {
     await objectStore().remove(key).catch(() => undefined); // the project was not recorded: do not leave its image behind

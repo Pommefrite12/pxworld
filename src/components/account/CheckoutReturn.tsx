@@ -35,7 +35,7 @@ export function CheckoutSuccess({ orderId }: { orderId: string }) {
     <div className="card mx-auto max-w-xl p-8 text-center" aria-live="polite" data-testid="checkout-result" data-state={state}>
       {state === "waiting" && <><div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-line border-t-signal" /><h1 className="text-2xl font-extrabold">{t("confirming")}</h1><p className="mt-2 text-ink-soft">{t("confirmingLead")}</p></>}
       {state === "paid" && <><p className="text-5xl" aria-hidden>🎉</p><h1 className="mt-2 text-3xl font-extrabold">{t("paidTitle")}</h1><p className="mt-2 text-ink-soft">{t("paidLead")}</p>
-        <div className="mt-6 flex flex-wrap justify-center gap-3">{code && <Link href={`/p/${code}`} className="btn btn-primary" data-testid="view-parcel">{t("viewParcel")}</Link>}<Link href="/account/parcels" className="btn btn-ghost">{t("myParcels")}</Link></div></>}
+        <div className="mt-6 flex flex-wrap justify-center gap-3">{code && <Link href={`/archive/${code}`} className="btn btn-primary" data-testid="view-parcel">{t("viewParcel")}</Link>}<Link href="/account/parcels" className="btn btn-ghost">{t("myParcels")}</Link></div></>}
       {state === "slow" && <><h1 className="text-2xl font-extrabold">{t("slowTitle")}</h1><p className="mt-2 text-ink-soft">{t("slowLead")}</p><Link href="/account/orders" className="btn btn-ghost mt-5">{t("orders")}</Link></>}
       {state === "failed" && <><h1 className="text-2xl font-extrabold">{t("failedTitle")}</h1><p className="mt-2 text-ink-soft">{t("failedLead")}</p><Link href="/map" className="btn btn-primary mt-5">{t("backToMap")}</Link></>}
     </div>

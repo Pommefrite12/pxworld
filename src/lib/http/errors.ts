@@ -13,6 +13,7 @@ const PX_STATUS: Record<string, number> = {
   px_not_on_land: 422,
   px_not_on_water: 422,
   px_sales_closed: 503,
+  px_invalid_archive: 400,
   px_edition_not_open: 503, // pre-launch: the archive has not opened yet
   px_edition_closed: 403, // after the closing: nothing can be bought
   px_edition_frozen: 423, // the creations are frozen (the archive)

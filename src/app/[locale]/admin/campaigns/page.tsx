@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { campaignQueue, campaignsReviewed } from "@/lib/data/campaigns";
 import { formatMoney } from "@/lib/grid/pricing";
 import { hostOf } from "@/lib/security/url";
+import { ArchiveChips } from "@/components/archive/ArchiveChips";
 
 /** The group projects (parcels several people pay for): the ones waiting for a moderator, and what happened to the others. */
 export default async function AdminCampaigns({ params }: { params: Promise<{ locale: string }> }) {
@@ -24,6 +25,7 @@ export default async function AdminCampaigns({ params }: { params: Promise<{ loc
               </div>
               <div className="min-w-0 flex-1 space-y-1.5">
                 <p className="font-bold">{c.title} {c.is_commercial && <span className="chip !bg-warn/15 !text-warn">{t("ad")}</span>} {c.kind === "water" && <span className="chip">{t("water")}</span>}</p>
+                <ArchiveChips category={c.category} placeLabel={c.place_label} placeCountry={c.place_country} />
                 {c.description && <p className="text-sm">{c.description}</p>}
                 {c.link_url && <p className="break-all text-sm"><a className="text-cobalt underline" href={c.link_url} target="_blank" rel="noopener noreferrer nofollow">{hostOf(c.link_url)} ↗</a></p>}
                 <p className="text-sm text-ink-soft">

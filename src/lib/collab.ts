@@ -7,6 +7,7 @@ import { processCreation } from "@/lib/images/validate";
 import { storeCreation } from "@/lib/creations";
 import { creationScale } from "@/lib/grid/constants";
 import { TITLE_MAX, isValidTitle } from "@/lib/security/text";
+import { isCategory } from "@/lib/archive";
 
 /**
  * Drawing together (see supabase/migrations/…_collab_drawing.sql).
@@ -122,8 +123,8 @@ export async function publishSnapshot(userId: string, parcel: { id: string; w: n
   const overlay = await query<{ x: number; y: number; rgb: number }>("select x, y, rgb from public.parcel_collab_pixels where parcel_id = $1", [parcel.id]);
   if (overlay.length === 0) throw new HttpError(409, "collab_empty");
 
-  const base = await queryOne<{ storage_path: string; title: string | null; description: string | null; link_url: string | null; is_commercial: boolean }>(
-    `select a.storage_path, a.title, a.description, a.link_url, a.is_commercial
+  const base = await queryOne<{ storage_path: string; title: string | null; description: string | null; link_url: string | null; is_commercial: boolean; category: string | null; place_label: string | null; place_country: string | null }>(
+    `select a.storage_path, a.title, a.description, a.link_url, a.is_commercial, a.category, a.place_label, a.place_country
        from public.parcels p join public.parcel_assets a on a.id = p.published_asset_id where p.id = $1`, [parcel.id]);
   let raw = Buffer.alloc(w * h * 3, 255); // white
   const bytes = base ? await objectStore().get(base.storage_path) : null;
@@ -140,10 +141,12 @@ export async function publishSnapshot(userId: string, parcel: { id: string; w: n
   const img = await processCreation(png, { w: parcel.w, h: parcel.h }); // the same checks and canonical encoding as any upload
 
   // keep the title the parcel already has (the latest version's, if nothing is approved yet)
-  const latest = base ?? (await queryOne<{ title: string | null; description: string | null; link_url: string | null; is_commercial: boolean }>(
-    "select title, description, link_url, is_commercial from public.parcel_assets where parcel_id = $1 order by version desc limit 1", [parcel.id]));
+  const latest = base ?? (await queryOne<{ title: string | null; description: string | null; link_url: string | null; is_commercial: boolean; category: string | null; place_label: string | null; place_country: string | null }>(
+    "select title, description, link_url, is_commercial, category, place_label, place_country from public.parcel_assets where parcel_id = $1 order by version desc limit 1", [parcel.id]));
   const title = latest?.title && isValidTitle(latest.title) ? latest.title : "Community drawing";
   return storeCreation(userId, parcel.id, img, {
     title: title.slice(0, TITLE_MAX), description: latest?.description ?? null, link: latest?.link_url ?? null, commercial: latest?.is_commercial ?? false,
+    // the community drawing is the same trace: it keeps its category and its place
+    category: isCategory(latest?.category) ? latest.category : null, placeLabel: latest?.place_label ?? null, placeCountry: latest?.place_country ?? null,
   });
 }

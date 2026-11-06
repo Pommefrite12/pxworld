@@ -5,6 +5,7 @@ import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { assetUrl } from "@/lib/images/sizes";
 import { hostOf } from "@/lib/security/url";
+import { ArchiveChips } from "@/components/archive/ArchiveChips";
 import { CommentsPanel, useComments } from "./Comments";
 
 /** Integer upscale (crisp pixels) up to `box` px; downscale smoothly beyond. */
@@ -16,7 +17,7 @@ export function fitSize(w: number, h: number, box: number) {
 export interface ParcelInfo {
   code: string; x: number; y: number; w: number; h: number; area: number; kind: "land" | "water"; hidden: boolean; likes: number; activatedAt: string | null;
   owner: { username: string; country: string | null; avatarId: string | null };
-  creation: null | { assetId: string; title: string | null; description: string | null; link: string | null; commercial: boolean; publishedAt: string | null; color: string };
+  creation: null | { assetId: string; title: string | null; description: string | null; link: string | null; commercial: boolean; publishedAt: string | null; color: string; category: string | null; placeLabel: string | null; placeCountry: string | null };
 }
 
 /** Small public "card" of a parcel: shown on the map and reused by the permalink page. */
@@ -84,6 +85,7 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
               <Link href={`/u/${info.owner.username}`} className="font-semibold text-ink underline-offset-2 hover:underline">{info.owner.username}</Link>
               {info.owner.country && <span> · {new Intl.DisplayNames([locale], { type: "region" }).of(info.owner.country)}</span>}
             </p>
+            {info.creation && <ArchiveChips category={info.creation.category} placeLabel={info.creation.placeLabel} placeCountry={info.creation.placeCountry} />}
             {info.creation?.description && <p className="text-sm">{info.creation.description}</p>}
             {info.creation?.link && (
               <a href={info.creation.link} target="_blank" rel={`noopener noreferrer nofollow ugc${info.creation.commercial ? " sponsored" : ""}`} className="inline-block break-all text-sm font-semibold text-cobalt underline underline-offset-2">
@@ -97,6 +99,7 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
             </dl>
             <div className="flex flex-wrap gap-2 pt-1">
               <button className="btn btn-ink btn-sm" onClick={share}>{t("share")}</button>
+              {!info.hidden && <Link href={`/archive/${info.code}`} className="btn btn-ghost btn-sm" data-testid="card-archive-page">{t("archivePage")}</Link>}
               <button className="btn btn-ghost btn-sm" onClick={like} aria-pressed={liked}>{liked ? "♥" : "♡"} {likes}</button>
               <button className="btn btn-ghost btn-sm" onClick={() => setCommenting((v) => !v)} aria-expanded={commenting} data-testid="comment-button">
                 {t("comment")}{comments.total > 0 && <span className="pixel-num" data-testid="comment-count"> · {comments.total}</span>}

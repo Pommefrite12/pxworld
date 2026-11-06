@@ -20,7 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       `select p.code, a.published_at from public.parcels p join public.parcel_assets a on a.id = p.published_asset_id
         where p.status = 'active' and p.hidden_at is null order by a.published_at desc nulls last limit 45000`,
     );
-    for (const r of rows) for (const l of locales) entries.push({ url: url(l, `/p/${r.code}`), lastModified: r.published_at ?? undefined, changeFrequency: "weekly", priority: 0.6, alternates: alt(`/p/${r.code}`) });
+    for (const r of rows) for (const l of locales) entries.push({ url: url(l, `/archive/${r.code}`), lastModified: r.published_at ?? undefined, changeFrequency: "weekly", priority: 0.6, alternates: alt(`/archive/${r.code}`) });
   } catch (e) {
     console.error("sitemap: parcels unavailable", (e as Error).message);
   }

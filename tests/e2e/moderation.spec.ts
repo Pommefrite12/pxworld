@@ -154,7 +154,7 @@ test.describe.serial("moderation & protection", () => {
     expect((await anon.get(`/api/assets/${v1}`)).status()).toBe(404);
     const card = await (await anon.get(`/api/parcels/${code}`)).json();
     expect(card).toMatchObject({ hidden: true, creation: null });
-    expect(await (await anon.get("/sitemap.xml")).text()).not.toContain(`/p/${code}`);
+    expect(await (await anon.get("/sitemap.xml")).text()).not.toContain(`/archive/${code}`);
     await anon.dispose();
   });
 

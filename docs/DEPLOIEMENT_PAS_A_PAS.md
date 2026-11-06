@@ -300,7 +300,7 @@ npx tsx scripts/check-env.mts .env.production.local
 Deux avertissements sont normaux tant que Stripe n'est pas configuré : `STRIPE_SECRET_KEY` et `NEXT_PUBLIC_OPERATOR_*`.
 
 **Le même vérificateur peut aussi interroger Supabase et la base de données** (rien n'est écrit : il demande seulement « acceptez-vous cette clé ? ») : ajoutez `--online`.
-Il dit si Supabase **accepte** la clé publique et la clé secrète, si le dossier des images existe, si les inscriptions sont ouvertes, et si la base répond avec toutes ses migrations (19 à ce jour).
+Il dit si Supabase **accepte** la clé publique et la clé secrète, si le dossier des images existe, si les inscriptions sont ouvertes, et si la base répond avec toutes ses migrations (20 à ce jour).
 ```bash
 npx tsx scripts/check-env.mts .env.production.local --online
 ```
@@ -457,7 +457,7 @@ la base contient déjà un paiement réel ; ou l'identifiant du projet Supabase 
 git pull origin claude/funny-bell-k7v5xf
 node scripts/migrate.mjs --env .env.production.local
 ```
-Attendu : `applying …_editions.sql … ok`.
+Attendu : `applying …_editions.sql … ok` puis `applying …_archive_fields.sql … ok` (la migration 20 ajoute la catégorie et le lieu de chaque trace ; rien n'est perdu, les créations existantes n'ont simplement ni catégorie ni lieu).
 2. **Sur le site de test, rien ne s'achète plus** tant que l'édition n'est pas ouverte : c'est voulu. Connectez-vous avec votre compte **administrateur**, ouvrez `/admin/edition` (menu « Édition (les 100 jours) »).
 3. Vous voyez l'état « Pré-lancement » et la phrase « Les 100 jours n'ont pas démarré ». Tapez le nom de l'édition (**Édition fondatrice**, majuscules sans importance) puis cliquez **« Ouvrir l'édition maintenant »** : l'état passe à « Ouverte » et la date de clôture s'affiche (100 jours plus tard, à la minute près).
 4. Pour **répéter** (essayer l'ouverture plusieurs fois sur le site de test) : « Revenir au pré-lancement » existe, mais il est **refusé dès qu'une parcelle est réservée ou achetée, ou qu'un paiement a eu lieu** ; effacez d'abord les données de démonstration (`demo:clear`). Sur le vrai site, ce bouton ne servira jamais.

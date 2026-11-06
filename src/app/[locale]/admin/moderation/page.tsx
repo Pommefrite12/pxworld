@@ -3,6 +3,7 @@ import { AdminButton } from "@/components/admin/AdminButton";
 import { Link } from "@/i18n/navigation";
 import { moderationQueue } from "@/lib/data/admin";
 import { hostOf } from "@/lib/security/url";
+import { ArchiveChips } from "@/components/archive/ArchiveChips";
 
 export default async function Moderation({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -21,6 +22,7 @@ export default async function Moderation({ params }: { params: Promise<{ locale:
               </div>
               <div className="min-w-0 flex-1 space-y-1.5">
                 <p className="font-bold">{a.title ?? t("untitled")} {a.is_commercial && <span className="chip !bg-warn/15 !text-warn">{t("ad")}</span>} {a.has_published && <span className="chip">{t("edit")}</span>}</p>
+                <ArchiveChips category={a.category} placeLabel={a.place_label} placeCountry={a.place_country} />
                 {a.description && <p className="text-sm">{a.description}</p>}
                 {a.link_url && <p className="break-all text-sm"><a className="text-cobalt underline" href={a.link_url} target="_blank" rel="noopener noreferrer nofollow">{hostOf(a.link_url)} ↗</a> <span className="text-xs text-ink-faint">({a.link_url})</span></p>}
                 <p className="text-xs text-ink-soft">{t("by")} <Link className="font-semibold underline" href={`/u/${a.username}`}>{a.username}</Link> · {a.width}×{a.height} · v{a.version} · {f.dateTime(a.created_at, { dateStyle: "medium", timeStyle: "short" })} · <Link className="underline" href={`/p/${a.code}`}>{a.code}</Link></p>

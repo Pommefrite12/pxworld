@@ -88,6 +88,12 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await dialog.getByTestId("to-review").click();
 
     await dialog.getByTestId("co-title").fill("Hello world");
+    // the archive: a category is asked (the button stays off without one), the place is optional
+    await expect(dialog.getByTestId("co-pay")).toBeDisabled();
+    await dialog.getByTestId("co-category").selectOption("food");
+    await dialog.getByTestId("co-place").fill("Naples");
+    await expect.poll(async () => dialog.getByTestId("co-country").locator("option").count()).toBeGreaterThan(150); // the full list appears once the page is alive
+    await dialog.getByTestId("co-country").selectOption("IT");
     await expect(dialog.getByTestId("co-total")).toHaveText("€100");
     await expect(dialog.getByTestId("co-area")).toHaveText("400 px");
     await expect(dialog).not.toContainText("km²");
@@ -112,10 +118,10 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await page.waitForURL(/checkout\/success/);
     await expect(page.getByTestId("checkout-result")).toHaveAttribute("data-state", "paid", { timeout: 30_000 });
     await page.getByTestId("view-parcel").click();
-    await page.waitForURL(/\/p\/[0-9a-f]{10}/);
+    await page.waitForURL(/\/archive\/[0-9a-f]{10}/); // the confirmation leads to the trace's own archive page
     parcelCode = page.url().split("/").pop()!.split("?")[0]!;
     expect(parcelCode).toMatch(/^[0-9a-f]{10}$/);
-    await expect(page.getByText(/will appear once our moderators/i)).toBeVisible();
+    await expect(page.getByTestId("archive-pending")).toContainText(/as soon as a moderator has validated it/i);
 
     // my parcels + orders
     await page.goto("/account/parcels");
@@ -240,7 +246,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await page.goto("/discover");
     await expect(page.getByRole("link", { name: /Hello world/ }).first()).toBeVisible();
     const sm = await (await request.get("/sitemap.xml")).text();
-    expect(sm).toContain(`/p/${parcelCode}`);
+    expect(sm).toContain(`/archive/${parcelCode}`); // the archive page of the trace is what crawlers are given
     expect((await (await request.get("/robots.txt")).text())).toContain("Sitemap:");
   });
 

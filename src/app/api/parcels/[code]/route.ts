@@ -9,11 +9,12 @@ export const GET = route(async (_req, ctx: { params: Promise<{ code: string }> }
   if (!p) return json({ error: "not_found" }, { status: 404 });
   return json(
     {
-      code: p.code, x: p.x, y: p.y, w: p.w, h: p.h, area: p.area, kind: p.kind, hidden: p.hidden, likes: p.likes, activatedAt: p.activated_at,
+      code: p.code, x: p.x, y: p.y, w: p.w, h: p.h, area: p.area, kind: p.kind, hidden: p.hidden, likes: p.likes, activatedAt: p.activated_at, edition: p.edition,
       owner: { username: p.owner.username, country: p.owner.country, avatarId: p.owner.avatar ? p.owner.id : null },
       creation: p.creation && {
         assetId: p.creation.asset_id, title: p.creation.title, description: p.creation.description, link: p.creation.link_url,
         commercial: p.creation.is_commercial, publishedAt: p.creation.published_at, color: p.creation.avg_color,
+        category: p.creation.category, placeLabel: p.creation.place_label, placeCountry: p.creation.place_country,
       },
     },
     { cache: "public, s-maxage=30, stale-while-revalidate=300" },

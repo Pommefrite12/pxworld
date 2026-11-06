@@ -32,8 +32,9 @@ export async function dashboard() {
 }
 
 export const moderationQueue = (offset = 0) =>
-  query<{ id: string; parcel_id: string; code: string; version: number; title: string | null; description: string | null; link_url: string | null; is_commercial: boolean; width: number; height: number; created_at: Date; username: string; owner_id: string; has_published: boolean }>(
+  query<{ id: string; parcel_id: string; code: string; version: number; title: string | null; description: string | null; link_url: string | null; is_commercial: boolean; width: number; height: number; created_at: Date; username: string; owner_id: string; has_published: boolean; category: string | null; place_label: string | null; place_country: string | null }>(
     `select a.id, a.parcel_id, p.code, a.version, a.title, a.description, a.link_url, a.is_commercial, a.width, a.height, a.created_at, u.username, u.id as owner_id,
+            a.category, a.place_label, a.place_country,
             (p.published_asset_id is not null) as has_published
        from public.parcel_assets a join public.parcels p on p.id = a.parcel_id join public.profiles u on u.id = a.uploader_id
       where a.status = 'pending' and p.status = 'active' order by a.created_at limit ${PAGE_SIZE} offset $1`, [offset]);

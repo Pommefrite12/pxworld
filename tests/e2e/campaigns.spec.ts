@@ -184,6 +184,7 @@ test.describe.serial("group projects: send, moderate, hold, withdraw", () => {
     await dialog.getByTestId("to-review").click();
 
     await dialog.getByTestId("co-title").fill("Bob's mural");
+    await dialog.getByTestId("co-category").selectOption("arts");
     await expect(dialog.getByTestId("co-total")).toContainText(/\d/); // the goal
     await expect(dialog.getByTestId("co-pay")).toBeDisabled(); // terms not accepted yet
     await dialog.getByTestId("co-days-7").click();

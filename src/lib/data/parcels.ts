@@ -20,24 +20,32 @@ export interface ParcelView {
     is_commercial: boolean;
     published_at: Date | null;
     avg_color: string;
+    category: string | null;
+    place_label: string | null;
+    place_country: string | null;
   };
+  /** The edition the parcel belongs to (the founding one today). */
+  edition: { slug: string; name: string } | null;
   likes: number;
 }
 
 const SELECT = `
   select p.id, p.code, p.x, p.y, p.w, p.h, p.area, p.kind, p.status, (p.hidden_at is not null) as hidden, p.activated_at,
          u.id as owner_id, u.username, u.country, (u.avatar_path is not null) as has_avatar,
-         a.id as asset_id, a.title, a.description, a.link_url, a.is_commercial, a.published_at, a.avg_color,
+         a.id as asset_id, a.title, a.description, a.link_url, a.is_commercial, a.published_at, a.avg_color, a.category, a.place_label, a.place_country,
+         e.slug as edition_slug, e.name as edition_name,
          (select count(*) from public.parcel_likes l where l.parcel_id = p.id)::int as likes
     from public.parcels p
     join public.profiles u on u.id = p.owner_id
-    left join public.parcel_assets a on a.id = p.published_asset_id`;
+    left join public.parcel_assets a on a.id = p.published_asset_id
+    left join public.editions e on e.id = p.edition_id`;
 
 type Row = {
   id: string; code: string; x: number; y: number; w: number; h: number; area: number; kind: string; status: string; hidden: boolean; activated_at: Date | null;
   owner_id: string; username: string; country: string | null; has_avatar: boolean;
   asset_id: string | null; title: string | null; description: string | null; link_url: string | null; is_commercial: boolean | null;
   published_at: Date | null; avg_color: string | null; likes: number;
+  category: string | null; place_label: string | null; place_country: string | null; edition_slug: string | null; edition_name: string | null;
 };
 
 function toView(r: Row): ParcelView {
@@ -45,8 +53,10 @@ function toView(r: Row): ParcelView {
     id: r.id, code: r.code, x: r.x, y: r.y, w: r.w, h: r.h, area: r.area, kind: r.kind === "water" ? "water" : "land", status: r.status, hidden: r.hidden, activated_at: r.activated_at,
     owner: { id: r.owner_id, username: r.username, country: r.country, avatar: r.has_avatar },
     creation: r.asset_id && !r.hidden
-      ? { asset_id: r.asset_id, title: r.title, description: r.description, link_url: r.link_url, is_commercial: r.is_commercial ?? false, published_at: r.published_at, avg_color: r.avg_color ?? "#cccccc" }
+      ? { asset_id: r.asset_id, title: r.title, description: r.description, link_url: r.link_url, is_commercial: r.is_commercial ?? false, published_at: r.published_at, avg_color: r.avg_color ?? "#cccccc",
+          category: r.category, place_label: r.place_label, place_country: r.place_country }
       : null,
+    edition: r.edition_slug && r.edition_name ? { slug: r.edition_slug, name: r.edition_name } : null,
     likes: r.likes,
   };
 }
@@ -84,8 +94,8 @@ export async function getOwnedParcelByCode(userId: string, code: string) {
 }
 
 export async function getLatestAssetsOf(parcelId: string) {
-  return query<{ id: string; version: number; status: string; title: string | null; description: string | null; link_url: string | null; rejection_reason: string | null; created_at: Date }>(
-    "select id, version, status, title, description, link_url, rejection_reason, created_at from public.parcel_assets where parcel_id = $1 order by version desc limit 10",
+  return query<{ id: string; version: number; status: string; title: string | null; description: string | null; link_url: string | null; rejection_reason: string | null; created_at: Date; category: string | null; place_label: string | null; place_country: string | null }>(
+    "select id, version, status, title, description, link_url, rejection_reason, created_at, category, place_label, place_country from public.parcel_assets where parcel_id = $1 order by version desc limit 10",
     [parcelId],
   );
 }

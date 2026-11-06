@@ -159,6 +159,56 @@
     "region": "Region",
     "commune": "Commune"
   },
+  "archive": {
+    "fields": {
+      "legend": "For the archive",
+      "category": "Category",
+      "categoryPlaceholder": "Choose a category…",
+      "place": "The place it is about (optional)",
+      "placeHint": "A city, a village, a country… not an address: nothing precise.",
+      "country": "Country (optional)",
+      "countryNone": "—"
+    },
+    "categories": {
+      "arts": "Arts and culture",
+      "daily": "Daily life",
+      "family": "Family and memories",
+      "nature": "Nature and climate",
+      "science": "Science and technology",
+      "sport": "Sport",
+      "food": "Food and traditions",
+      "tribute": "Tribute and memory",
+      "humor": "Humour and internet",
+      "future": "Message to future generations",
+      "other": "Other"
+    },
+    "page": {
+      "eyebrow": "Collective archive",
+      "untitled": "Untitled trace",
+      "by": "By",
+      "archivedOn": "Archived on {date}",
+      "category": "Category",
+      "place": "Place",
+      "edition": "Edition",
+      "size": "Size",
+      "size_value": "{w} × {h} px",
+      "kindWater": "A parcel of sea",
+      "seeOnMap": "See it on the map",
+      "share": "Share this trace",
+      "copied": "Link copied.",
+      "likes": "{n, plural, =0 {No like yet} one {# like} other {# likes}}",
+      "pending": "This trace will be public as soon as a moderator has validated it.",
+      "hidden": "The content of this trace is currently hidden by moderation.",
+      "closedNote": "This edition is closed: its traces are kept as they were, and can no longer be changed.",
+      "shareText": "{title}, a trace left in the collective archive of our time.",
+      "descriptionFallback": "A trace left by {author} in the collective archive of our time.",
+      "backToArchive": "The archive",
+      "imageAlt": "The creation “{title}”"
+    },
+    "editions": {
+      "fondatrice": "Founding edition"
+    }
+  },
   "parcel": {
     "water": "Water",
     "label": "Parcel details",
@@ -171,6 +221,7 @@
     "size": "Size",
     "area": "Area",
     "published": "Published",
+    "archivePage": "Archive page",
     "share": "Share",
     "copied": "Link copied",
     "report": "Report",
@@ -271,6 +322,9 @@
       "px_edition_not_open": "The archive has not opened yet: nothing can be bought for now.",
       "px_edition_closed": "This edition is closed: nothing can be bought any more. The archive stays open to visit.",
       "px_edition_frozen": "This edition is closed: creations can no longer be changed.",
+      "invalid_category": "Choose one of the categories of the list.",
+      "invalid_country": "That country is not valid.",
+      "px_invalid_archive": "The category or the place is not valid.",
       "px_currency_changed": "The prices have changed currency (your connection seems to have moved to another country). Reload the page to see the new price.",
       "px_bad_currency": "The shop only sells in euros and in dollars.",
       "px_account_suspended": "Your account is suspended.",
@@ -643,9 +697,9 @@
   "checkout": {
     "confirming": "Confirming your payment…",
     "confirmingLead": "We are waiting for the payment provider to confirm. This usually takes a few seconds.",
-    "paidTitle": "It's yours!",
-    "paidLead": "Your parcel is attributed. Your creation will appear on the map as soon as it has been moderated.",
-    "viewParcel": "View my parcel",
+    "paidTitle": "Your trace is now part of the collective archive of our era.",
+    "paidLead": "It will be public, on its own page, as soon as a moderator has validated it. You can already share it with the people who matter.",
+    "viewParcel": "See my archive page",
     "myParcels": "My parcels",
     "slowTitle": "Still waiting for confirmation",
     "slowLead": "Your payment may take a little longer to be confirmed. You will find your parcel in your account once it is. If you were charged and nothing happens, contact us with your order number.",
