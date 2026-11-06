@@ -108,7 +108,7 @@ test.describe("map interaction", () => {
     expect((await camera(page)).scale).toBeGreaterThanOrEqual(c.scale * 0.99);
   });
 
-  test("the planet is 2D only: the home page is the map, zooming all the way out stays on it, and there is no globe button", async ({ page }) => {
+  test("the planet is 2D only: the map, zooming all the way out stays on it, and there is no globe button", async ({ page }) => {
     await page.goto("/map");
     await expect(page.getByRole("application")).toBeVisible();
     await expect(page.getByTestId("zoom-level")).toBeVisible(); // the map's own controls are on the home page
@@ -125,10 +125,10 @@ test.describe("map interaction", () => {
     expect((await camera(page)).scale).toBeGreaterThan(0);
     // old addresses: the globe route and the home page with a camera land on the map
     await page.goto("/globe?lon=2&lat=48&zoom=2");
-    await expect(page).toHaveURL(/localhost:\d+\/?$/);
+    await expect(page).toHaveURL(/localhost:\d+\/map$/);
     await expect(page.getByRole("application")).toBeVisible();
     await page.goto("/fr/globe");
-    await expect(page).toHaveURL(/\/fr\/?$/);
+    await expect(page).toHaveURL(/\/fr\/map$/);
     await page.goto("/?x=19000&y=11700&z=6");
     expect((await camera(page)).scale).toBeCloseTo(6, 0);
   });

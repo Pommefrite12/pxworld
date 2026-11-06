@@ -116,6 +116,9 @@ test.describe.serial("a trace in the archive: category, place, and a page of its
     await expect(tile).toContainText("Food and traditions");
     await expect(tile).toContainText("Naples, Italy");
     await expect(tile).toContainText(`by ${author}`);
+    // its picture is really there (not only its title): scrolled into view, the image of the trace has been loaded
+    await tile.scrollIntoViewIfNeeded();
+    await expect.poll(() => tile.locator("img").evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0)).toBe(true);
     await tile.click();
     await expect(page).toHaveURL(new RegExp(`/archive/${code}$`));
     await expect(page.getByTestId("archive-title")).toHaveText("La pizza du dimanche");

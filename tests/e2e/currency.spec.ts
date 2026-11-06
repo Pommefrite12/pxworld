@@ -23,13 +23,30 @@ test("the price a buyer sees is in euros in the euro area, in dollars elsewhere,
     await ctx.close();
     return text;
   };
-  expect(await priceLine("US", "/")).toContain("$0.25");
-  expect(await priceLine("FR", "/")).toContain("€0.25");
-  expect(await priceLine("DE", "/")).toContain("€0.25");
-  expect(await priceLine("GB", "/")).toContain("$0.25"); // outside the euro area, next door or not
-  expect(await priceLine(undefined, "/")).toContain("€0.25");
-  const fr = await priceLine("US", "/fr");
+  expect(await priceLine("US", "/map")).toContain("$0.25");
+  expect(await priceLine("FR", "/map")).toContain("€0.25");
+  expect(await priceLine("DE", "/map")).toContain("€0.25");
+  expect(await priceLine("GB", "/map")).toContain("$0.25"); // outside the euro area, next door or not
+  expect(await priceLine(undefined, "/map")).toContain("€0.25");
+  const fr = await priceLine("US", "/fr/map");
   expect(fr).toMatch(/0,25\s*(\$US|\$)/); // written the French way
+  expect(fr).not.toContain("€");
+});
+
+test("the home page prints the price in the same currency, whatever the language", async ({ browser }) => {
+  const fine = async (country: string | undefined, path: string) => {
+    const ctx = await browser.newContext({ extraHTTPHeaders: as(country), baseURL: BASE });
+    const page = await ctx.newPage();
+    await page.goto(path);
+    const text = await page.getByTestId("home-fine").innerText();
+    await ctx.close();
+    return text;
+  };
+  expect(await fine("FR", "/")).toContain("€0.25 per pixel");
+  expect(await fine("US", "/")).toContain("$0.25 per pixel");
+  expect(await fine(undefined, "/")).toContain("€0.25 per pixel");
+  const fr = await fine("US", "/fr");
+  expect(fr).toMatch(/0,25\s*(\$US|\$)/);
   expect(fr).not.toContain("€");
 });
 
