@@ -18,11 +18,11 @@ test("the site icons are the logo's globe: linked from every page, and served", 
   const ico = await (await request.get("/favicon.ico")).body();
   expect([ico.readUInt16LE(2), ico.readUInt16LE(4)]).toEqual([1, 3]);
   expect([0, 1, 2].map((i) => ico.readUInt8(6 + 16 * i))).toEqual([16, 32, 48]);
-  // the SVG icon is the 12 × 12 globe in the brand's blue and orange
+  // the SVG icon is the 12 × 12 globe in the archive's cyan and gold
   const svg = await (await request.get("/icon.svg")).text();
   expect(svg).toContain('viewBox="0 0 12 12"');
-  expect(svg).toContain("#2b35e0");
-  expect(svg).toContain("#f04316");
+  expect(svg).toContain("#55c7d1");
+  expect(svg).toContain("#d6ab72");
   // the iOS icon is opaque (iOS paints transparency black) and 180 px
   const apple = await request.get((await page.locator('head link[rel="apple-touch-icon"]').first().getAttribute("href"))!);
   const png = await apple.body();

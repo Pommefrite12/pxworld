@@ -80,7 +80,7 @@ function AccountMenu({ viewer }: { viewer: HeaderViewer }) {
       <button className="btn btn-ghost btn-sm !gap-2 !pl-1.5 !pr-3" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)} data-testid="account-menu">
         {viewer.avatarId
           ? <img src={`/api/avatar/${viewer.avatarId}`} alt="" className="h-7 w-7 rounded-full" />
-          : <span className="grid h-7 w-7 place-items-center rounded-full bg-cobalt text-xs font-bold text-white">{viewer.username.slice(0, 1).toUpperCase()}</span>}
+          : <span className="grid h-7 w-7 place-items-center rounded-full bg-cobalt text-xs font-bold text-paper">{viewer.username.slice(0, 1).toUpperCase()}</span>}
         <span className="hidden max-w-28 truncate sm:inline">{viewer.username}</span>
       </button>
       {open && (

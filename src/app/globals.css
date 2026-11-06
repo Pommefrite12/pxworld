@@ -49,8 +49,72 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/*
+ * THEMES. The public side of the site is NIGHT (violet night, soft gold, cyan, ivory: the archive of our time), the back office stays LIGHT.
+ * A theme is only a set of the variables below: the components never name a colour, so a page changes theme with one attribute
+ * (`<html data-theme="night">`, and `data-theme="light"` on a part that must stay light: the back office). The story of the old
+ * countdown (about to be removed) keeps its own light look through the same variables. See docs/DESIGN.md.
+ */
+:root, [data-theme="light"], .doom-ticker, .doom-plate, .doom-msg, .comic {
+  color-scheme: light;
+  --surface: #fff; --surface-hover: #fffdf9; --surface-soft: #f5efe2;
+  --prose: #2d3348;
+  --shadow-ink: 31 37 64;
+  --selection-ink: #fff;
+  --checker-a: #fff; --checker-b: #ece4d3;
+  --badge-bg: rgb(252 249 242 / 0.92);
+  --field-inset: rgb(31 37 64 / 0.04);
+  --field-hover-edge: #d4c8b0;
+  --logo-land: #f04316; --logo-sea: #2b35e0;
+  /* buttons: the default (white) one, then what hover and pressed do to the default, secondary and navigation ones */
+  --btn-face: #fff; --btn-edge: #e6dccb; --btn-edge-dark: #d9ccb4; --btn-hl: rgb(255 255 255 / 0.9); --btn-ink: var(--color-ink);
+  --soft-face: #f7f2e6; --soft-edge: #dccfb6; --soft-edge-dark: #cdbfa4;
+  --hover-face: var(--color-sky); --hover-edge: #b7d3ee; --hover-edge-dark: #a6c6e6;
+  --press-face: var(--color-sky-2); --press-edge: var(--color-sky-line); --press-edge-dark: #7ba7d9;
+  /* the main call to action */
+  --primary-face: linear-gradient(#ea4211, #d63a10); --primary-face-hover: linear-gradient(#f4511f, #e2400f); --primary-face-press: linear-gradient(#d63a10, #c2330d);
+  --primary-edge: #b5300c; --primary-edge-dark: #8f2508; --primary-edge-press: #9c270a; --primary-hl: rgb(255 255 255 / 0.38); --primary-ink: #fff;
+  --primary-text-shadow: 0 1px 0 rgb(110 20 0 / 0.45); --primary-glow: rgb(240 67 22 / 0.35);
+  /* the strong neutral button */
+  --strong-face: #1f2540; --strong-face-hover: #2d3768; --strong-face-press: #161b34; --strong-edge: #0e1230; --strong-edge-dark: #080b20; --strong-hl: rgb(255 255 255 / 0.2); --strong-ink: #fff;
+}
+[data-theme="light"], .doom-ticker, .doom-plate, .doom-msg, .comic {
+  --color-paper: #fcf9f2; --color-paper-2: #f5efe2; --color-ink: #1f2540; --color-ink-soft: #4a5068; --color-ink-faint: #575e77; --color-line: #e6dccb;
+  --color-ocean: #c9dfe8; --color-land: #fbf5e6;
+  --color-signal: #f04316; --color-signal-strong: #d93a10; --color-signal-dark: #a92a0a;
+  --color-sky: #e6f2ff; --color-sky-2: #cfe6ff; --color-sky-line: #9cc3ec; --color-cobalt: #2457c5;
+  --color-mint: #12b886; --color-danger: #d92d20; --color-warn: #8a5a10; --color-mint-ink: #0b7a5a;
+  --shadow-8bit: 0 2px 0 rgb(31 37 64 / 0.12); --shadow-float: 0 1px 0 rgb(31 37 64 / 0.05), 0 8px 30px -8px rgb(31 37 64 / 0.2);
+}
+:root[data-theme="night"] {
+  color-scheme: dark;
+  --color-paper: #190921; --color-paper-2: #21102f; --color-ink: #f1e8df; --color-ink-soft: #cdc1c8; --color-ink-faint: #b8abc3; --color-line: #4a3069;
+  --color-ocean: #0d1a3e; --color-land: #382050;
+  --color-signal: #d6ab72; --color-signal-strong: #e2bd8a; --color-signal-dark: #a9824f;
+  --color-sky: #2d1a47; --color-sky-2: #3d2459; --color-sky-line: #6b4a95; --color-cobalt: #55c7d1;
+  --color-mint: #5fdcb0; --color-danger: #ff8a80; --color-warn: #f0b94f; --color-mint-ink: #6fe0b8;
+  --shadow-8bit: 0 2px 0 rgb(0 0 0 / 0.4); --shadow-float: 0 1px 0 rgb(0 0 0 / 0.3), 0 10px 30px -8px rgb(0 0 0 / 0.55);
+  --surface: #21102f; --surface-hover: #2a1740; --surface-soft: #2b1640;
+  --prose: #e4d9e0;
+  --shadow-ink: 0 0 0;
+  --selection-ink: #190921;
+  --checker-a: #1c0d29; --checker-b: #2a1740;
+  --badge-bg: rgb(25 9 33 / 0.86);
+  --field-inset: rgb(0 0 0 / 0.25);
+  --field-hover-edge: #6b4a95;
+  --logo-land: #d6ab72; --logo-sea: #55c7d1;
+  --btn-face: #21102f; --btn-edge: #4a3069; --btn-edge-dark: #2b1845; --btn-hl: rgb(255 255 255 / 0.1); --btn-ink: var(--color-ink);
+  --soft-face: #3d2459; --soft-edge: #6b4a95; --soft-edge-dark: #3a2257;
+  --hover-face: #2f1b49; --hover-edge: #6b4a95; --hover-edge-dark: #3a2257;
+  --press-face: #4b2f6e; --press-edge: #d6ab72; --press-edge-dark: #a9824f;
+  --primary-face: linear-gradient(#72d8e0, #55c7d1); --primary-face-hover: linear-gradient(#8ae3ea, #63d1da); --primary-face-press: linear-gradient(#55c7d1, #47b4be);
+  --primary-edge: #2f93a0; --primary-edge-dark: #1f6c77; --primary-edge-press: #1f6c77; --primary-hl: rgb(255 255 255 / 0.55); --primary-ink: #190921;
+  --primary-text-shadow: none; --primary-glow: rgb(85 199 209 / 0.45);
+  --strong-face: #46296a; --strong-face-hover: #55397a; --strong-face-press: #382050; --strong-edge: #6b4a95; --strong-edge-dark: #3a2257; --strong-hl: rgb(255 255 255 / 0.18); --strong-ink: #f1e8df;
+}
+
 @layer base {
-  html { color-scheme: light; -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
     background: var(--color-paper);
     color: var(--color-ink);
@@ -62,21 +126,21 @@
   h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; }
   :focus-visible { outline: 3px solid var(--color-cobalt); outline-offset: 2px; border-radius: 4px; }
   canvas[data-pointer-focus]:focus-visible { outline: none; }
-  ::selection { background: var(--color-signal); color: white; }
+  ::selection { background: var(--color-signal); color: var(--selection-ink); }
   button, [role="button"], a { -webkit-tap-highlight-color: transparent; }
 }
 
 @layer components {
-  /* ---------- buttons: stair-step corners, 1 px highlight, relief ledge, 8-bit shadow ---------- */
+  /* ---------- buttons: stair-step corners, 1 px highlight, relief ledge, 8-bit shadow (every colour comes from the theme) ---------- */
   .btn {
     --s: 2px;                         /* one stair step */
     --c: calc(var(--s) * 2);          /* corner = two steps */
     --ledge: 3px;                     /* thickness of the relief under the face */
-    --edge: var(--color-line);        /* outline */
-    --edge-dark: #d9ccb4;             /* outline of the ledge */
-    --face: #fff;                     /* background of the face (colour or gradient) */
-    --hl: rgb(255 255 255 / 0.9);     /* 1 px highlight along the top */
-    --ink: var(--color-ink);
+    --edge: var(--btn-edge);          /* outline */
+    --edge-dark: var(--btn-edge-dark);/* outline of the ledge */
+    --face: var(--btn-face);          /* background of the face (colour or gradient) */
+    --hl: var(--btn-hl);              /* 1 px highlight along the top */
+    --ink: var(--btn-ink);
     --poly: 0 var(--c), var(--s) var(--c), var(--s) var(--s), var(--c) var(--s), var(--c) 0,
       calc(100% - var(--c)) 0, calc(100% - var(--c)) var(--s), calc(100% - var(--s)) var(--s), calc(100% - var(--s)) var(--c), 100% var(--c),
       100% calc(100% - var(--c)), calc(100% - var(--s)) calc(100% - var(--c)), calc(100% - var(--s)) calc(100% - var(--s)), calc(100% - var(--c)) calc(100% - var(--s)), calc(100% - var(--c)) 100%,
@@ -100,24 +164,24 @@
   .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; filter: none; }
   .btn:focus-visible, .btn:has(:focus-visible) { outline: 3px solid var(--color-cobalt); outline-offset: 3px; }
   .btn:has(:focus-visible) :focus-visible { outline: none; }
-  .btn[aria-pressed="true"], .btn[aria-checked="true"] { --face: var(--color-sky-2); --edge: var(--color-sky-line); --edge-dark: #7ba7d9; }
+  .btn[aria-pressed="true"], .btn[aria-checked="true"] { --face: var(--press-face); --edge: var(--press-edge); --edge-dark: var(--press-edge-dark); }
 
-  /* primary call to action: the brand orange */
+  /* primary call to action: the theme's accent (orange by day, cyan by night) */
   .btn-primary {
-    --edge: #b5300c; --edge-dark: #8f2508; --hl: rgb(255 255 255 / 0.38); --ink: #fff;
-    --face: linear-gradient(#ea4211, #d63a10);
-    text-shadow: 0 1px 0 rgb(110 20 0 / 0.45);
+    --edge: var(--primary-edge); --edge-dark: var(--primary-edge-dark); --hl: var(--primary-hl); --ink: var(--primary-ink);
+    --face: var(--primary-face);
+    text-shadow: var(--primary-text-shadow);
   }
   .btn-primary:is(:hover, .is-hover):not(:disabled):not([aria-disabled="true"]) {
-    --face: linear-gradient(#f4511f, #e2400f);
-    filter: drop-shadow(var(--shadow-8bit)) drop-shadow(0 8px 14px rgb(240 67 22 / 0.35));
+    --face: var(--primary-face-hover);
+    filter: drop-shadow(var(--shadow-8bit)) drop-shadow(0 8px 14px var(--primary-glow));
   }
-  .btn-primary:is(:active, .is-active):not(:disabled):not([aria-disabled="true"]) { --face: linear-gradient(#d63a10, #c2330d); --edge: #9c270a; }
+  .btn-primary:is(:active, .is-active):not(:disabled):not([aria-disabled="true"]) { --face: var(--primary-face-press); --edge: var(--primary-edge-press); }
 
-  /* strong neutral: deep navy */
-  .btn-ink { --edge: #0e1230; --edge-dark: #080b20; --hl: rgb(255 255 255 / 0.2); --ink: #fff; --face: #1f2540; }
-  .btn-ink:is(:hover, .is-hover):not(:disabled):not([aria-disabled="true"]) { --face: #2d3768; }
-  .btn-ink:is(:active, .is-active):not(:disabled):not([aria-disabled="true"]) { --face: #161b34; }
+  /* strong neutral: deep navy by day, violet by night */
+  .btn-ink { --edge: var(--strong-edge); --edge-dark: var(--strong-edge-dark); --hl: var(--strong-hl); --ink: var(--strong-ink); --face: var(--strong-face); }
+  .btn-ink:is(:hover, .is-hover):not(:disabled):not([aria-disabled="true"]) { --face: var(--strong-face-hover); }
+  .btn-ink:is(:active, .is-active):not(:disabled):not([aria-disabled="true"]) { --face: var(--strong-face-press); }
 
   /* the story's buttons (arrows, close): the same stair-step pixel button, but dark with a magenta edge and a hard cyan shadow, like the frame of the pictures */
   .btn-comic { --s: 3px; --edge: var(--color-glitch-magenta); --edge-dark: #a8135f; --face: linear-gradient(#2a1d57, #170f33); --hl: rgb(180 160 255 / 0.4); --ink: #fff; filter: drop-shadow(3px 3px 0 var(--color-glitch-cyan)); }
@@ -128,16 +192,16 @@
   .btn-comic[data-dir="next"]:hover:not(:disabled) svg { translate: 2px 0; }
   .btn-comic[data-dir="prev"]:hover:not(:disabled) svg { translate: -2px 0; }
 
-  /* secondary (cream) and ghost (white): hover goes sky, pressed goes deeper sky */
-  .btn-secondary { --edge: #dccfb6; --edge-dark: #cdbfa4; --face: #f7f2e6; }
-  .btn-ghost { --edge: var(--color-line); --edge-dark: #d9ccb4; --face: #fff; }
+  /* secondary (soft) and ghost (the default face): hover and pressed go to the theme's own tints */
+  .btn-secondary { --edge: var(--soft-edge); --edge-dark: var(--soft-edge-dark); --face: var(--soft-face); }
+  .btn-ghost { --edge: var(--btn-edge); --edge-dark: var(--btn-edge-dark); --face: var(--btn-face); }
   .btn-secondary:is(:hover, .is-hover):not(:disabled):not([aria-disabled="true"]), .btn-ghost:is(:hover, .is-hover):not(:disabled):not([aria-disabled="true"]),
-  .btn-nav:is(:hover, .is-hover):not(:disabled):not([aria-disabled="true"]) { --face: var(--color-sky); --edge: #b7d3ee; --edge-dark: #a6c6e6; }
+  .btn-nav:is(:hover, .is-hover):not(:disabled):not([aria-disabled="true"]) { --face: var(--hover-face); --edge: var(--hover-edge); --edge-dark: var(--hover-edge-dark); }
   .btn-secondary:is(:active, .is-active):not(:disabled):not([aria-disabled="true"]), .btn-ghost:is(:active, .is-active):not(:disabled):not([aria-disabled="true"]),
-  .btn-nav:is(:active, .is-active):not(:disabled):not([aria-disabled="true"]) { --face: var(--color-sky-2); --edge: var(--color-sky-line); --edge-dark: #7ba7d9; }
+  .btn-nav:is(:active, .is-active):not(:disabled):not([aria-disabled="true"]) { --face: var(--press-face); --edge: var(--press-edge); --edge-dark: var(--press-edge-dark); }
 
-  /* navigation pill: cream, finer steps, usually with a chevron */
-  .btn-nav { --s: 1.5px; --edge: #dccfb6; --edge-dark: #cdbfa4; --face: #f7f2e6; min-height: 2.25rem; padding-inline: 1rem; font-size: 0.9rem; }
+  /* navigation pill: soft, finer steps, usually with a chevron */
+  .btn-nav { --s: 1.5px; --edge: var(--soft-edge); --edge-dark: var(--soft-edge-dark); --face: var(--soft-face); min-height: 2.25rem; padding-inline: 1rem; font-size: 0.9rem; }
 
   .btn-sm { min-height: 2.25rem; padding-inline: 0.9rem; font-size: 0.85rem; }
   /* icon button: square */
@@ -145,17 +209,17 @@
 
   /* small floating labels on the map */
   .badge-px {
-    background: rgb(252 249 242 / 0.92); border-radius: 7px; box-shadow: 0 0 0 1.5px var(--color-line), var(--shadow-8bit);
+    background: var(--badge-bg); border-radius: 7px; box-shadow: 0 0 0 1.5px var(--color-line), var(--shadow-8bit);
     backdrop-filter: blur(4px);
   }
 
-  .card { background: white; border-radius: var(--radius-card); box-shadow: 0 0 0 1.5px var(--color-line), var(--shadow-8bit), 0 14px 32px -16px rgb(31 37 64 / 0.22); }
+  .card { background: var(--surface); border-radius: var(--radius-card); box-shadow: 0 0 0 1.5px var(--color-line), var(--shadow-8bit), 0 14px 32px -16px rgb(var(--shadow-ink) / 0.22); }
   .field {
-    width: 100%; min-height: 2.75rem; padding: 0.5rem 0.9rem; border-radius: 9px; background: white;
-    box-shadow: inset 0 0 0 1.5px var(--color-line), inset 0 2px 0 rgb(31 37 64 / 0.04); transition: box-shadow 0.15s, background-color 0.15s; font-size: 1rem; color: var(--color-ink);
+    width: 100%; min-height: 2.75rem; padding: 0.5rem 0.9rem; border-radius: 9px; background: var(--surface);
+    box-shadow: inset 0 0 0 1.5px var(--color-line), inset 0 2px 0 var(--field-inset); transition: box-shadow 0.15s, background-color 0.15s; font-size: 1rem; color: var(--color-ink);
   }
-  .field:hover { background: #fffdf9; box-shadow: inset 0 0 0 1.5px #d4c8b0, inset 0 2px 0 rgb(31 37 64 / 0.04); }
-  .field:focus { outline: none; background: #fff; box-shadow: inset 0 0 0 2px var(--color-cobalt), 0 0 0 3px var(--color-sky-2); }
+  .field:hover { background: var(--surface-hover); box-shadow: inset 0 0 0 1.5px var(--field-hover-edge), inset 0 2px 0 var(--field-inset); }
+  .field:focus { outline: none; background: var(--surface); box-shadow: inset 0 0 0 2px var(--color-cobalt), 0 0 0 3px var(--color-sky-2); }
   .label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--color-ink-soft); margin-bottom: 0.35rem; }
   /* Readable tabular numbers for data (coordinates, sizes). The pixel font is reserved for headline figures: .pixel-display */
   .pixel-num { font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: 0; }
@@ -163,7 +227,7 @@
   .chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; background: var(--color-paper-2); color: var(--color-ink-soft); box-shadow: inset 0 0 0 1.5px var(--color-line); }
   .prose-pw { max-width: 42rem; line-height: 1.7; }
   .prose-pw h2 { font-size: 1.4rem; font-weight: 700; margin: 2rem 0 0.6rem; }
-  .prose-pw p, .prose-pw li { color: #2d3348; }
+  .prose-pw p, .prose-pw li { color: var(--prose); }
   .prose-pw ul { list-style: disc; padding-left: 1.3rem; margin: 0.5rem 0; }
   .prose-pw a { color: var(--color-cobalt); text-decoration: underline; text-underline-offset: 3px; }
 }
@@ -177,7 +241,7 @@
 }
 
 .pixelated { image-rendering: pixelated; image-rendering: crisp-edges; }
-.checker { background-color: #fff; background-image: linear-gradient(45deg, #ece4d3 25%, transparent 25%, transparent 75%, #ece4d3 75%), linear-gradient(45deg, #ece4d3 25%, transparent 25%, transparent 75%, #ece4d3 75%); background-size: 16px 16px; background-position: 0 0, 8px 8px; }
+.checker { background-color: var(--checker-a); background-image: linear-gradient(45deg, var(--checker-b) 25%, transparent 25%, transparent 75%, var(--checker-b) 75%), linear-gradient(45deg, var(--checker-b) 25%, transparent 25%, transparent 75%, var(--checker-b) 75%); background-size: 16px 16px; background-position: 0 0, 8px 8px; }
 
 /* ------------------------------------------------------------------ "100 days to save the world" (art direction Glitch)
    Only on the page while the countdown is on (see components/doom). The interface stays clear and cream: the story shows

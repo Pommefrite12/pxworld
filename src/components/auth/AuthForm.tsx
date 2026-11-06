@@ -80,7 +80,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
         <div><label className="label" htmlFor="au-pw">{mode === "reset" ? t("newPassword") : t("password")}</label><input id="au-pw" className="field" type="password" autoComplete={mode === "sign-in" ? "current-password" : "new-password"} required minLength={mode === "sign-in" ? 1 : 10} value={password} onChange={(e) => setPassword(e.target.value)} />{mode !== "sign-in" && <p className="mt-1 text-xs text-ink-faint">{t("passwordHint")}</p>}</div>
       )}
       {error && <p role="alert" className="rounded-xl bg-danger/10 px-3 py-2 text-sm font-semibold text-danger">{error}</p>}
-      {info && <p role="status" className="rounded-xl bg-mint/12 px-3 py-2 text-sm font-semibold text-[#0b7a5a]">{info}</p>}
+      {info && <p role="status" className="rounded-xl bg-mint/12 px-3 py-2 text-sm font-semibold text-(--color-mint-ink)">{info}</p>}
       <button className="btn btn-primary w-full" disabled={busy} type="submit" data-testid="auth-submit">{t(`${mode}.submit`)}</button>
       {(mode === "sign-in" || mode === "sign-up") && supabaseEnabled() && (
         <>

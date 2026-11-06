@@ -81,7 +81,7 @@ test("a parcel on the coast keeps its rectangle, but its drawing is cut along th
     let blue = 0, sea = 0;
     for (let i = 0; i < d.length; i += 4) {
       if (d[i] === 0x2b && d[i + 1] === 0x35 && d[i + 2] === 0xe0) blue++;
-      else if (Math.abs(d[i]! - 201) < 4 && Math.abs(d[i + 1]! - 223) < 4 && Math.abs(d[i + 2]! - 232) < 4) sea++;
+      else if (Math.abs(d[i]! - 13) < 4 && Math.abs(d[i + 1]! - 26) < 4 && Math.abs(d[i + 2]! - 62) < 4) sea++; // the night ocean
     }
     return { blue: blue / (d.length / 4), sea: sea / (d.length / 4) };
   });

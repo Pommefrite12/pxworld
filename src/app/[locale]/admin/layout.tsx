@@ -17,6 +17,8 @@ export default async function AdminLayout({ children, params }: { children: Reac
     ["/admin/users", t("users")], ["/admin/orders", t("orders")], ["/admin/reservations", t("reservations")], ["/admin/edition", t("edition")], ["/admin/settings", t("settings")], ["/admin/audit", t("audit")],
   ] as const;
   return (
+    // the back office is a work tool, not part of the archive: it keeps the light theme (see docs/DESIGN.md)
+    <div data-theme="light" className="min-h-dvh bg-paper text-ink">
     <PageShell width="max-w-7xl">
       <div className="grid gap-8 lg:grid-cols-[13rem_minmax(0,1fr)]">
         <nav aria-label={t("role", { role: staff.staffRole })} className="lg:sticky lg:top-6 lg:self-start">
@@ -28,5 +30,6 @@ export default async function AdminLayout({ children, params }: { children: Reac
         <div className="min-w-0">{children}</div>
       </div>
     </PageShell>
+    </div>
   );
 }

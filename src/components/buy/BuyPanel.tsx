@@ -59,7 +59,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind
     : state === "checking" || serverFree === "checking" ? { tone: "info", text: t("status.checking") }
     : { tone: "ok", text: t("status.free") };
 
-  const tone = { ok: "bg-mint/12 text-[#0b7a5a]", bad: "bg-danger/10 text-danger", info: "bg-paper-2 text-ink-soft" }[status.tone as "ok" | "bad" | "info"];
+  const tone = { ok: "bg-mint/12 text-(--color-mint-ink)", bad: "bg-danger/10 text-danger", info: "bg-paper-2 text-ink-soft" }[status.tone as "ok" | "bad" | "info"];
 
   return (
     <aside aria-label={t("title")} data-testid="buy-panel"

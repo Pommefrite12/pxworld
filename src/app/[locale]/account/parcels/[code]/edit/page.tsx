@@ -35,7 +35,7 @@ export default async function EditParcel({ params }: { params: Promise<{ locale:
       <CollabPanel code={code} initial={collab && { enabled: collab.enabled, token: collab.token, pixels: collab.pixels }} />
       <section className="mt-12" aria-label={t("history")}>
         <h2 className="text-xl font-bold">{t("history")}</h2>
-        <ul className="mt-3 divide-y divide-line rounded-2xl bg-white shadow-float">
+        <ul className="mt-3 divide-y divide-line rounded-2xl bg-paper-2 shadow-float">
           {versions.map((a) => (
             <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
               <span>v{a.version} · {f.dateTime(a.created_at, { dateStyle: "medium", timeStyle: "short" })} {a.title ? `· ${a.title}` : ""}</span>

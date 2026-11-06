@@ -8,6 +8,7 @@ import { enoughLand, enoughWater } from "@/lib/grid/pricing";
 import { ASSET_SIZES, assetSizeFor, assetUrl } from "@/lib/images/sizes";
 import { tintPixels } from "@/lib/images/waterTint";
 import { PROJECT_BAR_FROM_PX, projectAt, projectLook, projectProgress, type MapProject } from "@/lib/map/projects";
+import { storyIsOn } from "@/lib/doom/active";
 import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
 
 /**
@@ -94,15 +95,28 @@ const MAX_SCALE = 48;
 const RASTER_BELOW = 1; // below this zoom the server-composited rasters are shown; above it, parcels are drawn individually
 const JSON_ABOVE = 0.1; // below this zoom parcels are sub-2px: no metadata needed
 
-const COLORS = {
-  paper: "#fcf9f2",
-  ocean: "#c9dfe8",
-  land: "#fbf5e6",
-  ink: "31,37,64",
-  free: "18,184,134",
-  accent: "240,67,22",
-  danger: "217,45,32",
+/**
+ * The colours of the map. NIGHT is the archive's own (the ocean stays BLUE, a deep night blue; the land is violet; the coasts and the borders are
+ * drawn in soft gold; what is active, selected or free is cyan; what is collecting is gold). LIGHT is the previous look: it is only used while the old
+ * countdown story is on (its corrupted land was drawn for it) and goes away with it. Strings of "r,g,b" are for `rgba(${…}, alpha)`.
+ */
+const NIGHT = {
+  paper: "#190921", ocean: "#0d1a3e", land: "#382050",
+  ink: "214,171,114",   // coasts, borders, grid: gold, at the strength each line needs
+  text: "241,232,223", halo: "25,9,33", // the names of the places: ivory with a night halo
+  hover: "241,232,223", bar: "25,9,33", markerEdge: "#190921",
+  free: "85,199,209", accent: "214,171,114", danger: "255,122,112",
+  hatchA: "#2e1a45", hatchB: "#4a3069", hatchFallback: "#3a2358",
 };
+const LIGHT: typeof NIGHT = {
+  paper: "#fcf9f2", ocean: "#c9dfe8", land: "#fbf5e6",
+  ink: "31,37,64",
+  text: "31,37,64", halo: "251,245,230",
+  hover: "31,37,64", bar: "31,37,64", markerEdge: "#fff",
+  free: "18,184,134", accent: "240,67,22", danger: "217,45,32",
+  hatchA: "#e3ddcf", hatchB: "#c9c1ae", hatchFallback: "#ddd",
+};
+let COLORS: typeof NIGHT = NIGHT; // chosen when the engine starts
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const rasterSpan = (z: number) => RASTER_PX * 2 ** z;
@@ -195,6 +209,7 @@ export class MapEngine {
   private cleanup: (() => void)[] = [];
 
   constructor(private canvas: HTMLCanvasElement, private cb: EngineCallbacks = {}) {
+    COLORS = storyIsOn() ? LIGHT : NIGHT; // before anything is drawn or cached
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) throw new Error("Canvas 2D unavailable");
     this.ctx = ctx;
@@ -1636,9 +1651,9 @@ export class MapEngine {
     ctx.lineWidth = 3;
     const placed: { x0: number; y0: number; x1: number; y1: number }[] = [];
     const put = (text: string, x: number, y: number, a: number, ink: number) => {
-      ctx.strokeStyle = `rgba(251,245,230,${0.85 * a})`;
+      ctx.strokeStyle = `rgba(${COLORS.halo},${0.85 * a})`;
       ctx.strokeText(text, x, y);
-      ctx.fillStyle = `rgba(${COLORS.ink},${ink * a})`;
+      ctx.fillStyle = `rgba(${COLORS.text},${ink * a})`;
       ctx.fillText(text, x, y);
     };
     const clipped = (x0: number, x1: number, draw: () => void) => { ctx.save(); ctx.beginPath(); ctx.rect(x0, 0, x1 - x0, h); ctx.clip(); draw(); ctx.restore(); };
@@ -1667,7 +1682,7 @@ export class MapEngine {
     const onScreen = (p: { x: number; y: number }, m: number) => p.x > -m && p.y > -m && p.x < w + m && p.y < h + m;
     const dot = (p: { x: number; y: number }, size: number, a: number) => {
       if (plan?.tearing && p.x < front) return; // the sweep has taken this one
-      ctx.fillStyle = `rgba(${COLORS.ink},${0.7 * a * (plan && !plan.tearing ? plan.alpha : 1)})`;
+      ctx.fillStyle = `rgba(${COLORS.text},${0.7 * a * (plan && !plan.tearing ? plan.alpha : 1)})`;
       ctx.fillRect(Math.round(p.x - size / 2), Math.round(p.y - size / 2), size, size);
     };
 
@@ -1750,8 +1765,8 @@ export class MapEngine {
     const c = document.createElement("canvas");
     c.width = c.height = 8;
     const g = c.getContext("2d")!;
-    g.fillStyle = "#e3ddcf"; g.fillRect(0, 0, 8, 8);
-    g.strokeStyle = "#c9c1ae"; g.lineWidth = 1.4;
+    g.fillStyle = COLORS.hatchA; g.fillRect(0, 0, 8, 8);
+    g.strokeStyle = COLORS.hatchB; g.lineWidth = 1.4;
     g.beginPath(); g.moveTo(-1, 9); g.lineTo(9, -1); g.moveTo(-1, 1); g.lineTo(1, -1); g.moveTo(7, 9); g.lineTo(9, 7); g.stroke();
     return (this.hatch = this.ctx.createPattern(c, "repeat"));
   }
@@ -1822,7 +1837,7 @@ export class MapEngine {
             }
           }
           if (!drawn) {
-            ctx.fillStyle = water ? (p.color ?? WATER_FILL) : p.assetId && p.color ? p.color : (this.hatchPattern() ?? "#ddd");
+            ctx.fillStyle = water ? (p.color ?? WATER_FILL) : p.assetId && p.color ? p.color : (this.hatchPattern() ?? COLORS.hatchFallback);
             ctx.fillRect(rx, ry, rw, rh);
           }
         }
@@ -1921,7 +1936,7 @@ export class MapEngine {
       if (Math.min(rw, rh) >= PROJECT_BAR_FROM_PX) {
         // the progress, along the bottom edge: what is paid of what is asked
         const bh = 7, bx = x + 5, bw = pw - 10, by = y + ph - bh - 5, done = Math.round(bw * projectProgress(p));
-        ctx.fillStyle = `rgba(${COLORS.ink},0.55)`; ctx.fillRect(bx, by, bw, bh);
+        ctx.fillStyle = `rgba(${COLORS.bar},0.55)`; ctx.fillRect(bx, by, bw, bh);
         ctx.fillStyle = `rgb(${COLORS.accent})`; ctx.fillRect(bx, by, done, bh);
       }
     }
@@ -1932,7 +1947,7 @@ export class MapEngine {
     const { ctx } = this, r = hot ? 9 : 7;
     ctx.fillStyle = `rgb(${COLORS.accent})`;
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+    ctx.strokeStyle = COLORS.markerEdge; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
     if (progress > 0) { ctx.beginPath(); ctx.arc(cx, cy, r - 3.5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.02, progress)); ctx.stroke(); }
   }
@@ -1945,7 +1960,7 @@ export class MapEngine {
       return { x: Math.round(a.x), y: Math.round(a.y), w: Math.max(1, Math.round(r.w * s)), h: Math.max(1, Math.round(r.h * s)) };
     };
     const hl = this.highlight ? this.findParcelByCode(this.highlight) : null;
-    for (const [p, color, width] of [[hl, COLORS.accent, 3], [this.hovered, COLORS.ink, 2]] as const) {
+    for (const [p, color, width] of [[hl, COLORS.accent, 3], [this.hovered, COLORS.hover, 2]] as const) {
       if (!p) continue;
       const r = rectPath(p);
       ctx.strokeStyle = `rgb(${color})`; ctx.lineWidth = width;

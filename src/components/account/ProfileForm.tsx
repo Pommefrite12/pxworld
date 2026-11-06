@@ -43,7 +43,7 @@ export function ProfileForm({ initial }: { initial: { username: string; country:
       <div className="flex items-center gap-4">
         {initial.avatarId
           ? <img src={`/api/avatar/${initial.avatarId}?v=${initial.avatarV}`} alt="" className="h-16 w-16 rounded-full" />
-          : <span className="grid h-16 w-16 place-items-center rounded-full bg-cobalt text-2xl font-bold text-white">{initial.username.slice(0, 1).toUpperCase()}</span>}
+          : <span className="grid h-16 w-16 place-items-center rounded-full bg-cobalt text-2xl font-bold text-paper">{initial.username.slice(0, 1).toUpperCase()}</span>}
         <label className="btn btn-ghost btn-sm cursor-pointer">{t("avatar")}<input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(e) => void upload(e.target.files?.[0])} /></label>
       </div>
       <div><label className="label" htmlFor="pf-user">{t("username")}</label><input id="pf-user" className="field" value={username} onChange={(e) => setUsername(e.target.value)} pattern="[A-Za-z0-9_.\-]{3,24}" required /><p className="mt-1 text-xs text-ink-faint">{t("usernameHint")}</p></div>

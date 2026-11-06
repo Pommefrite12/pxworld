@@ -110,7 +110,7 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
             {reporting && (
               <div role="group" aria-label={t("reportReason")} className="grid gap-1 rounded-xl bg-paper-2 p-2 text-sm">
                 {["copyright", "hate", "sexual", "scam", "illegal_ad", "violence", "other"].map((r) => (
-                  <button key={r} className="rounded-lg px-2 py-1.5 text-left hover:bg-white" onClick={() => void report(r)}>{t(`reasons.${r}`)}</button>
+                  <button key={r} className="rounded-lg px-2 py-1.5 text-left hover:bg-paper" onClick={() => void report(r)}>{t(`reasons.${r}`)}</button>
                 ))}
               </div>
             )}

@@ -118,7 +118,7 @@ test("zooming out or panning over land never flashes the ocean colour while the 
     const ctx = canvas.getContext("2d")!;
     const points: [number, number][] = [];
     for (let i = 0; i < 5; i++) for (let j = 0; j < 3; j++) points.push([Math.round(canvas.width * (0.3 + 0.1 * i)), Math.round(canvas.height * (0.35 + 0.15 * j))]);
-    const isOcean = (d: Uint8ClampedArray) => Math.abs(d[0]! - 201) <= 2 && Math.abs(d[1]! - 223) <= 2 && Math.abs(d[2]! - 232) <= 2;
+    const isOcean = (d: Uint8ClampedArray) => Math.abs(d[0]! - 13) <= 2 && Math.abs(d[1]! - 26) <= 2 && Math.abs(d[2]! - 62) <= 2; // the night ocean
     let frames = 0, bad = 0;
     const sample = () => new Promise<void>((resolve) => requestAnimationFrame(() => {
       frames++;

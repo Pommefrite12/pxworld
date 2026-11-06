@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#fbf8f2", colorScheme: "light" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#190921", colorScheme: "dark" };
 
 export default async function LocaleLayout({ children, params }: { children: React.ReactNode; params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -35,9 +35,9 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   setRequestLocale(locale);
   const skip = (await getTranslations({ locale, namespace: "common" }))("skip");
   return (
-    <html lang={locale}>
+    <html lang={locale} data-theme="night">
       <body>
-        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-white">{skip}</a>
+        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-paper">{skip}</a>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>

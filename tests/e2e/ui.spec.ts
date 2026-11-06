@@ -291,7 +291,7 @@ test.describe("language switch", () => {
     await expect(page.getByTestId("locale-option-en")).toHaveAttribute("aria-checked", "true");
     await expect(page.getByTestId("locale-option-fr")).toHaveAttribute("aria-checked", "false");
     await expect(page.getByTestId("locale-option-fr")).toHaveText(/Français/);
-    expect(await menu.evaluate((e) => getComputedStyle(e).backgroundColor), "a white card like the account menu").toBe("rgb(255, 255, 255)");
+    expect(await menu.evaluate((e) => getComputedStyle(e).backgroundColor), "a card like the account menu: the surface of the night theme").toBe("rgb(33, 16, 47)");
     // Escape closes it and gives the focus back; so does a click elsewhere
     await page.keyboard.press("Escape");
     await expect(menu).toBeHidden();

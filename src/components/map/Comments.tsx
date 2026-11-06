@@ -120,7 +120,7 @@ export function CommentsPanel({ code, signedIn, comments: c }: { code: string; s
                 )}
               </p>
               {reporting === x.id && (
-                <div role="group" aria-label={t("reportReason")} className="mt-1 grid gap-0.5 rounded-lg bg-white p-1.5 text-xs">
+                <div role="group" aria-label={t("reportReason")} className="mt-1 grid gap-0.5 rounded-lg bg-paper p-1.5 text-xs">
                   {REPORT_REASONS.map((r) => <button key={r} type="button" className="rounded-md px-2 py-1 text-left hover:bg-paper-2" onClick={() => void report(x.id, r)}>{t(`reasons.${r}`)}</button>)}
                 </div>
               )}

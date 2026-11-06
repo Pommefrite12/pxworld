@@ -27,7 +27,7 @@ export default async function PublicProfile({ params }: { params: Promise<{ loca
       <div className="flex items-center gap-5">
         {p.has_avatar
           ? <img src={`/api/avatar/${p.id}`} alt="" className="h-20 w-20 rounded-full" />
-          : <span className="grid h-20 w-20 place-items-center rounded-full bg-cobalt text-3xl font-bold text-white">{p.username.slice(0, 1).toUpperCase()}</span>}
+          : <span className="grid h-20 w-20 place-items-center rounded-full bg-cobalt text-3xl font-bold text-paper">{p.username.slice(0, 1).toUpperCase()}</span>}
         <div>
           <h1 className="text-3xl font-extrabold">{p.username}</h1>
           <p className="text-ink-soft">{[region, t("since", { date: f.dateTime(p.created_at, { dateStyle: "medium" }) })].filter(Boolean).join(" · ")}</p>

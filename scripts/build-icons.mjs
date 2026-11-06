@@ -5,7 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 const OUT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../src/app");
 const ROWS = ["...oooooo...", "..oooLLooLo.", ".ooLLLoooLLo", ".oLLLLLooLLo", "oooLLLoooooo", "ooooLLLoooLo", "oooooLLLooLo", "ooooooLLLooo", ".oooooLLoooo", ".ooLooLooooo", "..oooooooLo.", "...oooooo..."];
-const BLUE = "#2b35e0", ORANGE = "#f04316", CREAM = "#fcf9f2";
+const BLUE = "#55c7d1", ORANGE = "#d6ab72", CREAM = "#190921"; // the globe in the archive's palette: cyan sea, gold land, on the violet night (the names are those of the old palette)
 const cells = (ox = 0, oy = 0) => ROWS.flatMap((row, y) => [...row].map((c, x) => c === "." ? "" : `<rect x="${x + ox}" y="${y + oy}" width="1.02" height="1.02" fill="${c === "L" ? ORANGE : BLUE}"/>`)).join("");
 
 // icon.svg: the globe alone, transparent corners (reads on light and dark tabs)
@@ -28,7 +28,7 @@ fs.writeFileSync(`${OUT}/icon.svg`, svg);
   });
   fs.writeFileSync(`${OUT}/favicon.ico`, Buffer.concat([head, ...dir, ...pngs]));
 
-  // apple-icon.png: iOS fills transparency with black, so the globe sits on the site's cream, 11 px per cell
+  // apple-icon.png: iOS fills transparency with black, so the globe sits on the site's night violet, 11 px per cell
   const globe = await sharp(big).resize(132, 132, { kernel: "nearest" }).png().toBuffer();
   await sharp({ create: { width: 180, height: 180, channels: 4, background: CREAM } }).composite([{ input: globe, left: 24, top: 24 }]).png({ compressionLevel: 9 }).toFile(`${OUT}/apple-icon.png`);
 

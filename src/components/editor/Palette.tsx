@@ -13,7 +13,7 @@ export function Swatches({ selected, order = false, onPick, label, name = (c) =>
             className="relative aspect-square rounded-[3px] shadow-[inset_0_0_0_1px_rgb(0_0_0/0.15),0_2px_0_rgb(31_37_64/0.12)]"
             style={{ background: c, outline: i >= 0 ? "3px solid var(--color-cobalt)" : "none", outlineOffset: 1 }}>
             {order && i >= 0 && (
-              <span className="pointer-events-none absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-cobalt px-0.5 text-[0.6rem] font-bold leading-none text-white" aria-hidden data-testid="mix-rank">{i + 1}</span>
+              <span className="pointer-events-none absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-cobalt px-0.5 text-[0.6rem] font-bold leading-none text-paper" aria-hidden data-testid="mix-rank">{i + 1}</span>
             )}
           </button>
         );

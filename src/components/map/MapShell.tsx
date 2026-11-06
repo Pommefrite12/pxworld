@@ -296,7 +296,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
         )}
 
         {toast && (
-          <div role="status" className="pointer-events-auto absolute left-1/2 top-4 z-50 -translate-x-1/2 rounded-[8px] bg-ink px-4 py-2.5 text-sm font-semibold text-white shadow-float">
+          <div role="status" className="pointer-events-auto absolute left-1/2 top-4 z-50 -translate-x-1/2 rounded-[8px] bg-ink px-4 py-2.5 text-sm font-semibold text-paper shadow-float">
             {toast}
             <button className="ml-3 underline" onClick={() => setToast(null)}>{tc("ok")}</button>
           </div>

@@ -36,7 +36,7 @@ export async function ProjectCard({ c }: { c: PublicCampaign }) {
           </p>
           <p className="flex items-baseline justify-between gap-2 text-xs text-ink-soft">
             <span>{c.contributors > 0 ? t("contributors", { n: f.number(c.contributors) }) : t("noContributors")}</span>
-            {c.status === "funded" ? <span className="chip !bg-mint/15 !text-[#0b7a5a]">{t("status.funded")}</span> : <span>{await timeLeftLabel(c.seconds_left)}</span>}
+            {c.status === "funded" ? <span className="chip !bg-mint/15 !text-(--color-mint-ink)">{t("status.funded")}</span> : <span>{await timeLeftLabel(c.seconds_left)}</span>}
           </p>
         </div>
       </Link>

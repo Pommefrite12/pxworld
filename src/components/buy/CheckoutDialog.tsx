@@ -206,7 +206,7 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
       </dialog>
 
       {previewing && (
-        <div className="pointer-events-auto fixed inset-x-3 bottom-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-full bg-ink px-4 py-2.5 text-white shadow-float md:bottom-6">
+        <div className="pointer-events-auto fixed inset-x-3 bottom-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-full bg-ink px-4 py-2.5 text-paper shadow-float md:bottom-6">
           <span className="text-sm font-semibold">{t("previewing")}</span>
           <button className="btn btn-primary btn-sm" onClick={backFromPreview}>{t("backToEditor")}</button>
         </div>

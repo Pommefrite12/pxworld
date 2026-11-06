@@ -1,22 +1,38 @@
 # Design system
 
-"Pixel-inspired, modern, premium": a warm paper background, a navy ink, one hot orange, and buttons that look like they were
-cut out pixel by pixel. Everything lives in `src/app/globals.css` (tokens in `@theme`, components in `@layer components`).
-In development, **`/dev/design`** shows every button family in its three states next to the palette (404 in production).
+**The archive of our time: a night of violet, a thread of gold, a light of cyan** — and the same stair-step pixel buttons the site has always had.
+The public side of the site is **night** (`<html data-theme="night">`); the back office (`/admin`) is a work tool and stays **light**
+(`data-theme="light"` on its layout). Everything lives in `src/app/globals.css`: tokens in `@theme`, the themes right after it, components in
+`@layer components`. In development, **`/dev/design`** shows every button family in its three states next to the palette (404 in production).
 
-## Palette
+## Themes (how a page changes colour)
+
+A theme is a **set of CSS variables**. Components never name a colour: they use the semantic tokens (`bg-paper`, `text-ink`, `border-line`,
+`text-signal`, `bg-sky`, `text-cobalt`…) and the variables of the buttons and surfaces (`--btn-face`, `--primary-face`, `--surface`…). So one
+attribute re-skins a whole page, and a part that must keep another theme (the back office, inside the night `<html>`) just sets its own
+`data-theme` — the variables are re-declared there. To add or adjust a colour, change it in the theme blocks (`:root`, `[data-theme="light"]`,
+`:root[data-theme="night"]`), never in a component. Rules: **text colour on an accent is the colour of the page** (`text-paper`), never `white`;
+the "ok" green has its own variable (`--color-mint-ink`) because the light and the night greens are not the same.
+
+## Palette — night (public side)
 
 | Token | Value | Use |
 |---|---|---|
-| `paper` | `#fcf9f2` | page background (warm) |
-| `paper-2` | `#f5efe2` | panels, chips |
-| `line` | `#e6dccb` | borders |
-| `ink` | `#1f2540` | main text, dark buttons |
-| `ink-soft` / `ink-faint` | `#4a5068` / `#575e77` | secondary text (≥ 5.6:1 on every surface) |
-| `signal` | `#f04316` | brand orange: CTA, figures, accents |
-| `signal-strong` | `#d93a10` | orange for small text (4.4:1) |
-| `sky` / `sky-2` / `sky-line` | `#e6f2ff` / `#cfe6ff` / `#9cc3ec` | hover / pressed-active / their outline |
-| `cobalt` | `#2457c5` | links and focus ring (6.2:1) |
+| `paper` | `#190921` | the page: violet night (dominant) |
+| `paper-2`, `--surface` | `#21102f` | panels, cards, chips |
+| `--surface-soft` | `#2b1640` | raised surfaces, hover |
+| `line` | `#4a3069` | borders (decorative: 1.4:1, never carries text) |
+| `ink` | `#f1e8df` | main text: ivory (15.7:1 on `paper`) |
+| `ink-soft` / `ink-faint` | `#cdc1c8` / `#b8abc3` | secondary text (≥ 7:1 / ≥ 6:1 on every surface) |
+| `signal` | `#d6ab72` | soft gold: time and heritage — figures, the countdown, the price, the world of the logo (9:1) |
+| `cobalt` | `#55c7d1` | cyan: interaction — links, focus ring, the main button, the active parcel (9.5:1) |
+| `sky` / `sky-2` / `sky-line` | `#2d1a47` / `#3d2459` / `#6b4a95` | hover / pressed / their outline (violet tints) |
+| `mint`, `danger`, `warn` | `#5fdcb0`, `#ff8a80`, `#f0b94f` | confirmation, error, warning — readable on the night |
+| **the map** | ocean `#0d1a3e`, land `#382050`, coasts and borders gold, names ivory with a night halo | **the oceans stay BLUE** (owner's decision), the land is violet |
+
+## Palette — light (back office, and the old story while it lasts)
+
+The previous palette, unchanged: `paper #fcf9f2`, `ink #1f2540`, `signal #f04316` (orange), `sky #e6f2ff`, `cobalt #2457c5`, `line #e6dccb`.
 
 ## Pixel details
 
@@ -29,10 +45,10 @@ In development, **`/dev/design`** shows every button family in its three states 
 
 | Class | What | Example |
 |---|---|---|
-| `btn btn-primary` | main call to action (orange) | *Trouvez votre place* |
-| `btn btn-secondary` | support action (cream) | *Connexion* |
-| `btn btn-ghost` | discreet action (white) | *Explorer*, most secondary buttons |
-| `btn btn-ink` | strong neutral (navy) | *Enregistrer*, *Importer une image* |
+| `btn btn-primary` | main call to action: **cyan** by night (orange by day) | *Trouvez votre place* |
+| `btn btn-secondary` | support action: violet by night (cream by day) | *Connexion* |
+| `btn btn-ghost` | discreet action (the surface colour) | *Explorer*, most secondary buttons |
+| `btn btn-ink` | strong neutral: violet by night (navy by day) | *Enregistrer*, *Importer une image* |
 | `btn btn-nav` | navigation pill (finer steps) | *Découvrir ›* |
 | `btn-icon` (with a variant) | square icon button | close, zoom, search |
 | `btn-sm` | smaller | toolbars |
@@ -47,11 +63,11 @@ The orange CTA is a gradient from `#ea4211` to `#d63a10` with bold white text an
 
 ## Logo and icons
 
-* **Logo** (`src/components/ui/Logo.tsx`): the 12 × 12 pixel globe (blue sea, orange land) and the wordmark — **"pixel" in the site's pixel font** (Jersey 10, one weight, no letter-spacing, 1.3 em so that its x-height matches the display font next to it) and **"world" in the display font** (Bricolage Grotesque 800, orange). Ink `#1f2540`, orange `#f04316`, blue `#2b35e0`.
-* **Icons** are the globe alone (a wordmark is unreadable at 16 px): `src/app/icon.svg` (transparent corners, reads on light and dark tabs), `icon.png` (512), `favicon.ico` (16, 32, 48) and `apple-icon.png` (180, on the site's cream because iOS paints transparency black). Next.js links them from every page by file convention. They are generated by `node scripts/build-icons.mjs` from the same grid as the logo and committed. (`tests/e2e/brand.spec.ts`.)
+* **Logo** (`src/components/ui/Logo.tsx`): the 12 × 12 pixel globe (**cyan sea, gold land** by night, blue and orange by day: `--logo-sea`, `--logo-land`) and the wordmark — **"pixel" in the site's pixel font** (Jersey 10, one weight, no letter-spacing, 1.3 em so that its x-height matches the display font next to it) and **"world" in the display font** (Bricolage Grotesque 800, orange). The word "world" is in the gold of the theme.
+* **Icons** are the globe alone (a wordmark is unreadable at 16 px): `src/app/icon.svg` (transparent corners, reads on light and dark tabs), `icon.png` (512), `favicon.ico` (16, 32, 48) and `apple-icon.png` (180, on the night violet `#190921` because iOS paints transparency black). Next.js links them from every page by file convention. They are generated by `node scripts/build-icons.mjs` from the same grid as the logo and committed. (`tests/e2e/brand.spec.ts`.) They are drawn in the night palette (cyan sea `#55c7d1`, gold land `#d6ab72`).
 * The share image (`/api/og/home`) is set in the pixel font (the file is carried into the serverless function by `outputFileTracingIncludes`) and follows the story: ordinary, countdown, the end (see `ARCHITECTURE.md`).
 
-## "100 days to save the world" — Glitch
+## "100 days to save the world" — Glitch (to be removed: step D6 of `PLAN_REFONTE_ARCHIVE.md`)
 
 The art direction chosen for the story (the other two mock-ups were *Arcade, the cobalt void* and *1-bit dither*). The interface stays clear and cream; only a few things "stutter". Palette added: cyan `#19D3FF`, magenta `#FF2E93`, lavender `#E9E5FF`, violet `#6A4CFF` (`--color-glitch-*`) — used as fringes and on the corrupted land, **never for running text**. Hazard stripes (orange on cream) mark the strip and the plate's header. Numbers and codes are set in the pixel font. Rules of sobriety: at most two effects at a time outside the map, no flashing faster than 3 per second, and everything still (`prefers-reduced-motion`) for those who asked. The one animation of the map in the story is a ~1.4 s "bug" every 30 s (the destroyed land tears in bands, in jerks, to a rhythm; with a cyan and magenta split along the torn bands and a few jolts on a machine that is not struggling; no flashing). Implementation notes in `ARCHITECTURE.md → "100 days to save the world"`.
 
