@@ -380,7 +380,7 @@ Sans cela, le lien de confirmation reçu par e-mail ne ramènerait pas vers votr
 
 ## Étape 7 : l'achat de test (20 min)
 
-1. Sur le site, cliquez sur **Trouver ma place** / **Find your spot**, choisissez une petite parcelle **sur la terre**, ajoutez une image, acceptez les conditions, **Payer**.
+1. Sur le site, cliquez sur **Laisser ma trace** / **Leave my trace**, choisissez une petite parcelle **sur la terre**, ajoutez une image, acceptez les conditions, **Payer**.
 2. Sur la page de Stripe, carte **`4242 4242 4242 4242`**, une date future quelconque, un code CVC quelconque, un code postal quelconque.
 3. Vous revenez sur le site : la commande doit passer à **Payée**. Dans **Administration → Modération**, approuvez la création ; la parcelle apparaît sur la carte.
    Dans Stripe → **Payments** : le paiement de test apparaît, en **EUR** (vous êtes en France).

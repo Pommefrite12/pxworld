@@ -3,7 +3,7 @@
 Items marked **(approval)** need an explicit decision from the project owner before anyone does them.
 
 ## Legal & business
-- [ ] **(approval)** Terms, privacy policy and community rules reviewed and completed by legal counsel (the texts in `src/messages/*.json → pages.*` are working drafts with `[bracketed]` gaps: tax treatment, withdrawal/refund policy, minimum duration of a parcel, liability, retention periods, governing law).
+- [ ] **(approval)** Terms, privacy policy and community rules reviewed and completed by legal counsel (the texts in `src/messages/*.json → pages.*` are working drafts with `[bracketed]` gaps: tax treatment, withdrawal/refund policy, minimum duration of a trace and what is promised about keeping the archive, the closing date of an edition as a term of the contract and a purchase made shortly before it, the wording "contribution / digital right to use" (without misleading a consumer about what is bought), the handling of an erasure request against a public archive and its preservation copy, liability, retention periods, governing law). The vocabulary of the whole site is the archive's (trace, edition, author); the payment button and the summary stay explicit ("Pay €6.25").
 - [ ] Operator identity configured (`NEXT_PUBLIC_OPERATOR_*`) — shown in the Terms/Privacy.
 - [ ] Stripe account activated for the operator entity; Stripe Tax configured if applicable (`STRIPE_AUTOMATIC_TAX=true`).
 - [ ] Moderation staffing plan and response time for reports (illegal content, copyright notices).

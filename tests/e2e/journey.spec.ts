@@ -61,7 +61,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     // back on the map with the same selection restored, now with the design step available
     await page.waitForURL(/bx=25000/);
     await expect(page.getByTestId("buy-status")).toContainText(/free/i);
-    await expect(page.getByTestId("buy-continue")).toHaveText("Design my parcel");
+    await expect(page.getByTestId("buy-continue")).toHaveText("Create my trace");
   });
 
   test("alice designs, pays and receives the parcel only after the (mock) webhook", async ({ browser }) => {
@@ -255,7 +255,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText(/Dans 100 ans, que restera-t-il de nous/);
     await expect(page.getByTestId("home-leave-trace")).toHaveText("Laisser ma trace");
     await page.goto("/fr/map");
-    await expect(page.getByTestId("find-your-spot")).toHaveText("Trouvez votre place");
+    await expect(page.getByTestId("find-your-spot")).toHaveText("Laisser ma trace");
     await page.goto("/fr/discover");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Découvrir");
   });

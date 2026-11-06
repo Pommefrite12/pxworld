@@ -130,6 +130,26 @@ test.describe.serial("a trace in the archive: category, place, and a page of its
     expect(j.edition).toEqual({ slug: "fondatrice", name: "Édition fondatrice" });
   });
 
+  test("the share image of the trace: 1200 × 630 in the night palette, in the language of the page announcing it", async ({ request }) => {
+    const get = async (q: string) => {
+      const r = await request.get(`/api/og/parcel/${code}${q}`);
+      expect(r.status(), q).toBe(200);
+      expect(r.headers()["content-type"]).toContain("image/png");
+      const body = await r.body();
+      const raw = await sharp(body).raw().toBuffer({ resolveWithObject: true });
+      expect([raw.info.width, raw.info.height], q).toEqual([1200, 630]);
+      return { body, px: (x: number, y: number) => Array.from(raw.data.subarray((y * raw.info.width + x) * raw.info.channels, (y * raw.info.width + x) * raw.info.channels + 3)) };
+    };
+    const en = await get(""), fr = await get("?lang=fr");
+    expect(en.px(8, 8), "the night violet, not the old cream").toEqual([25, 9, 33]);
+    expect(en.body.equals(fr.body), "its words follow the language").toBe(false);
+    expect((await get("?lang=de")).body.equals(en.body), "anything but French is English").toBe(true);
+    // the pages announce the one in their own language
+    expect(await (await request.get(`/archive/${code}`)).text()).toContain(`/api/og/parcel/${code}"`);
+    expect(await (await request.get(`/fr/archive/${code}`)).text()).toContain(`/api/og/parcel/${code}?lang=fr`);
+    expect(await (await request.get(`/fr/p/${code}`)).text()).toContain(`/api/og/parcel/${code}?lang=fr`);
+  });
+
   test("in French: the same page, in French words", async ({ page }) => {
     await page.goto(`/fr/archive/${code}`);
     await expect(page.getByTestId("archive-date")).toContainText("Archivée le");

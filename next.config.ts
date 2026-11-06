@@ -29,8 +29,9 @@ const config: NextConfig = {
   outputFileTracingIncludes: {
     "/api/checkout": ["./public/data/geo/**/*"],
     "/api/availability": ["./public/data/geo/**/*"],
-    // the share image of the home page is set in the site's pixel font, read from disk
+    // the share images (the home page, a trace) are set in the site's pixel font, read from disk
     "/api/og/home": ["./node_modules/@fontsource/jersey-10/files/jersey-10-latin-400-normal.woff"],
+    "/api/og/parcel/[code]": ["./node_modules/@fontsource/jersey-10/files/jersey-10-latin-400-normal.woff"],
   },
   async headers() {
     return [

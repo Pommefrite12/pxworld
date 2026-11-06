@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const title = p.creation?.title ?? t("untitled");
   const description = p.creation?.description ?? t("descriptionFallback", { author: p.owner.username });
   const url = `${siteUrl()}${path(locale, code)}`;
-  const image = `${siteUrl()}/api/og/parcel/${code}`;
+  const image = `${siteUrl()}/api/og/parcel/${code}${locale === "fr" ? "?lang=fr" : ""}`; // in the language of the page
   return {
     title: `${title} — ${p.owner.username}`,
     description,

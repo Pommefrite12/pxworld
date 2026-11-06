@@ -49,7 +49,7 @@ The previous palette, unchanged: `paper #fcf9f2`, `ink #1f2540`, `signal #f04316
 
 | Class | What | Example |
 |---|---|---|
-| `btn btn-primary` | main call to action: **cyan** by night (orange by day) | *Trouvez votre place* |
+| `btn btn-primary` | main call to action: **cyan** by night (orange by day) | *Laisser ma trace* |
 | `btn btn-secondary` | support action: violet by night (cream by day) | *Connexion* |
 | `btn btn-ghost` | discreet action (the surface colour) | *Explorer*, most secondary buttons |
 | `btn btn-ink` | strong neutral: violet by night (navy by day) | *Enregistrer*, *Importer une image* |

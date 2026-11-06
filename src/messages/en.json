@@ -1,8 +1,8 @@
 {
   "meta": {
     "siteName": "Pixel World",
-    "tagline": "One planet. One billion pixels. Your mark.",
-    "description": "Pixel World is a collaborative world map of one billion pixels. Claim a piece of the planet, draw your mark on it and share it with the world."
+    "tagline": "In 100 years, what will remain of us?",
+    "description": "Pixel World is a collective archive of our time: a map of the world where anyone can leave a trace — an image, a drawing, a few words — for the people who will come after us."
   },
   "nav": {
     "home": "pixelworld — home",
@@ -18,12 +18,12 @@
     "language": "Language"
   },
   "map": {
-    "canvasLabel": "Interactive world map of one billion pixels. Drag to move, scroll or pinch to zoom, arrow keys to pan, plus and minus to zoom.",
-    "sloganA": "One planet.",
-    "sloganB": "One billion pixels.",
-    "sloganC": "Your mark.",
-    "pitch": "A collaborative map of the Earth, made of one billion pixels. Claim a piece of it and put your creation on the world.",
-    "findYourSpot": "Find your spot",
+    "canvasLabel": "Interactive map of the archive: every trace sits at its place on the world. Drag to move, scroll or pinch to zoom, arrow keys to pan, plus and minus to zoom.",
+    "sloganA": "A collective archive",
+    "sloganB": "of our time.",
+    "sloganC": "Leave your trace.",
+    "pitch": "A collective archive of our time, on a map of the world. Pick a spot and leave your trace.",
+    "findYourSpot": "Leave my trace",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
     "recenter": "Show the whole world",
@@ -34,18 +34,18 @@
   },
   "stats": {
     "label": "Live statistics",
-    "sold": "Pixels sold",
-    "filled": "Share of the planet sold",
+    "sold": "Pixels archived",
+    "filled": "Share of the map archived",
     "available": "Available",
-    "owners": "Owners",
+    "owners": "Contributors",
     "creations": "Creations"
   },
   "latest": {
-    "title": "Latest creations",
-    "all": "See all creations",
-    "empty": "The first creations will appear here.",
+    "title": "Recently archived",
+    "all": "See all traces",
+    "empty": "The first traces will appear here.",
     "open": "Open {title}",
-    "untitled": "untitled creation"
+    "untitled": "untitled trace"
   },
   "comments": {
     "title": "Comments",
@@ -101,9 +101,18 @@
     "steps": {
       "eyebrow": "In three gestures",
       "title": "Leaving a trace is simple.",
-      "one": { "title": "Choose a parcel", "text": "Draw a rectangle on the world map, where you want your trace to be." },
-      "two": { "title": "Archive what matters", "text": "An image, a drawing, a text: give it a title and say why it matters to you." },
-      "three": { "title": "Hand it down", "text": "Share your page, invite other people to co-create. Your trace enters the archive." }
+      "one": {
+        "title": "Choose a parcel",
+        "text": "Draw a rectangle on the world map, where you want your trace to be."
+      },
+      "two": {
+        "title": "Archive what matters",
+        "text": "An image, a drawing, a text: give it a title and say why it matters to you."
+      },
+      "three": {
+        "title": "Hand it down",
+        "text": "Share your page, invite other people to co-create. Your trace enters the archive."
+      }
     },
     "recent": {
       "eyebrow": "The community",
@@ -141,10 +150,23 @@
   "about": {
     "title": "In 100 years, what will remain of us?",
     "lead": "Pixel World is a collective archive: a map of the world on which anyone can leave one trace of our time, for the people who will come after us.",
-    "why": { "title": "Why", "text": "Our conversations fade, our photos sleep in phones, our websites disappear. Little of what we live every day is kept in a form that someone could read in a hundred years. Here, each trace is chosen: a picture, a drawing, a few words, with a title, an author, a date and a place. Together they make a readable fragment of our era." },
-    "how": { "title": "How it works", "text": "You choose a rectangle on the map, you create your trace in the editor (an image, a drawing, a text), you give it a title, a category and, if you want, the place it is about. After a quick look by the moderators, it has a page of its own, that you can share, and you can invite other people to draw on it with you." },
-    "time": { "title": "A time to tell it", "text": "The first edition lasts 100 days. When it closes, nothing can be bought or changed any more: the edition becomes a historical archive, kept as it was and open to everybody. The opening and the closing are decided by us, announced, and enforced by the server, never by a browser." },
-    "buy": { "title": "What you pay for", "text": "A one-time payment of {price} per pixel (so {from} for the smallest parcel, 25 pixels). You get a virtual placement on a digital map, with a digital right to use it. It is not real estate, nor an intellectual property right, and it is not a promise that the archive will be kept for ever: the terms say exactly what is promised.", "terms": "Read the terms" },
+    "why": {
+      "title": "Why",
+      "text": "Our conversations fade, our photos sleep in phones, our websites disappear. Little of what we live every day is kept in a form that someone could read in a hundred years. Here, each trace is chosen: a picture, a drawing, a few words, with a title, an author, a date and a place. Together they make a readable fragment of our era."
+    },
+    "how": {
+      "title": "How it works",
+      "text": "You choose a rectangle on the map, you create your trace in the editor (an image, a drawing, a text), you give it a title, a category and, if you want, the place it is about. After a quick look by the moderators, it has a page of its own, that you can share, and you can invite other people to draw on it with you."
+    },
+    "time": {
+      "title": "A time to tell it",
+      "text": "The first edition lasts 100 days. When it closes, nothing can be bought or changed any more: the edition becomes a historical archive, kept as it was and open to everybody. The opening and the closing are decided by us, announced, and enforced by the server, never by a browser."
+    },
+    "buy": {
+      "title": "What you pay for",
+      "text": "A one-time payment of {price} per pixel (so {from} for the smallest parcel, 25 pixels). You get a virtual placement on a digital map, with a digital right to use it. It is not real estate, nor an intellectual property right, and it is not a promise that the archive will be kept for ever: the terms say exactly what is promised.",
+      "terms": "Read the terms"
+    },
     "draft": "This text is a first version, written for the launch: it will be reviewed with the legal text.",
     "cta": "Leave my trace",
     "explore": "Explore the archives"
@@ -205,7 +227,7 @@
     "close": "Close",
     "notFound": "This parcel could not be found.",
     "untitled": "Untitled creation",
-    "pending": "This parcel has been acquired. Its title and creation will appear once our moderators have approved them.",
+    "pending": "This trace has been archived. Its title and creation will appear once our moderators have approved them.",
     "hidden": "The content of this parcel is currently hidden.",
     "ad": "Advertisement",
     "size": "Size",
@@ -228,11 +250,11 @@
       "violence": "Violence or dangerous content",
       "other": "Something else"
     },
-    "shareDescription": "A {w}×{h} pixel creation ({area} pixels) by {owner} on Pixel World, the collaborative world map of one billion pixels.",
+    "shareDescription": "A trace of {area} pixels ({w}×{h}) by {owner} in the Pixel World archive, a collective archive of our time.",
     "comment": "Comment"
   },
   "buy": {
-    "title": "Claim your pixels",
+    "title": "Leave your trace",
     "unitPrice": "{price} per pixel · one-time payment",
     "close": "Close",
     "presets": "Popular sizes",
@@ -262,15 +284,15 @@
       "area_too_small": "The minimum surface is {min} pixels.",
       "area_too_large": "The maximum surface is {max} pixels."
     },
-    "continue": "Design my parcel",
+    "continue": "Create my trace",
     "signInToContinue": "Sign in to continue",
-    "legal": "Virtual placement on the map — not real-estate, geographic or intellectual property.",
+    "legal": "Digital right to use a virtual placement on the map — not real estate, nor an intellectual property right.",
     "terms": "Terms",
     "rules": "Community rules",
-    "designTitle": "Design your parcel",
+    "designTitle": "Create your trace",
     "reviewTitle": "Review and pay",
     "steps": "Steps",
-    "stepDesign": "Design",
+    "stepDesign": "Create",
     "stepPay": "Review & pay",
     "designReady": "Looking good. Review it, or preview it on the map first.",
     "designEmpty": "Upload an image or draw something to continue.",
@@ -280,10 +302,10 @@
     "backToEditor": "Back to the editor",
     "discardConfirm": "Discard your design?",
     "finalRender": "Final render, pixel for pixel",
-    "moderationNote": "Your creation is published once it passes moderation. We cannot promise that every image is accepted; if it is refused you can submit another one for the same parcel.",
+    "moderationNote": "Your trace is published, on a page of its own, once it passes moderation. We cannot promise that every image is accepted; if it is refused you can submit another one for the same parcel. When the edition closes, traces are frozen: they stay readable but can no longer be changed.",
     "fields": {
       "title": "Title",
-      "titleHint": "At least {min} characters. It is shown when someone clicks your parcel on the map.",
+      "titleHint": "At least {min} characters. It is shown on the page of your trace and when someone clicks it on the map.",
       "description": "Short description (optional)",
       "link": "Link (optional)",
       "linkHint": "https only. External links are shown with their domain and marked nofollow.",
@@ -437,7 +459,7 @@
     "adminNav": "Administration"
   },
   "footer": {
-    "tagline": "A collaborative map of the Earth in one billion pixels.",
+    "tagline": "A collective archive of our time, on a map of the world.",
     "legal": "Legal",
     "about": "Learn more",
     "discover": "Discover",
@@ -446,7 +468,7 @@
     "privacy": "Privacy",
     "credits": "Credits",
     "contact": "Contact",
-    "virtual": "Pixel World sells virtual placement on a digital map. It is not real-estate, geographic or intellectual property.",
+    "virtual": "Pixel World sells a digital right to use a virtual placement on a map, as a contribution to a collaborative work. It is not real estate, nor an intellectual property right, nor a promise that the archive will be kept for ever.",
     "projects": "Group projects",
     "ranking": "Ranking"
   },
@@ -468,12 +490,12 @@
     "devBanner": "Development mode: no password needed. This form does not exist in production.",
     "sign-in": {
       "title": "Sign in",
-      "lead": "Welcome back. Sign in to buy and manage your parcels.",
+      "lead": "Welcome back. Sign in to leave a trace and manage yours.",
       "submit": "Sign in"
     },
     "sign-up": {
       "title": "Create your account",
-      "lead": "It takes a minute. Then claim your piece of the planet.",
+      "lead": "It takes a minute. Then leave your trace.",
       "submit": "Create my account"
     },
     "forgot": {
@@ -504,13 +526,13 @@
   "account": {
     "title": "Your account",
     "memberSince": "Member since {date}",
-    "statParcels": "Parcels owned",
+    "statParcels": "Parcels",
     "ordersLink": "Orders",
     "parcels": {
       "title": "My parcels",
       "summary": "{parcels} parcels · {pixels} pixels",
-      "buyMore": "Buy another parcel",
-      "empty": "You do not own any parcel yet.",
+      "buyMore": "Leave another trace",
+      "empty": "You have not archived anything yet.",
       "findSpot": "Find your spot",
       "noImage": "No image yet",
       "untitled": "Untitled creation",
@@ -527,7 +549,7 @@
       "edit": "Edit creation",
       "drawTogether": "Draw together"
     },
-    "pixels": "Pixels owned",
+    "pixels": "Pixels archived",
     "myParcels": "My parcels",
     "orders": {
       "title": "Order history",
@@ -556,7 +578,7 @@
     "form": {
       "avatar": "Change avatar",
       "username": "Username",
-      "usernameHint": "3–24 characters: letters, numbers, dot, dash, underscore. Shown on your creations.",
+      "usernameHint": "3–24 characters: letters, numbers, dot, dash, underscore. Shown on your traces.",
       "country": "Country (optional)",
       "bio": "Short bio (optional)",
       "save": "Save",
@@ -633,7 +655,7 @@
     "title": "Draw together",
     "leadTitled": "Everyone with this link can add pixels to “{title}” by {owner}.",
     "lead": "Everyone with this link can add pixels to this parcel by {owner}.",
-    "rule": "What you paint shows up for everyone with the link, right away. It is not on the map: the owner chooses when to publish it, and moderators review it first.",
+    "rule": "What you paint shows up for everyone with the link, right away. It is not on the map: the author of the trace chooses when to publish it, and moderators review it first.",
     "canvas": "Shared canvas of {w} × {h} pixels, drawn down to a fraction of a pixel. Click or drag to paint.",
     "palette": "Colours",
     "customColor": "Pick any colour",
@@ -650,7 +672,7 @@
     "slow": "A lot of people are painting — slowing down for a moment.",
     "closedTitle": "This drawing link is no longer active",
     "frozenTitle": "This edition is closed: the drawing is archived",
-    "closedLead": "The owner may have switched it off or replaced it. Ask them for the current link.",
+    "closedLead": "Whoever created it may have switched it off or replaced it. Ask them for the current link.",
     "home": "Back to Pixel World",
     "multi": "Multicolour brush",
     "multiHint": "Click colours to add or remove them: the stroke runs through them in the order shown."
@@ -712,8 +734,8 @@
   },
   "discover": {
     "title": "Discover",
-    "lead": "The newest creations, the biggest parcels, the community favourites and the people shaping the map.",
-    "latest": "Latest creations",
+    "lead": "The newest traces, the biggest parcels, the community's favourites and the people who build the archive.",
+    "latest": "Latest traces",
     "large": "Biggest parcels",
     "largeHint": "Ranked by surface in pixels.",
     "popular": "Most liked this month",
@@ -721,8 +743,8 @@
     "editorial": "Editorial selection",
     "editorialHint": "Hand-picked by the Pixel World team.",
     "contributors": "Top contributors",
-    "contributorsHint": "Ranked by total pixels owned.",
-    "empty": "Nothing here yet — be the first to leave your mark.",
+    "contributorsHint": "Ranked by total pixels archived.",
+    "empty": "Nothing archived yet — be the first to leave your trace.",
     "emptyPopular": "No creation has been liked this month yet.",
     "emptyEditorial": "Our first picks will appear here.",
     "contribution": "{parcels} parcels · {pixels} px",
@@ -740,7 +762,7 @@
     "updated": "Last updated: {date}",
     "rules": {
       "title": "Community rules",
-      "intro": "Pixel World is a shared canvas that everybody can see. These rules keep it a place people enjoy visiting. They apply to every image, text and link published on the map.",
+      "intro": "Pixel World is a collective archive that everybody can see. These rules keep it a place people enjoy visiting. They apply to every image, text and link published on the map.",
       "sections": [
         {
           "h": "What you can publish",
@@ -790,7 +812,7 @@
     },
     "terms": {
       "title": "Terms of service",
-      "intro": "These terms govern your use of Pixel World and the purchase of parcels. They are a working draft that must be reviewed and completed by the operator's legal counsel before the public launch.",
+      "intro": "These terms govern your use of Pixel World and the payment you make to leave a trace on its map. They are a provisional text, written for the launch: it must be reviewed and completed by the operator's legal counsel before the public launch.",
       "sections": [
         {
           "h": "Who we are",
@@ -799,18 +821,19 @@
           ]
         },
         {
-          "h": "What you buy",
+          "h": "What you pay for",
           "p": [
-            "The map is a virtual grid of 1,000,000,000 pixels (40,000 × 25,000). A parcel is a rectangle of at least 25 pixels. Buying a parcel gives you the exclusive right to display one creation on that rectangle of the map, according to these terms.",
-            "A parcel is a virtual placement. It is not real-estate, nor a geographic, territorial or intellectual property right, and it gives you no right over the places the map depicts.",
-            "Land and water are for sale, as two separate categories. A land parcel owns the land pixels of its rectangle: it may include some sea along a coast, but at least half of its pixels must be land (the exact share is set by the administrators). A water parcel owns the water pixels of its rectangle: it may include some land along a coast, but at least half of its pixels must be water. You pay for the pixels your parcel owns only: the pixels of your rectangle that belong to the other category are cut away and offered, or discounted if a reduced price is in force, and the order summary shows the split before you pay. A land parcel and a water parcel may share the same rectangle, since they never share a pixel. Whatever you create on a water parcel is shown in three tints of blue. The counters on the map count the pixels owned by parcels, land and water."
+            "Pixel World is a collective archive of our time. It is drawn on a virtual grid of 1,000,000,000 pixels (40,000 × 25,000). A parcel is a rectangle of at least 25 pixels. Your payment is a contribution to this collaborative work; in return you get a digital right to use that rectangle, according to these terms, to display one creation on it.",
+            "A parcel is a virtual placement on a digital map. It is not real estate, nor a geographic, territorial or intellectual property right, and it gives you no right over the places the map depicts. Nor is it a promise that the archive will be kept for ever: see “How long a trace lasts” below.",
+            "Land and water are for sale, as two separate categories. A land parcel covers the land pixels of its rectangle: it may include some sea along a coast, but at least half of its pixels must be land (the exact share is set by the administrators). A water parcel covers the water pixels of its rectangle: it may include some land along a coast, but at least half of its pixels must be water. You pay for the pixels your parcel covers only: the pixels of your rectangle that belong to the other category are cut away and offered, or discounted if a reduced price is in force, and the order summary shows the split before you pay. A land parcel and a water parcel may share the same rectangle, since they never share a pixel. Whatever you create on a water parcel is shown in three tints of blue. The counters on the map count the pixels covered by parcels, land and water."
           ]
         },
         {
           "h": "Price and payment",
           "p": [
             "The initial price is €0.25 per pixel for buyers in the euro area and $0.25 per pixel for buyers elsewhere, charged in the currency of the buyer's country as detected when the order is placed, calculated automatically from the number of pixels and always recomputed on our servers. We may change the price for future sales; parcels already bought are not affected. Payments are processed by Stripe; we never see or store your card number.",
-            "When you start a purchase the pixels are reserved for you for a limited time. If you do not pay within that time the reservation is released. Your parcel is attributed only when the payment provider has confirmed the payment to us."
+            "When you start a purchase the pixels are reserved for you for a limited time. If you do not pay within that time the reservation is released. Your parcel is attributed only when the payment provider has confirmed the payment to us.",
+            "The amount to pay is always shown, in full, before you confirm the payment."
           ]
         },
         {
@@ -818,7 +841,7 @@
           "p": [
             "A group project lets several people pay together for one parcel. Its creator designs the parcel and sends it to moderation; once it is accepted, the zone is reserved for the duration the creator chose (7, 14 or 30 days) and anybody with an account may contribute, from the minimum amount shown on the project page.",
             "A contribution is paid through the same payment provider as a purchase, in the currency of the project. The contributions to a project can never exceed the price of its parcel. If the goal is reached before the end, the parcel becomes the creator's, as if they had bought it, and the contributions are kept as the payment for it. If the goal is not reached by the end, or if the creator withdraws the project, every contribution is refunded automatically to the payment method that was used. Contributions are not displayed publicly: only the total and the number of contributors are shown.",
-            "A contributor receives no ownership, share or right over the parcel. The creator alone owns the parcel and is alone responsible for its content, which is reviewed by moderators like any other creation. [To be reviewed by a lawyer: the holding of funds between a contribution and the end of the project, the right of withdrawal, who issues the invoice, the VAT on each contribution, and the information to give before payment.]"
+            "A contributor receives no ownership, share or right over the parcel. The creator alone holds the digital right to use the parcel and is alone responsible for its content, which is reviewed by moderators like any other creation. [To be reviewed by a lawyer: the holding of funds between a contribution and the end of the project, the right of withdrawal, who issues the invoice, the VAT on each contribution, and the information to give before payment.]"
           ]
         },
         {
@@ -831,13 +854,22 @@
           "h": "Your creation",
           "p": [
             "You keep your rights on what you publish and you guarantee that you are allowed to publish it. You grant Pixel World a worldwide, non-exclusive licence to display, reproduce and promote your creation on the site, in share previews and in material that presents the project.",
+            "Your creation is archived on a public page of its own, with its title, the username of its author, its category, the place it is about (if you gave one) and the date it was archived. The place is a text you choose (and, optionally, a country): never exact coordinates.",
             "Creations are published after moderation and may be refused, hidden or removed if they break the community rules or the law."
           ]
         },
         {
-          "h": "How long a parcel lasts",
+          "h": "Editions and the closing",
           "p": [
-            "A parcel stays attributed to you for as long as the service operates and these terms are respected. [Minimum duration, notice period if the service ends, and transfer rules: to be defined by the operator.]"
+            "The archive is organised in editions. The founding edition lasts 100 days from the day the operator opens it. The opening and the closing are decided by the operator, announced on the site, and enforced by the server, never by a browser.",
+            "When an edition closes, nothing can be bought any more and its creations are frozen: they stay readable and the map can still be explored, but their authors can no longer change them. Moderators keep the power to hide or remove a creation that breaks the rules or the law, even after the closing; the removal is recorded. A payment already started when the edition closes has a short delay to complete; one that would complete after it is refunded.",
+            "[To be reviewed by a lawyer: the closing date as a term of the contract, and what happens to a purchase made shortly before it.]"
+          ]
+        },
+        {
+          "h": "How long a trace lasts",
+          "p": [
+            "A trace stays attributed to you, and on the map, for as long as the service operates and these terms are respected. We want the archive to stay readable for a long time, but we do not promise that it will be kept for ever. [Minimum duration, notice period if the service ends, preservation of the archive after the end, and transfer rules: to be defined by the operator with legal counsel.]"
           ]
         },
         {
@@ -869,7 +901,7 @@
           "ul": [
             "Account: email address, username, optional country, bio and avatar.",
             "Purchases: order details, amounts, billing country and, where provided, tax identifiers, as reported by Stripe. We never receive your card number.",
-            "Creations you publish, with their title, description and link.",
+            "Creations you publish, with their title, description, link, category and the place you say they are about: they are public, with your username and the date of archiving.",
             "Reports: when you report a creation we keep the report and a snapshot of what was displayed. A salted hash of your IP address is used for abuse prevention; we do not store the address itself.",
             "Technical: the minimum needed to run and secure the service (error logs, rate-limit counters)."
           ]
@@ -895,7 +927,7 @@
         {
           "h": "Your rights",
           "p": [
-            "You can ask for access, correction, export or deletion of your data, and object to some processing, by writing to {operatorEmail}. Accounting records and moderation evidence may need to be kept for the period the law requires. [Retention periods: to be defined by the operator.]"
+            "You can ask for access, correction, export or deletion of your data, and object to some processing, by writing to {operatorEmail}. Accounting records and moderation evidence may need to be kept for the period the law requires. [Retention periods: to be defined by the operator.] [Erasure and a public archive: how a request is handled once a creation has been archived and published, and in the preservation copy of a frozen edition: to be defined with legal counsel.]"
           ]
         }
       ]
@@ -1388,6 +1420,6 @@
     "likes": "{n, plural, one {# like} other {# likes}}",
     "creationsCount": "{n, plural, one {# creation} other {# creations}}",
     "best": "best: {title}",
-    "rules": "Only likes from other, active accounts count: the owner's own like on their creation, and likes from suspended accounts, are ignored. A creation that is hidden by moderation is not ranked. Ties share a rank; the earlier creation comes first. The creators' score is the sum of the likes of all their creations."
+    "rules": "Only likes from other, active accounts count: the author's own like on their creation, and likes from suspended accounts, are ignored. A creation that is hidden by moderation is not ranked. Ties share a rank; the earlier creation comes first. The creators' score is the sum of the likes of all their creations."
   }
 }

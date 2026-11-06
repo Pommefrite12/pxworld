@@ -2,11 +2,22 @@ import { ImageResponse } from "next/og";
 import sharp from "sharp";
 import { getPublicParcel } from "@/lib/data/parcels";
 import { queryOne } from "@/lib/db/pool";
+import { CYAN, GOLD, IVORY, NIGHT, VIOLET_DEEP, Wordmark, fitsPixelFont, pixelFont } from "@/lib/og/brand";
 import { objectStore } from "@/lib/storage";
 
-/** Share image (1200×630) for a parcel: the creation, pixel-exact, next to its title and owner. */
-export async function GET(_req: Request, ctx: { params: Promise<{ code: string }> }) {
+const TEXT = {
+  fr: { kicker: "ARCHIVE COLLECTIVE", by: "par", pixels: "pixels", tagline: "Dans 100 ans, que restera-t-il de nous ?", locale: "fr-FR" },
+  en: { kicker: "COLLECTIVE ARCHIVE", by: "by", pixels: "pixels", tagline: "In 100 years, what will remain of us?", locale: "en" },
+};
+
+/**
+ * Share image (1200×630) for a trace: the creation, pixel-exact, next to its title and author, in the night palette of the site and in the
+ * language of the page that announces it (`?lang=fr`, otherwise English). Set in the site's pixel font, unless the title or the author's name
+ * uses letters it cannot draw: then the renderer's own font sets the whole card, so that nothing turns into empty boxes.
+ */
+export async function GET(req: Request, ctx: { params: Promise<{ code: string }> }) {
   const { code } = await ctx.params;
+  const lang = new URL(req.url).searchParams.get("lang") === "fr" ? "fr" : "en", t = TEXT[lang];
   const p = await getPublicParcel(code).catch(() => null);
   if (!p) return new Response("Not found", { status: 404 });
 
@@ -26,35 +37,39 @@ export async function GET(_req: Request, ctx: { params: Promise<{ code: string }
       dataUrl = `data:image/png;base64,${out.toString("base64")}`;
     }
   }
-  const title = p.creation?.title ?? "Pixel World";
+  const title = (p.creation?.title ?? "Pixel World").slice(0, 60), author = p.owner.username;
   const shown = k2(p.w, p.h, BOX);
+  const pixel = fitsPixelFont(title + author);
+  const fonts = pixel ? [{ name: "Jersey", data: await pixelFont(), weight: 400 as const, style: "normal" as const }] : undefined;
+  const titleSize = pixel ? (title.length > 26 ? 70 : 96) : title.length > 26 ? 52 : 68;
 
   return new ImageResponse(
     (
-      <div style={{ display: "flex", width: "100%", height: "100%", background: "#fbf8f2", padding: 52, fontFamily: "sans-serif", color: "#17151f" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 526, height: 526, background: "#ffffff", borderRadius: 28, border: "3px solid #e4ddcf" }}>
+      <div style={{ display: "flex", width: "100%", height: "100%", background: NIGHT, padding: 52, fontFamily: pixel ? "Jersey" : "sans-serif", color: IVORY }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 526, height: 526, background: VIOLET_DEEP, border: `4px solid ${GOLD}` }}>
           {dataUrl ? (
             <img src={dataUrl} width={shown.w} height={shown.h} alt="" />
           ) : (
-            <div style={{ display: "flex", width: 300, height: 300, background: "#c9dfe8", borderRadius: 20, alignItems: "center", justifyContent: "center", fontSize: 40, color: "#5a5766" }}>Pixel World</div>
+            <div style={{ display: "flex", width: 300, height: 300, background: "#382050", alignItems: "center", justifyContent: "center", fontSize: 40, color: GOLD }}>Pixel World</div>
           )}
         </div>
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", flex: 1, marginLeft: 52 }}>
-          <div style={{ display: "flex", fontSize: 40, fontWeight: 800, letterSpacing: -1 }}>
-            pixel<span style={{ color: "#f04316" }}>world</span>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <Wordmark size={40} />
+            <div style={{ display: "flex", marginTop: 14, fontSize: 28, letterSpacing: 3, color: GOLD }}>{t.kicker}</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", fontSize: title.length > 26 ? 52 : 68, fontWeight: 800, lineHeight: 1.05, letterSpacing: -2 }}>{title.slice(0, 60)}</div>
-            <div style={{ display: "flex", fontSize: 34, marginTop: 20, color: "#5a5766" }}>by {p.owner.username}</div>
+            <div style={{ display: "flex", fontSize: titleSize, lineHeight: 1.0, letterSpacing: pixel ? 1 : -2 }}>{title}</div>
+            <div style={{ display: "flex", fontSize: pixel ? 44 : 34, marginTop: 20, color: GOLD }}>{t.by} {author}</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", fontSize: 28, color: "#8d8a98" }}>{p.w}×{p.h} px · {p.area.toLocaleString("en")} pixels</div>
-            <div style={{ display: "flex", fontSize: 30, fontWeight: 700, marginTop: 10, color: "#f04316" }}>One planet. One billion pixels. Your mark.</div>
+            <div style={{ display: "flex", fontSize: pixel ? 32 : 26, color: "#b9aebf" }}>{p.w}×{p.h} px · {p.area.toLocaleString(t.locale).replace(/[\u202f\u00a0]/g, " ")} {t.pixels}</div>
+            <div style={{ display: "flex", fontSize: pixel ? (t.tagline.length > 36 ? 30 : 38) : t.tagline.length > 36 ? 24 : 28, marginTop: 10, color: CYAN, whiteSpace: "nowrap" }}>{t.tagline}</div>
           </div>
         </div>
       </div>
     ),
-    { width: 1200, height: 630, headers: { "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400" } },
+    { width: 1200, height: 630, fonts, headers: { "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400" } },
   );
 }
 

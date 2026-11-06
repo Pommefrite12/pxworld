@@ -1,8 +1,8 @@
 {
   "meta": {
     "siteName": "Pixel World",
-    "tagline": "Une planète. Un milliard de pixels. Votre empreinte.",
-    "description": "Pixel World est un planisphère collaboratif d'un milliard de pixels. Réservez un morceau de la planète, laissez-y votre empreinte et partagez-la avec le monde."
+    "tagline": "Dans 100 ans, que restera-t-il de nous\u00a0?",
+    "description": "Pixel World est une archive collective de notre époque\u00a0: une carte du monde où chacun peut laisser une trace — une image, un dessin, quelques mots — pour celles et ceux qui viendront après nous."
   },
   "nav": {
     "home": "pixelworld — accueil",
@@ -18,12 +18,12 @@
     "language": "Langue"
   },
   "map": {
-    "canvasLabel": "Planisphère interactif d'un milliard de pixels. Glissez pour déplacer, molette ou pincement pour zoomer, flèches pour se déplacer, plus et moins pour zoomer.",
-    "sloganA": "Une planète.",
-    "sloganB": "Un milliard de pixels.",
-    "sloganC": "Votre empreinte.",
-    "pitch": "Une carte collaborative de la Terre, faite d'un milliard de pixels. Réservez-en un morceau et posez votre création sur le monde.",
-    "findYourSpot": "Trouvez votre place",
+    "canvasLabel": "Carte interactive de l'archive\u00a0: chaque trace est à sa place sur le monde. Glissez pour déplacer, molette ou pincement pour zoomer, flèches pour se déplacer, plus et moins pour zoomer.",
+    "sloganA": "Une archive collective",
+    "sloganB": "de notre époque.",
+    "sloganC": "Laissez votre trace.",
+    "pitch": "Une archive collective de notre époque, sur une carte du monde. Choisissez une place et laissez votre trace.",
+    "findYourSpot": "Laisser ma trace",
     "zoomIn": "Zoom avant",
     "zoomOut": "Zoom arrière",
     "recenter": "Afficher le monde entier",
@@ -34,18 +34,18 @@
   },
   "stats": {
     "label": "Statistiques en direct",
-    "sold": "Pixels acquis",
-    "filled": "Part de la planète acquise",
+    "sold": "Pixels archivés",
+    "filled": "Part de la carte archivée",
     "available": "Disponibles",
-    "owners": "Propriétaires",
+    "owners": "Contributeurs",
     "creations": "Créations"
   },
   "latest": {
-    "title": "Dernières créations",
-    "all": "Voir toutes les créations",
-    "empty": "Les premières créations apparaîtront ici.",
+    "title": "Récemment archivées",
+    "all": "Voir toutes les traces",
+    "empty": "Les premières traces apparaîtront ici.",
     "open": "Ouvrir {title}",
-    "untitled": "création sans titre"
+    "untitled": "trace sans titre"
   },
   "comments": {
     "title": "Commentaires",
@@ -101,9 +101,18 @@
     "steps": {
       "eyebrow": "En trois gestes",
       "title": "Laisser sa trace, c'est simple.",
-      "one": { "title": "Choisissez une parcelle", "text": "Tracez un rectangle sur la carte du monde, là où vous voulez que votre trace se trouve." },
-      "two": { "title": "Archivez ce qui compte", "text": "Une image, un dessin, un texte : donnez-lui un titre et dites pourquoi il compte pour vous." },
-      "three": { "title": "Transmettez", "text": "Partagez votre page, invitez d'autres personnes à co-créer. Votre trace entre dans l'archive." }
+      "one": {
+        "title": "Choisissez une parcelle",
+        "text": "Tracez un rectangle sur la carte du monde, là où vous voulez que votre trace se trouve."
+      },
+      "two": {
+        "title": "Archivez ce qui compte",
+        "text": "Une image, un dessin, un texte : donnez-lui un titre et dites pourquoi il compte pour vous."
+      },
+      "three": {
+        "title": "Transmettez",
+        "text": "Partagez votre page, invitez d'autres personnes à co-créer. Votre trace entre dans l'archive."
+      }
     },
     "recent": {
       "eyebrow": "La communauté",
@@ -141,10 +150,23 @@
   "about": {
     "title": "Dans 100 ans, que restera-t-il de nous\u00a0?",
     "lead": "Pixel World est une archive collective : une carte du monde sur laquelle chacun peut laisser une trace de notre époque, pour ceux qui viendront après nous.",
-    "why": { "title": "Pourquoi", "text": "Nos conversations s'effacent, nos photos dorment dans des téléphones, nos sites disparaissent. Peu de ce que nous vivons chaque jour est conservé sous une forme que quelqu'un pourrait lire dans cent ans. Ici, chaque trace est choisie : une image, un dessin, quelques mots, avec un titre, un auteur, une date et un lieu. Ensemble, elles forment un fragment lisible de notre époque." },
-    "how": { "title": "Comment ça marche", "text": "Vous choisissez un rectangle sur la carte, vous créez votre trace dans l'éditeur (une image, un dessin, un texte), vous lui donnez un titre, une catégorie et, si vous le souhaitez, le lieu dont elle parle. Après un coup d'œil rapide des modérateurs, elle a sa propre page, que vous pouvez partager, et vous pouvez inviter d'autres personnes à dessiner dessus avec vous." },
-    "time": { "title": "Un temps pour la raconter", "text": "La première édition dure 100 jours. À sa clôture, plus rien ne peut être acheté ni modifié : l'édition devient une archive historique, conservée telle qu'elle était et ouverte à tous. L'ouverture et la clôture sont décidées par nous, annoncées, et appliquées par le serveur, jamais par un navigateur." },
-    "buy": { "title": "Ce que vous payez", "text": "Un paiement unique de {price} le pixel (soit {from} pour la plus petite parcelle, 25 pixels). Vous obtenez un emplacement virtuel sur une carte numérique, avec un droit d'usage numérique. Ce n'est ni un bien immobilier, ni un droit de propriété intellectuelle, et ce n'est pas la promesse que l'archive sera conservée éternellement : les conditions disent exactement ce qui est promis.", "terms": "Lire les conditions" },
+    "why": {
+      "title": "Pourquoi",
+      "text": "Nos conversations s'effacent, nos photos dorment dans des téléphones, nos sites disparaissent. Peu de ce que nous vivons chaque jour est conservé sous une forme que quelqu'un pourrait lire dans cent ans. Ici, chaque trace est choisie : une image, un dessin, quelques mots, avec un titre, un auteur, une date et un lieu. Ensemble, elles forment un fragment lisible de notre époque."
+    },
+    "how": {
+      "title": "Comment ça marche",
+      "text": "Vous choisissez un rectangle sur la carte, vous créez votre trace dans l'éditeur (une image, un dessin, un texte), vous lui donnez un titre, une catégorie et, si vous le souhaitez, le lieu dont elle parle. Après un coup d'œil rapide des modérateurs, elle a sa propre page, que vous pouvez partager, et vous pouvez inviter d'autres personnes à dessiner dessus avec vous."
+    },
+    "time": {
+      "title": "Un temps pour la raconter",
+      "text": "La première édition dure 100 jours. À sa clôture, plus rien ne peut être acheté ni modifié : l'édition devient une archive historique, conservée telle qu'elle était et ouverte à tous. L'ouverture et la clôture sont décidées par nous, annoncées, et appliquées par le serveur, jamais par un navigateur."
+    },
+    "buy": {
+      "title": "Ce que vous payez",
+      "text": "Un paiement unique de {price} le pixel (soit {from} pour la plus petite parcelle, 25 pixels). Vous obtenez un emplacement virtuel sur une carte numérique, avec un droit d'usage numérique. Ce n'est ni un bien immobilier, ni un droit de propriété intellectuelle, et ce n'est pas la promesse que l'archive sera conservée éternellement : les conditions disent exactement ce qui est promis.",
+      "terms": "Lire les conditions"
+    },
     "draft": "Ce texte est une première version, écrite pour le lancement : il sera relu avec le texte juridique.",
     "cta": "Laisser ma trace",
     "explore": "Explorer les archives"
@@ -205,7 +227,7 @@
     "close": "Fermer",
     "notFound": "Cette parcelle est introuvable.",
     "untitled": "Création sans titre",
-    "pending": "Cette parcelle a été acquise. Son titre et sa création apparaîtront dès que nos modérateurs les auront validés.",
+    "pending": "Cette trace a été archivée. Son titre et sa création apparaîtront une fois validés par nos modérateurs.",
     "hidden": "Le contenu de cette parcelle est actuellement masqué.",
     "ad": "Publicité",
     "size": "Taille",
@@ -228,11 +250,11 @@
       "violence": "Violence ou contenu dangereux",
       "other": "Autre"
     },
-    "shareDescription": "Une création de {w}×{h} pixels ({area} pixels) par {owner} sur Pixel World, le planisphère collaboratif d'un milliard de pixels.",
+    "shareDescription": "Une trace de {area} pixels ({w}×{h}) de {owner} dans l'archive Pixel World, une archive collective de notre époque.",
     "comment": "Commenter"
   },
   "buy": {
-    "title": "Réservez vos pixels",
+    "title": "Laissez votre trace",
     "unitPrice": "{price} le pixel · paiement unique",
     "close": "Fermer",
     "presets": "Tailles courantes",
@@ -262,15 +284,15 @@
       "area_too_small": "La surface minimale est de {min} pixels.",
       "area_too_large": "La surface maximale est de {max} pixels."
     },
-    "continue": "Créer ma parcelle",
+    "continue": "Créer ma trace",
     "signInToContinue": "Connectez-vous pour continuer",
-    "legal": "Emplacement virtuel sur la carte — aucun droit de propriété immobilière, géographique ou intellectuelle.",
+    "legal": "Droit d'usage numérique d'un emplacement virtuel sur la carte — ni bien immobilier, ni droit de propriété intellectuelle.",
     "terms": "Conditions",
     "rules": "Règles de la communauté",
-    "designTitle": "Créez votre parcelle",
+    "designTitle": "Créez votre trace",
     "reviewTitle": "Vérifier et payer",
     "steps": "Étapes",
-    "stepDesign": "Création",
+    "stepDesign": "Créer",
     "stepPay": "Vérifier et payer",
     "designReady": "C'est bien parti. Vérifiez le résultat, ou prévisualisez-le d'abord sur la carte.",
     "designEmpty": "Importez une image ou dessinez quelque chose pour continuer.",
@@ -280,10 +302,10 @@
     "backToEditor": "Retour à l'éditeur",
     "discardConfirm": "Abandonner votre création ?",
     "finalRender": "Rendu final, pixel pour pixel",
-    "moderationNote": "Votre création est publiée une fois la modération passée. Nous ne pouvons pas garantir que toute image sera acceptée ; si elle est refusée, vous pourrez en soumettre une autre pour la même parcelle.",
+    "moderationNote": "Votre trace est publiée, sur une page à elle, une fois validée par la modération. Nous ne pouvons pas promettre que toutes les images soient acceptées\u00a0; si la vôtre est refusée, vous pouvez en proposer une autre pour la même parcelle. À la clôture de l'édition, les traces sont figées\u00a0: elles restent lisibles mais ne peuvent plus être modifiées.",
     "fields": {
       "title": "Titre",
-      "titleHint": "{min} caractères minimum. Il s'affiche quand quelqu'un clique sur votre parcelle sur la carte.",
+      "titleHint": "Au moins {min} caractères. Il s'affiche sur la page de votre trace et quand quelqu'un clique dessus sur la carte.",
       "description": "Courte description (facultatif)",
       "link": "Lien (facultatif)",
       "linkHint": "https uniquement. Les liens externes affichent leur domaine et sont marqués nofollow.",
@@ -437,7 +459,7 @@
     "adminNav": "Administration"
   },
   "footer": {
-    "tagline": "Une carte collaborative de la Terre en un milliard de pixels.",
+    "tagline": "Une archive collective de notre époque, sur une carte du monde.",
     "legal": "Mentions",
     "about": "En savoir plus",
     "discover": "Découvrir",
@@ -446,7 +468,7 @@
     "privacy": "Confidentialité",
     "credits": "Crédits",
     "contact": "Contact",
-    "virtual": "Pixel World vend un emplacement virtuel sur une carte numérique. Ce n'est ni un bien immobilier, ni un droit géographique ou de propriété intellectuelle.",
+    "virtual": "Pixel World vend un droit d'usage numérique sur un emplacement virtuel d'une carte, en contribution à une œuvre collaborative. Ce n'est ni un bien immobilier, ni un droit de propriété intellectuelle, ni la promesse que l'archive sera conservée pour toujours.",
     "projects": "Projets collectifs",
     "ranking": "Classement"
   },
@@ -468,12 +490,12 @@
     "devBanner": "Mode développement : aucun mot de passe requis. Ce formulaire n'existe pas en production.",
     "sign-in": {
       "title": "Connexion",
-      "lead": "Bon retour. Connectez-vous pour acheter et gérer vos parcelles.",
+      "lead": "Bon retour. Connectez-vous pour laisser une trace et gérer les vôtres.",
       "submit": "Se connecter"
     },
     "sign-up": {
       "title": "Créez votre compte",
-      "lead": "Une minute suffit. Ensuite, réservez votre morceau de planète.",
+      "lead": "Cela prend une minute. Ensuite, laissez votre trace.",
       "submit": "Créer mon compte"
     },
     "forgot": {
@@ -504,13 +526,13 @@
   "account": {
     "title": "Votre compte",
     "memberSince": "Membre depuis le {date}",
-    "statParcels": "Parcelles possédées",
+    "statParcels": "Parcelles",
     "ordersLink": "Commandes",
     "parcels": {
       "title": "Mes parcelles",
       "summary": "{parcels} parcelles · {pixels} pixels",
-      "buyMore": "Acheter une autre parcelle",
-      "empty": "Vous ne possédez encore aucune parcelle.",
+      "buyMore": "Laisser une autre trace",
+      "empty": "Vous n'avez encore rien archivé.",
       "findSpot": "Trouvez votre place",
       "noImage": "Pas encore d'image",
       "untitled": "Création sans titre",
@@ -527,7 +549,7 @@
       "edit": "Modifier la création",
       "drawTogether": "Dessiner ensemble"
     },
-    "pixels": "Pixels possédés",
+    "pixels": "Pixels archivés",
     "myParcels": "Mes parcelles",
     "orders": {
       "title": "Historique des commandes",
@@ -556,7 +578,7 @@
     "form": {
       "avatar": "Changer l'avatar",
       "username": "Pseudonyme",
-      "usernameHint": "3 à 24 caractères : lettres, chiffres, point, tiret, tiret bas. Affiché sur vos créations.",
+      "usernameHint": "3 à 24 caractères\u00a0: lettres, chiffres, point, tiret, tiret bas. Affiché sur vos traces.",
       "country": "Pays (facultatif)",
       "bio": "Courte biographie (facultatif)",
       "save": "Enregistrer",
@@ -633,7 +655,7 @@
     "title": "Dessiner ensemble",
     "leadTitled": "Toutes les personnes ayant ce lien peuvent ajouter des pixels à « {title} » de {owner}.",
     "lead": "Toutes les personnes ayant ce lien peuvent ajouter des pixels à cette parcelle de {owner}.",
-    "rule": "Ce que vous peignez s'affiche tout de suite pour tous ceux qui ont le lien. Ce n'est pas sur la carte : le propriétaire choisit quand le publier, et les modérateurs le valident d'abord.",
+    "rule": "Ce que vous peignez s'affiche tout de suite pour tous ceux qui ont le lien. Ce n'est pas sur la carte\u00a0: l'auteur de la trace choisit quand le publier, et les modérateurs le valident d'abord.",
     "canvas": "Toile partagée de {w} × {h} pixels, dessinée jusqu'à une fraction de pixel. Cliquez ou glissez pour peindre.",
     "palette": "Couleurs",
     "customColor": "Choisir une couleur",
@@ -650,7 +672,7 @@
     "slow": "Beaucoup de monde peint en ce moment — on ralentit un instant.",
     "closedTitle": "Ce lien de dessin n'est plus actif",
     "frozenTitle": "Cette édition est close : le dessin est archivé",
-    "closedLead": "Le propriétaire l'a peut-être coupé ou remplacé. Demandez-lui le lien actuel.",
+    "closedLead": "La personne qui l'a créé l'a peut-être coupé ou remplacé. Demandez-lui le lien actuel.",
     "home": "Retour à Pixel World",
     "multi": "Pinceau multicolore",
     "multiHint": "Cliquez des couleurs pour les ajouter ou les retirer : le trait les parcourt dans l'ordre indiqué."
@@ -712,8 +734,8 @@
   },
   "discover": {
     "title": "Découvrir",
-    "lead": "Les créations les plus récentes, les plus grandes parcelles, les favorites de la communauté et celles et ceux qui façonnent la carte.",
-    "latest": "Dernières créations",
+    "lead": "Les traces les plus récentes, les plus grandes parcelles, les favoris de la communauté et celles et ceux qui font l'archive.",
+    "latest": "Dernières traces",
     "large": "Plus grandes parcelles",
     "largeHint": "Classées par surface en pixels.",
     "popular": "Les plus aimées ce mois-ci",
@@ -721,8 +743,8 @@
     "editorial": "Sélection éditoriale",
     "editorialHint": "Choisies à la main par l'équipe Pixel World.",
     "contributors": "Contributeurs remarquables",
-    "contributorsHint": "Classés par nombre total de pixels possédés.",
-    "empty": "Rien ici pour le moment — soyez le premier à laisser votre empreinte.",
+    "contributorsHint": "Classés par total de pixels archivés.",
+    "empty": "Rien d'archivé pour l'instant — soyez la première personne à laisser une trace.",
     "emptyPopular": "Aucune création n'a encore reçu de « j'aime » ce mois-ci.",
     "emptyEditorial": "Nos premières sélections apparaîtront ici.",
     "contribution": "{parcels} parcelles · {pixels} px",
@@ -740,7 +762,7 @@
     "updated": "Dernière mise à jour : {date}",
     "rules": {
       "title": "Règles de la communauté",
-      "intro": "Pixel World est un canevas partagé que tout le monde peut voir. Ces règles en font un lieu agréable à visiter. Elles s'appliquent à toute image, tout texte et tout lien publiés sur la carte.",
+      "intro": "Pixel World est une archive collective que tout le monde peut voir. Ces règles en font un lieu agréable à visiter. Elles s'appliquent à toute image, tout texte et tout lien publiés sur la carte.",
       "sections": [
         {
           "h": "Ce que vous pouvez publier",
@@ -790,7 +812,7 @@
     },
     "terms": {
       "title": "Conditions d'utilisation",
-      "intro": "Ces conditions régissent votre usage de Pixel World et l'achat de parcelles. Il s'agit d'un projet de travail que le conseil juridique de l'exploitant doit relire et compléter avant le lancement public.",
+      "intro": "Ces conditions régissent votre usage de Pixel World et le paiement que vous faites pour laisser une trace sur sa carte. Il s'agit d'un texte provisoire, écrit pour le lancement\u00a0: le conseil juridique de l'exploitant doit le relire et le compléter avant le lancement public.",
       "sections": [
         {
           "h": "Qui sommes-nous",
@@ -799,18 +821,19 @@
           ]
         },
         {
-          "h": "Ce que vous achetez",
+          "h": "Ce que vous payez",
           "p": [
-            "La carte est une grille virtuelle de 1 000 000 000 de pixels (40 000 × 25 000). Une parcelle est un rectangle d'au moins 25 pixels. L'achat d'une parcelle vous donne le droit exclusif d'y afficher une création sur ce rectangle de la carte, selon les présentes conditions.",
-            "Une parcelle est un emplacement virtuel. Ce n'est ni un bien immobilier, ni un droit géographique, territorial ou de propriété intellectuelle, et elle ne vous donne aucun droit sur les lieux représentés par la carte.",
-            "La terre et l'eau sont à vendre, en deux catégories distinctes. Une parcelle de terre possède les pixels de terre de son rectangle : elle peut inclure un peu de mer le long d'une côte, mais au moins la moitié de ses pixels doit être de la terre (la part exacte est fixée par les administrateurs). Une parcelle d'eau possède les pixels d'eau de son rectangle : elle peut inclure un peu de terre le long d'une côte, mais au moins la moitié de ses pixels doit être de l'eau. Vous ne payez que les pixels que votre parcelle possède : les pixels de votre rectangle qui appartiennent à l'autre catégorie sont coupés et offerts, ou à prix réduit si un tarif réduit est en vigueur, et le récapitulatif de commande montre la répartition avant le paiement. Une parcelle de terre et une parcelle d'eau peuvent partager le même rectangle, puisqu'elles ne partagent aucun pixel. Tout ce que vous créez sur une parcelle d'eau s'affiche en trois teintes de bleu. Les compteurs de la carte comptent les pixels possédés par les parcelles, terre et eau."
+            "Pixel World est une archive collective de notre époque. Elle est dessinée sur une grille virtuelle de 1 000 000 000 de pixels (40 000 × 25 000). Une parcelle est un rectangle d'au moins 25 pixels. Votre paiement est une contribution à cette œuvre collaborative\u00a0; en échange, vous obtenez un droit d'usage numérique de ce rectangle, selon les présentes conditions, pour y afficher une création.",
+            "Une parcelle est un emplacement virtuel sur une carte numérique. Ce n'est ni un bien immobilier, ni un droit géographique, territorial ou de propriété intellectuelle, et elle ne vous donne aucun droit sur les lieux représentés par la carte. Ce n'est pas non plus la promesse que l'archive sera conservée pour toujours\u00a0: voir «\u00a0Durée de conservation d'une trace\u00a0» plus bas.",
+            "La terre et l'eau sont à vendre, en deux catégories distinctes. Une parcelle de terre couvre les pixels de terre de son rectangle : elle peut inclure un peu de mer le long d'une côte, mais au moins la moitié de ses pixels doit être de la terre (la part exacte est fixée par les administrateurs). Une parcelle d'eau couvre les pixels d'eau de son rectangle : elle peut inclure un peu de terre le long d'une côte, mais au moins la moitié de ses pixels doit être de l'eau. Vous ne payez que les pixels que votre parcelle couvre : les pixels de votre rectangle qui appartiennent à l'autre catégorie sont coupés et offerts, ou à prix réduit si un tarif réduit est en vigueur, et le récapitulatif de commande montre la répartition avant le paiement. Une parcelle de terre et une parcelle d'eau peuvent partager le même rectangle, puisqu'elles ne partagent aucun pixel. Tout ce que vous créez sur une parcelle d'eau s'affiche en trois teintes de bleu. Les compteurs de la carte comptent les pixels couverts par les parcelles, terre et eau."
           ]
         },
         {
           "h": "Prix et paiement",
           "p": [
             "Le prix initial est de 0,25 € par pixel pour les acheteurs de la zone euro et de 0,25 $ par pixel pour les autres, facturé dans la devise du pays de l'acheteur détecté au moment de la commande, calculé automatiquement à partir du nombre de pixels et toujours recalculé par nos serveurs. Nous pouvons modifier le prix des ventes futures ; les parcelles déjà achetées ne sont pas concernées. Les paiements sont traités par Stripe ; nous ne voyons ni ne conservons votre numéro de carte.",
-            "Lorsque vous démarrez un achat, les pixels sont réservés pour vous pour une durée limitée. Si vous ne payez pas dans ce délai, la réservation est libérée. Votre parcelle ne vous est attribuée que lorsque le prestataire de paiement nous a confirmé le paiement."
+            "Lorsque vous démarrez un achat, les pixels sont réservés pour vous pour une durée limitée. Si vous ne payez pas dans ce délai, la réservation est libérée. Votre parcelle ne vous est attribuée que lorsque le prestataire de paiement nous a confirmé le paiement.",
+            "Le montant à payer est toujours affiché, en entier, avant que vous confirmiez le paiement."
           ]
         },
         {
@@ -818,7 +841,7 @@
           "p": [
             "Un projet collectif permet à plusieurs personnes de payer ensemble une même parcelle. Son créateur dessine la parcelle et l'envoie à la modération ; une fois acceptée, la zone est réservée pendant la durée choisie par le créateur (7, 14 ou 30 jours) et toute personne ayant un compte peut participer, à partir du montant minimum indiqué sur la page du projet.",
             "Une participation est payée par le même prestataire de paiement qu'un achat, dans la devise du projet. Les participations à un projet ne peuvent jamais dépasser le prix de sa parcelle. Si l'objectif est atteint avant la fin, la parcelle devient celle du créateur, comme s'il l'avait achetée, et les participations sont conservées comme paiement de cette parcelle. Si l'objectif n'est pas atteint à la fin, ou si le créateur retire son projet, chaque participation est remboursée automatiquement sur le moyen de paiement utilisé. Les participations ne sont pas affichées publiquement : seuls le total et le nombre de participants le sont.",
-            "Un participant ne reçoit aucune propriété, part ni droit sur la parcelle. Le créateur seul est propriétaire de la parcelle et seul responsable de son contenu, qui est relu par les modérateurs comme toute autre création. [À faire relire par un juriste : la détention des fonds entre une participation et la fin du projet, le droit de rétractation, qui émet la facture, la TVA sur chaque participation, et les informations à donner avant le paiement.]"
+            "Un participant ne reçoit aucune propriété, part ni droit sur la parcelle. Le créateur seul détient le droit d'usage numérique de la parcelle et est seul responsable de son contenu, qui est relu par les modérateurs comme toute autre création. [À faire relire par un juriste : la détention des fonds entre une participation et la fin du projet, le droit de rétractation, qui émet la facture, la TVA sur chaque participation, et les informations à donner avant le paiement.]"
           ]
         },
         {
@@ -831,13 +854,22 @@
           "h": "Votre création",
           "p": [
             "Vous conservez vos droits sur ce que vous publiez et vous garantissez avoir le droit de le publier. Vous accordez à Pixel World une licence mondiale, non exclusive, pour afficher, reproduire et promouvoir votre création sur le site, dans les aperçus de partage et dans les supports présentant le projet.",
+            "Votre création est archivée sur une page publique à elle, avec son titre, le pseudonyme de son auteur, sa catégorie, le lieu dont elle parle (si vous en avez donné un) et la date d'archivage. Le lieu est un texte que vous choisissez (et, facultativement, un pays)\u00a0: jamais des coordonnées exactes.",
             "Les créations sont publiées après modération et peuvent être refusées, masquées ou retirées si elles enfreignent les règles de la communauté ou la loi."
           ]
         },
         {
-          "h": "Durée d'une parcelle",
+          "h": "Éditions et clôture",
           "p": [
-            "Une parcelle reste attribuée à votre compte tant que le service est exploité et que ces conditions sont respectées. [Durée minimale, préavis en cas d'arrêt du service et règles de cession : à définir par l'exploitant.]"
+            "L'archive est organisée en éditions. L'édition fondatrice dure 100 jours à partir du jour où l'exploitant l'ouvre. L'ouverture et la clôture sont décidées par l'exploitant, annoncées sur le site et appliquées par le serveur, jamais par un navigateur.",
+            "À la clôture d'une édition, plus rien ne peut être acheté et ses créations sont figées\u00a0: elles restent lisibles et la carte reste consultable, mais leurs auteurs ne peuvent plus les modifier. La modération garde le pouvoir de masquer ou de retirer une création qui enfreint les règles ou la loi, même après la clôture\u00a0; le retrait est consigné. Un paiement déjà commencé à la clôture dispose d'un court délai pour aboutir\u00a0; celui qui aboutirait après est remboursé.",
+            "[À faire relire par un juriste\u00a0: la date de clôture comme condition du contrat, et le sort d'un achat fait peu avant.]"
+          ]
+        },
+        {
+          "h": "Durée de conservation d'une trace",
+          "p": [
+            "Une trace reste attribuée à votre compte, et sur la carte, tant que le service est exploité et que ces conditions sont respectées. Nous voulons que l'archive reste lisible longtemps, mais nous ne promettons pas qu'elle sera conservée pour toujours. [Durée minimale, préavis en cas d'arrêt du service, conservation de l'archive après l'arrêt et règles de cession\u00a0: à définir par l'exploitant avec son conseil juridique.]"
           ]
         },
         {
@@ -869,7 +901,7 @@
           "ul": [
             "Compte : adresse e-mail, pseudonyme, pays, biographie et avatar facultatifs.",
             "Achats : détails de commande, montants, pays de facturation et, s'ils sont fournis, identifiants fiscaux, tels que transmis par Stripe. Nous ne recevons jamais votre numéro de carte.",
-            "Les créations que vous publiez, avec leur titre, leur description et leur lien.",
+            "Les créations que vous publiez, avec leur titre, leur description, leur lien, leur catégorie et le lieu dont elles parlent\u00a0: elles sont publiques, avec votre pseudonyme et la date d'archivage.",
             "Signalements : lorsque vous signalez une création, nous conservons le signalement et une copie de ce qui était affiché. Une empreinte salée de votre adresse IP sert à prévenir les abus ; nous ne conservons pas l'adresse elle-même.",
             "Technique : le minimum nécessaire pour exploiter et sécuriser le service (journaux d'erreurs, compteurs de limitation de débit)."
           ]
@@ -895,7 +927,7 @@
         {
           "h": "Vos droits",
           "p": [
-            "Vous pouvez demander l'accès, la rectification, l'export ou la suppression de vos données, et vous opposer à certains traitements, en écrivant à {operatorEmail}. Les pièces comptables et les preuves de modération peuvent devoir être conservées pendant la durée exigée par la loi. [Durées de conservation : à définir par l'exploitant.]"
+            "Vous pouvez demander l'accès, la rectification, l'export ou la suppression de vos données, et vous opposer à certains traitements, en écrivant à {operatorEmail}. Les pièces comptables et les preuves de modération peuvent devoir être conservées pendant la durée exigée par la loi. [Durées de conservation\u00a0: à définir par l'exploitant.] [Effacement et archive publique\u00a0: comment une demande est traitée une fois la création archivée et publiée, et dans la copie de conservation d'une édition figée\u00a0: à définir avec le conseil juridique.]"
           ]
         }
       ]
@@ -1388,6 +1420,6 @@
     "likes": "{n, plural, one {# j'aime} other {# j'aime}}",
     "creationsCount": "{n, plural, one {# création} other {# créations}}",
     "best": "meilleure : {title}",
-    "rules": "Seuls comptent les « j'aime » d'autres comptes actifs : le « j'aime » du propriétaire sur sa propre création, et ceux des comptes suspendus, sont ignorés. Une création masquée par la modération n'est pas classée. Les égalités partagent le même rang ; la création publiée en premier passe devant. Le score d'un créateur est la somme des « j'aime » de toutes ses créations."
+    "rules": "Seuls comptent les « j'aime » d'autres comptes actifs : le «\u00a0j'aime\u00a0» de l'auteur ou de l'autrice sur sa propre création, et ceux des comptes suspendus, sont ignorés. Une création masquée par la modération n'est pas classée. Les égalités partagent le même rang ; la création publiée en premier passe devant. Le score d'un créateur est la somme des « j'aime » de toutes ses créations."
   }
 }
