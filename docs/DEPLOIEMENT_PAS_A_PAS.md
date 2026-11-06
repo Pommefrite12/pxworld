@@ -391,22 +391,15 @@ Sans cela, le lien de confirmation reçu par e-mail ne ramènerait pas vers votr
 
 ---
 
-## Étape 8 : afficher la nouvelle DA sur le site de test, sans date de fin
+## Étape 8 : retirer les anciennes variables du compte à rebours (si vous les aviez ajoutées)
 
-La nouvelle direction artistique « Glitch » (bandeau, compte à rebours, terre corrompue) est celle de l'histoire des 100 jours. Elle ne s'allume d'elle-même que si une
-**date de fin** est configurée, et cette date **ferme la boutique**. Pour la montrer à tous les visiteurs du site de test **sans fixer de date** : une variable de simulation.
+Le compte à rebours « 100 jours pour sauver le monde » (le Protocole ZÉRO) a été **retiré du site**. Les variables `NEXT_PUBLIC_STORY_PREVIEW` et `NEXT_PUBLIC_WORLD_END_AT` ne servent plus à rien. Si vous les aviez ajoutées dans Vercel :
 
-1. Vercel → projet → **Settings → Environment Variables** → bouton d'ajout.
-2. **Key** : `NEXT_PUBLIC_STORY_PREVIEW`. **Value** : `J-40` (le moment de l'histoire à montrer : `J-40` = chapitre 2, 21 % de terre corrompue ; `J-9` = 48 % ; `J-90` = presque rien).
-3. **Type** : **Config** (variable `NEXT_PUBLIC_`). **Environments** : « Production and Preview ». **Save**.
-4. **Deployments → ⋯ → Redeploy**, puis patientez 3 à 5 minutes. Ouvrez le site dans un nouvel onglet, **Ctrl + Maj + R**.
+1. Vercel → projet → **Settings → Environment Variables**.
+2. Pour chacune des deux : **⋯ → Remove**.
+3. **Deployments → ⋯ → Redeploy** (ce n'est pas obligatoire : tant qu'elles existent, elles ne font rien ; le contrôle de configuration au démarrage les signale seulement par un avertissement « n'est plus utilisée »).
 
-Ce qui change et ce qui ne change pas :
-- Tout le monde voit l'histoire. Le compte à rebours porte la mention **« FICTION · 100 JOURS »** (comme pour la vraie histoire) ; la mention « APERÇU » n'apparaît que si un visiteur demande lui-même une simulation avec `?preview=…` dans l'adresse. Le compte à rebours repart de J-40 à chaque nouvelle visite.
-- **La boutique ne se ferme jamais** : aucune date réelle n'existe. Le prix, les achats, Stripe : rien ne change.
-- `?preview=off` (à la fin de l'adresse) coupe l'histoire pour **un onglet** ; `?preview=default` la remet ; `?preview=J-3` ou `?preview=0` montrent d'autres moments.
-- Pour revenir au site ordinaire : supprimez la variable (**⋯ → Remove**) et **Redeploy**.
-- Pour le vrai lancement : supprimez cette variable et configurez la vraie date de fin (`NEXT_PUBLIC_WORLD_END_AT`).
+L'ouverture et la fermeture des ventes ne passent plus que par l'**édition** (étape 9b, dans `/admin/edition`).
 
 ## Étape 9 : habiller le site de test avec des comptes et des parcelles de démonstration (10 min)
 
@@ -461,7 +454,7 @@ Attendu : `applying …_editions.sql … ok` puis `applying …_archive_fields.s
 2. **Sur le site de test, rien ne s'achète plus** tant que l'édition n'est pas ouverte : c'est voulu. Connectez-vous avec votre compte **administrateur**, ouvrez `/admin/edition` (menu « Édition (les 100 jours) »).
 3. Vous voyez l'état « Pré-lancement » et la phrase « Les 100 jours n'ont pas démarré ». Tapez le nom de l'édition (**Édition fondatrice**, majuscules sans importance) puis cliquez **« Ouvrir l'édition maintenant »** : l'état passe à « Ouverte » et la date de clôture s'affiche (100 jours plus tard, à la minute près).
 4. Pour **répéter** (essayer l'ouverture plusieurs fois sur le site de test) : « Revenir au pré-lancement » existe, mais il est **refusé dès qu'une parcelle est réservée ou achetée, ou qu'un paiement a eu lieu** ; effacez d'abord les données de démonstration (`demo:clear`). Sur le vrai site, ce bouton ne servira jamais.
-5. Le mot de passe de l'étape suivante n'est pas concerné : rien d'autre à configurer. **Vous pouvez supprimer** la variable `NEXT_PUBLIC_WORLD_END_AT` si vous l'aviez mise : elle ne décide plus rien d'achetable (elle ne pilotait que l'habillage du compte à rebours, qui sera retiré avec la nouvelle direction artistique).
+5. Le mot de passe de l'étape suivante n'est pas concerné : rien d'autre à configurer. **Vous pouvez supprimer** la variable `NEXT_PUBLIC_WORLD_END_AT` si vous l'aviez mise : elle ne fait plus rien (le compte à rebours a été retiré du site).
 
 **Pour essayer la clôture sans attendre 100 jours (site de test seulement)** : dans `/admin/edition`, « Clore les ventes maintenant » (tapez le nom). Les achats s'arrêtent à la seconde ; les paiements déjà lancés ont encore le délai de réservation (35 min) pour aboutir ; ensuite les créations sont gelées et le **cliché** (la liste figée de ce que le public voyait, avec son empreinte) est pris par la tâche planifiée — ou dès que vous rechargez la page « Édition ». « Reporter la clôture » ne fait que repousser (jamais avancer).
 

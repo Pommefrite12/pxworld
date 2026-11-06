@@ -6,10 +6,11 @@ describe("which addresses open the map and which the home page", () => {
   it("the bare address is the home page, in every language", () => {
     expect(opensTheMap({})).toBe(false);
     expect(opensTheMap({ utm_source: "newsletter", ref: "x" })).toBe(false); // a campaign tag is not a map link
+    expect(opensTheMap({ preview: "J-9" })).toBe(false); // the preview of the old countdown story does not exist any more: the home page
   });
 
-  it("every address that used to be a link to the map still is one: camera, parcel, buy mode, resumed purchase, the old story's preview, the debug flags", () => {
-    for (const p of [{ x: "1" }, { z: "2" }, { p: "abcdef0123" }, { buy: "1" }, { bx: "1" }, { preview: "J-9" }, { preview: "off" }, { hud: "" }, { perf: "" }, { bk: "water" }]) expect(opensTheMap(p), JSON.stringify(p)).toBe(true);
+  it("every address that used to be a link to the map still is one: camera, parcel, buy mode, resumed purchase, the debug flags", () => {
+    for (const p of [{ x: "1" }, { z: "2" }, { p: "abcdef0123" }, { buy: "1" }, { bx: "1" }, { hud: "" }, { perf: "" }, { bk: "water" }]) expect(opensTheMap(p), JSON.stringify(p)).toBe(true);
     expect(MAP_PARAMS).toContain("bw");
     expect(MAP_PARAMS).toContain("bh");
   });

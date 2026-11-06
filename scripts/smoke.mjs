@@ -34,7 +34,7 @@ for (const path of ["/", "/fr", "/map", "/discover", "/fr/discover", "/rules", "
 const home = text(await get("/"));
 check("home page: title and share image announced", /<title>[^<]*Pixel World/.test(home) && home.includes("/api/og/home?lang=en"));
 check("home page: nothing of development left (no dev sign-in, no mock payment)", !/dev-login|STRIPE_MOCK|DEV_AUTH/.test(home));
-check("the story is off unless configured (no countdown in the page)", !home.includes('data-testid="doom-plate"'));
+check("home page: the archive's home (the sentence and the two ways in)", home.includes('data-testid="home-title"') && home.includes('data-testid="home-leave-trace"') && home.includes('data-testid="home-explore"'));
 
 // 2. map and data endpoints
 const stats = await get("/api/stats");
@@ -58,7 +58,7 @@ const [inUs, inFr] = [await quoteIn("US"), await quoteIn("FR")];
 check("the currency follows the country (or the host decides the country itself)", (inUs === "usd" && inFr === "eur") || (inUs === inFr && (inUs === "eur" || inUs === "usd")), inUs === inFr ? `the host decides: ${inUs}` : `US → ${inUs}, FR → ${inFr}`);
 
 // 3. share images: the pixel font must have been carried into the build
-for (const q of ["lang=en", "lang=fr", "lang=en&preview=J-9", "lang=fr&preview=0"]) {
+for (const q of ["lang=en", "lang=fr"]) {
   const x = await get(`/api/og/home?${q}`);
   check(`share image ${q}`, x.status === 200 && x.type.includes("image/png") && x.body.length > 5000, `${x.status}, ${x.body.length} bytes`);
 }

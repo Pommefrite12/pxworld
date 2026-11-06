@@ -2,7 +2,6 @@ import { clipPolygonToRect, clipPolylineToRect, outlineWithoutClipEdges, type Re
 import { cellWindows, landPixelsInWindow, type CellRect } from "@/lib/geo/landmask";
 import { indexCommunes, indexPlaces, type CommuneRow, type IndexedCommune, type IndexedPlace, type PlaceRow } from "@/lib/geo/placeSearch";
 import { SEAM_X } from "@/lib/grid/projection";
-import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 
 /**
  * Static geographic reference layer, pre-projected into grid pixel space by scripts/build-world-data.mts.
@@ -251,39 +250,6 @@ export class Geo {
       if (!this.adminLo) complete = false; else addLines(adminPath, this.adminLo, wide);
     }
     return out();
-  }
-
-  /**
-   * A point on every land cell of a `cols × rows` lattice laid over the world (grid px: x, y, x, y…), from the coarse 1:110m land
-   * (even-odd). For things defined "per share of the land", like the corrupted part of the map in the "100 days" story.
-   */
-  landLattice(cols: number, rows: number): Float32Array { return this.lattice(cols, rows, true); }
-
-  /** The same lattice, over the water: a point on every cell that is NOT land (for what is defined per share of the seas). */
-  waterLattice(cols: number, rows: number): Float32Array { return this.lattice(cols, rows, false); }
-
-  private lattice(cols: number, rows: number, land: boolean): Float32Array {
-    const out: number[] = [];
-    for (let r = 0; r < rows; r++) {
-      const y = ((r + 0.5) * GRID_HEIGHT) / rows, xs: number[] = [];
-      for (const ring of this.low) {
-        if (ring.y0 > y || ring.y1 < y) continue;
-        const p = ring.pts, n = p.length >> 1;
-        for (let i = 0, j = n - 1; i < n; j = i++) {
-          const ay = p[2 * j + 1]!, by = p[2 * i + 1]!;
-          if ((ay <= y && by > y) || (by <= y && ay > y)) xs.push(p[2 * j]! + ((y - ay) / (by - ay)) * (p[2 * i]! - p[2 * j]!));
-        }
-      }
-      xs.sort((a, b) => a - b);
-      let k = 0;
-      for (let c = 0; c < cols; c++) {
-        const x = ((c + 0.5) * GRID_WIDTH) / cols;
-        while (k + 1 < xs.length && xs[k + 1]! < x) k += 2;
-        const inside = k + 1 < xs.length && xs[k]! <= x && x < xs[k + 1]!;
-        if (inside === land) out.push(x, y);
-      }
-    }
-    return Float32Array.from(out);
   }
 
   /**

@@ -4,14 +4,13 @@ import sharp from "sharp";
 import { lonLatToPixel } from "../../src/lib/grid/geometry";
 
 /**
- * Water parcels: the sea is bought like the land, shown in three blues whatever the buyer sent, cut by the coast, and destroyed with
- * the rest of the planet by the story — except what has been acquired. (Named so that it runs after the journey spec, which asserts
- * exact global counters before any sale.)
+ * Water parcels: the sea is bought like the land, shown in three blues whatever the buyer sent, and cut by the coast. (Named so that it
+ * runs after the journey spec, which asserts exact global counters before any sale.)
  */
 const BASE = `http://localhost:${process.env.E2E_PORT ?? "3100"}`;
 const TINTS = ["127,200,240", "47,143,216", "27,79,156"];
 /** A water parcel is drawn a little see-through (the engine's WATER_ALPHA), so that the land stands out: what is on the canvas is the blue blended with what is under it. */
-const WATER_ALPHA = 0.62, OCEAN = [13, 26, 62]; // the night ocean (the old countdown story, whose tests below use `preview=0`, keeps the light palette: 201,223,232)
+const WATER_ALPHA = 0.62, OCEAN = [13, 26, 62]; // the night ocean
 const blend = (rgb: number[], under: number[]) => rgb.map((v, i) => v * WATER_ALPHA + under[i]! * (1 - WATER_ALPHA));
 /** Is the canvas pixel `px` ("r,g,b") the blue `rgb` seen through `WATER_ALPHA` over `under`? (a few levels of rounding allowed) */
 const seenAs = (px: string, rgb: number[], under: number[]) => { const want = blend(rgb, under); return px.split(",").map(Number).every((v, i) => Math.abs(v - want[i]!) <= 3); };
@@ -43,7 +42,7 @@ const pixelAt = (page: Page, x: number, y: number) => page.getByRole("applicatio
   return `${d[0]},${d[1]},${d[2]}`;
 }, [x, y]);
 
-test("water is bought like land: priced for its water, refused on land, shown in three blues, kept by the destruction of the sea", async ({ page }) => {
+test("water is bought like land: priced for its water, refused on land, shown in three blues", async ({ page }) => {
   const api = await pwRequest.newContext({ baseURL: BASE, extraHTTPHeaders: { "x-forwarded-for": "203.0.113.240" } });
   const admin = await pwRequest.newContext({ baseURL: BASE, extraHTTPHeaders: { "x-forwarded-for": "203.0.113.241" } });
   const anon = await pwRequest.newContext({ baseURL: BASE, extraHTTPHeaders: { "x-forwarded-for": "203.0.113.242" } });
@@ -76,7 +75,7 @@ test("water is bought like land: priced for its water, refused on land, shown in
   expect(await q("water")).toMatchObject({ free: false });
   const mid = { x: SEA.x + 10, y: SEA.y + 10 };
   await page.setViewportSize({ width: 1360, height: 860 });
-  await page.goto(`/?x=${mid.x}&y=${mid.y}&z=14&preview=off`);
+  await page.goto(`/?x=${mid.x}&y=${mid.y}&z=14`);
   await ready(page);
   await expect.poll(async () => seenAs(await pixelAt(page, mid.x, mid.y), [27, 79, 156], OCEAN), { timeout: 30_000 }).toBe(true);
   expect(isWater(await pixelAt(page, mid.x, mid.y)), "one of the three blues, seen through the sea").toBe(true);
@@ -90,20 +89,14 @@ test("water is bought like land: priced for its water, refused on land, shown in
   expect(cells.c).toEqual(expect.arrayContaining([Math.floor(mid.x / 512), Math.floor(mid.y / 512)]));
   const asked: string[] = [];
   page.on("request", (r) => { if (/\/api\/map\/raster\/.*[?&]k=w/.test(r.url())) asked.push(r.url()); });
-  await page.goto("/?preview=off");
+  await page.goto("/map");
   await ready(page);
   await expect.poll(() => asked.length, { timeout: 30_000 }).toBeGreaterThan(0); // the water parcel is on the world view
   await page.waitForTimeout(1500);
   expect(asked.length, "only the few tiles that can hold the water parcel").toBeLessThanOrEqual(6);
-  await page.goto(`/?x=${mid.x}&y=${mid.y}&z=14&preview=off`);
+  await page.goto(`/?x=${mid.x}&y=${mid.y}&z=14`);
   await ready(page);
 
-  // the end of the world: the sea is destroyed as well, the water parcel is not
-  await page.goto(`/?x=${mid.x}&y=${mid.y}&z=14&preview=0`);
-  await ready(page);
-  // still blue in the destroyed sea: far bluer than the lavender around it (red 100, blue 190 where the raw blue is 27 / 156), and not the raw blue either
-  await expect.poll(async () => { const [r, , b] = (await pixelAt(page, mid.x, mid.y)).split(",").map(Number) as [number, number, number]; return b - r > 60 && !(r === 27 && b === 156); }, { timeout: 30_000 }).toBe(true);
-  await expect.poll(async () => { const c = await pixelAt(page, SEA.x - 20, mid.y); return c !== "201,223,232"; }, { timeout: 30_000 }).toBe(true); // the sea around it is gone
   await Promise.all([api.dispose(), admin.dispose(), anon.dispose()]);
 });
 
@@ -127,7 +120,7 @@ test("a water parcel on a coast: the land inside is cut away, free, and still fo
   await buy(api, admin, c, "water", "Coast", "#ff0000");
   // the land part is still the land's: free for a land parcel when there is enough of it (here a quarter: not enough), and the map shows land there
   await page.setViewportSize({ width: 1360, height: 860 });
-  await page.goto(`/?x=${c.x + 10}&y=${c.y + 10}&z=14&preview=off`);
+  await page.goto(`/?x=${c.x + 10}&y=${c.y + 10}&z=14`);
   await ready(page);
   await expect.poll(async () => { // somewhere in the rectangle there is blue, and somewhere there is the violet of the land
     const seen = new Set<string>();

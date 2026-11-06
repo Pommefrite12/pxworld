@@ -4,8 +4,6 @@
  * tests can check it. An `error` means a feature of the live site will not work (or is unsafe); a `warn` means "look at this".
  * Nothing here ever prints a value of a secret: only the name of the variable.
  */
-import { parseEnd, previewEnd } from "@/lib/doom/clock";
-
 export interface ConfigProblem { level: "error" | "warn"; key: string; message: string }
 type Vars = Record<string, string | undefined>;
 
@@ -25,7 +23,7 @@ export function vercelRegionOfDatabase(url: string | undefined): { aws: string; 
   return vercel ? { aws: m[1]!, vercel } : null;
 }
 
-export function configProblems(v: Vars, now: number = Date.now()): ConfigProblem[] {
+export function configProblems(v: Vars): ConfigProblem[] {
   const out: ConfigProblem[] = [];
   const add = (level: ConfigProblem["level"], key: string, message: string) => out.push({ level, key, message });
   const has = (k: string) => Boolean(v[k] && v[k]!.trim() !== "");
@@ -94,20 +92,8 @@ export function configProblems(v: Vars, now: number = Date.now()): ConfigProblem
   const operator = [...["NAME", "ADDRESS", "REGISTRATION", "VAT"].filter((k) => !has(`NEXT_PUBLIC_OPERATOR_${k}`)).map((k) => k.toLowerCase()), ...(has("NEXT_PUBLIC_CONTACT_EMAIL") ? [] : ["contact e-mail"])];
   if (operator.length) add("warn", "NEXT_PUBLIC_OPERATOR_*", `the seller's identity is incomplete (${operator.join(", ")}): the legal pages show gaps`);
 
-  // the story: a date in the past closes the shop for good
-  if (has("NEXT_PUBLIC_WORLD_END_AT")) {
-    const end = parseEnd(v.NEXT_PUBLIC_WORLD_END_AT);
-    if (end === null) add("error", "NEXT_PUBLIC_WORLD_END_AT", "is not a date with a time zone (like 2027-02-11T12:00:00+01:00): the story would silently stay off");
-    else if (end <= now) add("warn", "NEXT_PUBLIC_WORLD_END_AT", "is in the past: the world is deleted and NOTHING CAN BE BOUGHT");
-  }
-
-  if (has("NEXT_PUBLIC_STORY_PREVIEW")) {
-    const p = previewEnd(v.NEXT_PUBLIC_STORY_PREVIEW, now);
-    if (p === null) add("error", "NEXT_PUBLIC_STORY_PREVIEW", "is not a moment of the story (J-40, 30, T-10…): nothing would be shown");
-    else if (p <= now) add("warn", "NEXT_PUBLIC_STORY_PREVIEW", "shows the world as already deleted to every visitor while purchases stay open: pick a moment before the end (J-40)");
-    else add("warn", "NEXT_PUBLIC_STORY_PREVIEW", "shows the story to every visitor as a simulation (labelled PREVIEW; the real shop is not affected): fine for a test site, remove it for a real launch");
-  }
-  if (has("NEXT_PUBLIC_STORY_PREVIEW") && has("NEXT_PUBLIC_WORLD_END_AT")) add("warn", "NEXT_PUBLIC_STORY_PREVIEW", "is set next to a real end date: the simulation hides the real countdown, remove one of the two");
+  // variables of the countdown story, which the site no longer has: they do nothing, and a site that still carries them is confusing to read
+  for (const k of ["NEXT_PUBLIC_WORLD_END_AT", "NEXT_PUBLIC_STORY_PREVIEW"]) if (has(k)) add("warn", k, "is no longer used (the countdown story has been removed; the opening and the closing of the edition are decided in the back office): remove it from the environment");
   if (has("TEST_COUNTRY")) {
     if (key.startsWith("sk_live_")) add("error", "TEST_COUNTRY", "is set next to a LIVE Stripe key (it is ignored there, but remove it: every visitor would otherwise be taken for one from that country in test mode)");
     else add("warn", "TEST_COUNTRY", "makes every visitor 'be' in that country (a way to test the dollar price): remove it when the test is done");

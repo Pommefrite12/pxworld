@@ -52,22 +52,9 @@ for (const width of [320, 390, 412]) {
   }
 }
 
-test("the countdown fits a phone: no horizontal scrolling, the plate inside the screen, the strip above the header", async ({ page }) => {
-  await page.goto("/?preview=J-9");
-  const plate = page.getByTestId("doom-plate");
-  await expect(plate).toBeVisible();
-  const box = (await plate.boundingBox())!;
-  const vw = await page.evaluate(() => window.innerWidth);
-  expect(box.x).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(vw + 0.5);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  const strip = (await page.getByTestId("doom-ticker").boundingBox())!, header = (await page.locator("header").boundingBox())!;
-  expect(strip.y + strip.height).toBeLessThanOrEqual(header.y + 0.5);
-});
-
-/** The header is one row: logo, a call to action, the language and the account. On the narrowest phones it must still fit, in both languages, with and without the story. */
+/** The header is one row: logo, a call to action, the language and the account. On the narrowest phones it must still fit, in both languages. */
 for (const width of [320, 360, 390, 412]) {
-  for (const path of ["/", "/fr", "/?preview=J-9", "/fr?preview=J-9", "/discover", "/fr/discover"]) {
+  for (const path of ["/", "/fr", "/map", "/fr/map", "/discover", "/fr/discover"]) {
     test(`the header fits a ${width}px phone: ${path}`, async ({ page }) => {
       await page.setViewportSize({ width, height: 780 });
       await page.goto(path);
@@ -86,22 +73,6 @@ for (const width of [320, 360, 390, 412]) {
       expect(m.outside, "nothing of the header is pushed off the screen").toEqual([]);
       expect(m.pageScrolls, "the page does not scroll sideways").toBe(false);
       expect(m.headerScrolls, "the header does not overflow itself").toBe(false);
-    });
-  }
-}
-
-/** The title of the story tile ("Save the world. And the pizza with it." / "Sauvez le monde. Et la pizza avec.") is one line, whatever the screen, in both languages. */
-for (const width of [320, 360, 390, 412]) {
-  for (const path of ["/?preview=J-9", "/fr?preview=J-9"]) {
-    test(`the title of the story tile is one line on a ${width}px phone: ${path}`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 780 });
-      await page.goto(path);
-      const title = page.getByTestId("doom-title");
-      await expect(title).toBeVisible();
-      const m = await title.evaluate((el) => { const r = el.getBoundingClientRect(), cs = getComputedStyle(el), lh = parseFloat(cs.lineHeight); return { lines: Math.round((r.height - parseFloat(cs.paddingTop)) / lh), overflow: el.scrollWidth > el.clientWidth, font: parseFloat(cs.fontSize) }; });
-      expect(m.lines, "one line").toBe(1);
-      expect(m.overflow, "it fits the tile").toBe(false);
-      expect(m.font, "and stays readable").toBeGreaterThanOrEqual(12.8);
     });
   }
 }

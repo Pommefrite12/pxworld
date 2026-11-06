@@ -8,14 +8,9 @@ launch checklist is `LAUNCH_CHECKLIST.md`; this list is what to do *first*.
 
 Migration 19 puts the 100 days in the database (`docs/ARCHITECTURE.md` §3f). A site is in **pre-launch** (nothing for sale, no date) until an administrator opens the edition in `/admin/edition` (type its name, click). On the test site, after applying the migration: open it, then try "close the sales now" to see the closing. `NEXT_PUBLIC_WORLD_END_AT` no longer sells or refuses anything (it only drives the old countdown's look, which the redesign removes: `PLAN_REFONTE_ARCHIVE.md`, steps D5–D6).
 
-## 0. The "100 days to save the world" story (art direction Glitch chosen)
+## 0. The old "100 days to save the world" story: removed (step D6)
 
-Done: the countdown and the interface that goes with it, **off until `NEXT_PUBLIC_WORLD_END_AT` is set**; look at it with `?preview=J-9`, `J-87`, `J-3`, `0`.
-Also done: **the corrupted land on the map** (it follows the countdown: nothing destroyed at J-87, about half of the land at J-9, all of it at the end) (acquired parcels stay intact, with **no** frame and **no** marker — removed at the owner's request).
-Also done: **the story in eight pictures** (the owner's own images, "Learn more" button on the story tile; the captions are in French in the pictures and written as text, translated, under them; ends on "Save my plot") and **a computer bug of the destroyed land every 30 seconds** (about 1.4 s: the land tears in bands of every thickness, in jerks and to a rhythm; on a machine that is not struggling the torn bands also come apart in cyan and magenta and the picture takes jolts; none for visitors who asked for fewer animations).
-Also done: **the final sequence** at zero (a flash, a hard shake, then a slow 12-second sweep from west to east that corrupts the land and **erases every name** — countries, regions, cities — then the end state for good, without names) and the **"Replay the destruction"** button; try `?preview=T-8` to watch the countdown end live and `?preview=0` for the end state.
-Also done: **a chromatic fringe (cyan/magenta) along the coasts of the destroyed land**, a plain progress bar in the counter card, a smaller countdown, and no "D-87" next to the logo any more. Also done: **the share image follows the story** (ordinary, countdown with the real days left, the end with the real number of survivors; pixel font) and a **"Share" button** after the end. Next: a real-device pass on a phone (the sequence draws a few hundred bands of pixels per frame).
-For the test site: `NEXT_PUBLIC_STORY_PREVIEW=J-40` shows the story to every visitor without any real date (the shop never closes); remove it for the real launch. Needs the owner: the date and time zone of the end (**owner**), whether the names should come back at close zoom in the end state so that people can still find where to buy (today: none at all), and a read of the English and French wording.
+The countdown, the corrupted land, the bug every 30 seconds, the final sequence, the picture book and the share image that followed them are **gone** from the site, with their texts, styles, pictures and the variables `NEXT_PUBLIC_WORLD_END_AT` / `NEXT_PUBLIC_STORY_PREVIEW` (git keeps the old code). If either variable is still set in Vercel, remove it (step 8 of `DEPLOIEMENT_PAS_A_PAS.md`; until then the site only logs a warning). The share image of the site is now a single one in the night palette (`/api/og/home?lang=en|fr`).
 
 Also for the test site: **demonstration data** (`npm run demo:seed` / `demo:status` / `demo:clear`, step 9 of `DEPLOIEMENT_PAS_A_PAS.md`): 50 marked accounts, one generated picture-parcel each, no order and no payment, refuses anything but a confirmed test site; **`demo:clear` is a launch blocker** (the public counters would show made-up numbers).
 
@@ -68,7 +63,7 @@ Left, because each needs the deployed site or a dashboard:
 
 ## 6. Launch assets
 
-- Share image: check, on the deployed site, that `/api/og/home` has its font (`outputFileTracingIncludes` is set; try `?preview=0`), and what the platforms' debuggers show for the countdown and the end.
+- Share image: check, on the deployed site, that `/api/og/home` has its font (`outputFileTracingIncludes` is set; open `/api/og/home?lang=fr`), and what the platforms' debuggers show for the home page.
 - Check the share previews on X, LinkedIn, WhatsApp; seed Discover with real editorial picks (the app never inserts fake data).
 - French review of the new wording (comments, palette, tile) by a native reader.
 

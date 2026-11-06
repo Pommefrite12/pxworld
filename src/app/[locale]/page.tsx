@@ -14,8 +14,7 @@ import MapPage from "./map/page";
 export const dynamic = "force-dynamic";
 
 /**
- * `/` is the HOME page. The map lives at `/map`; but every address that was shared as `/?x=…&y=…&z=…`, `/?p=<code>`, `/?buy=1`, `/?bx=…`,
- * `/?preview=…` was a link to the map and stays one (see `lib/home.ts`).
+ * `/` is the HOME page. The map lives at `/map`; but every address that was shared as `/?x=…&y=…&z=…`, `/?p=<code>`, `/?buy=1`, `/?bx=…` was a link to the map and stays one (see `lib/home.ts`).
  */
 export default async function RootPage(props: { params: Promise<{ locale: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { locale } = await props.params;

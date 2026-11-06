@@ -1,15 +1,11 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { gridAlpha } from "@/lib/map/pixelGrid";
-import { GLITCH_EVERY_MS, GLITCH_FOR_MS, glitchBand, glitchFrame, glitchJolt, glitchLift, glitchShift, glitchSplit, type GlitchFrame } from "@/lib/doom/glitch";
-import { cellDevicePx, cellLook, damage, destroyedRuns, field, fringeLook, fringeShift, hash2, levelAlpha, makeRanker, tearOffset, GLITCH } from "@/lib/doom/corruption";
-import { finaleAt, frontX, labelPlan, shakeOffset, shakeZoom, type FinaleFrame } from "@/lib/doom/finale";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
 import { enoughLand, enoughWater } from "@/lib/grid/pricing";
 import { ASSET_SIZES, assetSizeFor, assetUrl } from "@/lib/images/sizes";
 import { tintPixels } from "@/lib/images/waterTint";
 import { PROJECT_BAR_FROM_PX, projectAt, projectLook, projectProgress, type MapProject } from "@/lib/map/projects";
-import { storyIsOn } from "@/lib/doom/active";
-import { LIGHT_PALETTE, NIGHT_PALETTE, type MapPalette } from "@/lib/map/palette";
+import { NIGHT_PALETTE as COLORS } from "@/lib/map/palette";
 import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
 
 /**
@@ -44,8 +40,6 @@ export interface EngineCallbacks {
   onSelectionState?: (s: SelectionState) => void;
   /** Land pixels inside the selection (null while unknown or when nothing is selected). */
   onSelectionLand?: (landPixels: number | null) => void;
-  /** The final sequence of the story has finished playing. */
-  onFinaleEnd?: () => void;
 }
 
 type TileParcel = [string, number, number, number, number, string | null, string | null, 0 | 1];
@@ -54,10 +48,7 @@ interface Img { el: HTMLImageElement; state: "loading" | "ready" | "error"; used
 
 const TILE = 1000;
 const GEO_TILE_PX = 512;
-/** Where a tile's land is destroyed (rows of runs on an R × R lattice): the zones that can glitch. */
-type GeoGlitch = { runs: { j: number; i0: number; i1: number }[]; R: number };
-/** `cy` / `mg`: the tile's land as a flat cyan and a flat magenta silhouette, made while a burst of the bug needs them (`undefined`: not yet). */
-type GeoTile = { c: HTMLCanvasElement; used: number; complete: boolean; ver: number; step: number; glitch?: GeoGlitch; cy?: HTMLCanvasElement; mg?: HTMLCanvasElement };
+type GeoTile = { c: HTMLCanvasElement; used: number; complete: boolean; ver: number };
 const GEO_CACHE_MAX = 64;
 /**
  * The coarsest geography level. Its handful of tiles covers the whole world, is drawn with the land fill ONLY (no lines: a line
@@ -86,17 +77,10 @@ const SLOW_MEMORY_MS = 8000;
 const SETTLE_MS = 140;
 /** The page (React) hears about the camera at most this often while it moves: the map itself is redrawn at every frame. */
 const CAMERA_NOTIFY_MS = 120;
-/** The bug's extras (cyan and magenta split, up and down jumps, jolts) are for a machine that is not struggling: average frame under this (ms). */
-const GLITCH_RICH_MAX_MS = 30;
-/** Making the silhouettes of the tiles may take this long in a frame (ms); a frame of the burst slower than `GLITCH_ABORT_MS` drops the extras. */
-const GLITCH_PREP_MS = 10;
-const GLITCH_ABORT_MS = 110;
 const MAX_IMAGES_IN_FLIGHT = 20; // over HTTP/2 (every host that matters) requests share one connection: more at once is faster, not slower
 const MAX_SCALE = 48;
 const RASTER_BELOW = 1; // below this zoom the server-composited rasters are shown; above it, parcels are drawn individually
 const JSON_ABOVE = 0.1; // below this zoom parcels are sub-2px: no metadata needed
-
-let COLORS: MapPalette = NIGHT_PALETTE; // chosen when the engine starts (the palettes live in lib/map/palette.ts)
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const rasterSpan = (z: number) => RASTER_PX * 2 ** z;
@@ -189,7 +173,6 @@ export class MapEngine {
   private cleanup: (() => void)[] = [];
 
   constructor(private canvas: HTMLCanvasElement, private cb: EngineCallbacks = {}) {
-    COLORS = storyIsOn() ? LIGHT_PALETTE : NIGHT_PALETTE; // before anything is drawn or cached
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) throw new Error("Canvas 2D unavailable");
     this.ctx = ctx;
@@ -314,7 +297,6 @@ export class MapEngine {
     this.canvas.style.transform = "";
     this.cancelWarm();
     cancelAnimationFrame(this.raf);
-    this.stopGlitch();
     if (this.camTimer) clearTimeout(this.camTimer);
     this.cleanup.forEach((f) => f());
   }
@@ -735,14 +717,8 @@ export class MapEngine {
     const sr = this.selectionScreenRect();
     if (sr && (sr.w < 28 || sr.h < 28)) { this.pulse = (t % 1400) / 1400; again = true; }
 
-    if (this.glitch) { // the bug of the destroyed land: a still picture every 90 ms, then everything back in place
-      if (performance.now() - this.glitch.t0 >= GLITCH_FOR_MS) { this.dropGlitchExtras(); this.glitch = null; }
-      else again = true;
-      this.dirty = true;
-    }
     if (this.dirty || again) { this.dirty = false; this.draw(); }
     if (this.geoPending) { this.dirty = true; again = true; } // geography tiles are still being rasterised: draw the next batch next frame
-    if (this.finale) { this.dirty = true; again = true; } // the final sequence is playing
     if (again) this.raf = requestAnimationFrame((n) => this.frame(n));
     else this.scheduleWarm();
   }
@@ -758,7 +734,6 @@ export class MapEngine {
       const took = performance.now() - this.frameStart;
       if (took > SLOW_FRAME_MS) this.slowUntil = this.frameStart + SLOW_MEMORY_MS;
       this.drawMs = this.drawMs ? this.drawMs * 0.9 + took * 0.1 : took;
-      if (took > GLITCH_ABORT_MS && this.glitch?.rich && this.glitchRichMode === "auto") this.dropGlitchExtras(); // a slow frame during the burst: the plain tearing goes on, without the extras
       if (this.hud) { this.hudDraws.push(this.frameStart); while (this.hudDraws.length && this.frameStart - this.hudDraws[0]! > 1000) this.hudDraws.shift(); }
     }
   }
@@ -793,8 +768,6 @@ export class MapEngine {
   private drawFrame() {
     const { ctx, w, h, dpr, cam } = this;
     const s = cam.scale;
-    this.updateFinale();
-    this.applyJolt(); // after it: the finale sets (or clears) the same transform
     this.geo?.tick(this.frameNo);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = COLORS.paper;
@@ -822,7 +795,6 @@ export class MapEngine {
     for (let c = Math.floor((cam.x - halfW) / W); c <= Math.floor((cam.x + halfW) / W); c++) {
       this.offX = c * W; // draw the world copy that covers this stretch of the screen
       const x0 = (this.offX - cam.x) * s + w / 2, ww = W * s;
-      this.drawSea(s); // the story: the destroyed seas
       this.drawParcels(s, true); // the water parcels: over the sea, under the land (the coast cuts them)
       this.drawGeography(s);
       if (swapped) { // while buying water, the colours are swapped: the land takes the colour of the sea (no hatching), the water is cream and hatched
@@ -842,7 +814,6 @@ export class MapEngine {
     }
     this.offX = 0;
     ctx.restore();
-    this.drawFinaleFront();
 
     // top and bottom edge of the planet
     ctx.strokeStyle = `rgba(${COLORS.ink},0.55)`;
@@ -867,434 +838,6 @@ export class MapEngine {
    */
   private geoTiles = new Map<string, GeoTile>();
 
-  /* ------------------------------------------------------------------ the "100 days" story: corrupted land */
-  /** How corrupted the unacquired land is, as `step / 200` (0.5 % steps), or `null` while the story is off. */
-  private story: { step: number } | null = null;
-  private ranker: ((v: number) => number) | null = null;
-  private seaRanker: ((v: number) => number) | null = null;
-
-  /** Sets how much of the land is corrupted (0 to 1), or `null` for the ordinary map. Tiles of another step are redrawn lazily. */
-  setStory(intensity: number | null) {
-    const step = intensity === null ? -1 : Math.round(clamp(intensity, 0, 1) * 200);
-    if (step === (this.story ? this.story.step : -1)) return;
-    this.story = step < 0 ? null : { step };
-    if (this.story) this.armGlitch(); else this.stopGlitch();
-    this.invalidate();
-  }
-
-  /* ------------------------------------------------------------------ the bug of the destroyed land, every 30 s */
-  /** `rich`: the extras (cyan and magenta split, up and down jumps, jolts) are on: only on a machine that is not struggling. */
-  private glitch: { t0: number; seed: number; rich: boolean } | null = null;
-  private glitchTimer = 0;
-  private glitchEvery = GLITCH_EVERY_MS;
-  /** `"auto"`: the extras only on a machine that is not struggling; tests force them `"on"` or `"off"`. */
-  private glitchRichMode: "auto" | "on" | "off" = "auto";
-  setGlitchRich(mode: "auto" | "on" | "off") { this.glitchRichMode = mode; }
-
-  /** The picture of the burst to draw now (null: none going on). */
-  private glitchPicture(): GlitchFrame | null {
-    return this.glitch ? glitchFrame(performance.now() - this.glitch.t0, this.glitch.seed) : null;
-  }
-
-  /** From now on a burst happens every `glitchEvery` ms while the story shows destroyed land (a test shortens the wait). */
-  private armGlitch() {
-    if (this.glitchTimer || this.destroyed) return;
-    this.glitchTimer = window.setTimeout(() => { this.glitchTimer = 0; this.glitchNow(); this.armGlitch(); }, this.glitchEvery);
-  }
-  private stopGlitch() {
-    if (this.glitchTimer) clearTimeout(this.glitchTimer);
-    this.glitchTimer = 0; this.dropGlitchExtras(); this.glitch = null;
-  }
-  setGlitchEvery(ms: number) { this.glitchEvery = ms; if (this.glitchTimer) { this.stopGlitch(); this.armGlitch(); } }
-
-  /**
-   * Starts a burst now: the destroyed land tears for about a second and a half. Nothing happens for an ordinary map, before anything
-   * is destroyed, during the final sequence, in a hidden tab, or for a visitor who asked for fewer animations. The extras (an RGB
-   * split along the torn bands, bands that also jump up and down, a few jolts of the whole picture) are only for a machine that is
-   * not struggling (no slow frame seen lately, an average frame under 30 ms, 4 GB of memory or more).
-   */
-  glitchNow(seed = Math.floor(Math.random() * 2_000_000_000)): boolean {
-    if (!this.story || this.story.step < 1 || this.finale || this.fin || this.glitch || this.destroyed) return false;
-    if (document.visibilityState === "hidden" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return false;
-    const lean = ((navigator as { deviceMemory?: number }).deviceMemory ?? 8) < 4;
-    const rich = this.glitchRichMode === "auto" ? !lean && performance.now() >= this.slowUntil && this.drawMs < GLITCH_RICH_MAX_MS : this.glitchRichMode === "on";
-    this.glitch = { t0: performance.now(), seed, rich };
-    this.invalidate();
-    return true;
-  }
-
-  /** Makes the tile's land a flat cyan and a flat magenta silhouette (two cheap canvas operations each, nothing read back), a few tiles per frame. */
-  private tint(tile: GeoTile) {
-    if (tile.cy || !this.glitch?.rich) return;
-    if (performance.now() - this.frameStart > GLITCH_PREP_MS) return; // the frame has no time left: the next one goes on
-    const T = GEO_TILE_PX;
-    const make = (color: string) => {
-      const c = Object.assign(document.createElement("canvas"), { width: T, height: T }), g = c.getContext("2d")!;
-      g.drawImage(tile.c, 0, 0);
-      g.globalCompositeOperation = "source-in"; // keeps the shape of the land (the sea is transparent), in one colour
-      g.fillStyle = color; g.fillRect(0, 0, T, T);
-      return c;
-    };
-    tile.cy = make(GLITCH.cyan); tile.mg = make(GLITCH.magenta);
-  }
-  /** Gives the memory back, drops the extras: the burst goes on as a plain tearing, or is over. */
-  private dropGlitchExtras() {
-    if (this.glitch) this.glitch.rich = false;
-    for (const t of this.geoTiles.values()) { t.cy = undefined; t.mg = undefined; }
-    if (this.jolted && !this.finale && !this.fin) { this.canvas.style.transform = ""; this.jolted = false; }
-  }
-  /** A jolt of the whole picture on some pictures of the burst (a few px: the canvas is scaled up a little so that its edges never show); put back at the next picture. */
-  private jolted = false;
-  private applyJolt() {
-    const gf = this.glitch?.rich ? this.glitchPicture() : null, j = gf ? glitchJolt(gf) : null;
-    if (j) { this.canvas.style.transform = `translate(${j.x}px, ${j.y}px) scale(1.015)`; this.jolted = true; }
-    else if (this.jolted && !this.finale && !this.fin) { this.canvas.style.transform = ""; this.jolted = false; }
-  }
-
-  /**
-   * The bug itself, over one tile: bands of the destroyed land (`glitch.runs`, in rows of the tile's lattice) are drawn again, slid
-   * sideways by up to 110 px (some also up or down). With the extras, a flat cyan copy of the band goes further to one side and a
-   * magenta one to the other, under the band itself: where the band is torn off its place the two colours show at its ends (an RGB
-   * split, on the land only, since the silhouettes are the land). Bands that slide alike and sit one above the other are drawn in one go.
-   */
-  private drawGlitch(tile: GeoTile, glitch: GeoGlitch, x: number, y: number, size: number, ty: number, gf: GlitchFrame) {
-    const { runs, R } = glitch, cell = GEO_TILE_PX / R, f = size / GEO_TILE_PX, { ctx } = this, rich = Boolean(this.glitch?.rich);
-    let cur: { i0: number; i1: number; dx: number; dy: number; j0: number; j1: number } | null = null;
-    const flush = () => {
-      if (!cur) return;
-      const sx = cur.i0 * cell, sw = (cur.i1 - cur.i0) * cell, sy = cur.j0 * cell, sh = (cur.j1 - cur.j0 + 1) * cell, dy = y + (sy + cur.dy) * f;
-      if (rich && tile.cy && tile.mg) {
-        const split = glitchSplit(cur.dx);
-        ctx.globalAlpha = 0.8;
-        ctx.drawImage(tile.cy, sx, sy, sw, sh, x + (sx + cur.dx - split) * f, dy, sw * f, sh * f);
-        ctx.drawImage(tile.mg, sx, sy, sw, sh, x + (sx + cur.dx + split) * f, dy, sw * f, sh * f);
-        ctx.globalAlpha = 1;
-      }
-      ctx.drawImage(tile.c, sx, sy, sw, sh, x + (sx + cur.dx) * f, dy, sw * f, sh * f);
-      cur = null;
-    };
-    for (const r of runs) {
-      const band = glitchBand(ty * R + r.j), dx = glitchShift(band, gf), dy = rich ? glitchLift(band, gf) : 0;
-      if (!dx && !dy) { flush(); continue; }
-      if (cur && cur.i0 === r.i0 && cur.i1 === r.i1 && cur.dx === dx && cur.dy === dy && cur.j1 === r.j - 1) cur.j1 = r.j; else { flush(); cur = { i0: r.i0, i1: r.i1, dx, dy, j0: r.j, j1: r.j }; }
-    }
-    flush();
-  }
-
-  /* ------------------------------------------------------------------ the final sequence of the story */
-  /** The sequence in progress (null: none). `waiting`: a replay that first needs the screen redrawn in the world before the end. */
-  private finale: { start: number; reduced: boolean; waiting: boolean; waitedSince: number } | null = null;
-  /** The land in its end state (intensity 1), drawn ahead of the sequence so that nothing has to be made while it plays. */
-  private finTiles = new Map<string, GeoTile>();
-  private finArmed = false;
-  private geoMissing = 0;
-  private fin: { frame: FinaleFrame; front: number; reduced: boolean; t: number } | null = null;
-  /** The clock of the sequence, in ms. Replaceable, so that a test can step through the sequence instead of waiting for it. */
-  private finaleNow = () => performance.now();
-
-  /** The countdown is about to reach zero: draw the end state of the visible land now, a few tiles per frame. */
-  armFinale() {
-    if (this.finArmed) return;
-    this.finArmed = true;
-    this.invalidate();
-  }
-
-  /**
-   * Plays the sequence: a sweep crosses the screen from west to east and the land behind it becomes the end state; with `reduced`
-   * (the visitor asked for fewer animations) the end state simply fades in. A `replay` starts from the world as it was just
-   * before the end, so those tiles are redrawn first.
-   */
-  startFinale(start: number, reduced: boolean, replay: boolean) {
-    if (!this.story) return;
-    if (replay) { this.finTiles = new Map([...this.geoTiles].filter(([, t]) => t.step === 200)); this.finSeaTiles = new Map([...this.seaTiles].filter(([, t]) => t.step === 200)); }
-    this.finale = { start, reduced, waiting: replay, waitedSince: this.finaleNow() };
-    this.finArmed = true;
-    this.invalidate();
-  }
-
-  private updateFinale() {
-    const f = this.finale;
-    this.fin = null;
-    if (!f || !this.story) return;
-    if (f.waiting) {
-      if ((this.geoMissing === 0 && this.finTiles.size > 0) || this.finaleNow() - f.waitedSince > 2000) { f.start = this.finaleNow(); f.waiting = false; } else return;
-    }
-    const t = (this.finaleNow() - f.start) / 1000, frame = finaleAt(t, f.reduced);
-    if (frame.done) { this.completeFinale(); return; }
-    this.fin = { frame, front: frontX(frame.sweep, this.w), reduced: f.reduced, t };
-    if (frame.shake > 0 && !f.reduced) { // the whole picture is thrown about (scaled up a little so that its edges never show)
-      const o = shakeOffset(t, frame.shake, Math.min(this.w, this.h));
-      this.canvas.style.transform = `translate(${o.x.toFixed(1)}px, ${o.y.toFixed(1)}px) rotate(${o.rot.toFixed(3)}deg) scale(${shakeZoom(o, this.w, this.h).toFixed(4)})`;
-    } else this.canvas.style.transform = "";
-  }
-
-  /** The sweep is over: the end-state tiles become the map's tiles for good (nothing is redrawn), and the story is at its end. */
-  private completeFinale() {
-    for (const [k, t] of this.finTiles) this.geoTiles.set(k, t);
-    this.finTiles.clear();
-    for (const [k, t] of this.finSeaTiles) this.seaTiles.set(k, t);
-    this.finSeaTiles.clear();
-    this.finale = null;
-    this.finArmed = false;
-    this.story = { step: 200 };
-    this.canvas.style.transform = "";
-    this.invalidate();
-    this.cb.onFinaleEnd?.();
-  }
-
-  /**
-   * What the sweep leaves on the screen: a dim shadow ahead of the front (the wave is coming), the front itself (a wide band of
-   * cyan, magenta and white blocks, a storm of pixels), debris falling behind it, and the flash.
-   */
-  private drawFinaleFront() {
-    const fin = this.fin;
-    if (!fin) return;
-    const { ctx, w, h } = this;
-    if (!fin.reduced && fin.frame.sweep > 0 && fin.frame.sweep < 1) {
-      const x = Math.round(fin.front), bucket = Math.floor(fin.t * 14), power = 1 + 2 * fin.frame.shake;
-      // ahead: the light goes out, and thin scanlines creep over what is about to go
-      const ahead = ctx.createLinearGradient(x, 0, x + 260, 0);
-      ahead.addColorStop(0, "rgba(31,37,64,0.30)"); ahead.addColorStop(1, "rgba(31,37,64,0)");
-      ctx.fillStyle = ahead; ctx.fillRect(x, 0, Math.min(260, w - x), h);
-      ctx.fillStyle = "rgba(106,76,255,0.16)";
-      for (let y = bucket & 1; y < h; y += 4) ctx.fillRect(x, y, Math.min(70, w - x), 1);
-      // the front: a band of blocks of three sizes, thick at its centre and thinning out behind it
-      for (let row = 0; row * 4 < h; row++) {
-        const dx = Math.round((hash2(row, bucket) - 0.5) * 18 * power);
-        ctx.fillStyle = hash2(row, bucket + 7) < 0.5 ? GLITCH.cyan : GLITCH.magenta;
-        ctx.fillRect(x + dx, row * 4, 4 + Math.round(hash2(row, bucket + 9) * 8), 4);
-        if (hash2(row, bucket + 3) < 0.35) { ctx.fillStyle = GLITCH.white; ctx.fillRect(x + dx + 6, row * 4, 4, 4); }
-      }
-      const storm = Math.min(260, Math.round(h / 3));
-      for (let i = 0; i < storm; i++) {
-        const behind = Math.pow(hash2(i, bucket, 11), 2) * 150, size = [4, 8, 12][Math.floor(hash2(i, bucket, 12) * 3)]!;
-        ctx.fillStyle = [GLITCH.cyan, GLITCH.magenta, GLITCH.white, GLITCH.lav, GLITCH.orange][Math.floor(hash2(i, bucket, 13) * 5)]!;
-        ctx.fillRect(x - behind - size / 2, Math.round(hash2(i, bucket, 14) * h), size, size);
-      }
-      ctx.fillStyle = GLITCH.cyan; ctx.fillRect(x - 3, 0, 2, h);
-      ctx.fillStyle = GLITCH.magenta; ctx.fillRect(x + 2, 0, 2, h);
-      // debris: bits of the world falling away behind the front, drifting down as they go
-      for (let i = 0; i < 220; i++) {
-        const px = hash2(i, 1, 21) * (w + 160) - 80, age = x - px; // how far behind the front it came apart
-        if (age < 0 || age > 300) continue;
-        const k = age / 300, size = 3 + Math.floor(hash2(i, 2, 21) * 4) * 2;
-        ctx.globalAlpha = 1 - k;
-        ctx.fillStyle = [GLITCH.cyan, GLITCH.magenta, GLITCH.white, GLITCH.lav2][i & 3]!;
-        ctx.fillRect(Math.round(px + age * 0.15), Math.round(hash2(i, 3, 21) * h + age * (0.4 + hash2(i, 4, 21) * 0.9)), size, size);
-        ctx.globalAlpha = 1;
-      }
-    }
-    if (!fin.reduced && fin.frame.flash > 0) { ctx.fillStyle = `rgba(255,255,255,${0.9 * fin.frame.flash})`; ctx.fillRect(0, 0, w, h); }
-  }
-
-  /** Bands of the land just behind the front slide sideways, a few at a time: the world tearing as it goes (harder at each impact). */
-  private tearBehindFront() {
-    const fin = this.fin;
-    if (!fin || fin.reduced || fin.frame.sweep <= 0 || fin.frame.sweep >= 1) return;
-    const { ctx, canvas, dpr, h } = this, bucket = Math.floor(fin.t * 6), x1 = Math.round(fin.front) - 8, x0 = Math.max(0, x1 - 240), power = 1 + 3 * fin.frame.shake;
-    if (x1 <= 0) return;
-    for (let q = 0; q < 18; q++) {
-      const y = Math.round(hash2(bucket, q + 20) * h), bh = Math.round(6 + hash2(bucket, q + 40) * 26), dx = Math.round((hash2(bucket, q + 60) - 0.5) * 60 * power);
-      ctx.drawImage(canvas, x0 * dpr, y * dpr, (x1 - x0) * dpr, bh * dpr, x0 + dx, y, x1 - x0, bh);
-      // the colours slip apart at the edge of a torn band
-      ctx.fillStyle = GLITCH.cyan; ctx.fillRect(x0 + dx, y, 2, bh);
-      ctx.fillStyle = GLITCH.magenta; ctx.fillRect(x1 + dx - 2, y, 2, bh);
-    }
-  }
-
-  /**
-   * The rank of a place among the land (or, with `sea`, among the water), calibrated once on the coarse coast: "intensity 30 %" then
-   * means 30 % of the land AND 30 % of the seas, whatever the shape of the continents: the destruction touches the whole planet.
-   */
-  private rankOf(sea = false): (v: number) => number {
-    const have = sea ? this.seaRanker : this.ranker;
-    if (have) return have;
-    const pts = sea ? this.geo!.waterLattice(160, 100) : this.geo!.landLattice(160, 100), vals = new Float64Array(pts.length >> 1);
-    for (let i = 0; i < vals.length; i++) vals[i] = field(pts[2 * i]!, pts[2 * i + 1]!);
-    const r = makeRanker(vals);
-    if (sea) this.seaRanker = r; else this.ranker = r;
-    return r;
-  }
-
-  /**
-   * Paints the corruption into a geography tile, inside the land only (`fill` is the tile's land; for the SEA, `sea`, it is the whole tile
-   * and the look is the plain lavender field — the error colours stay on the land): big square cells (a few screen
-   * pixels whatever the zoom) of scanlined lavender, colours slipping at the edge of the
-   * destroyed area, and bands that have slid sideways. The cells of a level have a fixed size in device pixels, so a tile
-   * holds a whole number of them and they never leave seams. Returns where the land is destroyed (for the fringe of the coasts), or
-   * `null` when nothing of the tile is touched.
-   */
-  private paintCorruption(g: CanvasRenderingContext2D, fill: Path2D, k: number, tx: number, ty: number, scale: number, step: number, sea = false): { runs: { j: number; i0: number; i1: number }[]; R: number } | null {
-    const I = step / 200;
-    if (I <= 0) return null;
-    const rank = this.rankOf(sea), R = 64, size = GEO_TILE_PX / scale, lattice = new Float32Array((R + 1) * (R + 1));
-    let min = 1;
-    for (let j = 0; j <= R; j++) for (let i = 0; i <= R; i++) { const r = rank(field(tx * size + (i * size) / R, ty * size + (j * size) / R)); lattice[j * (R + 1) + i] = r; if (r < min) min = r; }
-    if (I * 1.12 - min <= 0) return null; // nothing of this tile is touched yet
-    const cs = cellDevicePx(this.dpr), n = GEO_TILE_PX / cs, alpha = levelAlpha(k), fringe = Math.max(1, cs / 4);
-    const B = Math.max(2, n / 16), blocks = n / B; // the tile in 16 × 16 blocks of cells: whole blocks are skipped or filled at once
-    g.save();
-    g.clip(fill, "evenodd");
-    g.setTransform(1, 0, 0, 1, 0, 0); // from here, tile pixels (the clip stays where the land is)
-    g.globalAlpha = alpha;
-    const lim = I * 1.12;
-    for (let by = 0; by < blocks; by++) for (let bx = 0; bx < blocks; bx++) {
-      // the ranks at the corners of the block tell whether it is untouched, destroyed from corner to corner, or mixed
-      const i0 = Math.floor((bx * B * R) / n), i1 = Math.min(R, Math.ceil(((bx + 1) * B * R) / n)), j0 = Math.floor((by * B * R) / n), j1 = Math.min(R, Math.ceil(((by + 1) * B * R) / n));
-      let lo = 1, hi = 0;
-      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const r = lattice[j * (R + 1) + i]!; if (r < lo) lo = r; if (r > hi) hi = r; }
-      if (lim - lo <= 0) continue; // untouched
-      if ((lim - hi) / 0.1 >= 0.62) { // destroyed everywhere in the block: its scanlines in one go
-        for (let r = 0; r < B; r++) {
-          const cy = by * B + r, iy = ty * n + cy;
-          g.fillStyle = iy & 1 ? GLITCH.lav2 : GLITCH.lav;
-          g.fillRect(bx * B * cs + (sea ? 0 : tearOffset(iy >> 1, k) * cs), cy * cs, B * cs, cs);
-        }
-        continue; // the destroyed field is the scanlined lavender alone: no stray blocks of colour
-      }
-      for (let cy = by * B; cy < (by + 1) * B; cy++) { // mixed: cell by cell
-        const v = ((cy + 0.5) / n) * R, j = Math.min(R - 1, Math.floor(v)), fy = v - j, iy = ty * n + cy, off = tearOffset(iy >> 1, k);
-        for (let cx = bx * B; cx < (bx + 1) * B; cx++) {
-          const u = ((cx + 0.5) / n) * R, i = Math.min(R - 1, Math.floor(u)), fx = u - i, b = j * (R + 1) + i;
-          const r = (lattice[b]! * (1 - fx) + lattice[b + 1]! * fx) * (1 - fy) + (lattice[b + R + 1]! * (1 - fx) + lattice[b + R + 2]! * fx) * fy;
-          const d = damage(r, I);
-          if (d <= 0) continue;
-          if (sea) { // the same field, with a clean edge: no colours slipping, no sparks, no sliding band
-            if (d >= 0.5) { g.fillStyle = iy & 1 ? GLITCH.lav2 : GLITCH.lav; g.fillRect(cx * cs, cy * cs, cs, cs); }
-            continue;
-          }
-          const look = cellLook(d, hash2(tx * n + cx, iy, 100 + k), iy);
-          const px = cx * cs + (d >= 0.6 ? off * cs : 0), py = cy * cs;
-          if (look.fill) { g.fillStyle = look.fill; g.fillRect(px, py, cs, cs); }
-          if (look.split) { g.fillStyle = GLITCH.cyan; g.fillRect(px - fringe, py, fringe, cs); g.fillStyle = GLITCH.magenta; g.fillRect(px + cs, py, fringe, cs); }
-        }
-      }
-    }
-    g.restore();
-    return { runs: destroyedRuns(lattice, R, I), R };
-  }
-
-  /* ------------------------------------------------------------------ the story: the destroyed seas */
-  /**
-   * The destruction touches the water as well as the land. Its tiles are a layer of their own, drawn over the ocean colour and UNDER
-   * the water parcels (an acquired piece of sea stays intact in a destroyed ocean) and under the land (which is opaque, so the layer
-   * needs no clipping at all). `c` is null when nothing of the tile is touched yet.
-   */
-  private seaTiles = new Map<string, { c: HTMLCanvasElement | null; used: number; step: number }>();
-  /** The sea in its end state, drawn ahead of the final sequence (see `finTiles`). */
-  private finSeaTiles = new Map<string, { c: HTMLCanvasElement | null; used: number; step: number }>();
-
-  private renderSeaTile(k: number, tx: number, ty: number, step: number): HTMLCanvasElement | null {
-    const scale = 2 ** k, size = GEO_TILE_PX / scale;
-    const c = document.createElement("canvas");
-    c.width = c.height = GEO_TILE_PX;
-    const g = c.getContext("2d");
-    if (!g) return null;
-    g.setTransform(scale, 0, 0, scale, -tx * GEO_TILE_PX, -ty * GEO_TILE_PX);
-    const all = new Path2D();
-    all.rect(tx * size, ty * size, size, size);
-    return this.paintCorruption(g, all, k, tx, ty, scale, step, true) ? c : null;
-  }
-
-  private drawSea(s: number) {
-    if (!this.story || !this.geo) return;
-    const { ctx } = this;
-    const k = Math.ceil(Math.log2(s * this.dpr)), size = GEO_TILE_PX / 2 ** k, v = this.visibleWorld(), step = this.story.step;
-    const tx0 = Math.max(0, Math.floor(v.x0 / size)), tx1 = Math.min(Math.floor(W / size), Math.floor(v.x1 / size));
-    const ty0 = Math.max(0, Math.floor(v.y0 / size)), ty1 = Math.min(Math.floor(H / size), Math.floor(v.y1 / size));
-    const missing: { tx: number; ty: number; d: number }[] = [];
-    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
-      const t = this.seaTiles.get(`${k}/${tx}/${ty}`);
-      if (!t || t.step !== step) missing.push({ tx, ty, d: Math.hypot((tx + 0.5) * size - this.cam.x, (ty + 0.5) * size - this.cam.y) });
-    }
-    if (missing.length && this.deferBaking()) this.geoPending = true; // as for the land: not while a slow machine moves the camera
-    else if (missing.length) { // a few per frame, the nearest to the middle of the view first (as for the land)
-      missing.sort((a, b) => a.d - b.d);
-      let made = 0;
-      for (const m of missing) {
-        if (made > 0 && performance.now() - this.frameStart > BAKE_BUDGET_MS) break; // the land took the time: the next frame goes on
-        this.seaTiles.set(`${k}/${m.tx}/${m.ty}`, { c: this.renderSeaTile(k, m.tx, m.ty, step), used: this.frameNo, step });
-        made++;
-      }
-      if (made < missing.length) this.geoPending = true; // keep drawing until the whole view is done
-    }
-    // the end state of the sea, made ahead of the final sequence
-    if (this.finArmed && !(this.finale?.waiting)) {
-      let baked = 0;
-      for (let ty = ty0; ty <= ty1 && baked < 2; ty++) for (let tx = tx0; tx <= tx1 && baked < 2; tx++) {
-        const key = `${k}/${tx}/${ty}`;
-        if (this.finSeaTiles.has(key)) continue;
-        this.finSeaTiles.set(key, { c: this.renderSeaTile(k, tx, ty, 200), used: this.frameNo, step: 200 });
-        baked++;
-      }
-      if (baked) this.geoPending = true;
-    }
-    const placed: { key: string; x: number; y: number; px: number }[] = [];
-    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
-      const key = `${k}/${tx}/${ty}`, t = this.seaTiles.get(key), a = this.worldToScreen(tx * size, ty * size), px = size * s;
-      placed.push({ key, x: a.x, y: a.y, px });
-      if (t) { t.used = this.frameNo; if (t.c) ctx.drawImage(t.c, a.x, a.y, px + 0.6, px + 0.6); continue; }
-      // not made yet: the nearest coarser tile we have, stretched (never the bare ocean colour in the middle of a destroyed sea)
-      for (let kk = k - 1; kk >= k - GEO_STAND_IN_LEVELS; kk--) {
-        const sz = GEO_TILE_PX / 2 ** kk, bx = Math.floor((tx * size) / sz), by = Math.floor((ty * size) / sz), anc = this.seaTiles.get(`${kk}/${bx}/${by}`);
-        if (!anc) continue;
-        if (anc.c) { const f = (size / sz) * GEO_TILE_PX; ctx.drawImage(anc.c, ((tx * size) - bx * sz) / sz * GEO_TILE_PX, ((ty * size) - by * sz) / sz * GEO_TILE_PX, f, f, a.x, a.y, px + 0.6, px + 0.6); }
-        break;
-      }
-    }
-    const fin = this.fin;
-    if (fin && this.finSeaTiles.size) { // the final sequence: the end state of the sea, behind the front of the sweep (or fading in)
-      ctx.save();
-      if (fin.reduced) ctx.globalAlpha = fin.frame.sweep; else { ctx.beginPath(); ctx.rect(0, 0, Math.max(0, fin.front), this.h); ctx.clip(); }
-      for (const p of placed) { const ft = this.finSeaTiles.get(p.key); if (ft?.c) ctx.drawImage(ft.c, p.x, p.y, p.px + 0.6, p.px + 0.6); }
-      ctx.restore();
-    }
-    if (this.seaTiles.size > 120) { // never evict what is on screen: 120 tiles are far more than a view needs
-      const old = [...this.seaTiles.entries()].sort((x, y) => x[1].used - y[1].used).slice(0, this.seaTiles.size - 100);
-      for (const [key] of old) this.seaTiles.delete(key);
-    }
-  }
-
-  /** Where the cyan and magenta echoes of the coasts are made (one tile's worth, reused: tiles are drawn one after the other). */
-  private fringeLayer: HTMLCanvasElement | null = null;
-
-  /**
-   * The coasts of the destroyed land come apart into colours: a cyan echo of the coastline slipped to one side and a magenta one
-   * to the other (white where they overlap), a few bands of them slid sideways. Drawn over the coast line, and only where the land
-   * is destroyed (`runs`: the destroyed stretches of the tile, in rows of 8 px), so the intact land keeps its clean coast.
-   */
-  private paintCoastFringe(g: CanvasRenderingContext2D, coast: Path2D, corrupted: { runs: { j: number; i0: number; i1: number }[]; R: number } | null, k: number, tx: number, ty: number, scale: number) {
-    if (!corrupted || corrupted.runs.length === 0) return;
-    const T = GEO_TILE_PX, cs = cellDevicePx(this.dpr), look = fringeLook(k, cs), o = look.offset, w = look.width; // thinner and tighter when zoomed out
-    const layer = this.fringeLayer ?? (this.fringeLayer = Object.assign(document.createElement("canvas"), { width: T, height: T }));
-    const f = layer.getContext("2d");
-    if (!f) return;
-    f.setTransform(1, 0, 0, 1, 0, 0);
-    f.globalCompositeOperation = "source-over";
-    f.clearRect(0, 0, T, T);
-    f.globalCompositeOperation = "lighter"; // where the two echoes meet, cyan + magenta make white
-    f.lineJoin = "round"; f.lineCap = "round"; f.lineWidth = w / scale;
-    f.setTransform(scale, 0, 0, scale, -tx * T - o, -ty * T); f.strokeStyle = GLITCH.cyan; f.stroke(coast);
-    f.setTransform(scale, 0, 0, scale, -tx * T + o, -ty * T); f.strokeStyle = GLITCH.magenta; f.stroke(coast);
-    const { runs, R } = corrupted, cell = T / R;
-    g.save();
-    g.setTransform(1, 0, 0, 1, 0, 0);
-    g.globalAlpha = levelAlpha(k) * look.alpha;
-    // the layer is copied into the tile in bands of two rows, each slid by its own amount; neighbouring bands that are alike are copied in one go
-    let cur: { i0: number; i1: number; dx: number; j0: number; j1: number } | null = null;
-    const flush = () => {
-      if (!cur) return;
-      const x0 = cur.i0 * cell, wd = (cur.i1 - cur.i0) * cell, y = cur.j0 * cell, hh = (cur.j1 - cur.j0 + 1) * cell;
-      g.drawImage(layer, x0 - cur.dx, y, wd, hh, x0, y, wd, hh);
-      cur = null;
-    };
-    for (const r of runs) {
-      const dx = Math.round(fringeShift((ty * R + r.j) >> 1, k, cs) * look.slide);
-      if (cur && cur.i0 === r.i0 && cur.i1 === r.i1 && cur.dx === dx && cur.j1 === r.j - 1) cur.j1 = r.j; else { flush(); cur = { i0: r.i0, i1: r.i1, dx, j0: r.j, j1: r.j }; }
-    }
-    flush();
-    g.restore();
-  }
   private geoPending = false;
 
   /** Level of detail for a render level k (2^k device pixels per grid pixel). */
@@ -1304,7 +847,7 @@ export class MapEngine {
    * Rasterises one geography tile. With `strict` it refuses (returns null) to draw anything while data the tile needs is
    * still downloading — pre-rendering must never spend time on a stand-in that will be redrawn anyway.
    */
-  private renderGeoTile(k: number, tx: number, ty: number, strict = false, fillOnly = false, stepOverride?: number): { c: HTMLCanvasElement; complete: boolean; glitch?: GeoGlitch } | null {
+  private renderGeoTile(k: number, tx: number, ty: number, strict = false, fillOnly = false): { c: HTMLCanvasElement; complete: boolean } | null {
     if (!this.geo) return null;
     this.bakedNow++;
     const scale = 2 ** k, size = GEO_TILE_PX / scale;
@@ -1328,7 +871,6 @@ export class MapEngine {
     g.fillStyle = COLORS.land;
     g.fill(paths.fill, "evenodd");
     if (fillOnly) return { c, complete };
-    const corrupted = this.story ? this.paintCorruption(g, paths.fill, k, tx, ty, scale, stepOverride ?? this.story.step) : null; // the story: corrupted land, under the borders and the coast
     // Borders are SOLID thin lines (dashes cost a lot to rasterise and read as noise), kept discreet by their opacity.
     if (communes) {
       g.strokeStyle = `rgba(${COLORS.ink},${k >= 5 ? 0.3 : 0.22})`;
@@ -1349,8 +891,7 @@ export class MapEngine {
     g.strokeStyle = `rgba(${COLORS.ink},0.62)`;
     g.lineWidth = (clamp(1.6 + k * 0.12, 1.4, 2.6) * dprBoost) / scale;
     g.stroke(paths.coast);
-    this.paintCoastFringe(g, paths.coast, corrupted, k, tx, ty, scale); // the story: the coasts of the destroyed land come apart into colours
-    return { c, complete, glitch: corrupted && corrupted.runs.length ? corrupted : undefined };
+    return { c, complete };
   }
 
   /* ------------------------------------------------------------------ pre-rendering */
@@ -1424,11 +965,10 @@ export class MapEngine {
       const key = `${c.k}/${c.tx}/${c.ty}`;
       const r = this.renderGeoTile(c.k, c.tx, c.ty, true); // null while its data is still downloading (that download is now under way)
       if (!r) continue;
-      if (this.story && this.seaTiles.get(key)?.step !== this.story.step) this.seaTiles.set(key, { c: this.renderSeaTile(c.k, c.tx, c.ty, this.story.step), used: this.frameNo, step: this.story.step }); // the sea of the story, ready too
       // canvas drawing is lazy: touching the tile once makes the browser rasterise it now rather than at the first blit
       if (!this.warmScratch) { const sc = document.createElement("canvas"); sc.width = sc.height = 1; this.warmScratch = sc.getContext("2d"); }
       this.warmScratch?.drawImage(r.c, 0, 0, 1, 1);
-      this.geoTiles.set(key, { c: r.c, used: this.frameNo, complete: true, ver: this.geo.version, step: this.story ? this.story.step : -1, glitch: r.glitch });
+      this.geoTiles.set(key, { c: r.c, used: this.frameNo, complete: true, ver: this.geo.version });
       made++;
     }
     return made;
@@ -1488,13 +1028,11 @@ export class MapEngine {
     ctx.imageSmoothingEnabled = true;
     // a few tiles are rasterised per frame (the cost is bounded), the ones nearest to the middle of the view first
     const missing: { tx: number; ty: number; d: number }[] = [];
-    const step = this.story ? this.story.step : -1;
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
       const tile = this.geoTiles.get(`${k}/${tx}/${ty}`);
-      // a tile drawn from a coarser level while data was missing is redrawn once new data has arrived; so is one of another step of the story
-      if (!tile || (!tile.complete && tile.ver !== this.geo.version) || tile.step !== step) missing.push({ tx, ty, d: Math.hypot((tx + 0.5) * size - this.cam.x, (ty + 0.5) * size - this.cam.y) });
+      // a tile drawn from a coarser level while data was missing is redrawn once new data has arrived
+      if (!tile || (!tile.complete && tile.ver !== this.geo.version)) missing.push({ tx, ty, d: Math.hypot((tx + 0.5) * size - this.cam.x, (ty + 0.5) * size - this.cam.y) });
     }
-    this.geoMissing = missing.length;
     if (missing.length) {
       // as many as the frame can afford, the nearest to the middle first (at least one, so that the view always makes progress)
       missing.sort((a, b) => a.d - b.d);
@@ -1503,44 +1041,21 @@ export class MapEngine {
       for (let i = 0; i < Math.min(missing.length, defer ? 0 : 6); i++) {
         if (i > 0 && performance.now() - this.frameStart > BAKE_BUDGET_MS) break;
         const m = missing[i]!, r = this.renderGeoTile(k, m.tx, m.ty);
-        if (r) this.geoTiles.set(`${k}/${m.tx}/${m.ty}`, { c: r.c, used: 0, complete: r.complete, ver: this.geo.version, step, glitch: r.glitch });
+        if (r) this.geoTiles.set(`${k}/${m.tx}/${m.ty}`, { c: r.c, used: 0, complete: r.complete, ver: this.geo.version });
       }
     }
-    // the end state of the visible land, made ahead of the final sequence (or while it plays, if the camera moved)
-    if (this.story && this.finArmed && !(this.finale?.waiting)) {
-      let baked = 0;
-      for (let ty = ty0; ty <= ty1 && baked < 2; ty++) for (let tx = tx0; tx <= tx1 && baked < 2; tx++) {
-        const key = `${k}/${tx}/${ty}`, have = this.finTiles.get(key);
-        if (have && have.ver === this.geo.version) continue;
-        const r = this.renderGeoTile(k, tx, ty, false, false, 200);
-        if (r) { this.finTiles.set(key, { c: r.c, used: this.frameNo, complete: r.complete, ver: this.geo.version, step: 200 }); baked++; }
-      }
-      if (baked) this.geoPending = true; // keep drawing until the whole visible land is ready
-    }
-    const placed: { key: string; x: number; y: number; px: number }[] = [];
-    const gf = this.glitchPicture(); // the bug of the destroyed land, while one is on
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
       const tile = this.geoTiles.get(`${k}/${tx}/${ty}`);
       const a = this.worldToScreen(tx * size, ty * size);
       const px = size * s;
-      placed.push({ key: `${k}/${tx}/${ty}`, x: a.x, y: a.y, px });
       if (tile) {
         tile.used = this.frameNo;
         ctx.drawImage(tile.c, a.x, a.y, px + 0.6, px + 0.6);
-        if (gf && tile.glitch) { if (this.glitch?.rich) this.tint(tile); this.drawGlitch(tile, tile.glitch, a.x, a.y, px + 0.6, ty, gf); }
         if (!tile.complete && tile.ver !== this.geo.version) this.geoPending = true;
         continue;
       }
       this.geoPending = true;
       this.drawGeoStandIn(k, tx, ty, a.x, a.y, px);
-    }
-    const fin = this.fin;
-    if (fin && this.finTiles.size) { // the final sequence: the end state of the land, behind the front of the sweep (or fading in)
-      ctx.save();
-      if (fin.reduced) ctx.globalAlpha = fin.frame.sweep; else { ctx.beginPath(); ctx.rect(0, 0, Math.max(0, fin.front), this.h); ctx.clip(); }
-      for (const p of placed) { const ft = this.finTiles.get(p.key); if (ft) ctx.drawImage(ft.c, p.x, p.y, p.px + 0.6, p.px + 0.6); }
-      ctx.restore();
-      this.tearBehindFront();
     }
     // never evict what is on screen: the cache must at least hold the visible tiles
     const cacheMax = Math.max(GEO_CACHE_MAX, (tx1 - tx0 + 1) * (ty1 - ty0 + 1) + 16);
@@ -1618,10 +1133,7 @@ export class MapEngine {
    */
   private drawLabels(s: number) {
     if (!this.places || !this.geo || s < 0.025) return;
-    if (this.story && this.story.step >= 200 && !this.finale) return; // the end state: every name has been erased, for good
     const { ctx, w, h } = this;
-    // during the final sequence the sweep erases the names as it passes: whole ahead of its front, tearing away just behind it
-    const fin = this.fin, plan = fin ? labelPlan(fin.frame.sweep, fin.front, w, fin.reduced) : null, front = plan?.whole ? plan.whole[0] : 0, tearFrom = plan?.tearing ? plan.tearing[0] : 0;
     const v = this.visibleWorld();
     const lang = document.documentElement.lang === "fr" ? "fr" : "en";
     const FONT = `"Instrument Sans Variable", system-ui, sans-serif`;
@@ -1636,7 +1148,6 @@ export class MapEngine {
       ctx.fillStyle = `rgba(${COLORS.text},${ink * a})`;
       ctx.fillText(text, x, y);
     };
-    const clipped = (x0: number, x1: number, draw: () => void) => { ctx.save(); ctx.beginPath(); ctx.rect(x0, 0, x1 - x0, h); ctx.clip(); draw(); ctx.restore(); };
     const label = (text: string, x: number, y: number, a: number, align: CanvasTextAlign = "center", ink = 0.55) => {
       const tw = ctx.measureText(text).width, th = 13;
       const x0 = align === "left" ? x : x - tw / 2;
@@ -1644,25 +1155,12 @@ export class MapEngine {
       if (placed.some((b) => box.x0 < b.x1 && b.x0 < box.x1 && box.y0 < b.y1 && b.y0 < box.y1)) return false; // collision: skip
       placed.push(box);
       ctx.textAlign = align;
-      if (!plan) { put(text, x, y, a, ink); return true; }
-      if (!plan.tearing) { put(text, x, y, a * plan.alpha, ink); return true; } // before the front arrives (or fading, for reduced motion)
-      if (box.x0 >= front) { put(text, x, y, a, ink); return true; } // ahead of the front: untouched
-      if (box.x1 > front) clipped(front, w, () => put(text, x, y, a, ink)); // the front is crossing this name: the part ahead stays
-      if (box.x1 > tearFrom) { // what is left of it tears away: cyan and magenta ghosts, thrown sideways, fading with the distance
-        const f = clamp((box.x1 - tearFrom) / (front - tearFrom), 0, 1), jitter = Math.round((hash2(Math.floor((fin?.t ?? 0) * 14) + Math.round(y), Math.round(x)) - 0.5) * 70 * (1 - f)) + 3;
-        clipped(0, front, () => {
-          ctx.globalAlpha = 0.7 * f * a;
-          ctx.fillStyle = GLITCH.cyan; ctx.fillText(text, x + jitter - 2, y);
-          ctx.fillStyle = GLITCH.magenta; ctx.fillText(text, x + jitter + 2, y);
-          ctx.globalAlpha = 1;
-        });
-      }
+      put(text, x, y, a, ink);
       return true;
     };
     const onScreen = (p: { x: number; y: number }, m: number) => p.x > -m && p.y > -m && p.x < w + m && p.y < h + m;
     const dot = (p: { x: number; y: number }, size: number, a: number) => {
-      if (plan?.tearing && p.x < front) return; // the sweep has taken this one
-      ctx.fillStyle = `rgba(${COLORS.text},${0.7 * a * (plan && !plan.tearing ? plan.alpha : 1)})`;
+      ctx.fillStyle = `rgba(${COLORS.text},${0.7 * a})`;
       ctx.fillRect(Math.round(p.x - size / 2), Math.round(p.y - size / 2), size, size);
     };
 

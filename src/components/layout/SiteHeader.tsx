@@ -6,8 +6,6 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { localeNames, locales, type Locale } from "@/i18n/routing";
 import { Logo } from "@/components/ui/Logo";
 import { signOut } from "@/lib/auth/client";
-import { DoomTicker } from "@/components/doom/Doom";
-import { useDoom } from "@/components/doom/useDoom";
 
 export interface HeaderViewer { username: string; avatarId: string | null; staffRole: "moderator" | "admin" | null }
 
@@ -98,11 +96,8 @@ function AccountMenu({ viewer }: { viewer: HeaderViewer }) {
 
 export function SiteHeader({ viewer, center, cta, className = "" }: { viewer: HeaderViewer | null; center?: React.ReactNode; cta?: React.ReactNode; className?: string }) {
   const t = useTranslations("nav");
-  const doom = useDoom(); // the "100 days" story: a strip above the header, a coloured line under it — all absent while it is off
   return (
-    <>
-    <DoomTicker />
-    <header className={`relative z-40 border-b border-line bg-paper/95 backdrop-blur ${doom ? "doom-header" : ""} ${className}`}>
+    <header className={`relative z-40 border-b border-line bg-paper/95 backdrop-blur ${className}`}>
       <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-1.5 px-2.5 min-[360px]:gap-2 min-[360px]:px-3 sm:gap-4 sm:px-5">
         {/* on a phone the row (logo, call to action, language, account) is tight, above all in French: below 440 px the name gives way to the globe */}
         <Link href="/" aria-label={t("home")} className="shrink-0"><Logo wordClassName="max-[439px]:hidden" /></Link>
@@ -120,6 +115,5 @@ export function SiteHeader({ viewer, center, cta, className = "" }: { viewer: He
       </div>
       {center && <div className="px-3 pb-2 md:hidden">{center}</div>}
     </header>
-    </>
   );
 }

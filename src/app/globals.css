@@ -33,11 +33,6 @@
   --color-mint: #12b886;
   --color-danger: #d92d20;
   --color-warn: #8a5a10;
-  /* "100 days" story (art direction Glitch): the colours of a corrupted file. Never used for running text. */
-  --color-glitch-cyan: #19d3ff;
-  --color-glitch-magenta: #ff2e93;
-  --color-glitch-lav: #e9e5ff;
-  --color-glitch-violet: #6a4cff;
 
   --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
@@ -52,10 +47,9 @@
 /*
  * THEMES. The public side of the site is NIGHT (violet night, soft gold, cyan, ivory: the archive of our time), the back office stays LIGHT.
  * A theme is only a set of the variables below: the components never name a colour, so a page changes theme with one attribute
- * (`<html data-theme="night">`, and `data-theme="light"` on a part that must stay light: the back office). The story of the old
- * countdown (about to be removed) keeps its own light look through the same variables. See docs/DESIGN.md.
+ * (`<html data-theme="night">`, and `data-theme="light"` on a part that must stay light: the back office). See docs/DESIGN.md.
  */
-:root, [data-theme="light"], .doom-ticker, .doom-plate, .doom-msg, .comic {
+:root, [data-theme="light"] {
   color-scheme: light;
   --surface: #fff; --surface-hover: #fffdf9; --surface-soft: #f5efe2;
   --prose: #2d3348;
@@ -79,7 +73,7 @@
   /* the strong neutral button */
   --strong-face: #1f2540; --strong-face-hover: #2d3768; --strong-face-press: #161b34; --strong-edge: #0e1230; --strong-edge-dark: #080b20; --strong-hl: rgb(255 255 255 / 0.2); --strong-ink: #fff;
 }
-[data-theme="light"], .doom-ticker, .doom-plate, .doom-msg, .comic {
+[data-theme="light"] {
   --color-paper: #fcf9f2; --color-paper-2: #f5efe2; --color-ink: #1f2540; --color-ink-soft: #4a5068; --color-ink-faint: #575e77; --color-line: #e6dccb;
   --color-ocean: #c9dfe8; --color-land: #fbf5e6;
   --color-signal: #f04316; --color-signal-strong: #d93a10; --color-signal-dark: #a92a0a;
@@ -185,14 +179,6 @@
   .btn-ink:is(:hover, .is-hover):not(:disabled):not([aria-disabled="true"]) { --face: var(--strong-face-hover); }
   .btn-ink:is(:active, .is-active):not(:disabled):not([aria-disabled="true"]) { --face: var(--strong-face-press); }
 
-  /* the story's buttons (arrows, close): the same stair-step pixel button, but dark with a magenta edge and a hard cyan shadow, like the frame of the pictures */
-  .btn-comic { --s: 3px; --edge: var(--color-glitch-magenta); --edge-dark: #a8135f; --face: linear-gradient(#2a1d57, #170f33); --hl: rgb(180 160 255 / 0.4); --ink: #fff; filter: drop-shadow(3px 3px 0 var(--color-glitch-cyan)); }
-  .btn-comic:is(:hover, .is-hover):not(:disabled) { --face: linear-gradient(#41307f, #2a1d57); --hl: rgb(255 255 255 / 0.55); }
-  .btn.btn-comic:is(:active, .is-active):not(:disabled) { --face: linear-gradient(#170f33, #120b2a); filter: drop-shadow(1px 1px 0 var(--color-glitch-cyan)); }
-  .btn.btn-comic:focus-visible { outline-color: #fff; }
-  .btn-comic svg { transition: translate 0.1s ease-out; }
-  .btn-comic[data-dir="next"]:hover:not(:disabled) svg { translate: 2px 0; }
-  .btn-comic[data-dir="prev"]:hover:not(:disabled) svg { translate: -2px 0; }
 
   /* secondary (soft) and ghost (the default face): hover and pressed go to the theme's own tints */
   .btn-secondary { --edge: var(--soft-edge); --edge-dark: var(--soft-edge-dark); --face: var(--soft-face); }
@@ -283,77 +269,3 @@
 
 .pixelated { image-rendering: pixelated; image-rendering: crisp-edges; }
 .checker { background-color: var(--checker-a); background-image: linear-gradient(45deg, var(--checker-b) 25%, transparent 25%, transparent 75%, var(--checker-b) 75%), linear-gradient(45deg, var(--checker-b) 25%, transparent 25%, transparent 75%, var(--checker-b) 75%); background-size: 16px 16px; background-position: 0 0, 8px 8px; }
-
-/* ------------------------------------------------------------------ "100 days to save the world" (art direction Glitch)
-   Only on the page while the countdown is on (see components/doom). The interface stays clear and cream: the story shows
-   in a scrolling strip, the countdown plate, a few fringes of cyan/magenta, and the map. */
-.doom-ticker {
-  position: relative; height: 26px; overflow: hidden; white-space: nowrap;
-  background: var(--color-paper); border-bottom: 2px solid var(--color-ink);
-  font-family: var(--font-pixel); font-size: 17px; line-height: 24px; letter-spacing: 0.06em; color: var(--color-ink);
-}
-.doom-ticker::before, .doom-ticker::after {
-  content: ""; position: absolute; top: 0; bottom: 0; width: 56px; z-index: 2;
-  background: repeating-linear-gradient(-45deg, var(--color-signal) 0 7px, var(--color-paper) 7px 14px);
-}
-.doom-ticker::before { left: 0; } .doom-ticker::after { right: 0; }
-.doom-ticker[data-phase="4"]::before, .doom-ticker[data-phase="4"]::after,
-.doom-ticker[data-phase="5"]::before, .doom-ticker[data-phase="5"]::after { width: 112px; } /* the last week and after: the strip wears more hazard */
-.doom-ticker-run { display: flex; width: max-content; animation: doom-marquee 90s linear infinite; }
-.doom-ticker-run span { padding-left: 4rem; }
-@keyframes doom-marquee { to { transform: translateX(-50%); } }
-
-.doom-header { background-image: linear-gradient(90deg, var(--color-glitch-magenta), var(--color-glitch-cyan)); background-size: 100% 2px; background-repeat: no-repeat; background-position: bottom; }
-.doom-cta { box-shadow: 3px 0 0 var(--color-glitch-cyan), -3px 0 0 var(--color-glitch-magenta) !important; }
-
-.doom-plate {
-  pointer-events: auto; width: min(380px, 100%); margin-inline: auto; overflow: hidden; container-type: inline-size; /* the title is sized from the width of the tile (cqw) */
-  background: rgb(255 253 248 / 0.97); border: 2px solid var(--color-ink); border-radius: 12px; box-shadow: 4px 4px 0 rgb(31 37 64 / 0.16);
-}
-.doom-plate-top {
-  display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 10px;
-  background: repeating-linear-gradient(-45deg, var(--color-signal) 0 7px, var(--color-paper) 7px 14px);
-  font-family: var(--font-pixel); font-size: 14px; letter-spacing: 0.08em; color: var(--color-ink);
-}
-.doom-plate-top span { background: var(--color-paper); padding: 0 6px; border-radius: 3px; }
-.doom-digits { display: flex; justify-content: center; align-items: flex-start; gap: clamp(3px, 1.2vw, 8px); padding: 4px 10px 6px; }
-.doom-group { position: relative; flex: 1 1 0; min-width: 0; max-width: 80px; text-align: center; }
-.doom-n {
-  display: block; font-family: var(--font-pixel); font-weight: 400; font-size: clamp(1.9rem, 7vw, 2.9rem); line-height: 0.9; color: var(--color-ink);
-  text-shadow: -2px 0 var(--color-glitch-cyan), 2px 0 var(--color-glitch-magenta);
-}
-.doom-group i { display: block; margin-top: 3px; font-style: normal; font-size: clamp(0.5rem, 1.5vw, 0.62rem); font-weight: 700; letter-spacing: 0.14em; color: var(--color-ink-soft); }
-.doom-sep { padding-top: 2px; font-family: var(--font-pixel); font-size: clamp(1.6rem, 6vw, 2.4rem); line-height: 0.9; color: var(--color-signal); }
-.doom-group.glitch .doom-n { animation: doom-glitch 1s steps(1, end) infinite; } /* the seconds stutter once a second, for a tenth of it */
-@keyframes doom-glitch {
-  0%, 90%, 100% { transform: none; clip-path: none; }
-  91% { transform: translate(3px, -2px); clip-path: polygon(0 0, 100% 0, 100% 38%, 0 38%, 0 46%, 100% 46%, 100% 100%, 0 100%); text-shadow: -5px 0 var(--color-glitch-cyan), 5px 0 var(--color-glitch-magenta); }
-  95% { transform: translate(-2px, 1px); }
-}
-.doom-plate[data-phase="5"] .doom-n { color: var(--color-glitch-magenta); text-shadow: none; }
-
-/* the title is ONE line ("Save the world. And the pizza with it." is the longest): its size follows the width of the tile, so that it never wraps (it saves a line of the map) */
-.doom-title { margin: 0; padding: 7px 6px 0; text-align: center; white-space: nowrap; font-family: var(--font-pixel); font-size: clamp(0.8rem, 5.5cqw, 1.35rem); line-height: 1.1; letter-spacing: 0.01em; color: var(--color-ink); }
-.doom-title span { display: inline; }
-/* the second half keeps a whisper of the glitch (a deeper magenta, a 1 px cyan edge) but stays easy to read */
-.doom-title .m { color: #d01a74; text-shadow: -1px 0 rgb(25 211 255 / 0.5); }
-.doom-plate-actions { display: flex; justify-content: center; gap: 8px; padding: 0 10px 7px; }
-.doom-plate-actions .btn { white-space: nowrap; }
-.doom-msg {
-  pointer-events: auto; width: fit-content; max-width: min(36rem, 100%); padding: 0.5rem 1rem; border-radius: 8px; text-align: center;
-  background: var(--color-ink); color: #fff; font-weight: 700; font-size: 0.95rem; box-shadow: 3px 3px 0 var(--color-glitch-magenta);
-}
-
-.doom-card-lab { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-ink-soft); }
-.doom-big { margin-top: 0.1rem; font-family: var(--font-pixel); font-size: 2.3rem; line-height: 0.9; color: var(--color-signal); }
-
-@media (prefers-reduced-motion: reduce) {
-  .doom-ticker-run, .doom-group.glitch .doom-n { animation: none; }
-}
-
-/* the story: a picture comes in with a wipe (from the right when going on, from the left when going back); still for those who asked for less motion */
-.comic-wipe[data-wipe="next"] { animation: comic-wipe-next 0.45s ease-out both; }
-.comic-wipe[data-wipe="prev"] { animation: comic-wipe-prev 0.45s ease-out both; }
-@keyframes comic-wipe-next { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0 0 0 0); } }
-@keyframes comic-wipe-prev { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
-@media (prefers-reduced-motion: reduce) { .comic-wipe { animation: none !important; } .btn-comic svg { transition: none; } }
