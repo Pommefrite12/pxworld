@@ -229,7 +229,7 @@ Le texte d'introduction du brief sert de **base narrative**, pas de bloc à affi
 
 - **Palette** : nuit `#190921` (dominante, fonds) · violet `#382050` (surfaces secondaires) · or `#D6AB72` (temps, héritage : compteur, date d'archivage, badges) · cyan `#55C7D1` (interactions, parcelles actives, sélection) · ivoire `#F1E8DF` (texte).
 - **Pixelisation modérée** : boutons « escalier » conservés (teintes changées), bordures en pas de 2 px, icônes pixel, police pixel (Jersey 10) réservée aux chiffres, dates et petits titres ; les créations gardent leur finesse (aucun filtre dessus).
-- **Carte** : océan nuit très sombre, terres en violet, côtes fines or, parcelles cyan au survol/sélection ; parcelles d'eau en teintes de bleu (règle existante).
+- **Carte** : **océans bleu nuit** (décision du propriétaire : « les océans gardent une teinte bleutée » — base `#0d1a3e`, lueur le long des côtes `#183468`), terres en violet `#382050`, côtes fines or, parcelles cyan au survol/sélection ; parcelles d'eau en teintes de bleu (règle existante, à garder bien visible sur ce fond bleu). Seule la carte est bleutée : les fonds de pages, panneaux et en-tête restent en violet nuit `#190921`.
 - **Ambiance** : lueurs douces, quelques particules très discrètes (facultatif, voir A5 n°10) ; **rien** de flamme, d'explosion, d'écran d'alerte, de destruction ni d'effet d'apocalypse.
 - **Lisibilité d'abord** : texte courant ivoire sur nuit (15,7 : 1) ; pas d'interface « futuriste illisible » ; le bruit visuel de l'ancien thème (rayures, franges magenta) disparaît.
 - Mobile et ordinateur testés à chaque étape (les mesures d'en-tête à 320–412 px sont conservées et adaptées).
@@ -341,6 +341,8 @@ Chaque étape est testée (unitaire, base, e2e), poussée et présentée avant l
 
 La détention temporaire de fonds (projets collectifs), le droit de rétractation et la politique de remboursement, la TVA, le traitement d'une demande d'effacement face à une archive publique, la formulation « contribution / droit d'usage numérique » sans tromper le consommateur, et toute promesse de durée de conservation : **à faire examiner par un juriste avant tout lancement réel**. Je ne fixe aucune règle juridique ou fiscale. Le paiement réel reste **désactivé** (règle du projet).
 
-## Prochaine étape
+## État d'avancement
 
-Après votre accord sur ce plan (et vos réponses aux décisions, même partielles : les recommandations s'appliquent par défaut) : **phase C**, la maquette de l'accueil avec deux variantes. Aucun changement du site avant votre validation de cette maquette.
+- **Phase A (audit) et B (proposition)** : faites (ce document).
+- **Phase C (maquette de l'accueil)** : faite ; deux variantes (A « carte d'abord », B « accueil puis carte ») et les trois états du compteur. **Validée par le propriétaire** (« ça me va ») avec une demande : **les océans gardent une teinte bleutée** (intégrée, voir B3). Le choix entre A et B ne conditionne que l'étape D5 (accueil) : il reste à confirmer avant D5 (recommandation : B).
+- **Phase D (développement)** : commence par D1 (prix 0,25 € figé dans les tests). Les décisions 1 à 15 non tranchées suivent leur recommandation par défaut.
