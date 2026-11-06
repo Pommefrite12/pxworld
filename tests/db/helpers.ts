@@ -33,8 +33,14 @@ export async function createUser(name?: string, opts: { role?: "moderator" | "ad
   return id;
 }
 
+/** The founding edition, open since yesterday (100 days in all): what almost every test needs, since a fresh database is in pre-launch. */
+export async function openEdition() {
+  await pool.query(`update public.editions set status = 'open', opens_at = now() - interval '1 day', closes_at = now() + interval '99 days', closed_at = null`);
+}
+
 export async function resetData() {
-  await pool.query(`truncate public.parcels, public.rate_limits, public.stripe_events, public.audit_logs, public.moderation_actions restart identity cascade`);
+  await pool.query(`truncate public.parcels, public.rate_limits, public.stripe_events, public.audit_logs, public.moderation_actions, public.edition_snapshots restart identity cascade`);
+  await openEdition();
   await pool.query(`update public.app_settings set value = '50'::jsonb where key = 'price_unit_cents'`);
   await pool.query(`update public.app_settings set value = '50'::jsonb where key = 'price_unit_cents_usd'`);
   await pool.query(`update public.app_settings set value = 'true'::jsonb where key = 'sales_open'`);

@@ -19,6 +19,14 @@ await admin.query(`create database ${DB}`);
 await admin.end();
 const DATABASE_URL = ADMIN_URL.replace(/\/[^/]*$/, `/${DB}`);
 execFileSync("node", [path.join(root, "scripts/migrate.mjs"), "--shim"], { env: { ...process.env, DATABASE_URL }, stdio: "inherit" });
+// A fresh database is in PRE-LAUNCH (no date, nothing for sale: the 100 days never start by themselves). The tests need a shop that sells,
+// so this isolated test database, and only this one, is opened here. (tests/e2e/edition.spec.ts puts it back to pre-launch to test that state, and restores it.)
+{
+  const c = new pg.Client({ connectionString: DATABASE_URL });
+  await c.connect();
+  await c.query(`update public.editions set status = 'open', opens_at = now() - interval '1 day', closes_at = now() + interval '99 days', closed_at = null`);
+  await c.end();
+}
 const storage = path.join(root, ".data/e2e-storage");
 fs.rmSync(storage, { recursive: true, force: true });
 fs.rmSync(path.join(root, ".next-e2e"), { recursive: true, force: true }); // never reuse a stale dev cache: it can make the dev server reload pages in a loop

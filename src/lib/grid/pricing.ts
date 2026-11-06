@@ -1,5 +1,6 @@
 import { CURRENCY, DEFAULT_UNIT_PRICE_CENTS, MIN_AREA } from "./constants";
 import { area, type Rect } from "./geometry";
+import type { EditionState } from "@/lib/edition";
 
 /** A parcel owns the land pixels of its rectangle (kind `land`) or its water pixels (kind `water`); the other pixels are cut away. */
 export type ParcelKind = "land" | "water";
@@ -31,7 +32,10 @@ export interface Pricing {
   currency: string;
   minArea: number;
   maxArea: number;
+  /** The shop is open: the edition is open AND the manual switch is on. */
   salesOpen: boolean;
+  /** Where the edition stands (decided by the database): `prelaunch` and `closed` both mean nothing can be bought, for different reasons. */
+  editionState: EditionState;
   /** A land parcel may include some sea, but at least this share of its pixels must be land. */
   minLandPercent: number;
   /** One sea pixel cut away from a land parcel costs this percentage of a land pixel (0 = free). */
@@ -49,7 +53,7 @@ export interface Pricing {
 }
 
 export const DEFAULT_PRICING: Pricing = {
-  unitPriceCents: DEFAULT_UNIT_PRICE_CENTS, currency: "eur", minArea: MIN_AREA, maxArea: 250_000, salesOpen: false,
+  unitPriceCents: DEFAULT_UNIT_PRICE_CENTS, currency: "eur", minArea: MIN_AREA, maxArea: 250_000, salesOpen: false, editionState: "prelaunch",
   minLandPercent: 50, seaPercent: 0, minWaterPercent: 50, waterPercent: 100, landCutPercent: 0, campaignMinArea: 10_000, campaignMinContributionCents: 200,
 };
 

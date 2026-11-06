@@ -4,6 +4,10 @@ Written at the end of a working day, to start the next one from. Items marked **
 project owner; **(approval)** ones must never be done without an explicit yes (real money, real users, legal texts). The longer
 launch checklist is `LAUNCH_CHECKLIST.md`; this list is what to do *first*.
 
+## 00. The edition (the 100 days) — done in the database, to open by hand **(owner)**
+
+Migration 19 puts the 100 days in the database (`docs/ARCHITECTURE.md` §3f). A site is in **pre-launch** (nothing for sale, no date) until an administrator opens the edition in `/admin/edition` (type its name, click). On the test site, after applying the migration: open it, then try "close the sales now" to see the closing. `NEXT_PUBLIC_WORLD_END_AT` no longer sells or refuses anything (it only drives the old countdown's look, which the redesign removes: `PLAN_REFONTE_ARCHIVE.md`, steps D5–D6).
+
 ## 0. The "100 days to save the world" story (art direction Glitch chosen)
 
 Done: the countdown and the interface that goes with it, **off until `NEXT_PUBLIC_WORLD_END_AT` is set**; look at it with `?preview=J-9`, `J-87`, `J-3`, `0`.

@@ -24,6 +24,25 @@ function databaseUrl() {
   } catch { return undefined; }
 }
 
+/**
+ * A freshly migrated database is in PRE-LAUNCH: no date, nothing for sale (the 100 days never start by themselves). On THIS machine's throwaway
+ * development database only (the caller has checked it is local), the founding edition is opened so that `npm run dev` can sell something.
+ * A real site's edition is opened by an administrator in /admin/edition, and nothing here can do that. To work on the pre-launch state
+ * itself, start with PIXELWORLD_DEV_PRELAUNCH=1 and the edition is left alone.
+ */
+async function openLocalEdition(connectionString) {
+  if (process.env.PIXELWORLD_DEV_PRELAUNCH === "1") return;
+  try {
+    const { default: pg } = await import("pg");
+    const c = new pg.Client({ connectionString });
+    await c.connect();
+    try {
+      const res = await c.query("update public.editions set status = 'open', opens_at = now(), closes_at = now() + make_interval(days => duration_days) where status = 'prelaunch'");
+      if (res.rowCount) console.log("▶ Development database: the founding edition was opened (it was in pre-launch). PIXELWORLD_DEV_PRELAUNCH=1 keeps it in pre-launch.");
+    } finally { await c.end(); }
+  } catch { /* an older database without editions, or not reachable: nothing to open */ }
+}
+
 const url = databaseUrl();
 if (!url) {
   console.log("▶ No DATABASE_URL: skipping the database update.");
@@ -33,6 +52,7 @@ if (!url) {
   const r = spawnSync("node", [path.join(root, "scripts/migrate.mjs"), "--shim"], { cwd: root, env: { ...process.env, DATABASE_URL: url }, encoding: "utf8" });
   const out = `${r.stdout ?? ""}${r.stderr ?? ""}`.trim();
   if (r.status === 0) {
+    await openLocalEdition(url);
     console.log(out.includes("applying") ? `▶ Database updated:\n${out.split("\n").filter((l) => l.startsWith("applying")).map((l) => `  ${l}`).join("\n")}` : "▶ Database is up to date.");
   } else {
     console.log(`▶ The database could not be updated (the site starts anyway): ${out.split("\n").find((l) => /error|ECONN|refused|FAILED/i.test(l)) ?? out.split("\n")[0]}`);

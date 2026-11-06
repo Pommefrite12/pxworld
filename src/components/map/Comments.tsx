@@ -77,7 +77,7 @@ export function CommentsPanel({ code, signedIn, comments: c }: { code: string; s
     const status = await c.post(body);
     setBusy(false);
     if (status === null) { setText(""); return; }
-    setErr(status === 429 ? t("tooFast") : status === 409 ? t("duplicate") : status === 400 ? t("invalid") : status === 401 || status === 403 ? t("signInAgain") : t("failed"));
+    setErr(status === 429 ? t("tooFast") : status === 409 ? t("duplicate") : status === 423 ? t("frozen") : status === 400 ? t("invalid") : status === 401 || status === 403 ? t("signInAgain") : t("failed"));
   };
 
   const report = async (commentId: string, reason: string) => {

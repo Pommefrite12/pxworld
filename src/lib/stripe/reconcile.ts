@@ -2,6 +2,7 @@ import "server-only";
 import { query } from "@/lib/db/pool";
 import { env } from "@/lib/env";
 import { invalidatePublicStats } from "@/lib/data/map";
+import { settleEdition } from "@/lib/data/edition";
 import { stripe } from "./client";
 import { raiseAlert } from "@/lib/alerts";
 import { expireCheckoutSession } from "./checkout";
@@ -17,6 +18,8 @@ export interface MaintenanceReport {
   recoveredPayments: number;
   closedSessions: number;
   refundsRetried: number;
+  /** What the edition sweep did: `idle` (nothing due), `closing` (the sales are over, the payments under way are settling), `finalized` (snapshot taken, edition closed), `error`. */
+  edition: string;
 }
 
 /**
@@ -44,7 +47,7 @@ export async function reconcileOrder(orderId: string): Promise<"paid" | "expired
 
 /** Periodic job (Vercel Cron → /api/cron/maintenance). */
 export async function runMaintenance(): Promise<MaintenanceReport> {
-  const report: MaintenanceReport = { expiredReservations: 0, expiredCampaigns: 0, contributionRefunds: 0, recoveredPayments: 0, closedSessions: 0, refundsRetried: 0 };
+  const report: MaintenanceReport = { expiredReservations: 0, expiredCampaigns: 0, contributionRefunds: 0, recoveredPayments: 0, closedSessions: 0, refundsRetried: 0, edition: "idle" };
 
   // 1. Release lapsed reservations and close their checkout sessions.
   const expired = await query<{ order_id: string; stripe_checkout_session_id: string | null }>("select * from public.px_expire_reservations(500)");
@@ -53,6 +56,9 @@ export async function runMaintenance(): Promise<MaintenanceReport> {
     await expireCheckoutSession(e.stripe_checkout_session_id);
     report.closedSessions++;
   }
+
+  // 1a. The edition: records what the clock already decided (ends the open projects, takes the snapshot once the payments under way settled).
+  report.edition = await settleEdition();
 
   // 1b. Group projects whose deadline has passed. Never allowed to break the rest of the job (the database may not have the migration yet).
   try {

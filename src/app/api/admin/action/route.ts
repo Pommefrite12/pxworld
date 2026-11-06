@@ -22,6 +22,12 @@ const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("feature_parcel"), parcelId: uuid, featured: z.boolean(), note: z.string().max(140).optional() }),
   z.object({ action: z.literal("set_setting"), key: z.string().max(60), value: z.union([z.number(), z.boolean()]) }),
   z.object({ action: z.literal("refund_order"), orderId: uuid, reason: z.string().min(3).max(300) }),
+  // the edition (the 100 days): administrators only, each one confirmed by typing the name of the edition (except the postponement), all audited
+  z.object({ action: z.literal("edition_open"), confirm: z.string().max(100) }),
+  z.object({ action: z.literal("edition_close_now"), confirm: z.string().max(100) }),
+  z.object({ action: z.literal("edition_reset"), confirm: z.string().max(100) }),
+  z.object({ action: z.literal("edition_extend"), closesAt: z.string().datetime({ offset: true }), note: z.string().max(300).optional() }),
+  z.object({ action: z.literal("edition_snapshot") }),
 ]);
 
 /**
@@ -33,7 +39,7 @@ export const POST = route(async (req) => {
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) throw new HttpError(400, "invalid_request");
   const a = parsed.data;
-  const adminOnly = ["revoke_parcel", "suspend_user", "set_setting", "refund_order"].includes(a.action);
+  const adminOnly = ["revoke_parcel", "suspend_user", "set_setting", "refund_order"].includes(a.action) || a.action.startsWith("edition_");
   const staff = await requireStaff(adminOnly ? "admin" : "moderator");
   const actor = staff.user.id;
   const clean = (s?: string) => (s ? cleanText(s, 500) : null);
@@ -75,6 +81,21 @@ export const POST = route(async (req) => {
       await stripe().refunds.create({ payment_intent: o.stripe_payment_intent_id, reason: "requested_by_customer", metadata: { order_id: a.orderId, actor } }, { idempotencyKey: `staff_refund_${a.orderId}` });
       break;
     }
+    case "edition_open":
+      await query("select public.px_edition_open($1, $2)", [actor, a.confirm]);
+      break;
+    case "edition_close_now":
+      await query("select public.px_edition_close_now($1, $2)", [actor, a.confirm]);
+      break;
+    case "edition_reset":
+      await query("select public.px_edition_reset($1, $2)", [actor, a.confirm]);
+      break;
+    case "edition_extend":
+      await query("select public.px_edition_extend($1, $2::timestamptz, $3)", [actor, a.closesAt, a.note ? clean(a.note) : null]);
+      break;
+    case "edition_snapshot":
+      await query("select public.px_edition_take_snapshot($1)", [actor]);
+      break;
   }
   invalidatePublicStats();
   return json({ ok: true }, { cache: "no-store" });

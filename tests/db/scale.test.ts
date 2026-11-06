@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { closeDb, createUser, databaseUrl, expectPgError, pool, startOrder } from "./helpers";
+import { closeDb, createUser, databaseUrl, expectPgError, openEdition, pool, startOrder } from "./helpers";
 
 /**
  * "The map must not slow down after thousands of purchases." 200 000 parcels (20 million pixels) are inserted
@@ -13,6 +13,7 @@ beforeAll(async () => {
   process.env.DATABASE_URL = databaseUrl;
   delete (globalThis as { __pxPool?: unknown }).__pxPool;
   ({ getTile } = await import("@/lib/data/map"));
+  await openEdition();
   owner = await createUser("whale");
   await pool.query(
     `insert into public.parcels (code, owner_id, x, y, w, h, status, activated_at)

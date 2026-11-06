@@ -63,6 +63,7 @@
     "invalid": "Un commentaire fait de 1 à 500 caractères.",
     "signInAgain": "Reconnectez-vous pour commenter.",
     "failed": "Le commentaire n'a pas pu être envoyé. Réessayez.",
+    "frozen": "Cette édition est close : les commentaires sont fermés.",
     "reasons": {
       "hate": "Haineux ou harcelant",
       "sexual": "Contenu sexuel",
@@ -207,6 +208,8 @@
       "out": "La parcelle doit rester dans la carte.",
       "checking": "Vérification de la disponibilité…",
       "closed": "Les ventes sont momentanément fermées.",
+      "notOpen": "L'archive ouvre bientôt : rien ne peut encore être acheté.",
+      "editionClosed": "Cette édition est close : l'archive reste consultable, mais plus rien ne peut être acheté.",
       "water": "Au moins {pct} % de votre parcelle doit être sur la terre ferme. Rapprochez-la des terres, ou passez en mode Eau pour acheter la mer.",
       "land": "Au moins {pct} % de votre parcelle doit être sur l'eau. Éloignez-la des côtes, ou passez en mode Terre."
     },
@@ -265,7 +268,9 @@
       "px_invalid_rect": "La taille ou la position de cette parcelle n'est pas valide.",
       "px_bad_dimensions": "Cette image ne correspond pas à la taille de votre parcelle. Rechargez la page et réessayez.",
       "px_sales_closed": "Les ventes sont momentanément fermées.",
-      "px_world_ended": "Le monde a été supprimé : les parcelles ne peuvent plus être achetées.",
+      "px_edition_not_open": "L'archive n'est pas encore ouverte : rien ne peut encore être acheté.",
+      "px_edition_closed": "Cette édition est close : plus rien ne peut être acheté. L'archive reste consultable.",
+      "px_edition_frozen": "Cette édition est close : les créations ne peuvent plus être modifiées.",
       "px_currency_changed": "Les prix ont changé de devise (votre connexion semble avoir changé de pays). Rechargez la page pour voir le nouveau prix.",
       "px_bad_currency": "La boutique ne vend qu'en euros et en dollars.",
       "px_account_suspended": "Votre compte est suspendu.",
@@ -597,6 +602,7 @@
     "reconnecting": "Reconnexion…",
     "slow": "Beaucoup de monde peint en ce moment — on ralentit un instant.",
     "closedTitle": "Ce lien de dessin n'est plus actif",
+    "frozenTitle": "Cette édition est close : le dessin est archivé",
     "closedLead": "Le propriétaire l'a peut-être coupé ou remplacé. Demandez-lui le lien actuel.",
     "home": "Retour à Pixel World",
     "multi": "Pinceau multicolore",
@@ -628,6 +634,7 @@
       "generic": "Une erreur est survenue. Veuillez réessayer.",
       "collab_empty": "Rien n'a encore été dessiné.",
       "px_parcel_not_active": "Cette parcelle ne peut plus être partagée.",
+      "px_edition_frozen": "Cette édition est close : le dessin est archivé et ne peut plus changer.",
       "px_account_suspended": "Votre compte est suspendu."
     }
   },
@@ -894,6 +901,7 @@
       "parcels": "Parcelles",
       "users": "Utilisateurs",
       "orders": "Commandes et paiements",
+      "edition": "Édition (les 100 jours)",
       "settings": "Paramètres",
       "audit": "Journal d'audit",
       "role": "Connecté en tant que {role}",
@@ -1036,6 +1044,72 @@
       "refund": "Rembourser",
       "confirmRefund": "Rembourser intégralement cette commande ? La parcelle sera révoquée.",
       "empty": "Aucune commande."
+    },
+    "edition": {
+      "title": "L'édition (les 100 jours)",
+      "lead": "L'état de l'édition est décidé par la base de données, avec sa propre horloge. Les 100 jours ne démarrent que lorsqu'un administrateur ouvre l'édition ici : rien d'autre (ni un déploiement, ni un réglage) ne peut les démarrer. Chaque action ci-dessous est inscrite au journal d'audit.",
+      "unavailable": "L'édition est illisible : il manque sans doute la dernière migration dans la base (lancez node scripts/migrate.mjs).",
+      "current": "État actuel",
+      "state": {
+        "prelaunch": "Pré-lancement",
+        "open": "Ouverte",
+        "settling": "Ventes closes — en cours de clôture",
+        "closed": "Close — archive"
+      },
+      "explain": {
+        "prelaunch": "Aucune date, rien n'est en vente. La carte se visite. Les 100 jours n'ont pas démarré.",
+        "open": "Les achats, les projets collectifs et les créations sont ouverts jusqu'à la date de clôture.",
+        "settling": "Plus rien ne peut s'acheter. Les paiements déjà lancés peuvent encore aboutir, et leurs acheteurs envoyer leur création, jusqu'à la fin du délai de réservation. Ensuite les créations sont gelées et le cliché est pris.",
+        "closed": "Rien ne peut s'acheter, aucune création ne peut changer. L'archive se visite. Les modérateurs peuvent toujours retirer un contenu."
+      },
+      "opens": "Ouverte le",
+      "closes": "Clôture le",
+      "settles": "Gel après le délai le",
+      "frozen": "gelé",
+      "closedAt": "Close le",
+      "duration": "Durée",
+      "days": "{n} jours",
+      "none": "— (aucune date)",
+      "snapshot": "Cliché n° {rev} : {n} parcelles",
+      "confirmLabel": "Pour confirmer, tapez le nom de l'édition : {name}",
+      "open": {
+        "title": "Ouvrir l'édition",
+        "help": "Les {n} jours démarrent à l'instant du clic. Impossible de revenir en arrière d'ici (seule une répétition sur un site qui n'a rien vendu peut revenir au pré-lancement).",
+        "button": "Ouvrir l'édition maintenant"
+      },
+      "extend": {
+        "title": "Reporter la clôture",
+        "help": "La clôture ne peut être que repoussée, jamais avancée, et jamais au-delà de 366 jours après l'ouverture. Elle est inscrite au journal d'audit avec votre note.",
+        "days": "Jours à ajouter",
+        "note": "Motif (gardé au journal d'audit)",
+        "button": "Reporter de {n} jours"
+      },
+      "close": {
+        "title": "Clore les ventes maintenant",
+        "help": "Les achats et les projets s'arrêtent tout de suite. Les paiements déjà lancés peuvent aboutir pendant le délai de réservation ; ensuite tout est gelé et le cliché est pris.",
+        "button": "Clore les ventes maintenant"
+      },
+      "reset": {
+        "button": "Revenir au pré-lancement",
+        "help": "« Revenir au pré-lancement » sert aux répétitions : refusé dès qu'une parcelle est réservée ou achetée, ou qu'un paiement a eu lieu."
+      },
+      "snap": {
+        "title": "Nouveau cliché",
+        "help": "Un cliché n'est jamais réécrit. Après un retrait, ou une création validée tardivement par la modération, prenez-en un nouveau : il devient la révision suivante.",
+        "button": "Prendre un nouveau cliché"
+      },
+      "refresh": "Actualiser",
+      "working": "En cours…",
+      "done": "C'est fait.",
+      "adminOnly": "Seuls les administrateurs peuvent modifier l'édition.",
+      "errors": {
+        "generic": "Un problème est survenu.",
+        "px_forbidden": "Réservé aux administrateurs.",
+        "px_edition_bad_state": "Impossible dans l'état actuel de l'édition.",
+        "px_edition_bad_date": "Cette date n'est pas permise : après la clôture actuelle, et au plus 366 jours après l'ouverture.",
+        "px_edition_confirm_mismatch": "Le nom saisi ne correspond pas au nom de l'édition.",
+        "px_edition_not_empty": "Refusé : une parcelle est réservée ou achetée, ou un paiement a eu lieu. Seul un site vide peut revenir au pré-lancement."
+      }
     },
     "settings": {
       "title": "Paramètres",
@@ -1236,7 +1310,8 @@
       "px_amount_leaves_dust": "Il resterait trop peu à financer. Choisissez un autre montant, ou le reste exact.",
       "px_invalid_amount": "Saisissez un montant, par exemple 25 ou 12,50.",
       "px_sales_closed": "Les ventes sont temporairement fermées.",
-      "px_world_ended": "Le monde a été supprimé : plus rien ne peut être acheté ni financé.",
+      "px_edition_not_open": "L'archive n'est pas encore ouverte : rien ne peut encore être financé.",
+      "px_edition_closed": "Cette édition est close : plus rien ne peut être acheté ni financé.",
       "px_account_suspended": "Votre compte est suspendu.",
       "payments_not_configured": "Les paiements ne sont pas encore disponibles.",
       "rate_limited": "Trop de tentatives. Patientez un peu."

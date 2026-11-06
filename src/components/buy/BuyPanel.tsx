@@ -48,7 +48,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind
   // a project funded by several people is for BIG parcels: below this area one pays alone
   const tooSmall = size.w * size.h < pricing.campaignMinArea;
 
-  const status = !pricing.salesOpen ? { tone: "bad", text: t("status.closed") }
+  const status = !pricing.salesOpen ? { tone: "bad", text: t(pricing.editionState === "prelaunch" ? "status.notOpen" : pricing.editionState === "closed" ? "status.editionClosed" : "status.closed") }
     : sizeErr ? { tone: "bad", text: t(`sizeError.${sizeErr}`, { min: f.number(pricing.minArea), max: f.number(pricing.maxArea), side: MAX_SIDE }) }
     : !selection ? { tone: "info", text: t("status.place") }
     : state === "out" ? { tone: "bad", text: t("status.out") }

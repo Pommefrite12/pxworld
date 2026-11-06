@@ -17,6 +17,13 @@ Items marked **(approval)** need an explicit decision from the project owner bef
 - [ ] Load test of the map endpoints behind the CDN (tiles are immutable per version).
 - [ ] Review the initial prices in `/admin/settings` (default €0.25/pixel = 25 cents in the euro area, $0.25 elsewhere = `price_unit_cents_usd`, set by the owner).
 
+## The edition (the 100 days)
+
+- [ ] Migration 19 applied on the production database; the site is in **pre-launch** (no date, nothing for sale) — check in `/admin/edition`.
+- [ ] `CRON_SECRET` is set and the maintenance job runs (it records the closing, ends the open group projects, takes the snapshot). On the Vercel free plan the job runs once a day: the **closing itself is exact** (decided by the database clock), only the recording of the snapshot may lag by up to a day (it is also recorded as soon as somebody opens `/admin/edition` or `/api/edition`).
+- [ ] The **moment of the opening is decided by the owner**: sign in as an administrator, `/admin/edition`, type the name of the edition, click. The 100 days start then, to the minute. Write the closing date shown in the announcement; there is no way to bring it forward, only to postpone it (audited).
+- [ ] The creations frozen after the closing and the **snapshot** (`edition_snapshots`) are the archive's reference: the export and the integrity check are step D8 of `PLAN_REFONTE_ARCHIVE.md`, to be done **before** the opening.
+
 ## Payments — go live
 - [ ] **(approval)** Switch Stripe to live keys and live webhook secret; set `PAYMENTS_LIVE_ENABLED=yes-i-have-approval`.
 - [ ] One real purchase + refund end to end; check invoice, tax lines, the order in `/admin/orders`, and the audit log.

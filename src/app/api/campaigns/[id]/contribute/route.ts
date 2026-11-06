@@ -3,7 +3,6 @@ import { query } from "@/lib/db/pool";
 import { HttpError, json } from "@/lib/http/errors";
 import { assertSameOrigin, route } from "@/lib/http/route";
 import { LIMITS, enforceRateLimit } from "@/lib/rate-limit";
-import { assertStoryAllowsSales } from "@/lib/doom/sales";
 import { stripeConfigured } from "@/lib/stripe/client";
 import { createContributionSession, type ContributionForCheckout } from "@/lib/stripe/contributions";
 
@@ -16,7 +15,6 @@ export const maxDuration = 30;
  */
 export const POST = route(async (req, ctx: { params: Promise<{ id: string }> }) => {
   assertSameOrigin(req);
-  assertStoryAllowsSales();
   const { id } = await ctx.params;
   if (!/^[0-9a-f-]{36}$/.test(id)) throw new HttpError(404, "px_not_found");
   const viewer = await requireActiveViewer();

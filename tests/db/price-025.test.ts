@@ -1,7 +1,8 @@
-import { afterAll, describe, expect, it } from "vitest";
-import { closeDb, createUser, pool } from "./helpers";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { closeDb, createUser, openEdition, pool } from "./helpers";
 
 afterAll(closeDb);
+beforeAll(openEdition); // a fresh database is in pre-launch; only the edition is opened, the settings stay as the migrations leave them
 
 /**
  * NO `resetData` here, on purpose: the other files force the price to 50 cents to keep their arithmetic round. This one reads the database

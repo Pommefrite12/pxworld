@@ -3,8 +3,8 @@ import { revalidateTag, unstable_cache } from "next/cache";
 import { query, queryOne } from "@/lib/db/pool";
 import { DEFAULT_UNIT_PRICE_CENTS, GRID_HEIGHT, GRID_WIDTH, MIN_AREA, TOTAL_PIXELS } from "@/lib/grid/constants";
 import type { ParcelKind, Pricing } from "@/lib/grid/pricing";
-import { salesClosedByStory } from "@/lib/doom/sales";
 import type { SaleCurrency } from "@/lib/currency";
+import type { EditionState } from "@/lib/edition";
 import { tintColor } from "@/lib/images/waterTint";
 
 export const TILE_SIZE = 1000; // virtual pixels per JSON metadata tile (40 × 25 tiles)
@@ -105,19 +105,29 @@ export function invalidatePublicStats(): void {
  * Without a currency, the shop's own.
  */
 export async function getPricing(currency?: SaleCurrency): Promise<Pricing> {
-  const rows = await query<{ key: string; value: unknown }>(
-    "select key, value from public.app_settings where key in ('price_unit_cents','price_unit_cents_usd','currency','min_area','max_area','sales_open','sea_price_percent','min_land_percent','water_price_percent','min_water_percent','land_cut_price_percent','campaign_min_area','campaign_min_contribution_cents')",
-  );
+  const keys = "('price_unit_cents','price_unit_cents_usd','currency','min_area','max_area','sales_open','sea_price_percent','min_land_percent','water_price_percent','min_water_percent','land_cut_price_percent','campaign_min_area','campaign_min_contribution_cents')";
+  let rows: { key: string; value: unknown }[];
+  try {
+    // one round trip: the settings and the state of the edition (computed by the database from its own clock)
+    rows = await query<{ key: string; value: unknown }>(`select key, value from public.app_settings where key in ${keys} union all select 'edition_state', to_jsonb(public.px_edition_state())`);
+  } catch (e) {
+    // a database without migration 19: the pages still work, but nothing is for sale until the migrations are applied
+    if ((e as { code?: string }).code !== "42883") throw e;
+    console.error("[alert] The database is out of date (no editions): run `node scripts/migrate.mjs`. Nothing is for sale until then.");
+    rows = await query<{ key: string; value: unknown }>(`select key, value from public.app_settings where key in ${keys}`);
+  }
   const m = Object.fromEntries(rows.map((r) => [r.key, r.value]));
   const base = String(m.currency ?? "eur").toLowerCase();
   const cur = currency ?? base;
   const unit = cur === "usd" && base !== "usd" ? Number(m.price_unit_cents_usd ?? DEFAULT_UNIT_PRICE_CENTS) : Number(m.price_unit_cents ?? DEFAULT_UNIT_PRICE_CENTS);
+  const editionState: EditionState = m.edition_state === "open" || m.edition_state === "closed" ? m.edition_state : "prelaunch";
   return {
     unitPriceCents: unit,
     currency: cur,
     minArea: Number(m.min_area ?? MIN_AREA),
     maxArea: Number(m.max_area ?? 250_000),
-    salesOpen: m.sales_open !== false && !salesClosedByStory(process.env.NEXT_PUBLIC_WORLD_END_AT, Date.now()), // (and never once the story has ended)
+    salesOpen: m.sales_open !== false && editionState === "open", // the manual switch AND the edition: nothing is sold in pre-launch nor after the closing
+    editionState,
     minLandPercent: Number(m.min_land_percent ?? 50),
     seaPercent: Number(m.sea_price_percent ?? 0),
     minWaterPercent: Number(m.min_water_percent ?? 50),

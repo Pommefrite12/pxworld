@@ -300,7 +300,7 @@ npx tsx scripts/check-env.mts .env.production.local
 Deux avertissements sont normaux tant que Stripe n'est pas configuré : `STRIPE_SECRET_KEY` et `NEXT_PUBLIC_OPERATOR_*`.
 
 **Le même vérificateur peut aussi interroger Supabase et la base de données** (rien n'est écrit : il demande seulement « acceptez-vous cette clé ? ») : ajoutez `--online`.
-Il dit si Supabase **accepte** la clé publique et la clé secrète, si le dossier des images existe, si les inscriptions sont ouvertes, et si la base répond avec toutes ses migrations (17 à ce jour).
+Il dit si Supabase **accepte** la clé publique et la clé secrète, si le dossier des images existe, si les inscriptions sont ouvertes, et si la base répond avec toutes ses migrations (19 à ce jour).
 ```bash
 npx tsx scripts/check-env.mts .env.production.local --online
 ```
@@ -447,6 +447,23 @@ la base contient déjà un paiement réel ; ou l'identifiant du projet Supabase 
 > **À faire absolument avant le vrai lancement :** `npm run demo:clear` (étape 6), puis vérifier que `npm run demo:status` indique 0, pour que les compteurs publics ne montrent que de vrais chiffres.
 > Je n'ai pu essayer la création de comptes par l'API d'administration de Supabase que sur une base locale, pas sur un vrai projet : si Supabase refuse un compte, le message est affiché tel quel (collez-le moi).
 > Si c'est l'adresse `…@demo.invalid` qui est refusée, ajoutez `--email-domain exemple.test` (même option pour `demo:clear`).
+
+## Étape 9b : « l'édition » — les 100 jours s'ouvrent à la main (10 min)
+
+**Nouveauté (migration 19).** La date de fin n'est plus une variable de configuration : l'état du site (**pré-lancement**, **ouvert**, **clos**) est décidé par la base de données, avec sa propre horloge. Et **les 100 jours ne démarrent jamais tout seuls** : après la migration, le site est en **pré-lancement** (la carte se visite, **rien ne s'achète**) tant qu'un administrateur n'a pas cliqué sur « Ouvrir l'édition ».
+
+1. Mettez la base à jour (comme à l'étape 1F) :
+```bash
+git pull origin claude/funny-bell-k7v5xf
+node scripts/migrate.mjs --env .env.production.local
+```
+Attendu : `applying …_editions.sql … ok`.
+2. **Sur le site de test, rien ne s'achète plus** tant que l'édition n'est pas ouverte : c'est voulu. Connectez-vous avec votre compte **administrateur**, ouvrez `/admin/edition` (menu « Édition (les 100 jours) »).
+3. Vous voyez l'état « Pré-lancement » et la phrase « Les 100 jours n'ont pas démarré ». Tapez le nom de l'édition (**Édition fondatrice**, majuscules sans importance) puis cliquez **« Ouvrir l'édition maintenant »** : l'état passe à « Ouverte » et la date de clôture s'affiche (100 jours plus tard, à la minute près).
+4. Pour **répéter** (essayer l'ouverture plusieurs fois sur le site de test) : « Revenir au pré-lancement » existe, mais il est **refusé dès qu'une parcelle est réservée ou achetée, ou qu'un paiement a eu lieu** ; effacez d'abord les données de démonstration (`demo:clear`). Sur le vrai site, ce bouton ne servira jamais.
+5. Le mot de passe de l'étape suivante n'est pas concerné : rien d'autre à configurer. **Vous pouvez supprimer** la variable `NEXT_PUBLIC_WORLD_END_AT` si vous l'aviez mise : elle ne décide plus rien d'achetable (elle ne pilotait que l'habillage du compte à rebours, qui sera retiré avec la nouvelle direction artistique).
+
+**Pour essayer la clôture sans attendre 100 jours (site de test seulement)** : dans `/admin/edition`, « Clore les ventes maintenant » (tapez le nom). Les achats s'arrêtent à la seconde ; les paiements déjà lancés ont encore le délai de réservation (35 min) pour aboutir ; ensuite les créations sont gelées et le **cliché** (la liste figée de ce que le public voyait, avec son empreinte) est pris par la tâche planifiée — ou dès que vous rechargez la page « Édition ». « Reporter la clôture » ne fait que repousser (jamais avancer).
 
 ## Étape 10 : essayer les projets collectifs sur le site de test (15 min)
 

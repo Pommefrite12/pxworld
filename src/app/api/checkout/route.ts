@@ -10,7 +10,7 @@ import { stripeConfigured } from "@/lib/stripe/client";
 import { landPixelsIn } from "@/lib/geo/landServer";
 import { enoughForKind, isParcelKind, type ParcelKind } from "@/lib/grid/pricing";
 import { parseCreationMeta, readCreationImage, storeCreation } from "@/lib/creations";
-import { assertStoryAllowsSales } from "@/lib/doom/sales";
+import { assertSalesOpen } from "@/lib/data/edition";
 import { requestCurrency } from "@/lib/currency-server";
 
 export const maxDuration = 30;
@@ -22,7 +22,6 @@ export const maxDuration = 30;
  */
 export const POST = route(async (req) => {
   assertSameOrigin(req);
-  assertStoryAllowsSales(); // the world has ended: nothing can be bought any more
   const viewer = await requireActiveViewer();
   await enforceRateLimit(req, LIMITS.checkout, viewer.user.id);
   if (!stripeConfigured()) throw new HttpError(503, "payments_not_configured");
@@ -43,7 +42,7 @@ export const POST = route(async (req) => {
   const shown = form.get("currency");
   if (typeof shown === "string" && shown.toLowerCase() !== currency) throw new HttpError(409, "px_currency_changed");
   const pricing = await getPricing(currency);
-  if (!pricing.salesOpen) throw new HttpError(503, "px_sales_closed");
+  assertSalesOpen(pricing); // pre-launch, after the closing, or the shop switched off: refused here with the right reason (the database refuses too)
   if (validateRect(r, { minArea: pricing.minArea, maxArea: pricing.maxArea })) throw new HttpError(400, "px_invalid_rect");
   // coastal parcels are allowed, never mostly of the other kind: the land count is made HERE, from the server's own map data
   const landPx = await landPixelsIn(r);

@@ -8,7 +8,7 @@ import { validateRect } from "@/lib/grid/geometry";
 import { landPixelsIn } from "@/lib/geo/landServer";
 import { enoughForKind, isParcelKind, type ParcelKind } from "@/lib/grid/pricing";
 import { parseCreationMeta, readCreationImage } from "@/lib/creations";
-import { assertStoryAllowsSales } from "@/lib/doom/sales";
+import { assertSalesOpen } from "@/lib/data/edition";
 import { requestCurrency } from "@/lib/currency-server";
 import { objectStore } from "@/lib/storage";
 import { isCampaignDays } from "@/lib/campaign";
@@ -22,7 +22,6 @@ export const maxDuration = 30;
  */
 export const POST = route(async (req) => {
   assertSameOrigin(req);
-  assertStoryAllowsSales(); // the world has ended: nothing can be bought, so nothing can be funded either
   const viewer = await requireActiveViewer();
   await enforceRateLimit(req, LIMITS.campaign, viewer.user.id);
 
@@ -43,7 +42,7 @@ export const POST = route(async (req) => {
   const shown = form.get("currency");
   if (typeof shown === "string" && shown.toLowerCase() !== currency) throw new HttpError(409, "px_currency_changed");
   const pricing = await getPricing(currency);
-  if (!pricing.salesOpen) throw new HttpError(503, "px_sales_closed");
+  assertSalesOpen(pricing); // nothing can be bought outside the open edition, so nothing can be funded either
   if (validateRect(r, { minArea: pricing.campaignMinArea, maxArea: pricing.maxArea })) throw new HttpError(r.w * r.h < pricing.campaignMinArea ? 422 : 400, r.w * r.h < pricing.campaignMinArea ? "px_campaign_too_small" : "px_invalid_rect");
   const landPx = await landPixelsIn(r);
   if (!enoughForKind(kind, landPx, r.w * r.h, pricing)) throw new HttpError(422, kind === "water" ? "px_not_on_water" : "px_not_on_land");

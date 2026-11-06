@@ -40,6 +40,7 @@ export function DrawBoard({ token, w: parcelW, h: parcelH, scale, baseAssetId }:
   const version = useRef(0);
   const [ready, setReady] = useState(false);
   const [closed, setClosed] = useState(false);
+  const [frozen, setFrozen] = useState(false); // the edition is closed: the drawing is archived
   const [online, setOnline] = useState(true);
   const [slow, setSlow] = useState(false);
   const [n, setN] = useState(0);
@@ -139,6 +140,7 @@ export function DrawBoard({ token, w: parcelW, h: parcelH, scale, baseAssetId }:
       try {
         const r = await fetch(`/api/draw/${token}/pixels`, { method: "POST", headers: { "content-type": "application/json" }, body });
         if (r.status === 404) setClosed(true);
+        else if (r.status === 423) { pending.current.clear(); setFrozen(true); }
         else if (r.status === 429) { setSlow(true); pause = Date.now() + 4000; }
         else {
           if (r.ok) setSlow(false);
@@ -221,6 +223,7 @@ export function DrawBoard({ token, w: parcelW, h: parcelH, scale, baseAssetId }:
     keepCentre.current = null;
   }, [dotPx, w, h]);
 
+  if (frozen) return <p role="alert" className="card p-6 text-center font-semibold" data-testid="draw-frozen">{t("frozenTitle")}</p>;
   if (closed) return <p role="alert" className="card p-6 text-center font-semibold" data-testid="draw-closed-live">{t("closedTitle")}</p>;
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">

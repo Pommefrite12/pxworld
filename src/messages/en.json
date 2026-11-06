@@ -63,6 +63,7 @@
     "invalid": "A comment is 1 to 500 characters.",
     "signInAgain": "Please sign in again to comment.",
     "failed": "The comment could not be sent. Try again.",
+    "frozen": "This edition is closed: comments are closed.",
     "reasons": {
       "hate": "Hateful or harassing",
       "sexual": "Sexual content",
@@ -207,6 +208,8 @@
       "out": "The parcel must stay inside the map.",
       "checking": "Checking availability…",
       "closed": "Sales are temporarily closed.",
+      "notOpen": "The archive opens soon: nothing can be bought yet.",
+      "editionClosed": "This edition is closed: the archive can still be explored, but nothing can be bought any more.",
       "water": "At least {pct}% of your parcel must be on land. Move it inland, or switch to Water to buy the sea.",
       "land": "At least {pct}% of your parcel must be on water. Move it out to sea, or switch to Land."
     },
@@ -265,7 +268,9 @@
       "px_invalid_rect": "This parcel size or position is not valid.",
       "px_bad_dimensions": "This image does not match the size of your parcel. Reload the page and try again.",
       "px_sales_closed": "Sales are temporarily closed.",
-      "px_world_ended": "The world has been deleted: plots can no longer be bought.",
+      "px_edition_not_open": "The archive has not opened yet: nothing can be bought for now.",
+      "px_edition_closed": "This edition is closed: nothing can be bought any more. The archive stays open to visit.",
+      "px_edition_frozen": "This edition is closed: creations can no longer be changed.",
       "px_currency_changed": "The prices have changed currency (your connection seems to have moved to another country). Reload the page to see the new price.",
       "px_bad_currency": "The shop only sells in euros and in dollars.",
       "px_account_suspended": "Your account is suspended.",
@@ -597,6 +602,7 @@
     "reconnecting": "Reconnecting…",
     "slow": "A lot of people are painting — slowing down for a moment.",
     "closedTitle": "This drawing link is no longer active",
+    "frozenTitle": "This edition is closed: the drawing is archived",
     "closedLead": "The owner may have switched it off or replaced it. Ask them for the current link.",
     "home": "Back to Pixel World",
     "multi": "Multicolour brush",
@@ -628,6 +634,7 @@
       "generic": "Something went wrong. Please try again.",
       "collab_empty": "Nothing has been drawn yet.",
       "px_parcel_not_active": "This parcel can no longer be shared.",
+      "px_edition_frozen": "This edition is closed: the drawing is archived and can no longer change.",
       "px_account_suspended": "Your account is suspended."
     }
   },
@@ -894,6 +901,7 @@
       "parcels": "Parcels",
       "users": "Users",
       "orders": "Orders & payments",
+      "edition": "Edition (the 100 days)",
       "settings": "Settings",
       "audit": "Audit log",
       "role": "Signed in as {role}",
@@ -1036,6 +1044,72 @@
       "refund": "Refund",
       "confirmRefund": "Refund this order in full? The parcel will be revoked.",
       "empty": "No order."
+    },
+    "edition": {
+      "title": "The edition (the 100 days)",
+      "lead": "The state of the edition is decided by the database, from its own clock. The 100 days only start when an administrator opens the edition here: nothing else (no deployment, no setting) can start them. Every action below is written to the audit log.",
+      "unavailable": "The edition cannot be read: the database is probably missing the latest migration (run node scripts/migrate.mjs).",
+      "current": "Current state",
+      "state": {
+        "prelaunch": "Pre-launch",
+        "open": "Open",
+        "settling": "Closed to sales — settling",
+        "closed": "Closed — archive"
+      },
+      "explain": {
+        "prelaunch": "No date, nothing is for sale. The map can be visited. The 100 days have not started.",
+        "open": "Purchases, group projects and creations are open until the closing date.",
+        "settling": "Nothing can be bought any more. The payments that were already under way can still finish, and their buyers can still send their creation, until the end of the reservation delay. Then the creations freeze and the snapshot is taken.",
+        "closed": "Nothing can be bought, no creation can be changed. The archive can be visited. Moderators can still take things down."
+      },
+      "opens": "Opened on",
+      "closes": "Closing on",
+      "settles": "Freeze after the delay on",
+      "frozen": "frozen",
+      "closedAt": "Closed on",
+      "duration": "Duration",
+      "days": "{n} days",
+      "none": "— (no date)",
+      "snapshot": "Snapshot no. {rev}: {n} parcels",
+      "confirmLabel": "To confirm, type the name of the edition: {name}",
+      "open": {
+        "title": "Open the edition",
+        "help": "The {n} days start at the moment you click. This cannot be undone from here (only a rehearsal on a site that sold nothing can go back to pre-launch).",
+        "button": "Open the edition now"
+      },
+      "extend": {
+        "title": "Postpone the closing",
+        "help": "The closing can only be moved later, never brought forward, and never beyond 366 days after the opening. It is recorded in the audit log with your note.",
+        "days": "Days to add",
+        "note": "Reason (kept in the audit log)",
+        "button": "Postpone by {n} days"
+      },
+      "close": {
+        "title": "Close the sales now",
+        "help": "Purchases and projects stop at once. The payments under way can finish during the reservation delay; then everything freezes and the snapshot is taken.",
+        "button": "Close the sales now"
+      },
+      "reset": {
+        "button": "Back to pre-launch",
+        "help": "\"Back to pre-launch\" is for a rehearsal: it is refused as soon as a parcel is reserved or bought, or a payment was made."
+      },
+      "snap": {
+        "title": "New snapshot",
+        "help": "A snapshot is never rewritten. After a takedown, or a creation that moderation approved late, take a new one: it becomes the next revision.",
+        "button": "Take a new snapshot"
+      },
+      "refresh": "Refresh",
+      "working": "Working…",
+      "done": "Done.",
+      "adminOnly": "Only administrators can change the edition.",
+      "errors": {
+        "generic": "Something went wrong.",
+        "px_forbidden": "Administrators only.",
+        "px_edition_bad_state": "Not possible in the current state of the edition.",
+        "px_edition_bad_date": "That date is not allowed: later than the current closing, and within 366 days of the opening.",
+        "px_edition_confirm_mismatch": "The name typed does not match the name of the edition.",
+        "px_edition_not_empty": "Refused: a parcel is reserved or bought, or a payment was made. Only an empty site can go back to pre-launch."
+      }
     },
     "settings": {
       "title": "Settings",
@@ -1236,7 +1310,8 @@
       "px_amount_leaves_dust": "That would leave too little to fund. Choose another amount, or the exact rest.",
       "px_invalid_amount": "Enter an amount, for example 25 or 12.50.",
       "px_sales_closed": "Sales are temporarily closed.",
-      "px_world_ended": "The world has been deleted: nothing can be bought or funded any more.",
+      "px_edition_not_open": "The archive has not opened yet: nothing can be funded for now.",
+      "px_edition_closed": "This edition is closed: nothing can be bought or funded any more.",
       "px_account_suspended": "Your account is suspended.",
       "payments_not_configured": "Payments are not available yet.",
       "rate_limited": "Too many attempts. Please wait a little."
