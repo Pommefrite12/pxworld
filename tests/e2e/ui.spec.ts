@@ -260,6 +260,14 @@ test.describe("map interaction", () => {
     await page.getByLabel("Height (px)").fill("5");
     await expect(page.getByTestId("buy-price")).toHaveText("€6.25");
     await expect(page.getByTestId("buy-continue")).toBeEnabled();
+    // the shop's price list, €0.25 a pixel: 25 px €6.25 · 50 px €12.50 · 100 px €25 · 200 px €50 · 400 px €100
+    for (const [w, h, price] of [[5, 10, "€12.50"], [10, 10, "€25"], [10, 20, "€50"], [20, 20, "€100"]] as const) {
+      await page.getByLabel("Width (px)").fill(String(w));
+      await page.getByLabel("Height (px)").fill(String(h));
+      await expect(page.getByTestId("buy-price"), `${w * h} px`).toHaveText(price);
+    }
+    await page.getByLabel("Width (px)").fill("5");
+    await page.getByLabel("Height (px)").fill("5");
     // the price follows the size immediately
     await page.getByLabel("Width (px)").fill("30");
     await page.getByLabel("Height (px)").fill("40");
