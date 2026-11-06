@@ -5,6 +5,8 @@ import sharp from "sharp";
 /**
  * The archive: a trace carries a category and the place it is about, and has a page of its own (/archive/<code>) that can be read and shared
  * without the map. Driven through the real HTTP API and the real pages. Self-contained: its own users and its own spot on the map.
+ *
+ * It is named "the-archive" so that it runs AFTER journey.spec.ts: that one starts by checking that nothing has been sold yet, and this one buys.
  */
 const BASE = `http://localhost:${process.env.E2E_PORT ?? "3100"}`;
 const SPOT = { x: 27_500, y: 10_000, w: 10, h: 10 };
