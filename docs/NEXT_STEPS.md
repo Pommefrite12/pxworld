@@ -8,6 +8,10 @@ launch checklist is `LAUNCH_CHECKLIST.md`; this list is what to do *first*.
 
 Migration 19 puts the 100 days in the database (`docs/ARCHITECTURE.md` §3f). A site is in **pre-launch** (nothing for sale, no date) until an administrator opens the edition in `/admin/edition` (type its name, click). On the test site, after applying the migration: open it, then try "close the sales now" to see the closing. `NEXT_PUBLIC_WORLD_END_AT` no longer sells or refuses anything (it only drives the old countdown's look, which the redesign removes: `PLAN_REFONTE_ARCHIVE.md`, steps D5–D6).
 
+## 000. Preserving the archive — done (migration 21, step 9c of `DEPLOIEMENT_PAS_A_PAS.md`) **(owner: run the rehearsal on the test site)**
+
+`npm run archive:export -- --env .env.production.local --preview --zip` makes a rehearsal of the export (a folder readable without our software + a ZIP), `npm run archive:verify -- --dir …` checks it, and after the closing the same two commands without `--preview` make and check the real archive; `npm run archive:verify -- --env …` checks the live site's pictures against the closing snapshot. **Before the real launch:** the real export, copied to a second place (another provider), and the yearly drill (`BACKUP_RESTORE.md`). Needs the owner: where the second copy lives, and what is promised about keeping the archive (the wording is for a lawyer).
+
 ## 0. The old "100 days to save the world" story: removed (step D6)
 
 The countdown, the corrupted land, the bug every 30 seconds, the final sequence, the picture book and the share image that followed them are **gone** from the site, with their texts, styles, pictures and the variables `NEXT_PUBLIC_WORLD_END_AT` / `NEXT_PUBLIC_STORY_PREVIEW` (git keeps the old code). If either variable is still set in Vercel, remove it (step 8 of `DEPLOIEMENT_PAS_A_PAS.md`; until then the site only logs a warning). The share image of the site is now a single one in the night palette (`/api/og/home?lang=en|fr`).

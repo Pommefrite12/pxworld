@@ -24,6 +24,8 @@
     "demo:seed": "NODE_OPTIONS=--conditions=react-server tsx scripts/seed-demo.mts seed",
     "demo:status": "NODE_OPTIONS=--conditions=react-server tsx scripts/seed-demo.mts status",
     "demo:clear": "NODE_OPTIONS=--conditions=react-server tsx scripts/seed-demo.mts clear",
+    "archive:export": "tsx scripts/export-archive.mts",
+    "archive:verify": "tsx scripts/verify-archive.mts",
     "data:world": "NODE_OPTIONS=--max-old-space-size=6144 tsx scripts/build-world-data.mts",
     "db:setup": "bash scripts/local-db.sh start && node scripts/migrate.mjs --shim",
     "db:reset": "bash scripts/local-db.sh reset && node scripts/migrate.mjs --shim"

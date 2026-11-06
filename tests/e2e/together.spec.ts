@@ -154,6 +154,10 @@ test.describe.serial("drawing together", () => {
   });
 
   test("each address has a budget per minute", async () => {
+    // the limiter counts in fixed windows of one minute, aligned on the clock: never start a burst that could straddle two of them (it would then
+    // never reach the budget, and this test used to fail now and then in a full run)
+    const left = 60_000 - (Date.now() % 60_000);
+    if (left < 12_000) await new Promise((r) => setTimeout(r, left + 500));
     const ctx = await visitor();
     const statuses: number[] = [];
     for (let i = 0; i < 125; i++) statuses.push((await paint(ctx, token, [i % SPOT.w, 15, 0x123456])).status());

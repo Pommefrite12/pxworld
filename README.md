@@ -52,6 +52,7 @@ Supabase (Auth + Storage), Stripe **test** keys, and `CRON_SECRET`. Step-by-step
 | `npm run test:e2e` | Playwright: full buy → pay → moderate → publish journey, moderation, uploads, permissions |
 | `npm run lint` / `typecheck` | ESLint, `tsc --noEmit` |
 | `npm run db:setup` / `db:reset` | local PostgreSQL + migrations |
+| `npm run archive:export -- --env <file> [--preview] [--zip]` / `archive:verify -- --dir <folder>` | export the archive of the closed edition as a folder readable without our software (page, pictures, JSON, CSV, checksums), and check its integrity (or the live site's); see `docs/BACKUP_RESTORE.md` |
 | `npm run data:world` | rebuild the projected map data (land, borders, départements, cities) in `public/data` from Natural Earth / GeoNames |
 | `npm run data:clear -- --yes` | wipe parcels/orders/payments of a **local** development database (refuses anything else) |
 

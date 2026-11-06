@@ -11,6 +11,7 @@ Items marked **(approval)** need an explicit decision from the project owner bef
 ## Technical
 - [ ] Supabase project (PITR on), migrations applied, bucket created, admin role granted, SMTP configured, Google OAuth configured.
 - [ ] Vercel env vars set (no dev variables), cron running, domain + HTTPS, Stripe webhook pointing at production.
+- [ ] **Preservation of the archive** (`BACKUP_RESTORE.md`, "The archive: export, integrity check, second copy"): the rehearsal `npm run archive:export -- --preview` and `npm run archive:verify -- --dir …` were run on the test site and the exported `index.html` was opened offline; the **real** export after the closing is verified, copied to a **second place that is not the same provider or account** (read-only if possible) and verified there; `npm run archive:verify` against the live site says `OK`; the date of the yearly restore drill is written down here: ______
 - [ ] CI green: `npm run lint && npm run typecheck && npm test && npm run build && npm run test:e2e`.
 - [ ] Restore drill performed once (docs/BACKUP_RESTORE.md).
 - [ ] CSP added in report-only mode, then enforced; MFA for admins; WAF rules on sign-up/checkout.

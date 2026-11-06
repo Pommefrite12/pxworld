@@ -300,7 +300,7 @@ npx tsx scripts/check-env.mts .env.production.local
 Deux avertissements sont normaux tant que Stripe n'est pas configuré : `STRIPE_SECRET_KEY` et `NEXT_PUBLIC_OPERATOR_*`.
 
 **Le même vérificateur peut aussi interroger Supabase et la base de données** (rien n'est écrit : il demande seulement « acceptez-vous cette clé ? ») : ajoutez `--online`.
-Il dit si Supabase **accepte** la clé publique et la clé secrète, si le dossier des images existe, si les inscriptions sont ouvertes, et si la base répond avec toutes ses migrations (20 à ce jour).
+Il dit si Supabase **accepte** la clé publique et la clé secrète, si le dossier des images existe, si les inscriptions sont ouvertes, et si la base répond avec toutes ses migrations (21 à ce jour).
 ```bash
 npx tsx scripts/check-env.mts .env.production.local --online
 ```
@@ -457,6 +457,37 @@ Attendu : `applying …_editions.sql … ok` puis `applying …_archive_fields.s
 5. Le mot de passe de l'étape suivante n'est pas concerné : rien d'autre à configurer. **Vous pouvez supprimer** la variable `NEXT_PUBLIC_WORLD_END_AT` si vous l'aviez mise : elle ne fait plus rien (le compte à rebours a été retiré du site).
 
 **Pour essayer la clôture sans attendre 100 jours (site de test seulement)** : dans `/admin/edition`, « Clore les ventes maintenant » (tapez le nom). Les achats s'arrêtent à la seconde ; les paiements déjà lancés ont encore le délai de réservation (35 min) pour aboutir ; ensuite les créations sont gelées et le **cliché** (la liste figée de ce que le public voyait, avec son empreinte) est pris par la tâche planifiée — ou dès que vous rechargez la page « Édition ». « Reporter la clôture » ne fait que repousser (jamais avancer).
+
+## Étape 9c : répéter l'export de l'archive, et le vérifier (15 min)
+
+**Nouveauté (migration 21).** L'archive peut être exportée en un dossier lisible **sans notre logiciel** (une page `index.html`, les images, la liste en
+JSON et en CSV, des empreintes pour vérifier que rien n'a changé), et vérifiée. Sur le site de test, vous pouvez **répéter** l'export avant la clôture :
+il porte la mention **APERÇU** partout et n'est jamais une archive. Rien n'est modifié : l'export ne fait que **lire**.
+
+1. Mettez la base à jour (comme à l'étape 1F), puis récupérez le code :
+```bash
+git pull origin claude/funny-bell-k7v5xf
+npm install
+node scripts/migrate.mjs --env .env.production.local
+```
+Attendu : `applying …_snapshot_archive_fields.sql … ok`.
+2. Faites l'export de répétition (dans le terminal du Codespace) :
+```bash
+npm run archive:export -- --env .env.production.local --preview --zip
+```
+La première ligne affichée donne ce qui est lu : la base doit être `aws-…pooler.supabase.com`, et les images « in the Supabase bucket ». Attendu à la fin : `Done: N parcels, N creations, … files.` et deux chemins (le dossier et le ZIP). Si une image manque ou ne correspond pas à son empreinte, l'export **refuse** et nomme la trace : c'est le but.
+3. Vérifiez-le (copiez le chemin du dossier affiché) :
+```bash
+npm run archive:verify -- --dir exports/fondatrice-preview-AAAA-MM-JJ
+```
+Attendu : `OK — everything is as recorded.`
+4. Regardez-le : dans l'explorateur de fichiers du Codespace (à gauche), ouvrez le dossier `exports/`, clic droit sur le dossier de l'export → **Download…**, décompressez-le sur votre ordinateur et double-cliquez `index.html`. Vous voyez toute l'archive sur une page, sans connexion internet. (Le dossier `exports/` n'est **jamais** envoyé sur GitHub.)
+5. Vérifiez aussi **le vrai site** (les images stockées contre les empreintes du cliché de clôture). Cela demande qu'un cliché existe, donc **après la clôture** : sur le site de test, utilisez « Clore les ventes maintenant » (étape 9b), attendez 35 minutes, puis :
+```bash
+npm run archive:export -- --env .env.production.local --zip
+npm run archive:verify -- --env .env.production.local
+```
+6. **Avant le vrai lancement** (pas maintenant) : après la vraie clôture, refaites l'export réel, vérifiez-le, et **copiez-le dans un second endroit** qui n'est pas chez le même fournisseur (voir `BACKUP_RESTORE.md`).
 
 ## Étape 10 : essayer les projets collectifs sur le site de test (15 min)
 

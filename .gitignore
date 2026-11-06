@@ -5,6 +5,8 @@ out
 .env.*
 !.env.example
 .data
+# exports of the archive (npm run archive:export): never commit them
+/exports
 *.tsbuildinfo
 next-env.d.ts
 coverage
