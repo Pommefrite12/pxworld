@@ -36,11 +36,11 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
         </section>
       )}
       <dl className="my-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="card p-4"><dt className="text-xs text-ink-faint">{t("parcels")}</dt><dd className="pixel-display text-4xl" data-testid="stat-parcels">{f.number(stats.parcels)}</dd></div>
+        <div className="card p-4"><dt className="text-xs text-ink-faint">{t("statParcels")}</dt><dd className="pixel-display text-4xl" data-testid="stat-parcels">{f.number(stats.parcels)}</dd></div>
         <div className="card p-4"><dt className="text-xs text-ink-faint">{t("pixels")}</dt><dd className="pixel-display text-4xl" data-testid="stat-pixels">{f.number(stats.pixels)}</dd></div>
         <div className="card col-span-2 flex flex-wrap items-center justify-between gap-3 p-4 sm:col-span-3">
           <Link href="/account/parcels" className="btn btn-ink btn-sm">{t("myParcels")}</Link>
-          <Link href="/account/orders" className="btn btn-ghost btn-sm">{t("orders")}</Link>
+          <Link href="/account/orders" className="btn btn-ghost btn-sm">{t("ordersLink")}</Link>
           <Link href="/account/campaigns" className="btn btn-ghost btn-sm" data-testid="my-campaigns">{t("myCampaigns")}</Link>
         </div>
       </dl>

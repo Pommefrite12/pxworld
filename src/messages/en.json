@@ -459,6 +459,8 @@
   "account": {
     "title": "Your account",
     "memberSince": "Member since {date}",
+    "statParcels": "Parcels owned",
+    "ordersLink": "Orders",
     "parcels": {
       "title": "My parcels",
       "summary": "{parcels} parcels · {pixels} pixels",
