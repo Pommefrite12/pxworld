@@ -170,6 +170,8 @@ Offline, no search service. **Always loaded when the box opens**: the countries,
 
 ## 3d. The ranking by likes
 
+**The Discover page** (`/discover`) has four lists, all public data only (a validated, not hidden creation of a visible author): the latest traces, the biggest parcels, the most liked this month, and **the most commented** (`mostCommented`: the number of *visible* comments received; the comments of the parcel's own owner, the removed ones and those of suspended or deleted accounts do not count; ties: the latest comment). The "editorial selection" and the "top contributors" lists were removed at the owner's request (November 2026): the `parcel_features` table and the admin's *feature* button remain, with no public effect for now. `tests/e2e/parcel-most-commented.spec.ts` covers it.
+
 `/ranking` (`/fr/ranking`; linked from the footer and from Discover) ranks the **creations** and the **creators** by the number of likes they received, over **all time, this month (30 days) or this week (7 days)** (`?board=creations|creators&period=all|month|week`, anything else falls back to the defaults). The SQL is in `lib/ranking.ts` (no server-only import) so that `tests/db/ranking.test.ts` runs exactly what the page runs. Rules, so that the ranking stays honest:
 
 * **The owner's own like does not count** (liking one's own creation is still allowed, it is just ignored), nor a like from an account that is **suspended or deleted**.

@@ -139,7 +139,7 @@ export async function getPublicProfile(username: string) {
 
 /* ------------------------------------------------------------------ discovery */
 
-export interface Card { code: string; w: number; h: number; x: number; y: number; area: number; asset_id: string; title: string | null; username: string; country: string | null; published_at: Date | null; score?: number; note?: string | null }
+export interface Card { code: string; w: number; h: number; x: number; y: number; area: number; asset_id: string; title: string | null; username: string; country: string | null; published_at: Date | null; score?: number; comments?: number }
 
 const CARD = `select p.code, p.w, p.h, p.x, p.y, p.area, a.id as asset_id, a.title, u.username, u.country, a.published_at
                 from public.parcels p join public.parcel_assets a on a.id = p.published_asset_id join public.profiles u on u.id = p.owner_id
@@ -167,18 +167,21 @@ export const popularCreations = (limit = 12) =>
     [limit],
   );
 
-export const editorialPicks = (limit = 12) =>
+/**
+ * The most talked-about traces: the number of VISIBLE comments received. Like the likes, it is hard to inflate: the comments of the
+ * parcel's own owner do not count, nor those of suspended or deleted accounts, nor removed ones (ties: the latest comment, then recency).
+ */
+export const mostCommented = (limit = 12) =>
   query<Card>(
-    `select c.*, f.note from (${CARD}) c join public.parcel_features f on f.parcel_id = (select id from public.parcels where code = c.code)
-      order by f.featured_at desc limit $1`,
-    [limit],
-  );
-
-export const topContributors = (limit = 10) =>
-  query<{ username: string; country: string | null; parcels: number; pixels: number }>(
-    `select u.username, u.country, count(*)::int as parcels, sum(p.area)::int as pixels
-       from public.parcels p join public.profiles u on u.id = p.owner_id
-      where p.status = 'active' and u.status = 'active' group by u.id order by pixels desc, parcels desc limit $1`,
+    `select c.*, s.n as comments from (${CARD}) c
+       join (select pc.parcel_id, count(*)::int as n, max(pc.created_at) as last_at
+               from public.parcel_comments pc
+               join public.parcels pp on pp.id = pc.parcel_id
+               join public.profiles au on au.id = pc.author_id
+              where pc.status = 'visible' and au.status = 'active' and au.deleted_at is null and pc.author_id <> pp.owner_id
+              group by pc.parcel_id) s
+         on s.parcel_id = (select id from public.parcels where code = c.code)
+      order by s.n desc, s.last_at desc, c.published_at desc limit $1`,
     [limit],
   );
 

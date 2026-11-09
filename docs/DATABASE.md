@@ -35,7 +35,7 @@ erDiagram
 | `parcel_assets` | **versions** of a creation (image path, hash, size, title, description, https link, `is_commercial`, moderation status) |
 | `moderation_reports` | user reports with an **evidence snapshot** (what was displayed, hash, texts, link, owner) |
 | `moderation_actions`, `audit_logs` | append-only (triggers forbid UPDATE/DELETE) journals of staff and payment events |
-| `parcel_likes`, `parcel_features` | popularity (likes in the last 30 days) and editorial selection |
+| `parcel_likes`, `parcel_features` | popularity (likes in the last 30 days) and editorial selection (the table and the admin button remain; the public Discover page no longer shows a selection) |
 | `parcel_comments` | comments under a parcel (server-only; removed ones are kept, marked) |
 | `rate_limits`, `map_state` | shared rate-limit counters; the map version used to bust caches |
 

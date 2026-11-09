@@ -32,5 +32,5 @@ Items marked **(approval)** need an explicit decision from the project owner bef
 
 ## Launch assets
 - [ ] Share image and copy for the home page checked on X / LinkedIn / WhatsApp debuggers (`/api/og/home`, `/api/og/parcel/<code>`).
-- [ ] Seed the Discover page with genuine editorial picks from real creations (no fake data is ever inserted by the app).
+- [ ] Check the Discover page once real creations exist (latest, biggest, most liked, most commented): the lists are computed from real data only; no fake data is ever inserted by the app.
 - [ ] On the deployed site, try buying a parcel at sea (expect the red "not entirely on land" message and, via curl, `422 px_not_on_land`) and one on land: confirms `outputFileTracingIncludes` shipped `public/data/geo` to the checkout/availability functions.

@@ -76,7 +76,7 @@ Left, because each needs the deployed site or a dashboard:
 ## 6. Launch assets
 
 - Share image: check, on the deployed site, that `/api/og/home` has its font (`outputFileTracingIncludes` is set; open `/api/og/home?lang=fr`), and what the platforms' debuggers show for the home page.
-- Check the share previews on X, LinkedIn, WhatsApp; seed Discover with real editorial picks (the app never inserts fake data).
+- Check the share previews on X, LinkedIn, WhatsApp; look at Discover once real creations and comments exist (its lists are computed from real data; the app never inserts fake data; the editorial selection and the top contributors were removed).
 - French review of the new wording (comments, palette, tile) by a native reader.
 
 ## 7. Going live **(approval)**

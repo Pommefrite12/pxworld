@@ -1,4 +1,4 @@
-import { getFormatter, getLocale } from "next-intl/server";
+import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { assetUrl } from "@/lib/images/sizes";
 import type { Card } from "@/lib/data/parcels";
@@ -6,6 +6,7 @@ import type { Card } from "@/lib/data/parcels";
 export async function CreationGrid({ items, empty }: { items: Card[]; empty: string }) {
   const f = await getFormatter();
   const locale = await getLocale();
+  const t = await getTranslations("discover");
   if (items.length === 0) return <p className="card p-6 text-sm text-ink-soft">{empty}</p>;
   const region = new Intl.DisplayNames([locale], { type: "region" });
   return (
@@ -19,8 +20,7 @@ export async function CreationGrid({ items, empty }: { items: Card[]; empty: str
             <div className="p-3">
               <p className="truncate text-sm font-bold">{c.title ?? "—"}</p>
               <p className="truncate text-xs text-ink-soft">{c.username}{c.country ? ` · ${region.of(c.country) ?? c.country}` : ""}</p>
-              <p className="pixel-num mt-0.5 text-xs text-ink-faint">{c.w}×{c.h} · {f.number(c.area)} px{c.score ? ` · ♥ ${c.score}` : ""}</p>
-              {c.note && <p className="mt-1 text-xs italic text-ink-soft">“{c.note}”</p>}
+              <p className="pixel-num mt-0.5 text-xs text-ink-faint">{c.w}×{c.h} · {f.number(c.area)} px{c.score ? ` · ♥ ${c.score}` : ""}{c.comments ? ` · ${t("commentsCount", { n: c.comments })}` : ""}</p>
             </div>
           </Link>
         </li>
