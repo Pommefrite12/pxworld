@@ -95,8 +95,6 @@
       "subtitle": "Une archive collective mondiale où chacun peut déposer une création, un souvenir, une passion — un morceau de notre monde — pour les générations futures.",
       "primary": "Laisser ma trace",
       "secondary": "Explorer les archives",
-      "fine": "Paiement unique · <b>{price} le pixel</b> · à partir de {from} ({px} pixels)",
-      "peek": "Chaque cadre cyan est une trace laissée par quelqu'un",
       "mapLabel": "Planisphère : la carte du monde, où chaque trace est à sa place"
     },
     "eras": {

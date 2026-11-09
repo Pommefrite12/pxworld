@@ -1,11 +1,10 @@
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getFormatter, getTranslations } from "next-intl/server";
 import { ArchiveChips } from "@/components/archive/ArchiveChips";
 import { Footer } from "@/components/layout/Footer";
 import { SiteHeader, type HeaderViewer } from "@/components/layout/SiteHeader";
 import { Link } from "@/i18n/navigation";
 import type { Trace } from "@/lib/data/parcels";
 import { daysLeft, editionProgress, type PublicEdition } from "@/lib/edition";
-import { formatMoney, type Pricing } from "@/lib/grid/pricing";
 import { assetUrl } from "@/lib/images/sizes";
 import { Eras } from "./Eras";
 import { HeroWorld, Sparks } from "./HeroWorld";
@@ -18,10 +17,8 @@ const SEGMENTS = 50;
  * just archived (real, validated traces only: the section is absent while there are none), where the edition stands (the database's state:
  * pre-launch, open, closed), and a word on why. The interactive map is one click away (`/map`).
  */
-export async function Home({ viewer, pricing, edition, traces }: { viewer: HeaderViewer | null; pricing: Pricing; edition: PublicEdition | null; traces: Trace[] }) {
-  const [t, tn, te, ta, f, locale] = await Promise.all([getTranslations("home"), getTranslations("nav"), getTranslations("archive.editions"), getTranslations("archive.page"), getFormatter(), getLocale()]);
-  const money = (cents: number) => formatMoney(cents, locale, pricing.currency);
-  const unit = money(pricing.unitPriceCents), from = money(pricing.unitPriceCents * pricing.minArea);
+export async function Home({ viewer, edition, traces }: { viewer: HeaderViewer | null; edition: PublicEdition | null; traces: Trace[] }) {
+  const [t, tn, te, ta, f] = await Promise.all([getTranslations("home"), getTranslations("nav"), getTranslations("archive.editions"), getTranslations("archive.page"), getFormatter()]);
   const day = (iso: string | null) => (iso ? f.dateTime(new Date(iso), { dateStyle: "long" }) : "");
   const state = edition?.state ?? null;
   const left = edition ? daysLeft(edition) : null;
@@ -51,9 +48,7 @@ export async function Home({ viewer, pricing, edition, traces }: { viewer: Heade
               <Link href="/map?buy=1" className="btn btn-primary min-h-[3.25rem] px-7 text-[1.05rem]" data-testid="home-leave-trace">{t("hero.primary")}</Link>
               <Link href="/map" className="btn btn-secondary min-h-[3.25rem] px-7 text-[1.05rem]" data-testid="home-explore">{t("hero.secondary")}</Link>
             </div>
-            <p className="mt-4 text-sm text-ink-soft" data-testid="home-fine">{t.rich("hero.fine", { price: unit, from, px: pricing.minArea, b: (c) => <b className="text-ink">{c}</b> })}</p>
           </div>
-          {traces.length > 0 && <p className="absolute bottom-6 right-5 hidden items-center gap-2 text-[0.82rem] text-ink-soft sm:flex" aria-hidden><i className="inline-block h-2.5 w-2.5 bg-cobalt shadow-[0_0_10px_var(--color-cobalt)]" />{t("hero.peek")}</p>}
         </section>
 
         {/* ---------------------------------------------------------------- every era leaves a trace */}

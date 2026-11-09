@@ -14,7 +14,7 @@ async function sql<T = Record<string, unknown>>(text: string, params: unknown[] 
 }
 
 test.describe("the home page", () => {
-  test("the sentence, the two ways in, and the real price in the fine print", async ({ page }) => {
+  test("the slogan, the hook, the two ways in, and nothing else under the buttons", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByTestId("home-title")).toContainText("Every era leaves a trace. Here is ours.");
     await expect(page.getByTestId("home-hook")).toHaveText("In 100 years, what will remain of us?"); // the hook, under the slogan
@@ -22,9 +22,12 @@ test.describe("the home page", () => {
     await expect(page.getByTestId("home-leave-trace")).toHaveAttribute("href", "/map?buy=1");
     await expect(page.getByTestId("home-explore")).toHaveText("Explore the archives");
     await expect(page.getByTestId("home-explore")).toHaveAttribute("href", "/map");
-    // the price printed is the server's: €0.25 a pixel, from €6.25 for the smallest parcel (25 pixels)
-    await expect(page.getByTestId("home-fine")).toContainText("€0.25 per pixel");
-    await expect(page.getByTestId("home-fine")).toContainText("from €6.25 (25 pixels)");
+    // nothing else under the buttons: no fine print about the price (it is on the map, in the buy panel and on the "Learn more" page), no legend over the map
+    await expect(page.getByTestId("home-fine")).toHaveCount(0);
+    const hero = (await page.getByTestId("home-hero").innerText()).toLowerCase();
+    expect(hero).not.toContain("per pixel");
+    expect(hero).not.toContain("one-time payment");
+    expect(await page.locator("main").innerText()).not.toContain("Every cyan frame");
     // no leftovers of the old story on the home page
     const text = (await page.locator("main").innerText()).toLowerCase();
     for (const gone of ["protocol", "protocole", "doom", "apocalypse", "countdown"]) expect(text, gone).not.toContain(gone);
@@ -177,14 +180,15 @@ test.describe("the home page", () => {
     await expect(page).toHaveURL(/\/map\?buy=1$/);
   });
 
-  test("in French: the sentence, the buttons, the price with its comma", async ({ page }) => {
+  test("in French: the slogan, the hook, the buttons", async ({ page }) => {
     await page.goto("/fr");
     await expect(page.getByTestId("home-title")).toContainText("Chaque époque laisse une trace. Voici la nôtre.");
     await expect(page.getByTestId("home-hook")).toHaveText("Dans 100 ans, que restera-t-il de nous ?");
     await expect(page.getByTestId("home-leave-trace")).toHaveText("Laisser ma trace");
     await expect(page.getByTestId("home-leave-trace")).toHaveAttribute("href", "/fr/map?buy=1");
     await expect(page.getByTestId("home-explore")).toHaveText("Explorer les archives");
-    await expect(page.getByTestId("home-fine")).toContainText(/0,25\s€ le pixel/);
+    await expect(page.getByTestId("home-fine")).toHaveCount(0);
+    expect(await page.locator("main").innerText()).not.toContain("Chaque cadre cyan");
     await expect(page.getByTestId("home-time")).toContainText("100 jours pour entrer dans l'archive.");
   });
 

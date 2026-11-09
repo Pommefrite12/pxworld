@@ -33,23 +33,6 @@ test("the price a buyer sees is in euros in the euro area, in dollars elsewhere,
   expect(fr).not.toContain("€");
 });
 
-test("the home page prints the price in the same currency, whatever the language", async ({ browser }) => {
-  const fine = async (country: string | undefined, path: string) => {
-    const ctx = await browser.newContext({ extraHTTPHeaders: as(country), baseURL: BASE });
-    const page = await ctx.newPage();
-    await page.goto(path);
-    const text = await page.getByTestId("home-fine").innerText();
-    await ctx.close();
-    return text;
-  };
-  expect(await fine("FR", "/")).toContain("€0.25 per pixel");
-  expect(await fine("US", "/")).toContain("$0.25 per pixel");
-  expect(await fine(undefined, "/")).toContain("€0.25 per pixel");
-  const fr = await fine("US", "/fr");
-  expect(fr).toMatch(/0,25\s*(\$US|\$)/);
-  expect(fr).not.toContain("€");
-});
-
 test("the availability probe quotes in the same currency", async ({ browser }) => {
   for (const [country, currency] of [["US", "usd"], ["FR", "eur"], ["JP", "usd"], [undefined, "eur"]] as const) {
     const ctx = await pwRequest.newContext({ baseURL: BASE, extraHTTPHeaders: as(country) });
