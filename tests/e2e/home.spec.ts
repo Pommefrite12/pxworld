@@ -76,7 +76,7 @@ test.describe("the home page", () => {
     await expect(eras).toHaveCount(5);
     expect(await eras.evaluateAll((els) => els.map((e) => e.getAttribute("data-era")))).toEqual(["cave", "hieroglyphs", "manuscript", "photography", "pixelworld"]);
     await expect(page.getByTestId("home-eras")).toContainText("Humanity has always left a trace.");
-    const titles = ["Prehistoric paintings", "Stone and hieroglyphs", "Illuminated manuscripts", "Photography", "Pixel World"];
+    const titles = ["Prehistoric paintings", "Hieroglyphs", "Illuminated manuscripts", "Photography", "Pixel World"];
     for (const [i, title] of titles.entries()) {
       const era = eras.nth(i);
       await era.scrollIntoViewIfNeeded();
