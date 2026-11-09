@@ -1,8 +1,8 @@
 {
   "meta": {
     "siteName": "Pixel World",
-    "tagline": "In 100 years, what will remain of us?",
-    "description": "Pixel World is a collective archive of our time: a map of the world where anyone can leave a trace — an image, a drawing, a few words — for the people who will come after us."
+    "tagline": "Every era leaves a trace. Here is ours.",
+    "description": "Pixel World is a worldwide collective archive of our time: a map of the world where anyone can leave a trace — a creation, a memory, a passion — for the generations to come."
   },
   "nav": {
     "home": "pixelworld — home",
@@ -19,9 +19,9 @@
   },
   "map": {
     "canvasLabel": "Interactive map of the archive: every trace sits at its place on the world. Drag to move, scroll or pinch to zoom, arrow keys to pan, plus and minus to zoom.",
-    "sloganA": "A collective archive",
-    "sloganB": "of our time.",
-    "sloganC": "Leave your trace.",
+    "sloganA": "Every era leaves a trace.",
+    "sloganB": "Here is ours.",
+    "sloganC": "Leave yours.",
     "pitch": "A collective archive of our time, on a map of the world. Pick a spot and leave your trace.",
     "findYourSpot": "Leave my trace",
     "zoomIn": "Zoom in",
@@ -90,13 +90,49 @@
   "home": {
     "hero": {
       "eyebrow": "Collective archive",
-      "title": "In <gold>100 years</gold>, <nb>what will remain</nb> <nb>of us?</nb>",
-      "subtitle": "A collective archive where everyone can leave a trace of our time for future generations.",
+      "title": "<nb>Every era</nb> <nb>leaves a trace.</nb> <gold>Here is ours.</gold>",
+      "hook": "In 100 years, what will remain of us?",
+      "subtitle": "A worldwide collective archive where anyone can leave a creation, a memory, a passion — a piece of our world — for the generations to come.",
       "primary": "Leave my trace",
       "secondary": "Explore the archives",
       "fine": "One-time payment · <b>{price} per pixel</b> · from {from} ({px} pixels)",
       "peek": "Every cyan frame is a trace left by someone",
       "mapLabel": "Planisphere: the world map, where every trace sits at its place"
+    },
+    "eras": {
+      "eyebrow": "Since forever",
+      "title": "Humanity has always left a trace.",
+      "lead": "Every era found its own way of handing its story down to the generations to come. Today, it is Pixel World's turn.",
+      "cave": {
+        "when": "Tens of thousands of years ago",
+        "title": "Cave walls",
+        "text": "The first traces: animals, hunts, the hand of someone who wanted to say “we were here”.",
+        "alt": "Pixel-art cave painting: hunters with spears and bows around a bison, deer and a boar, lit by a small fire."
+      },
+      "hieroglyphs": {
+        "when": "More than 5,000 years ago",
+        "title": "Stone and hieroglyphs",
+        "text": "Kings, gods and seasons are carved into stone, so that the wall can still speak thousands of years later.",
+        "alt": "Pixel-art wall of Egyptian hieroglyphs: a seated pharaoh, an ankh, the Eye of Horus, a sun, pyramids, a cartouche and a cat."
+      },
+      "manuscript": {
+        "when": "The Middle Ages",
+        "title": "Illuminated manuscripts",
+        "text": "Patient hands copy, decorate and pass on knowledge, page after page.",
+        "alt": "Pixel-art open illuminated manuscript with a decorated letter, a painting of a castle and a coat of arms, beside a candle and a quill."
+      },
+      "photography": {
+        "when": "The 19th century",
+        "title": "Photography",
+        "text": "For the first time, the look of a precise moment can be kept: a face, a street, a landscape.",
+        "alt": "Pixel-art darkroom: a wooden field camera on a tripod, bottles of developer, a tray, and prints hanging to dry."
+      },
+      "pixelworld": {
+        "when": "Today",
+        "title": "Pixel World",
+        "text": "Here is ours: a collective archive where everyone leaves a trace of our time on a map of the world, to be read in 100 years.",
+        "alt": "Pixel-art map of the world in violet and blue, where every trace will sit at its place."
+      }
     },
     "steps": {
       "eyebrow": "In three gestures",
@@ -122,21 +158,21 @@
       "by": "by {author}"
     },
     "time": {
-      "title": "An era. 100 days to tell it.",
-      "lead": "At the closing, the edition becomes a historical archive that can be explored.",
+      "title": "100 days to join the archive.",
+      "lead": "The founding edition lasts 100 days: the time left to take part. At the end, the creations are frozen in a collective archive that the generations to come can explore.",
       "opening": "Opening",
       "span": "100 days",
       "closing": "Closing",
       "archive": "Archive",
       "onDate": "on {date}",
-      "toArchive": "to archive",
+      "toArchive": "to take part",
       "explorable": "explorable",
       "prelaunchTitle": "Opening soon",
       "prelaunchNote": "The map can already be explored. The 100 days have not started.",
-      "openLeft": "Time left",
+      "openLeft": "Time left to take part",
       "dayOne": "day",
       "dayMany": "days",
-      "openNote": "Closing on <b>{date}</b>. After that nothing can be bought or changed any more; the map stays open to explore.",
+      "openNote": "You can take part until <b>{date}</b>. Then the creations are frozen in a collective archive, open to the generations to come; the map stays open to explore.",
       "closedTitle": "Historical archive",
       "closedNote": "Edition closed on <b>{date}</b>. The creations are frozen: they can be explored, no longer changed.",
       "explore": "Explore the archive"
@@ -148,11 +184,11 @@
     }
   },
   "about": {
-    "title": "In 100 years, what will remain of us?",
-    "lead": "Pixel World is a collective archive: a map of the world on which anyone can leave one trace of our time, for the people who will come after us.",
+    "title": "Every era leaves a trace. Here is ours.",
+    "lead": "Pixel World is a worldwide collective archive of our time: a map of the world on which anyone can leave a creation, a memory, a passion, for the people who will come after us.",
     "why": {
       "title": "Why",
-      "text": "Our conversations fade, our photos sleep in phones, our websites disappear. Little of what we live every day is kept in a form that someone could read in a hundred years. Here, each trace is chosen: a picture, a drawing, a few words, with a title, an author, a date and a place. Together they make a readable fragment of our era."
+      "text": "Humanity has always looked for a way to leave a trace of its passage: paintings on cave walls, hieroglyphs carved in stone, illuminated manuscripts, books, photographs. Every era found its own way of handing its story down. Ours is made of conversations that fade, photos that sleep in phones and websites that disappear: little of what we live every day is kept in a form that someone could read in a hundred years. Here, each trace is chosen, with a title, an author, a date and a place, and together they make a readable fragment of our era. Today, it is Pixel World's turn."
     },
     "how": {
       "title": "How it works",
@@ -160,7 +196,7 @@
     },
     "time": {
       "title": "A time to tell it",
-      "text": "The first edition lasts 100 days. When it closes, nothing can be bought or changed any more: the edition becomes a historical archive, kept as it was and open to everybody. The opening and the closing are decided by us, announced, and enforced by the server, never by a browser."
+      "text": "The founding edition lasts 100 days: this is the time left to take part. When it closes, nothing can be bought or changed any more: the edition becomes a historical archive, kept as it was and open to everybody. The opening and the closing are decided by us, announced, and enforced by the server, never by a browser."
     },
     "buy": {
       "title": "What you pay for",

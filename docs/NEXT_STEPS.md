@@ -8,6 +8,10 @@ launch checklist is `LAUNCH_CHECKLIST.md`; this list is what to do *first*.
 
 Migration 19 puts the 100 days in the database (`docs/ARCHITECTURE.md` §3f). A site is in **pre-launch** (nothing for sale, no date) until an administrator opens the edition in `/admin/edition` (type its name, click). On the test site, after applying the migration: open it, then try "close the sales now" to see the closing. `NEXT_PUBLIC_WORLD_END_AT` no longer sells or refuses anything (it only drives the old countdown's look, which the redesign removes: `PLAN_REFONTE_ARCHIVE.md`, steps D5–D6).
 
+## 00000. The story of the eras — done (November 2026) **(owner: look at the home page and tell me what to change)**
+
+The home page now opens on the slogan "Every era leaves a trace. Here is ours." with the hook "In 100 years, what will remain of us?", then a timeline: cave wall → hieroglyphs → illuminated manuscripts → photography → Pixel World, with the owner's four pictures (`public/eras/`) and the site's own planisphere. The 100 days read as "the time left to take part in the founding edition". Open points that are the owner's call: the wording of each era's sentence (`home.eras.*` in `src/messages/*.json`), the order and size of the pictures, whether the timeline should come before the hero's buttons or after, and whether the legal text should say anything about the story.
+
 ## 0000. "Premiers Gardiens" badges — studied, **not built** (`docs/BADGES_PREMIERS_GARDIENS.md`) **(owner: the 12 decisions of §9)**
 
 A design study only: no table, no migration, no screen, no public text (the site does not mention badges). A badge is symbolic, awarded **by a human moderator** to the author of the first *validated* trace on a subject the moderators name, per edition; never automatic; nothing public before the decision; one active holder per subject guaranteed by the database. The round gold-on-violet medallion exists as three SVG files in `docs/img/`. To build it later: five phases (§11), after the owner's decisions and a lawyer's look at the wording.

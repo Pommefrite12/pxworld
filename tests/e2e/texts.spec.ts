@@ -24,7 +24,7 @@ test.describe("vocabulary", () => {
     await expect(page.getByText("Pixels archived")).toBeVisible();
     await expect(page.getByRole("progressbar", { name: "Share of the map archived" })).toBeVisible();
     await expect(page.getByTestId("latest-tile").getByRole("heading")).toHaveText("Recently archived");
-    await expect(page.locator("h1")).toHaveText("A collective archive of our time. Leave your trace.");
+    await expect(page.locator("h1")).toHaveText("Every era leaves a trace. Here is ours. Leave yours.");
     await page.goto("/fr/map");
     await expect(page.getByTestId("find-your-spot")).toHaveText("Laisser ma trace");
     await expect(page.getByText("Pixels archivés")).toBeVisible();
@@ -34,11 +34,11 @@ test.describe("vocabulary", () => {
 
   test("the tagline and the description of the site, in the title and the previews", async ({ request }) => {
     const html = await (await request.get("/")).text();
-    expect(html).toContain("In 100 years, what will remain of us?");
-    expect(html).toMatch(/<meta name="description" content="Pixel World is a collective archive of our time/);
+    expect(html).toContain("Every era leaves a trace. Here is ours.");
+    expect(html).toMatch(/<meta name="description" content="Pixel World is a worldwide collective archive of our time/);
     const fr = await (await request.get("/fr")).text();
-    expect(fr).toContain("Dans 100 ans, que restera-t-il de nous");
-    expect(fr).toMatch(/<meta name="description" content="Pixel World est une archive collective de notre époque/);
+    expect(fr).toContain("Chaque époque laisse une trace. Voici la nôtre.");
+    expect(fr).toMatch(/<meta name="description" content="Pixel World est une archive collective mondiale de notre époque/);
   });
 });
 

@@ -7,6 +7,7 @@ import type { Trace } from "@/lib/data/parcels";
 import { daysLeft, editionProgress, type PublicEdition } from "@/lib/edition";
 import { formatMoney, type Pricing } from "@/lib/grid/pricing";
 import { assetUrl } from "@/lib/images/sizes";
+import { Eras } from "./Eras";
 import { HeroWorld, Sparks } from "./HeroWorld";
 import { PixelIcon } from "./PixelIcon";
 
@@ -41,10 +42,11 @@ export async function Home({ viewer, pricing, edition, traces }: { viewer: Heade
           </div>
           <div className="relative mx-auto w-full max-w-[1180px] px-5 pb-10 pt-2 sm:py-24" data-testid="home-hero">
             <p className="eyebrow">{t("hero.eyebrow")}{editionName ? ` · ${editionName}` : ""}</p>
-            <h1 className="mt-2 max-w-[9em] text-balance font-display text-[2.3rem] font-extrabold leading-[1.02] sm:text-[clamp(2.3rem,5.6vw,4.6rem)]" data-testid="home-title">
+            <h1 className="mt-2 max-w-[10.5em] text-balance font-display text-[2.3rem] font-extrabold leading-[1.02] sm:text-[clamp(2.3rem,5.2vw,4.4rem)]" data-testid="home-title">
               {t.rich("hero.title", { gold: (c) => <span className="text-signal">{c}</span>, nb })}
             </h1>
-            <p className="mt-4 max-w-[25em] text-[1.05rem] text-ink-soft sm:text-[clamp(1.05rem,1.7vw,1.3rem)]">{t("hero.subtitle")}</p>
+            <p className="mt-4 max-w-[22em] font-display text-[clamp(1.2rem,2.3vw,1.7rem)] font-bold leading-snug text-cobalt" data-testid="home-hook">{t("hero.hook")}</p>
+            <p className="mt-3 max-w-[27em] text-[1.05rem] text-ink-soft sm:text-[clamp(1.05rem,1.5vw,1.2rem)]">{t("hero.subtitle")}</p>
             <div className="mt-7 flex flex-wrap gap-3 max-sm:[&>a]:flex-1 max-sm:[&>a]:basis-full">
               <Link href="/map?buy=1" className="btn btn-primary min-h-[3.25rem] px-7 text-[1.05rem]" data-testid="home-leave-trace">{t("hero.primary")}</Link>
               <Link href="/map" className="btn btn-secondary min-h-[3.25rem] px-7 text-[1.05rem]" data-testid="home-explore">{t("hero.secondary")}</Link>
@@ -53,6 +55,9 @@ export async function Home({ viewer, pricing, edition, traces }: { viewer: Heade
           </div>
           {traces.length > 0 && <p className="absolute bottom-6 right-5 hidden items-center gap-2 text-[0.82rem] text-ink-soft sm:flex" aria-hidden><i className="inline-block h-2.5 w-2.5 bg-cobalt shadow-[0_0_10px_var(--color-cobalt)]" />{t("hero.peek")}</p>}
         </section>
+
+        {/* ---------------------------------------------------------------- every era leaves a trace */}
+        <Eras />
 
         {/* ---------------------------------------------------------------- three gestures */}
         <section className="py-14 sm:py-20" aria-labelledby="h-steps">

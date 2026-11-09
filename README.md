@@ -1,6 +1,6 @@
-# Pixel World — *In 100 years, what will remain of us?*
+# Pixel World — *Every era leaves a trace. Here is ours.*
 
-A **collective archive of our time**, drawn on a map made of **exactly 1 000 000 000 virtual pixels** (40 000 × 25 000). Anyone can leave a trace:
+*In 100 years, what will remain of us?* Humanity has always looked for a way to leave a trace of its passage — cave paintings, hieroglyphs, manuscripts, photographs — and every era found its own. Pixel World is a **worldwide collective archive of our time**, drawn on a map made of **exactly 1 000 000 000 virtual pixels** (40 000 × 25 000). Anyone can leave a trace:
 choose a rectangle of the planet (from 25 pixels; one-time payment of €0.25 per pixel in the euro area, $0.25 elsewhere, so €6.25 for the smallest),
 put a creation on it (an image, a drawing, a text) with a title, a category and, if wanted, the place it is about, and share its page. The archive is
 organised in **editions**: the founding edition lasts 100 days, is opened and closed by an administrator and enforced by the database; when it closes, its

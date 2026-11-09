@@ -1,8 +1,8 @@
 {
   "meta": {
     "siteName": "Pixel World",
-    "tagline": "Dans 100 ans, que restera-t-il de nous\u00a0?",
-    "description": "Pixel World est une archive collective de notre époque\u00a0: une carte du monde où chacun peut laisser une trace — une image, un dessin, quelques mots — pour celles et ceux qui viendront après nous."
+    "tagline": "Chaque époque laisse une trace. Voici la nôtre.",
+    "description": "Pixel World est une archive collective mondiale de notre époque\u00a0: une carte du monde où chacun peut laisser une trace — une création, un souvenir, une passion — pour les générations futures."
   },
   "nav": {
     "home": "pixelworld — accueil",
@@ -19,9 +19,9 @@
   },
   "map": {
     "canvasLabel": "Carte interactive de l'archive\u00a0: chaque trace est à sa place sur le monde. Glissez pour déplacer, molette ou pincement pour zoomer, flèches pour se déplacer, plus et moins pour zoomer.",
-    "sloganA": "Une archive collective",
-    "sloganB": "de notre époque.",
-    "sloganC": "Laissez votre trace.",
+    "sloganA": "Chaque époque laisse une trace.",
+    "sloganB": "Voici la nôtre.",
+    "sloganC": "Laissez la vôtre.",
     "pitch": "Une archive collective de notre époque, sur une carte du monde. Choisissez une place et laissez votre trace.",
     "findYourSpot": "Laisser ma trace",
     "zoomIn": "Zoom avant",
@@ -90,13 +90,49 @@
   "home": {
     "hero": {
       "eyebrow": "Archive collective",
-      "title": "Dans <gold>100 ans</gold>, <nb>que restera-t-il</nb> <nb>de nous\u00a0?</nb>",
-      "subtitle": "Une archive collective où chacun peut laisser une trace de notre époque pour les générations futures.",
+      "title": "<nb>Chaque époque</nb> <nb>laisse une trace.</nb> <gold>Voici la nôtre.</gold>",
+      "hook": "Dans 100 ans, que restera-t-il de nous\u00a0?",
+      "subtitle": "Une archive collective mondiale où chacun peut déposer une création, un souvenir, une passion — un morceau de notre monde — pour les générations futures.",
       "primary": "Laisser ma trace",
       "secondary": "Explorer les archives",
       "fine": "Paiement unique · <b>{price} le pixel</b> · à partir de {from} ({px} pixels)",
       "peek": "Chaque cadre cyan est une trace laissée par quelqu'un",
       "mapLabel": "Planisphère : la carte du monde, où chaque trace est à sa place"
+    },
+    "eras": {
+      "eyebrow": "De tout temps",
+      "title": "L'humanité a toujours laissé une trace.",
+      "lead": "Chaque époque a eu sa manière de transmettre son histoire aux générations futures. Aujourd'hui, c'est au tour de Pixel World.",
+      "cave": {
+        "when": "Il y a des dizaines de milliers d'années",
+        "title": "Les parois des cavernes",
+        "text": "Les premières traces\u00a0: des animaux, des chasses, la main de quelqu'un qui voulait dire «\u00a0nous étions là\u00a0».",
+        "alt": "Peinture rupestre en pixel art\u00a0: des chasseurs armés de lances et d'arcs autour d'un bison, de cerfs et d'un sanglier, éclairés par un petit feu."
+      },
+      "hieroglyphs": {
+        "when": "Il y a plus de 5 000 ans",
+        "title": "La pierre et les hiéroglyphes",
+        "text": "On grave les rois, les dieux, les saisons dans la pierre, pour que le mur parle encore des milliers d'années plus tard.",
+        "alt": "Mur de hiéroglyphes en pixel art\u00a0: un pharaon assis, une croix ankh, l'œil d'Horus, un soleil, des pyramides, un cartouche et un chat."
+      },
+      "manuscript": {
+        "when": "Le Moyen Âge",
+        "title": "Les manuscrits enluminés",
+        "text": "Des mains patientes copient, décorent et transmettent les savoirs, page après page.",
+        "alt": "Manuscrit enluminé ouvert en pixel art\u00a0: une lettrine ornée, la peinture d'un château et un blason, près d'une bougie et d'une plume."
+      },
+      "photography": {
+        "when": "Le XIXe siècle",
+        "title": "La photographie",
+        "text": "Pour la première fois, on garde l'apparence exacte d'un instant précis\u00a0: un visage, une rue, un paysage.",
+        "alt": "Chambre noire en pixel art\u00a0: un appareil photo à soufflet en bois sur un trépied, des flacons de révélateur, un bac et des tirages qui sèchent."
+      },
+      "pixelworld": {
+        "when": "Aujourd'hui",
+        "title": "Pixel World",
+        "text": "Voici la nôtre\u00a0: une archive collective où chacun laisse une trace de notre époque sur une carte du monde, à lire dans 100 ans.",
+        "alt": "Carte du monde en pixel art, violette et bleue, où chaque trace sera à sa place."
+      }
     },
     "steps": {
       "eyebrow": "En trois gestes",
@@ -122,21 +158,21 @@
       "by": "par {author}"
     },
     "time": {
-      "title": "Une époque. 100 jours pour la raconter.",
-      "lead": "À la clôture, l'édition deviendra une archive historique consultable.",
+      "title": "100 jours pour entrer dans l'archive.",
+      "lead": "L'édition fondatrice dure 100 jours\u00a0: c'est le temps qu'il reste pour y participer. À la fin, les créations sont figées dans une archive collective que les générations futures pourront consulter.",
       "opening": "Ouverture",
       "span": "100 jours",
       "closing": "Clôture",
       "archive": "Archive",
       "onDate": "le {date}",
-      "toArchive": "pour archiver",
+      "toArchive": "pour participer",
       "explorable": "consultable",
       "prelaunchTitle": "Ouverture prochainement",
       "prelaunchNote": "La carte est déjà consultable. Les 100 jours n'ont pas démarré.",
-      "openLeft": "Il reste",
+      "openLeft": "Temps restant pour participer",
       "dayOne": "jour",
       "dayMany": "jours",
-      "openNote": "Clôture le <b>{date}</b>. Après cette date, plus rien ne peut être acheté ni modifié ; la carte reste consultable.",
+      "openNote": "Vous pouvez participer jusqu'au <b>{date}</b>. Ensuite, les créations sont figées dans une archive collective, consultable par les générations futures\u00a0; la carte reste ouverte à l'exploration.",
       "closedTitle": "Archive historique",
       "closedNote": "Édition close le <b>{date}</b>. Les créations sont gelées : on peut les explorer, plus les modifier.",
       "explore": "Explorer l'archive"
@@ -148,11 +184,11 @@
     }
   },
   "about": {
-    "title": "Dans 100 ans, que restera-t-il de nous\u00a0?",
-    "lead": "Pixel World est une archive collective : une carte du monde sur laquelle chacun peut laisser une trace de notre époque, pour ceux qui viendront après nous.",
+    "title": "Chaque époque laisse une trace. Voici la nôtre.",
+    "lead": "Pixel World est une archive collective mondiale de notre époque\u00a0: une carte du monde sur laquelle chacun peut laisser une création, un souvenir, une passion, pour celles et ceux qui viendront après nous.",
     "why": {
       "title": "Pourquoi",
-      "text": "Nos conversations s'effacent, nos photos dorment dans des téléphones, nos sites disparaissent. Peu de ce que nous vivons chaque jour est conservé sous une forme que quelqu'un pourrait lire dans cent ans. Ici, chaque trace est choisie : une image, un dessin, quelques mots, avec un titre, un auteur, une date et un lieu. Ensemble, elles forment un fragment lisible de notre époque."
+      "text": "L'humanité a toujours cherché à laisser une trace de son passage\u00a0: peintures sur les parois des cavernes, hiéroglyphes gravés dans la pierre, manuscrits enluminés, livres, photographies. Chaque époque a eu sa manière de transmettre son histoire. La nôtre est faite de conversations qui s'effacent, de photos qui dorment dans des téléphones et de sites qui disparaissent\u00a0: peu de ce que nous vivons chaque jour est gardé sous une forme que quelqu'un pourrait lire dans cent ans. Ici, chaque trace est choisie, avec un titre, un auteur, une date et un lieu, et toutes ensemble elles font un fragment lisible de notre époque. Aujourd'hui, c'est au tour de Pixel World."
     },
     "how": {
       "title": "Comment ça marche",
@@ -160,7 +196,7 @@
     },
     "time": {
       "title": "Un temps pour la raconter",
-      "text": "La première édition dure 100 jours. À sa clôture, plus rien ne peut être acheté ni modifié : l'édition devient une archive historique, conservée telle qu'elle était et ouverte à tous. L'ouverture et la clôture sont décidées par nous, annoncées, et appliquées par le serveur, jamais par un navigateur."
+      "text": "L'édition fondatrice dure 100 jours\u00a0: c'est le temps qu'il reste pour y participer. À sa clôture, plus rien ne peut être acheté ni modifié : l'édition devient une archive historique, conservée telle qu'elle était et ouverte à tous. L'ouverture et la clôture sont décidées par nous, annoncées, et appliquées par le serveur, jamais par un navigateur."
     },
     "buy": {
       "title": "Ce que vous payez",
