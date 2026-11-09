@@ -27,6 +27,7 @@ test.describe("the home page", () => {
     const hero = (await page.getByTestId("home-hero").innerText()).toLowerCase();
     expect(hero).not.toContain("per pixel");
     expect(hero).not.toContain("one-time payment");
+    expect(hero, "no long dash in the hero: commas").not.toContain("—");
     expect(await page.locator("main").innerText()).not.toContain("Every cyan frame");
     // no leftovers of the old story on the home page
     const text = (await page.locator("main").innerText()).toLowerCase();
