@@ -579,7 +579,7 @@ export class MapEngine {
     return { x: cam.x + (sx - this.w / 2) / scale, y: cam.y + (sy - this.h / 2) / scale };
   }
 
-  private setCursor(v?: string) { this.canvas.style.cursor = v ?? (this.mode === "buy" ? "crosshair" : this.hovered || this.hoveredProject ? "pointer" : "grab"); }
+  private setCursor(v?: string) { this.canvas.style.cursor = v ?? (this.mode === "buy" ? (this.hovered ? "pointer" : "crosshair") : this.hovered || this.hoveredProject ? "pointer" : "grab"); }
 
   private startInertia(t: number) {
     const recent = this.trail.filter((s) => t - s.t < 90);
@@ -595,7 +595,10 @@ export class MapEngine {
     const w = this.screenToWorld(sx, sy);
     if (type !== "mouse") return;
     if (this.mode === "buy" && this.brush && !this.selection) {
-      this.ghost = centeredRect(w.x, w.y, this.brush.w, this.brush.h);
+      // over a taken parcel the ghost rectangle goes away: a click there opens the parcel's card instead of placing anything
+      const taken = this.cam.scale >= JSON_ABOVE ? this.parcelAt(w.x, w.y) : null;
+      this.setHovered(taken);
+      this.ghost = taken ? null : centeredRect(w.x, w.y, this.brush.w, this.brush.h);
       this.setCursor();
       this.invalidate();
       return;
@@ -648,6 +651,11 @@ export class MapEngine {
     const w = this.screenToWorld(sx, sy);
     if (this.mode === "buy" && this.brush) {
       this.ghost = null;
+      // A parcel that is already taken is not a place for a rectangle: a click on it opens its card (what it is, who made it) and the
+      // rectangle stays where it is. A click on free land puts the rectangle there, and closes any card.
+      const taken = this.cam.scale >= JSON_ABOVE ? this.parcelAt(w.x, w.y) : null;
+      if (taken) { this.invalidate(); this.cb.onSelectParcel?.(taken, { x: sx, y: sy }); return; }
+      this.cb.onSelectParcel?.(null, { x: sx, y: sy });
       this.place(centeredRect(w.x, w.y, this.brush.w, this.brush.h));
       return;
     }

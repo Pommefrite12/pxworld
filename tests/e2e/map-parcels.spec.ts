@@ -200,3 +200,61 @@ test("zooming in or out, a big creation is never a flat colour while its picture
   expect(await wrong("right")).toBe(0);
   await Promise.all([api.dispose(), admin.dispose()]);
 });
+
+/**
+ * While buying, a click on a parcel that is already taken used to do nothing visible but put a blocked rectangle on it. It now opens the
+ * parcel's card (the buy panel keeps the right side, the card sits on the left), and the rectangle stays where it was.
+ */
+test("buying: a click on a taken parcel opens its card (the rectangle stays); a click on free land closes it and places the rectangle", async ({ page }) => {
+  const TAKEN = { x: 27_400, y: 11_000, w: 40, h: 30 };
+  const TITLE = "Card while buying";
+  const api = await pwRequest.newContext({ baseURL: BASE, extraHTTPHeaders: { "x-forwarded-for": "203.0.113.208" } });
+  const admin = await pwRequest.newContext({ baseURL: BASE, extraHTTPHeaders: { "x-forwarded-for": "203.0.113.209" } });
+  expect((await api.post("/api/dev/login", { data: { email: "cardowner@example.test" } })).ok()).toBeTruthy();
+  expect((await admin.post("/api/dev/login", { data: { email: "admin.card@example.test", role: "admin" } })).ok()).toBeTruthy();
+  const image = await sharp({ create: { width: TAKEN.w, height: TAKEN.h, channels: 3, background: "#2b35e0" } }).png().toBuffer();
+  const r = await api.post("/api/checkout", { multipart: { x: String(TAKEN.x), y: String(TAKEN.y), w: String(TAKEN.w), h: String(TAKEN.h), title: TITLE, image: { name: "c.png", mimeType: "image/png", buffer: image } } });
+  expect(r.status(), await r.text()).toBe(200);
+  const { orderId } = await r.json();
+  expect((await (await api.post("/api/dev/pay", { data: { orderId, outcome: "paid" } })).json()).outcome).toBe("processed");
+  const db = new pg.Client({ connectionString: (process.env.TEST_PG_ADMIN_URL ?? "postgres://pixel:pixel@127.0.0.1:54329/postgres").replace(/\/[^/]*$/, "/pixelworld_e2e") });
+  await db.connect();
+  const { rows } = await db.query(`select a.id from public.parcel_assets a join public.parcels p on p.id = a.parcel_id where p.x = $1 and p.y = $2 and a.status = 'pending'`, [TAKEN.x, TAKEN.y]);
+  await db.end();
+  expect((await admin.post("/api/admin/action", { data: { action: "review_asset", assetId: rows[0]!.id, decision: "approve" } })).status()).toBe(200);
+
+  type Eng = { geo: unknown; geoPending: boolean; selection: unknown; parcelAt(x: number, y: number): { code: string } | null; worldToScreen(x: number, y: number): { x: number; y: number } };
+  const selection = () => page.evaluate(() => (window as unknown as { __pxEngine: Eng }).__pxEngine.selection);
+  await page.setViewportSize({ width: 1360, height: 860 });
+  const centre = { x: TAKEN.x + TAKEN.w / 2, y: TAKEN.y + TAKEN.h / 2 };
+  await page.goto(`/map?x=${centre.x}&y=${centre.y}&z=8`); // 8 screen px per grid px: the parcel is 320 × 240 on screen
+  await page.waitForFunction(() => { const e = (window as unknown as { __pxEngine?: Eng }).__pxEngine; return Boolean(e && e.geo && !e.geoPending); }, undefined, { timeout: 60_000 });
+  await page.getByTestId("find-your-spot").click();
+  await expect(page.getByTestId("buy-panel")).toBeVisible();
+  // the tile of the parcel is there: the engine knows who owns the pixel under the pointer
+  await expect.poll(() => page.evaluate(([x, y]) => (window as unknown as { __pxEngine: Eng }).__pxEngine.parcelAt(x!, y!) !== null, [centre.x, centre.y]), { timeout: 30_000 }).toBe(true);
+
+  const box = (await page.getByRole("application").boundingBox())!;
+  const at = async (wx: number, wy: number) => { const p = await page.evaluate(([x, y]) => (window as unknown as { __pxEngine: Eng }).__pxEngine.worldToScreen(x!, y!), [wx, wy]); return { x: box.x + p.x, y: box.y + p.y }; };
+
+  // hovering it: the pointing hand (not the crosshair of the free land)
+  const c = await at(centre.x, centre.y);
+  await page.mouse.move(c.x, c.y);
+  await expect.poll(() => page.getByRole("application").evaluate((el) => (el as HTMLElement).style.cursor)).toBe("pointer");
+  // a click on it: its card opens (title, owner), the buy panel stays, and no rectangle was put on the taken parcel
+  await page.mouse.click(c.x, c.y);
+  const card = page.getByRole("article");
+  await expect(card.getByRole("heading", { name: TITLE })).toBeVisible();
+  await expect(page.getByTestId("buy-panel")).toBeVisible();
+  expect(await selection(), "no rectangle on a taken parcel").toBeNull();
+  // the card and the panel do not cover each other
+  const cb = (await card.boundingBox())!, pb = (await page.getByTestId("buy-panel").boundingBox())!;
+  expect(cb.x + cb.width, "the card is left of the buy panel").toBeLessThanOrEqual(pb.x);
+
+  // a click on free land (left of the parcel, out of the card's way): the card closes and the rectangle is placed there
+  const free = await at(TAKEN.x - 30, centre.y);
+  await page.mouse.click(Math.max(box.x + 420, free.x), free.y + 120);
+  await expect(card).toHaveCount(0);
+  await expect.poll(selection, { timeout: 10_000 }).not.toBeNull();
+  await Promise.all([api.dispose(), admin.dispose()]);
+});

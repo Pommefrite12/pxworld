@@ -115,6 +115,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
   const stopBuy = useCallback(() => {
     const e = engine();
     setMode("explore"); e?.setMode("explore"); e?.setBrush(null); e?.setPreviewImage(null);
+    setParcelCode(null); e?.setHighlight(null); // the card opened while buying closes with it
     applySelection(null); setServerFree(null); setSelState(null); setDialog(false);
   }, [applySelection]);
 
@@ -238,9 +239,19 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
           />
         )}
 
-        {parcelCode && mode === "explore" && (
-          <div className="pointer-events-none absolute inset-x-2 bottom-2 z-20 flex justify-center sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-4 sm:block">
-            <ParcelCard code={parcelCode} signedIn={Boolean(viewer)} onClose={() => { setParcelCode(null); engine()?.setHighlight(null); }} />
+        {/* the card of a taken parcel. While buying, the buy panel owns the right side (and the bottom of a phone): the card sits on the left (on a phone, at the top, over the panel: it is what was just tapped) */}
+        {parcelCode && (
+          <div
+            className={`pointer-events-none absolute flex justify-center ${mode === "buy"
+              ? "inset-x-2 top-2 z-40 md:inset-x-auto md:left-4 md:top-4 md:z-20 md:block"
+              : "inset-x-2 bottom-2 z-20 sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-4 sm:block"}`}
+            data-testid="parcel-card-slot"
+          >
+            <ParcelCard
+              code={parcelCode} signedIn={Boolean(viewer)}
+              className={mode === "buy" ? "!max-h-[55dvh] md:!max-h-[calc(100dvh-13rem)]" : ""}
+              onClose={() => { setParcelCode(null); engine()?.setHighlight(null); }}
+            />
           </div>
         )}
 
