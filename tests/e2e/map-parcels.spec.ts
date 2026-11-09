@@ -132,3 +132,71 @@ test("the latest-creations tile shows real published creations; one click flies 
   await expect.poll(() => page.evaluate(() => { const e = (window as unknown as { __pxEngine?: { cam: { x: number; y: number; scale: number } } }).__pxEngine; return e ? Math.round(e.cam.x) : 0; }), { timeout: 10_000 }).toBe(SPOT2.x + SPOT2.w / 2);
   await Promise.all([api.dispose(), admin.dispose()]);
 });
+
+/**
+ * Zooming through ×1 (the map switches from the server's raster pictures to drawing each parcel from its own picture): a big creation
+ * is never a flat block of its average colour while its picture is on the way, and zoomed out no place name is written over it.
+ * (In Germany, where the names of Brandenburg and Berlin used to be drawn across it. The pictures are slowed down on purpose.)
+ */
+test("zooming in or out, a big creation is never a flat colour while its picture loads, and no place name is written over it", async ({ page }) => {
+  const BIG = { x: 20_100, y: 11_000, w: 260, h: 160 };
+  const LEFT = [43, 53, 224], RIGHT = [224, 53, 43]; // two plain halves: their average (133, 53, 133) is a colour the picture does not contain
+  const api = await pwRequest.newContext({ baseURL: BASE, extraHTTPHeaders: { "x-forwarded-for": "203.0.113.206" } });
+  const admin = await pwRequest.newContext({ baseURL: BASE, extraHTTPHeaders: { "x-forwarded-for": "203.0.113.207" } });
+  expect((await api.post("/api/dev/login", { data: { email: "bigowner@example.test" } })).ok()).toBeTruthy();
+  expect((await admin.post("/api/dev/login", { data: { email: "admin.big@example.test", role: "admin" } })).ok()).toBeTruthy();
+  const raw = Buffer.alloc(BIG.w * BIG.h * 3);
+  for (let y = 0; y < BIG.h; y++) for (let x = 0; x < BIG.w; x++) raw.set(x < BIG.w / 2 ? LEFT : RIGHT, (y * BIG.w + x) * 3);
+  const image = await sharp(raw, { raw: { width: BIG.w, height: BIG.h, channels: 3 } }).png().toBuffer();
+  const r = await api.post("/api/checkout", { multipart: { x: String(BIG.x), y: String(BIG.y), w: String(BIG.w), h: String(BIG.h), title: "Big creation", image: { name: "c.png", mimeType: "image/png", buffer: image } } });
+  expect(r.status(), await r.text()).toBe(200);
+  const { orderId } = await r.json();
+  expect((await (await api.post("/api/dev/pay", { data: { orderId, outcome: "paid" } })).json()).outcome).toBe("processed");
+  const db = new pg.Client({ connectionString: (process.env.TEST_PG_ADMIN_URL ?? "postgres://pixel:pixel@127.0.0.1:54329/postgres").replace(/\/[^/]*$/, "/pixelworld_e2e") });
+  await db.connect();
+  const { rows } = await db.query(`select a.id from public.parcel_assets a join public.parcels p on p.id = a.parcel_id where p.x = $1 and p.y = $2 and a.status = 'pending'`, [BIG.x, BIG.y]);
+  await db.end();
+  expect((await admin.post("/api/admin/action", { data: { action: "review_asset", assetId: rows[0]!.id, decision: "approve" } })).status()).toBe(200);
+
+  const SLOW = 4_000;
+  await page.route("**/api/assets/**", async (route) => { await new Promise((res) => setTimeout(res, SLOW)); await route.continue(); }); // a slow network for the pictures only
+  await page.setViewportSize({ width: 1100, height: 760 });
+  type Eng = { geo: unknown; geoPending: boolean; dpr: number; worldToScreen(x: number, y: number): { x: number; y: number }; flyTo(cam: { x: number; y: number; scale: number }, ms: number): void };
+  const ready = () => page.waitForFunction(() => { const e = (window as unknown as { __pxEngine?: Eng }).__pxEngine; return Boolean(e && e.geo && !e.geoPending); }, undefined, { timeout: 60_000 });
+  /** Every sample point of the left (then right) half of the creation, as read on the canvas: how many are not exactly that half's colour. */
+  const wrong = (half: "left" | "right") => page.evaluate(([bx, by, bw, bh, rgb, side]) => {
+    const e = (window as unknown as { __pxEngine: Eng }).__pxEngine, c = document.querySelector("canvas")!, g = c.getContext("2d")!;
+    const [r0, g0, b0] = rgb as number[];
+    let bad = 0, n = 0;
+    for (let fy = 0.2; fy <= 0.8; fy += 0.1) for (let fx = side === "left" ? 0.1 : 0.6; fx <= (side === "left" ? 0.4 : 0.9); fx += 0.1) {
+      const a = e.worldToScreen((bx as number) + (bw as number) * fx, (by as number) + (bh as number) * fy);
+      const d = g.getImageData(Math.round(a.x * e.dpr), Math.round(a.y * e.dpr), 1, 1).data;
+      n++;
+      if (d[0] !== r0 || d[1] !== g0 || d[2] !== b0) bad++;
+    }
+    return bad / n;
+  }, [BIG.x, BIG.y, BIG.w, BIG.h, half === "left" ? LEFT : RIGHT, half] as const);
+  const centre = { x: BIG.x + BIG.w / 2, y: BIG.y + BIG.h / 2 };
+
+  // 1. zoomed out (×0.62: the rasters), the names of the region are drawn but not across the creation: its two halves are clean
+  await page.goto(`/map?x=${centre.x}&y=${centre.y}&z=0.62`);
+  await ready();
+  await expect.poll(() => wrong("left"), { timeout: 30_000, message: "the left half of the creation is on screen, with nothing written over it" }).toBe(0);
+  expect(await wrong("right"), "nor over the right half").toBe(0);
+
+  // 2. zoom in past ×1 at once: its own picture is 4 s away, the creation already shows its two halves (the raster in memory stands in), not their average
+  await page.evaluate(([x, y]) => (window as unknown as { __pxEngine: Eng }).__pxEngine.flyTo({ x: x!, y: y!, scale: 1.7 }, 0), [centre.x, centre.y]);
+  await expect.poll(() => wrong("left"), { timeout: SLOW - 1_500, message: "the creation is not a flat block while its picture loads" }).toBe(0);
+  expect(await wrong("right")).toBe(0);
+  // …and it still shows them once its own picture is there
+  await page.waitForTimeout(SLOW + 1_500);
+  expect(await wrong("left")).toBe(0);
+  expect(await wrong("right")).toBe(0);
+
+  // 3. straight at ×1.7 with nothing in memory (a shared link): the raster of that place is asked for, and shows the creation before its picture arrives
+  await page.goto(`/map?x=${centre.x}&y=${centre.y}&z=1.7`);
+  await ready();
+  await expect.poll(() => wrong("left"), { timeout: SLOW - 1_500, message: "a shared link at ×1.7: no flat block either" }).toBe(0);
+  expect(await wrong("right")).toBe(0);
+  await Promise.all([api.dispose(), admin.dispose()]);
+});

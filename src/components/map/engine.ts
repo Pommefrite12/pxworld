@@ -81,6 +81,8 @@ const MAX_IMAGES_IN_FLIGHT = 20; // over HTTP/2 (every host that matters) reques
 const MAX_SCALE = 48;
 const RASTER_BELOW = 1; // below this zoom the server-composited rasters are shown; above it, parcels are drawn individually
 const JSON_ABOVE = 0.1; // below this zoom parcels are sub-2px: no metadata needed
+const STAND_IN_MIN_PX = 12; // a creation at least this big on screen, whose picture is still on its way, shows the raster picture meanwhile (not a flat colour)
+const NAME_AVOIDS_PARCEL_PX = 24; // zoomed out, a place name is not written over a parcel at least this big on screen (a creation hides the names under it, as it does zoomed in)
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const rasterSpan = (z: number) => RASTER_PX * 2 ** z;
@@ -1141,7 +1143,9 @@ export class MapEngine {
     ctx.textBaseline = "middle";
     ctx.lineJoin = "round";
     ctx.lineWidth = 3;
-    const placed: { x0: number; y0: number; x1: number; y1: number }[] = [];
+    // Zoomed in, the names sit under the parcels. Zoomed out they are drawn on top (parcels are specks), but never over a parcel big enough
+    // to show its creation: those parcels are obstacles like any other name, so a big creation is not written over (nor its city dot).
+    const placed: { x0: number; y0: number; x1: number; y1: number }[] = s < RASTER_BELOW ? this.bigParcelBoxes(s) : [];
     const put = (text: string, x: number, y: number, a: number, ink: number) => {
       ctx.strokeStyle = `rgba(${COLORS.halo},${0.85 * a})`;
       ctx.strokeText(text, x, y);
@@ -1227,6 +1231,27 @@ export class MapEngine {
     ctx.restore();
   }
 
+  /** Screen rectangles of the parcels (of the metadata tiles already here) that are at least `NAME_AVOIDS_PARCEL_PX` wide and high. */
+  private bigParcelBoxes(s: number) {
+    const boxes: { x0: number; y0: number; x1: number; y1: number }[] = [];
+    if (s < JSON_ABOVE) return boxes;
+    const v = this.visibleWorld(), min = NAME_AVOIDS_PARCEL_PX / s;
+    const tx0 = Math.max(0, Math.floor(v.x0 / TILE)), tx1 = Math.min(W / TILE - 1, Math.floor(v.x1 / TILE));
+    const ty0 = Math.max(0, Math.floor(v.y0 / TILE)), ty1 = Math.min(H / TILE - 1, Math.floor(v.y1 / TILE));
+    const seen = new Set<string>();
+    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+      const tile = this.tiles.get(`${tx},${ty}`);
+      if (!tile || tile.state !== "ready") continue;
+      for (const p of tile.parcels) {
+        if (p.w < min || p.h < min || p.x > v.x1 || p.y > v.y1 || p.x + p.w < v.x0 || p.y + p.h < v.y0 || seen.has(p.code)) continue;
+        seen.add(p.code);
+        const a = this.worldToScreen(p.x, p.y);
+        boxes.push({ x0: a.x, y0: a.y, x1: a.x + p.w * s, y1: a.y + p.h * s });
+      }
+    }
+    return boxes;
+  }
+
   private seaPattern: CanvasPattern | null = null;
   private seaHatch() {
     if (this.seaPattern) return this.seaPattern;
@@ -1286,6 +1311,9 @@ export class MapEngine {
         ctx.restore();
       }
       const seen = new Set<string>();
+      // A creation whose own picture has not arrived yet (a big one is a big file) is not shown as a flat block of its average
+      // colour: the raster picture of that very place stands in for it until the real one is there.
+      const waiting: { x: number; y: number; w: number; h: number; wx0: number; wy0: number; wx1: number; wy1: number }[] = [];
       for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
         const tile = this.tiles.get(`${tx},${ty}`);
         if (!tile || tile.state !== "ready" || s < RASTER_BELOW) continue;
@@ -1317,8 +1345,22 @@ export class MapEngine {
           if (!drawn) {
             ctx.fillStyle = water ? (p.color ?? WATER_FILL) : p.assetId && p.color ? p.color : (this.hatchPattern() ?? COLORS.hatchFallback);
             ctx.fillRect(rx, ry, rw, rh);
+            if (p.assetId && sw >= STAND_IN_MIN_PX && sh >= STAND_IN_MIN_PX) waiting.push({ x: rx, y: ry, w: rw, h: rh, wx0: p.x, wy0: p.y, wx1: p.x + p.w, wy1: p.y + p.h });
           }
         }
+      }
+      if (waiting.length) {
+        // only the raster tiles under those parcels are asked for (they are the ones already shown just below ×1), and only their rectangles are painted
+        const box = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+        ctx.save();
+        ctx.beginPath();
+        for (const q of waiting) {
+          ctx.rect(q.x, q.y, q.w, q.h);
+          box.x0 = Math.min(box.x0, q.wx0); box.y0 = Math.min(box.y0, q.wy0); box.x1 = Math.max(box.x1, q.wx1); box.y1 = Math.max(box.y1, q.wy1);
+        }
+        ctx.clip();
+        this.drawRasters(s, box, true, layer);
+        ctx.restore();
       }
     }
   }
