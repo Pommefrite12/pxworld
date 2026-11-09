@@ -76,7 +76,7 @@ test.describe("the home page", () => {
     await expect(eras).toHaveCount(5);
     expect(await eras.evaluateAll((els) => els.map((e) => e.getAttribute("data-era")))).toEqual(["cave", "hieroglyphs", "manuscript", "photography", "pixelworld"]);
     await expect(page.getByTestId("home-eras")).toContainText("Humanity has always left a trace.");
-    const titles = ["Cave walls", "Stone and hieroglyphs", "Illuminated manuscripts", "Photography", "Pixel World"];
+    const titles = ["Prehistoric paintings", "Stone and hieroglyphs", "Illuminated manuscripts", "Photography", "Pixel World"];
     for (const [i, title] of titles.entries()) {
       const era = eras.nth(i);
       await era.scrollIntoViewIfNeeded();
@@ -108,7 +108,7 @@ test.describe("the home page", () => {
     await page.goto("/fr");
     await expect(page.getByTestId("home-eras")).toContainText("L'humanité a toujours laissé une trace.");
     const eras = page.getByTestId("era");
-    await expect(eras.nth(0).getByRole("heading", { level: 3 })).toHaveText("Les parois des cavernes");
+    await expect(eras.nth(0).getByRole("heading", { level: 3 })).toHaveText("Les peintures préhistoriques");
     await expect(eras.nth(1)).toContainText("Il y a plus de 5 000 ans");
     await expect(eras.nth(3).getByRole("heading", { level: 3 })).toHaveText("La photographie");
     await expect(eras.nth(4)).toContainText("Aujourd'hui");
