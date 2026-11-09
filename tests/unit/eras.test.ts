@@ -25,11 +25,13 @@ describe("the pictures of the eras", () => {
 
 describe("the words of the eras", () => {
   for (const [lang, m] of [["en", en], ["fr", fr]] as const) {
-    it(`${lang}: every era has a date, a title, a sentence and a description of its picture`, () => {
+    it(`${lang}: every era has a date, a title and a description of its picture; only the last one has a sentence`, () => {
       for (const k of ERAS) {
-        const e = m.home.eras[k];
-        for (const part of ["when", "title", "text", "alt"] as const) expect(e[part].length, `${lang} ${k}.${part}`).toBeGreaterThan(3);
-        expect(e.alt.length, `${lang} ${k}: a real description`).toBeGreaterThan(30);
+        const e = m.home.eras[k] as Record<string, string>;
+        for (const part of ["when", "title", "alt"] as const) expect(e[part]!.length, `${lang} ${k}.${part}`).toBeGreaterThan(3);
+        expect(e.alt!.length, `${lang} ${k}: a real description`).toBeGreaterThan(30);
+        if (k === "pixelworld") expect(e.text!.length, `${lang} ${k}.text`).toBeGreaterThan(30);
+        else expect(e.text, `${lang} ${k}: the picture speaks, no sentence under it`).toBeUndefined();
       }
     });
   }

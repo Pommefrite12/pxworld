@@ -104,25 +104,21 @@
       "cave": {
         "when": "Tens of thousands of years ago",
         "title": "Prehistoric paintings",
-        "text": "The first traces: animals, hunts, the hand of someone who wanted to say “we were here”.",
         "alt": "Pixel-art cave painting: hunters with spears and bows around a bison, deer and a boar, lit by a small fire."
       },
       "hieroglyphs": {
         "when": "More than 5,000 years ago",
         "title": "Stone and hieroglyphs",
-        "text": "Kings, gods and seasons are carved into stone, so that the wall can still speak thousands of years later.",
         "alt": "Pixel-art wall of Egyptian hieroglyphs: a seated pharaoh, an ankh, the Eye of Horus, a sun, pyramids, a cartouche and a cat."
       },
       "manuscript": {
         "when": "The Middle Ages",
         "title": "Illuminated manuscripts",
-        "text": "Patient hands copy, decorate and pass on knowledge, page after page.",
         "alt": "Pixel-art open illuminated manuscript with a decorated letter, a painting of a castle and a coat of arms, beside a candle and a quill."
       },
       "photography": {
         "when": "The 19th century",
         "title": "Photography",
-        "text": "For the first time, the look of a precise moment can be kept: a face, a street, a landscape.",
         "alt": "Pixel-art darkroom: a wooden field camera on a tripod, bottles of developer, a tray, and prints hanging to dry."
       },
       "pixelworld": {

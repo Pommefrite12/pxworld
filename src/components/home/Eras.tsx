@@ -7,7 +7,7 @@ const PICTURE: Record<(typeof ERAS)[number], string> = { cave: "cave", hieroglyp
 
 /**
  * "Every era leaves a trace. Here is ours.": how people have always handed their time down — the cave wall, the stone, the manuscript, the
- * photograph — and Pixel World as the next one. A gold thread with a square for each era, the picture on one side and the words on the other
+ * photograph — and Pixel World as the next one. Each of the first four is only a date and a title (the picture speaks); the last one has its sentence and the way in. A gold thread with a square for each era, the picture on one side and the words on the other
  * (the other way round on the next one); on a phone the thread runs down the left. Plain server markup: no script, the pictures load lazily.
  */
 export async function Eras() {
@@ -30,7 +30,7 @@ export async function Eras() {
                 <div className="era-text">
                   <p className="eyebrow">{t(`eras.${k}.when`)}</p>
                   <h3 className="mt-1 font-display text-[clamp(1.4rem,2.6vw,1.9rem)] font-extrabold leading-tight">{t(`eras.${k}.title`)}</h3>
-                  <p className="mt-2 max-w-[30em] text-[1.05rem] text-ink-soft">{t(`eras.${k}.text`)}</p>
+                  {last && <p className="mt-2 max-w-[30em] text-[1.05rem] text-ink-soft">{t("eras.pixelworld.text")}</p>}
                   {last && <Link href="/map?buy=1" className="btn btn-primary mt-5 min-h-[3.25rem] px-7 text-[1.05rem]" data-testid="eras-leave-trace">{t("hero.primary")}</Link>}
                 </div>
               </li>

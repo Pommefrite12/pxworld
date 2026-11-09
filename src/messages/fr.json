@@ -104,25 +104,21 @@
       "cave": {
         "when": "Il y a des dizaines de milliers d'années",
         "title": "Les peintures préhistoriques",
-        "text": "Les premières traces\u00a0: des animaux, des chasses, la main de quelqu'un qui voulait dire «\u00a0nous étions là\u00a0».",
         "alt": "Peinture rupestre en pixel art\u00a0: des chasseurs armés de lances et d'arcs autour d'un bison, de cerfs et d'un sanglier, éclairés par un petit feu."
       },
       "hieroglyphs": {
         "when": "Il y a plus de 5 000 ans",
         "title": "La pierre et les hiéroglyphes",
-        "text": "On grave les rois, les dieux, les saisons dans la pierre, pour que le mur parle encore des milliers d'années plus tard.",
         "alt": "Mur de hiéroglyphes en pixel art\u00a0: un pharaon assis, une croix ankh, l'œil d'Horus, un soleil, des pyramides, un cartouche et un chat."
       },
       "manuscript": {
         "when": "Le Moyen Âge",
         "title": "Les manuscrits enluminés",
-        "text": "Des mains patientes copient, décorent et transmettent les savoirs, page après page.",
         "alt": "Manuscrit enluminé ouvert en pixel art\u00a0: une lettrine ornée, la peinture d'un château et un blason, près d'une bougie et d'une plume."
       },
       "photography": {
         "when": "Le XIXe siècle",
         "title": "La photographie",
-        "text": "Pour la première fois, on garde l'apparence exacte d'un instant précis\u00a0: un visage, une rue, un paysage.",
         "alt": "Chambre noire en pixel art\u00a0: un appareil photo à soufflet en bois sur un trépied, des flacons de révélateur, un bac et des tirages qui sèchent."
       },
       "pixelworld": {

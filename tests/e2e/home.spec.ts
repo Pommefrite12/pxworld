@@ -85,6 +85,9 @@ test.describe("the home page", () => {
       await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), { message: `the picture of ${title}`, timeout: 20_000 }).toBe(true);
       expect((await img.getAttribute("alt"))!.length, `the picture of ${title} is described`).toBeGreaterThan(30);
     }
+    // the first four are a date and a title, nothing more; the last one has its sentence and the way in
+    for (const i of [0, 1, 2, 3]) await expect(eras.nth(i).locator(".era-text p:not(.eyebrow)"), `era ${i + 1}: no sentence under the title`).toHaveCount(0);
+    await expect(eras.nth(4).locator(".era-text p:not(.eyebrow)")).toHaveCount(1);
     await expect(eras.nth(0)).toContainText("Tens of thousands of years ago");
     await expect(eras.nth(1)).toContainText("More than 5,000 years ago");
     await expect(eras.nth(4)).toContainText("Today");
