@@ -87,7 +87,7 @@ test.describe("the home page", () => {
     }
     // the first four are a date and a title, nothing more; the last one has its sentence and the way in
     for (const i of [0, 1, 2, 3]) await expect(eras.nth(i).locator(".era-text p:not(.eyebrow)"), `era ${i + 1}: no sentence under the title`).toHaveCount(0);
-    await expect(eras.nth(4).locator(".era-text p:not(.eyebrow)")).toHaveCount(1);
+    await expect(eras.nth(4).locator(".era-text p:not(.eyebrow)")).toHaveText("Our collective archive where everyone leaves a trace of our time on a map of the world, to be read in 100 years.");
     await expect(eras.nth(0)).toContainText("Tens of thousands of years ago");
     await expect(eras.nth(1)).toContainText("More than 5,000 years ago");
     await expect(eras.nth(4)).toContainText("Today");
@@ -115,6 +115,7 @@ test.describe("the home page", () => {
     await expect(eras.nth(1)).toContainText("Il y a plus de 5 000 ans");
     await expect(eras.nth(3).getByRole("heading", { level: 3 })).toHaveText("La photographie");
     await expect(eras.nth(4)).toContainText("Aujourd'hui");
+    await expect(eras.nth(4).locator(".era-text p:not(.eyebrow)")).toHaveText("Notre archive collective où chacun laisse une trace de notre époque sur une carte du monde, à lire dans 100 ans.");
     await expect(page.getByTestId("eras-leave-trace")).toHaveText("Laisser ma trace");
   });
 
