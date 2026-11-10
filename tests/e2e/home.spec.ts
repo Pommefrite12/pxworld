@@ -107,6 +107,46 @@ test.describe("the home page", () => {
     expect(Math.abs(phone.pic - phone.text), "stacked: the picture and the words start at the same edge").toBeLessThan(2);
   });
 
+  test("the eras come in one after the other as the visitor scrolls down to them", async ({ page }) => {
+    await page.goto("/");
+    const eras = page.getByTestId("era");
+    const words = (i: number) => eras.nth(i).locator(".era-text").evaluate((el) => Number(getComputedStyle(el).opacity));
+    const pic = (i: number) => eras.nth(i).locator("figure").evaluate((el) => Number(getComputedStyle(el).opacity));
+    // the stations below the screen wait, invisible, until the visitor gets to them…
+    await expect(eras.nth(4)).toHaveAttribute("data-reveal", "wait");
+    await expect(eras.nth(0)).toHaveAttribute("data-reveal", "wait");
+    expect(await words(4)).toBe(0);
+    expect(await pic(4)).toBe(0);
+    // …then each one comes in (its picture and its words), and only that one
+    await eras.nth(4).scrollIntoViewIfNeeded();
+    await expect(eras.nth(4)).toHaveAttribute("data-reveal", "in");
+    await expect.poll(() => words(4)).toBeGreaterThan(0.99);
+    await expect.poll(() => pic(4)).toBeGreaterThan(0.99);
+    await expect(eras.nth(0), "an era the visitor has not reached is still waiting").toHaveAttribute("data-reveal", "wait");
+    await eras.nth(0).scrollIntoViewIfNeeded();
+    await expect(eras.nth(0)).toHaveAttribute("data-reveal", "in");
+    await expect.poll(() => words(0)).toBeGreaterThan(0.99);
+    // an era that has come in stays: scrolling away and back does not hide it again
+    await eras.nth(4).scrollIntoViewIfNeeded();
+    await expect(eras.nth(0)).toHaveAttribute("data-reveal", "in");
+  });
+
+  test("nothing is ever hidden without the script, nor with 'reduce motion'", async ({ page, browser }) => {
+    const shown = async (p: import("@playwright/test").Page) => p.getByTestId("era").evaluateAll((els) => els.map((e) => [e.getAttribute("data-reveal"), getComputedStyle(e.querySelector(".era-text")!).opacity, getComputedStyle(e.querySelector("figure")!).opacity]));
+    // reduced motion: the script does not arm anything
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await expect(page.getByTestId("home-title")).toBeVisible();
+    await page.waitForTimeout(800); // hydration has run
+    expect(await shown(page)).toEqual(Array(5).fill([null, "1", "1"]));
+    // no script at all: the page is plain markup
+    const ctx = await browser.newContext({ javaScriptEnabled: false, baseURL: `http://localhost:${process.env.E2E_PORT ?? "3100"}` });
+    const bare = await ctx.newPage();
+    await bare.goto("/");
+    expect(await shown(bare)).toEqual(Array(5).fill([null, "1", "1"]));
+    await ctx.close();
+  });
+
   test("in French: the eras, with their dates", async ({ page }) => {
     await page.goto("/fr");
     await expect(page.getByTestId("home-eras")).toContainText("L'humanité a toujours laissé une trace.");

@@ -270,6 +270,23 @@
   .era:nth-child(even) .era-text { text-align: right; }
   .era:nth-child(even) .era-text > p, .era:nth-child(even) .era-text > h3 { margin-left: auto; }
 }
+/* Each era appears as the visitor scrolls down to it. `EraItem` sets data-reveal="wait" on an era that is still below the screen, then "in" once it has come in;
+   an era without the attribute (no script, "reduce motion", already on screen) is simply shown. The picture slides in from its own side, the words follow. */
+.era[data-reveal="in"] .era-pic, .era[data-reveal="in"] .era-text, .era[data-reveal="in"]::before { transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1); } /* only the coming-in is animated: waiting is instant */
+.era[data-reveal="in"] .era-text { transition-delay: 0.18s; }
+.era[data-reveal="wait"] .era-pic, .era[data-reveal="wait"] .era-text, .era[data-reveal="wait"]::before { opacity: 0; }
+.era[data-reveal="wait"] .era-pic { transform: translateY(32px); }
+.era[data-reveal="wait"] .era-text { transform: translateY(20px); }
+.era[data-reveal="wait"]::before { transform: scale(0.3); }
+@media (min-width: 768px) {
+  .era[data-reveal="wait"] .era-pic { transform: translateX(-44px); }
+  .era[data-reveal="wait"]:nth-child(even) .era-pic { transform: translateX(44px); }
+  .era[data-reveal="wait"] .era-text { transform: translateX(30px); }
+  .era[data-reveal="wait"]:nth-child(even) .era-text { transform: translateX(-30px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .era[data-reveal] .era-pic, .era[data-reveal] .era-text, .era[data-reveal]::before { transition: none; opacity: 1; transform: none; }
+}
 
 @keyframes twinkle { 0%, 100% { opacity: 0.15; transform: scale(0.7); } 50% { opacity: 0.95; transform: scale(1.2); } }
 @media (prefers-reduced-motion: reduce) { .spark { animation: none; opacity: 0.5; } }
