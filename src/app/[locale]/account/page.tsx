@@ -29,6 +29,7 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
                 {n.kind === "project_rejected" && <>{tn("projectRejected", { title: n.title })}{n.reason ? ` ${tn("reason", { reason: n.reason })}` : ""} <Link href="/account/campaigns" className="font-semibold text-cobalt underline">{tn("see")}</Link></>}
                 {n.kind === "project_funded" && <>{tn("projectFunded", { title: n.title })} <Link href={n.parcelCode ? `/p/${n.parcelCode}` : "/account/campaigns"} className="font-semibold text-cobalt underline">{tn("seeParcel")}</Link></>}
                 {n.kind === "project_expired" && <>{tn("projectExpired", { title: n.title })} <Link href="/account/campaigns" className="font-semibold text-cobalt underline">{tn("see")}</Link></>}
+                {n.kind === "covered" && <>{tn("covered", { title: n.title })} <Link href={`/archive/${n.code}`} className="font-semibold text-cobalt underline">{tn("coveredSee")}</Link> · <Link href="/map?buy=1" className="font-semibold text-cobalt underline">{tn("coveredAgain")}</Link></>}
                 {n.kind === "comments" && <>{tn("comments", { n: n.count, title: n.title })} <Link href={`/p/${n.code}`} className="font-semibold text-cobalt underline">{tn("read")}</Link></>}
               </li>
             ))}

@@ -19,6 +19,7 @@ export default async function Settings({ params }: { params: Promise<{ locale: s
         sea_price_percent: Number(m.sea_price_percent ?? 0), min_land_percent: Number(m.min_land_percent ?? 50),
         water_price_percent: Number(m.water_price_percent ?? 100), min_water_percent: Number(m.min_water_percent ?? 50), land_cut_price_percent: Number(m.land_cut_price_percent ?? 0),
         campaign_min_area: Number(m.campaign_min_area ?? 10000), campaign_min_contribution_cents: Number(m.campaign_min_contribution_cents ?? 200),
+        free_parcels_open: m.free_parcels_open !== false, free_parcels_days: Number(m.free_parcels_days ?? 60), free_parcels_cap: Number(m.free_parcels_cap ?? 5000), free_max_area: Number(m.free_max_area ?? 24), free_lifetime_max: Number(m.free_lifetime_max ?? 3),
       }} />
     </div>
   );

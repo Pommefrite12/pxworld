@@ -38,7 +38,8 @@
     "filled": "Part de la carte archivée",
     "available": "Disponibles",
     "owners": "Contributeurs",
-    "creations": "Créations"
+    "creations": "Créations",
+    "free": "{n, plural, one {+ # empreinte gratuite} other {+ # empreintes gratuites}}"
   },
   "clock": {
     "label": "Compte à rebours de l'édition fondatrice",
@@ -254,13 +255,16 @@
       "shareText": "{title}, une empreinte laissée dans l'archive collective de notre époque.",
       "descriptionFallback": "Une empreinte laissée par {author} dans l'archive collective de notre époque.",
       "backToArchive": "L'archive",
-      "imageAlt": "La création « {title} »"
+      "imageAlt": "La création « {title} »",
+      "covered": "Cette empreinte gratuite a été recouverte le {date} par une parcelle payante. Elle reste ici, dans l'historique de l'archive, mais n'est plus sur la carte.",
+      "free": "Empreinte gratuite"
     },
     "editions": {
       "fondatrice": "Édition fondatrice"
     }
   },
   "parcel": {
+    "free": "Empreinte gratuite",
     "water": "Eau",
     "label": "Détails de la parcelle",
     "close": "Fermer",
@@ -366,6 +370,10 @@
     "errors": {
       "generic": "Une erreur est survenue. Veuillez réessayer.",
       "network": "Erreur réseau. Vérifiez votre connexion et réessayez.",
+      "px_free_closed": "Les empreintes gratuites ne sont plus ouvertes.",
+      "px_free_full": "Toutes les empreintes gratuites ont été posées.",
+      "px_free_quota": "Vous avez déjà utilisé votre empreinte gratuite (une à la fois, trois au total).",
+      "email_not_verified": "Confirmez d'abord votre adresse e-mail (le lien reçu à l'inscription) pour poser une empreinte gratuite.",
       "px_parcel_unavailable": "Désolé, quelqu'un vient de prendre cet emplacement. Choisissez-en un autre.",
       "px_invalid_rect": "La taille ou la position de cette parcelle n'est pas valide.",
       "px_bad_dimensions": "Cette image ne correspond pas à la taille de votre parcelle. Rechargez la page et réessayez.",
@@ -411,6 +419,28 @@
       "landHint": "Les continents et les îles. Votre création s'affiche dans ses propres couleurs."
     },
     "seaDiscount": "{sea} px de votre parcelle sont en mer, facturés {pct} % d'un pixel de terre ; {land} px sont de la terre.",
+    "free": {
+      "title": "Empreinte gratuite",
+      "hint": "De 1 à {max} pixels, sur la terre, une seule à la fois, jusqu'au {date}. Si quelqu'un achète une parcelle qui la touche, elle est recouverte.",
+      "price": "Gratuit",
+      "priceLabel": "Prix",
+      "subtitle": "Empreinte gratuite · peut être recouverte par une parcelle payante",
+      "statusOk": "Place libre\u00a0: votre empreinte gratuite peut être posée ici.",
+      "statusCovers": "{n, plural, one {Cette zone recouvrira # empreinte gratuite.} other {Cette zone recouvrira # empreintes gratuites.}}",
+      "continue": "Créer mon empreinte gratuite",
+      "designTitle": "Créez votre empreinte gratuite",
+      "reviewTitle": "Vérifiez votre empreinte gratuite",
+      "designNote": "Une empreinte gratuite fait de 1 à 24 pixels. Elle est précaire\u00a0: une parcelle payante qui la touche la recouvre, et vous le verrez sur votre compte.",
+      "coverNote": "Gratuite, mais précaire\u00a0: une parcelle payante qui touche votre empreinte la recouvre. Elle reste alors dans l'historique de l'archive.",
+      "accept": "J'accepte les <terms>conditions</terms> et les <rules>règles de la communauté</rules>, je comprends que mon empreinte est publiée après modération et qu'une parcelle payante peut la recouvrir.",
+      "place": "Poser mon empreinte",
+      "placing": "Pose en cours…",
+      "nothingPaid": "Rien n'est payé\u00a0: cette empreinte est offerte.",
+      "why": {
+        "standing": "Vous avez déjà une empreinte gratuite sur la carte. Elle doit être recouverte avant que vous puissiez en poser une autre.",
+        "lifetime": "Vous avez posé vos {max} empreintes gratuites."
+      }
+    },
     "collective": {
       "button": "Financer à plusieurs",
       "hint": "Une grande parcelle seul, c'est trop ? Lancez un projet : d'autres peuvent y participer.",
@@ -586,7 +616,9 @@
       "view": "Page publique",
       "onMap": "Voir sur la carte",
       "edit": "Modifier la création",
-      "drawTogether": "Dessiner ensemble"
+      "drawTogether": "Dessiner ensemble",
+      "free": "Empreinte gratuite",
+      "covered": "Recouverte le {date}"
     },
     "pixels": "Pixels archivés",
     "myParcels": "Mes parcelles",
@@ -687,7 +719,10 @@
       "comments": "{n, plural, one {# nouveau commentaire} other {# nouveaux commentaires}} sur « {title} » cette semaine.",
       "see": "Voir mes projets",
       "seeParcel": "Voir la parcelle",
-      "read": "Lire"
+      "read": "Lire",
+      "covered": "Votre empreinte gratuite \u00ab\u00a0{title}\u00a0\u00bb a été recouverte par une parcelle payante. Elle reste dans l'historique de l'archive, et vous pouvez en poser une autre.",
+      "coveredSee": "La voir",
+      "coveredAgain": "En poser une autre"
     }
   },
   "draw": {
@@ -879,6 +914,13 @@
             "Un projet collectif permet à plusieurs personnes de payer ensemble une même parcelle. Son créateur dessine la parcelle et l'envoie à la modération ; une fois acceptée, la zone est réservée pendant la durée choisie par le créateur (7, 14 ou 30 jours) et toute personne ayant un compte peut participer, à partir du montant minimum indiqué sur la page du projet.",
             "Une participation est payée par le même prestataire de paiement qu'un achat, dans la devise du projet. Les participations à un projet ne peuvent jamais dépasser le prix de sa parcelle. Si l'objectif est atteint avant la fin, la parcelle devient celle du créateur, comme s'il l'avait achetée, et les participations sont conservées comme paiement de cette parcelle. Si l'objectif n'est pas atteint à la fin, ou si le créateur retire son projet, chaque participation est remboursée automatiquement sur le moyen de paiement utilisé. Les participations ne sont pas affichées publiquement : seuls le total et le nombre de participants le sont.",
             "Un participant ne reçoit aucune propriété, part ni droit sur la parcelle. Le créateur seul détient le droit d'usage numérique de la parcelle et est seul responsable de son contenu, qui est relu par les modérateurs comme toute autre création. [À faire relire par un juriste : la détention des fonds entre une participation et la fin du projet, le droit de rétractation, qui émet la facture, la TVA sur chaque participation, et les informations à donner avant le paiement.]"
+          ]
+        },
+        {
+          "h": "Empreintes gratuites",
+          "p": [
+            "Pendant les premiers jours d'une édition, chaque compte dont l'adresse e-mail est confirmée peut poser gratuitement une empreinte de 1 à 24 pixels sur la terre (une à la fois, trois au total). Elle est publiée après modération, comme toute création.",
+            "Une empreinte gratuite est précaire\u00a0: une parcelle payante dont le rectangle la touche la recouvre entièrement, sans compensation. Une empreinte recouverte n'est plus sur la carte\u00a0; elle reste consultable, avec la mention de son recouvrement, dans l'historique de l'archive. Les empreintes gratuites ne sont pas comptées dans les pixels vendus. [À faire relire par un juriste\u00a0: la nature de ce droit précaire et révocable, l'information donnée avant la pose, la durée de la période gratuite et son plafond, et l'absence de toute contrepartie.]"
           ]
         },
         {
@@ -1240,6 +1282,16 @@
       "ttlHint": "Au moins 32 : une session Stripe Checkout ne peut pas expirer avant 30 minutes.",
       "maxHolds": "Réservations impayées par utilisateur",
       "salesOpen": "Les ventes sont ouvertes",
+      "freeTitle": "Empreintes gratuites (1 à 24 pixels, recouvertes par toute parcelle payante qui les touche)",
+      "freeOpen": "La période gratuite est ouverte",
+      "freeDays": "Période gratuite\u00a0: jours depuis l'ouverture de l'édition",
+      "freeDaysHint": "Passé ce délai, plus rien ne peut être posé gratuitement (ce qui est déjà là reste).",
+      "freeCap": "Empreintes gratuites\u00a0: le maximum qui puisse jamais être posé",
+      "freeCapHint": "La modération et le stockage ne sont pas gratuits\u00a0: cela les plafonne.",
+      "freeMaxArea": "Plus grande empreinte gratuite, en pixels",
+      "freeMaxAreaHint": "24 au plus, et toujours moins que la plus petite parcelle payante.",
+      "freeLifetime": "Poses par compte sur toute l'édition",
+      "freeLifetimeHint": "Une empreinte gratuite à la fois\u00a0; voici le nombre de fois au total (10 au plus).",
       "save": "Enregistrer",
       "saved": "Paramètres enregistrés et journalisés.",
       "adminOnly": "Seuls les administrateurs peuvent modifier les paramètres.",

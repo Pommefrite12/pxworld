@@ -4,6 +4,10 @@ Written at the end of a working day, to start the next one from. Items marked **
 project owner; **(approval)** ones must never be done without an explicit yes (real money, real users, legal texts). The longer
 launch checklist is `LAUNCH_CHECKLIST.md`; this list is what to do *first*.
 
+## 000000. Free imprints — built (migration 23) **(owner: decide the start; lawyer; apply the migration)**
+
+At the start of the edition anybody with a confirmed e-mail can place, for nothing, one imprint of 1 to 24 pixels on land (one at a time, three in all, for 60 days, within a cap of 5 000); a paid parcel that touches it covers it and it stays in the archive's history (`ARCHITECTURE.md` §3j). To do on your side: apply migration 23, read the five settings in `/admin/settings`, tell the lawyer (the terms have a draft section with gaps), and decide whether to open the free period at once. Not built yet: the covered imprints in the closing export; "place again with the same, already validated creation" (today a new placing goes through moderation again); water.
+
 ## 00. The edition (the 365 days) — done in the database, to open by hand **(owner)** The countdown is shown on the home page (days left) and **on the map** (days, hours, minutes, seconds; "Opening soon" before the opening). **Careful on a test site with demonstration data**: opening the edition is not reversible there (`edition_reset` refuses as soon as a parcel is active or a payment was made, simulated ones included): `demo:clear` first if you want to go back.
 
 Migration 19 puts the 365 days in the database (`docs/ARCHITECTURE.md` §3f). A site is in **pre-launch** (nothing for sale, no date) until an administrator opens the edition in `/admin/edition` (type its name, click). On the test site, after applying the migration: open it, then try "close the sales now" to see the closing. `NEXT_PUBLIC_WORLD_END_AT` no longer sells or refuses anything (it only drives the old countdown's look, which the redesign removes: `PLAN_REFONTE_ARCHIVE.md`, steps D5–D6).

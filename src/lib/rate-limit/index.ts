@@ -40,6 +40,8 @@ export const LIMITS = {
   contribute: { name: "contribute", windowSeconds: 3600, max: 60 },
   /** Sending a project to moderation (a campaign): failed attempts count too; the abuse is bounded by "one active project per creator". */
   campaign: { name: "campaign", windowSeconds: 3600, max: 20 },
+  /** Placing a free parcel: failed attempts count too; the abuse is bounded by the quota (one standing, three in all) and the cap. */
+  freeParcel: { name: "free-parcel", windowSeconds: 3600, max: 12 },
   upload: { name: "upload", windowSeconds: 3600, max: 30 },
   report: { name: "report", windowSeconds: 3600, max: 10 },
   like: { name: "like", windowSeconds: 600, max: 60 },

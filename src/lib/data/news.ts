@@ -11,10 +11,12 @@ export type NewsItem =
   | { kind: "project_rejected"; title: string; at: Date; reason: string | null }
   | { kind: "project_funded"; title: string; at: Date; parcelCode: string | null }
   | { kind: "project_expired"; title: string; at: Date }
-  | { kind: "comments"; title: string; at: Date; code: string; count: number };
+  | { kind: "comments"; title: string; at: Date; code: string; count: number }
+  | { kind: "covered"; title: string; at: Date; code: string };
 
 export const NEWS_PROJECT_DAYS = 14;
 export const NEWS_COMMENT_DAYS = 7;
+export const NEWS_COVERED_DAYS = 14;
 
 export async function accountNews(userId: string): Promise<NewsItem[]> {
   const items: NewsItem[] = [];
@@ -45,6 +47,17 @@ export async function accountNews(userId: string): Promise<NewsItem[]> {
     for (const r of rows) items.push({ kind: "comments", title: r.title ?? r.code, at: r.last, code: r.code, count: r.n });
   } catch (e) {
     console.error("account news (comments) failed", (e as Error).message);
+  }
+  try {
+    // a free imprint that a paid parcel has covered: the owner learns it here, and can place another one
+    const rows = await query<{ code: string; title: string | null; covered_at: Date }>(
+      `select p.code, coalesce((select title from public.parcel_assets where id = p.published_asset_id), (select title from public.parcel_assets where parcel_id = p.id order by version desc limit 1)) as title, p.covered_at
+         from public.parcels p
+        where p.owner_id = $1 and p.tier = 'free' and p.status = 'covered' and p.covered_at > now() - make_interval(days => ${NEWS_COVERED_DAYS})
+        order by p.covered_at desc limit 5`, [userId]);
+    for (const r of rows) items.push({ kind: "covered", title: r.title ?? r.code, at: r.covered_at, code: r.code });
+  } catch (e) {
+    console.error("account news (covered) failed", (e as Error).message);
   }
   return items.sort((a, b) => b.at.getTime() - a.at.getTime());
 }

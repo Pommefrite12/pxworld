@@ -35,6 +35,7 @@ export const MapView = forwardRef<MapViewHandle, Props>(function MapView({ label
       onPlace: (r) => cbRef.current.onPlace?.(r),
       onSelectionState: (s) => cbRef.current.onSelectionState?.(s),
       onSelectionLand: (l) => cbRef.current.onSelectionLand?.(l),
+      onSelectionCovers: (n) => cbRef.current.onSelectionCovers?.(n),
     });
     engineRef.current = engine;
     // debugging / e2e hook: in development, and in production only when the address says `?perf` (to measure the real build)

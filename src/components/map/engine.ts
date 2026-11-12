@@ -25,7 +25,7 @@ import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
  */
 
 export interface Camera { x: number; y: number; scale: number }
-export interface MapParcel { code: string; x: number; y: number; w: number; h: number; assetId: string | null; color: string | null; /** A water parcel: drawn under the land, in three blues. */ water: boolean }
+export interface MapParcel { code: string; x: number; y: number; w: number; h: number; assetId: string | null; color: string | null; /** A water parcel: drawn under the land, in three blues. */ water: boolean; /** A free imprint (1 to 24 pixels): a paid parcel that touches it covers it, so a purchase is never blocked by it. */ free: boolean }
 /** `water`: a land parcel that is mostly sea; `land`: a water parcel that is mostly land (the other kind's pixels are cut away, but never most of the parcel). */
 export type SelectionState = "ok" | "blocked" | "checking" | "out" | "water" | "land";
 export type Mode = "explore" | "buy";
@@ -40,9 +40,11 @@ export interface EngineCallbacks {
   onSelectionState?: (s: SelectionState) => void;
   /** Land pixels inside the selection (null while unknown or when nothing is selected). */
   onSelectionLand?: (landPixels: number | null) => void;
+  /** How many free imprints the selection would cover (a paid selection over free parcels is allowed: the purchase covers them). */
+  onSelectionCovers?: (n: number) => void;
 }
 
-type TileParcel = [string, number, number, number, number, string | null, string | null, 0 | 1];
+type TileParcel = [string, number, number, number, number, string | null, string | null, 0 | 1, (0 | 1)?];
 interface Tile { state: "loading" | "ready" | "error"; parcels: MapParcel[] }
 interface Img { el: HTMLImageElement; state: "loading" | "ready" | "error"; used: number }
 
@@ -155,6 +157,9 @@ export class MapEngine {
   /** What the buyer is choosing: land or water. A selection only collides with parcels of its own kind. */
   private buyKind: "land" | "water" = "land";
   private selectionLand: number | null = null;
+  private selectionCovers = 0;
+  /** Placing a FREE parcel: land only, and every parcel (free or paid) blocks it. Otherwise free parcels do not block the selection. */
+  private freeMode = false;
   private highlight: string | null = null;
   private hovered: MapParcel | null = null;
   /** The group projects that are collecting ("Fund it together"): a hatched zone on the map, a pin when it is a speck; a click opens its card. */
@@ -380,7 +385,7 @@ export class MapEngine {
         .then((r) => (r.ok ? (r.json() as Promise<TileParcel[]>) : Promise.reject(new Error(String(r.status)))))
         .then((rows) => {
           if (version !== this.version) return;
-          this.tiles.set(key, { state: "ready", parcels: rows.map(([code, x, y, w, h, assetId, color, water]) => ({ code, x, y, w, h, assetId, color, water: water === 1 })) });
+          this.tiles.set(key, { state: "ready", parcels: rows.map(([code, x, y, w, h, assetId, color, water, free]) => ({ code, x, y, w, h, assetId, color, water: water === 1, free: free === 1 })) });
           this.updateSelectionState();
           this.invalidateSoon();
         })
@@ -425,6 +430,13 @@ export class MapEngine {
   setLandRule(minLandPercent: number) { this.minLandPercent = minLandPercent; this.updateSelectionState(); this.invalidate(); }
   /** At least this share of a water parcel's pixels must be water (the land cut away is free or discounted): the admin's setting. */
   setWaterRule(minWaterPercent: number) { this.minWaterPercent = minWaterPercent; this.updateSelectionState(); this.invalidate(); }
+  /** Placing a free parcel (land only, nothing may be under it) or not (free parcels under a purchase are covered, not blocking). */
+  setFreeMode(on: boolean) {
+    if (on === this.freeMode) return;
+    this.freeMode = on;
+    this.updateSelectionState();
+    this.invalidate();
+  }
   /** Land or water: what the selection is for. While buying water the colours of the map are swapped (the water stays hatched, in both modes). */
   setBuyKind(kind: "land" | "water") {
     if (kind === this.buyKind) return;
@@ -441,20 +453,25 @@ export class MapEngine {
   private updateSelectionState() {
     let s: SelectionState | null = null;
     let landPx: number | null = null;
+    let covers = 0;
     const r = this.selection;
     if (r) {
       if (r.x < 0 || r.y < 0 || r.x + r.w > W || r.y + r.h > H) s = "out";
       else {
         const land = this.geo?.landIn(r);
         if (land && !land.pending) landPx = land.land;
-        const hits = this.parcelsIn(r, this.buyKind === "water");
-        s = hits === null ? "checking" : hits.length ? "blocked" : "ok";
+        const hits = this.parcelsIn(r, this.freeMode ? false : this.buyKind === "water");
+        // a free parcel never blocks a purchase (the paid parcel covers it); while placing a free one, everything blocks
+        const blocking = hits === null ? null : this.freeMode ? hits : hits.filter((p) => !p.free);
+        covers = hits === null || this.freeMode ? 0 : hits.length - (blocking?.length ?? 0);
+        s = blocking === null ? "checking" : blocking.length ? "blocked" : "ok";
         // coastal parcels are fine (what is cut away is discounted) but never mostly of the other kind
         if (s === "ok") s = landPx === null ? "checking" : this.enoughOfKind(landPx, r.w * r.h) ? "ok" : this.buyKind === "water" ? "land" : "water";
       }
     }
     if (s !== this.selectionState) { this.selectionState = s; if (s) this.cb.onSelectionState?.(s); }
     if (landPx !== this.selectionLand) { this.selectionLand = landPx; this.cb.onSelectionLand?.(landPx); }
+    if (covers !== this.selectionCovers) { this.selectionCovers = covers; this.cb.onSelectionCovers?.(covers); }
   }
 
   private place(r: Rect) {

@@ -38,7 +38,8 @@
     "filled": "Share of the map archived",
     "available": "Available",
     "owners": "Contributors",
-    "creations": "Creations"
+    "creations": "Creations",
+    "free": "{n, plural, one {+ # free trace} other {+ # free traces}}"
   },
   "clock": {
     "label": "Countdown of the founding edition",
@@ -254,13 +255,16 @@
       "shareText": "{title}, a trace left in the collective archive of our time.",
       "descriptionFallback": "A trace left by {author} in the collective archive of our time.",
       "backToArchive": "The archive",
-      "imageAlt": "The creation “{title}”"
+      "imageAlt": "The creation “{title}”",
+      "covered": "This free trace was covered on {date} by a paid parcel. It stays here, in the history of the archive, but is no longer on the map.",
+      "free": "Free trace"
     },
     "editions": {
       "fondatrice": "Founding edition"
     }
   },
   "parcel": {
+    "free": "Free trace",
     "water": "Water",
     "label": "Parcel details",
     "close": "Close",
@@ -366,6 +370,10 @@
     "errors": {
       "generic": "Something went wrong. Please try again.",
       "network": "Network error. Please check your connection and try again.",
+      "px_free_closed": "Free traces are no longer open.",
+      "px_free_full": "All the free traces have been placed.",
+      "px_free_quota": "You have already used your free trace (one at a time, three in all).",
+      "email_not_verified": "Confirm your e-mail address first (the link sent when you signed up) to place a free trace.",
       "px_parcel_unavailable": "Sorry, someone just took this spot. Pick another one.",
       "px_invalid_rect": "This parcel size or position is not valid.",
       "px_bad_dimensions": "This image does not match the size of your parcel. Reload the page and try again.",
@@ -411,6 +419,28 @@
       "landHint": "Continents and islands. Your creation is shown in its own colours."
     },
     "seaDiscount": "{sea} px of your parcel are sea, charged {pct}% of a land pixel; {land} px are land.",
+    "free": {
+      "title": "Free trace",
+      "hint": "From 1 to {max} pixels, on land, one at a time, until {date}. If somebody buys a parcel that touches it, it is covered.",
+      "price": "Free",
+      "priceLabel": "Price",
+      "subtitle": "Free trace · can be covered by a paid parcel",
+      "statusOk": "Free spot: your free trace can be placed here.",
+      "statusCovers": "This area will cover {n, plural, one {# free trace} other {# free traces}}.",
+      "continue": "Create my free trace",
+      "designTitle": "Create your free trace",
+      "reviewTitle": "Check your free trace",
+      "designNote": "A free trace is 1 to 24 pixels. It is precarious: a paid parcel that touches it covers it, and you will see it on your account.",
+      "coverNote": "Free, but precarious: a paid parcel that touches your trace covers it. It then stays in the history of the archive.",
+      "accept": "I accept the <terms>terms</terms> and the <rules>community rules</rules>, and I understand that my trace is published after moderation and that a paid parcel can cover it.",
+      "place": "Place my trace",
+      "placing": "Placing…",
+      "nothingPaid": "Nothing is paid: this trace is a gift.",
+      "why": {
+        "standing": "You already have a free trace on the map. It has to be covered before you can place another one.",
+        "lifetime": "You have placed your {max} free traces."
+      }
+    },
     "collective": {
       "button": "Fund it together",
       "hint": "Can't afford a big parcel alone? Start a project: others can chip in.",
@@ -586,7 +616,9 @@
       "view": "Public page",
       "onMap": "Show on map",
       "edit": "Edit creation",
-      "drawTogether": "Draw together"
+      "drawTogether": "Draw together",
+      "free": "Free trace",
+      "covered": "Covered on {date}"
     },
     "pixels": "Pixels archived",
     "myParcels": "My parcels",
@@ -687,7 +719,10 @@
       "comments": "{n, plural, one {# new comment} other {# new comments}} on “{title}” this week.",
       "see": "See my projects",
       "seeParcel": "See the parcel",
-      "read": "Read"
+      "read": "Read",
+      "covered": "Your free trace \u201c{title}\u201d was covered by a paid parcel. It stays in the history of the archive, and you can place another one.",
+      "coveredSee": "See it",
+      "coveredAgain": "Place another"
     }
   },
   "draw": {
@@ -879,6 +914,13 @@
             "A group project lets several people pay together for one parcel. Its creator designs the parcel and sends it to moderation; once it is accepted, the zone is reserved for the duration the creator chose (7, 14 or 30 days) and anybody with an account may contribute, from the minimum amount shown on the project page.",
             "A contribution is paid through the same payment provider as a purchase, in the currency of the project. The contributions to a project can never exceed the price of its parcel. If the goal is reached before the end, the parcel becomes the creator's, as if they had bought it, and the contributions are kept as the payment for it. If the goal is not reached by the end, or if the creator withdraws the project, every contribution is refunded automatically to the payment method that was used. Contributions are not displayed publicly: only the total and the number of contributors are shown.",
             "A contributor receives no ownership, share or right over the parcel. The creator alone holds the digital right to use the parcel and is alone responsible for its content, which is reviewed by moderators like any other creation. [To be reviewed by a lawyer: the holding of funds between a contribution and the end of the project, the right of withdrawal, who issues the invoice, the VAT on each contribution, and the information to give before payment.]"
+          ]
+        },
+        {
+          "h": "Free traces",
+          "p": [
+            "During the first days of an edition, every account whose e-mail address is confirmed can place, for nothing, one trace of 1 to 24 pixels on land (one at a time, three in all). It is published after moderation, like any creation.",
+            "A free trace is precarious: a paid parcel whose rectangle touches it covers it entirely, without compensation. A covered trace is no longer on the map; it stays readable, with the mention that it was covered, in the history of the archive. Free traces are not counted in the pixels sold. [To be reviewed by a lawyer: the nature of this precarious and revocable right, the information given before it is placed, the length of the free period and its cap, and the absence of any consideration.]"
           ]
         },
         {
@@ -1240,6 +1282,16 @@
       "ttlHint": "At least 32: Stripe Checkout sessions cannot expire sooner than 30 minutes.",
       "maxHolds": "Unpaid reservations per user",
       "salesOpen": "Sales are open",
+      "freeTitle": "Free traces (1 to 24 pixels, covered by any paid parcel that touches them)",
+      "freeOpen": "The free period is open",
+      "freeDays": "Free period: days from the opening of the edition",
+      "freeDaysHint": "After this many days nothing new can be placed for free (what is already there stays).",
+      "freeCap": "Free traces: the most that can ever be placed",
+      "freeCapHint": "Moderation and storage are not free: this caps them.",
+      "freeMaxArea": "Biggest free trace, in pixels",
+      "freeMaxAreaHint": "At most 24, and always below the smallest paid parcel.",
+      "freeLifetime": "Placements per account over the whole edition",
+      "freeLifetimeHint": "One free trace at a time; this is how many times in all (at most 10).",
       "save": "Save",
       "saved": "Settings saved and journalised.",
       "adminOnly": "Only administrators can change settings.",

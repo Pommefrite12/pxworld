@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import { DEFAULT_PRICING } from "@/lib/grid/pricing";
 import { notFound } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { MapShell } from "@/components/map/MapShell";
-import { getHeaderViewer } from "@/lib/auth/session";
+import { getHeaderViewer, getSessionUser } from "@/lib/auth/session";
+import { getFreeStatus } from "@/lib/data/free";
+import { getEdition } from "@/lib/data/edition";
+import { toPublicEdition } from "@/lib/edition";
 import { getPricing, getPublicStats } from "@/lib/data/map";
 import { headers } from "next/headers";
 import { requestCurrency } from "@/lib/currency-server";
@@ -41,8 +45,9 @@ export default async function ParcelPage({ params }: { params: Promise<{ locale:
   setRequestLocale(locale);
   const p = await getPublicParcel(code);
   if (!p) notFound();
+  if (p.status === "covered") redirect({ href: `/archive/${p.code}`, locale }); // covered: not on the map any more, its place is the archive
   const currency = requestCurrency(await headers()); // euros in the euro area, dollars elsewhere
-  const [stats, pricing, viewer, t] = await Promise.all([getPublicStats().catch(() => null), getPricing(currency).catch(() => null), getHeaderViewer(), getTranslations("parcel")]);
+  const [stats, pricing, viewer, t, edition, free] = await Promise.all([getPublicStats().catch(() => null), getPricing(currency).catch(() => null), getHeaderViewer(), getTranslations("parcel"), getEdition().catch(() => null), getSessionUser().then((u) => getFreeStatus(u?.id ?? null), () => getFreeStatus(null))]);
   const scale = Math.max(0.5, Math.min(24, 360 / Math.max(p.w, p.h)));
   return (
     <main id="main">
@@ -55,6 +60,8 @@ export default async function ParcelPage({ params }: { params: Promise<{ locale:
       <MapShell
         stats={stats}
         viewer={viewer}
+        edition={edition ? toPublicEdition(edition) : null}
+        free={free}
         pricing={pricing ?? DEFAULT_PRICING}
         initial={{ camera: { x: p.x + p.w / 2 - 190 / scale, y: p.y + p.h / 2, scale }, parcelCode: p.code, buy: null }}
       />

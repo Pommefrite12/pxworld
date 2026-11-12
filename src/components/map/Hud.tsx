@@ -22,6 +22,7 @@ export function StatsCard({ stats, compact }: { stats: PublicStats; compact: boo
         <span className="pixel-display text-[2.7rem] text-signal" data-testid="sold-pixels">{f.number(stats.soldPixels)}</span>
         <span className="pixel-num text-sm text-ink-faint">/ {f.number(stats.totalPixels)}</span>
       </p>
+      {stats.freeParcels > 0 && <p className="mt-1 text-xs text-ink-soft" data-testid="free-count">{t("free", { n: stats.freeParcels })}</p>}
       <div className="mt-2.5 flex items-center gap-2.5">
         <div className="h-2.5 flex-1 overflow-hidden rounded-[3px] bg-paper-2 shadow-[inset_0_0_0_1.5px_var(--color-line)]" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct * 10000) / 10000} aria-valuetext={pctLabel} aria-label={t("filled")}>
           {/* the bar is at least 3px wide as soon as one pixel is sold, so progress is always visible */}

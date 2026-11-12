@@ -57,6 +57,8 @@ export default async function ArchivePage({ params }: { params: Promise<{ locale
       <article data-testid="archive-page" data-code={p.code}>
         <p className="text-sm font-semibold uppercase tracking-wide text-ink-faint">{t("eyebrow")}{editionName ? ` · ${editionName}` : ""}</p>
         <h1 className="mt-1 text-3xl font-extrabold leading-tight sm:text-4xl" data-testid="archive-title">{title}</h1>
+        {p.tier === "free" && <p className="mt-2"><span className="chip" data-testid="archive-free">{t("free")}</span></p>}
+        {p.status === "covered" && p.covered_at && <p className="mt-3 rounded-2xl bg-paper-2 p-4 text-sm text-ink-soft" data-testid="archive-covered">{t("covered", { date: f.dateTime(p.covered_at, { dateStyle: "long" }) })}</p>}
         <p className="mt-2 text-ink-soft">
           {t("by")} <Link href={`/u/${p.owner.username}`} className="font-semibold text-ink underline underline-offset-2" data-testid="archive-author">{p.owner.username}</Link>
           {" · "}<span data-testid="archive-date">{p.activated_at ? t("archivedOn", { date: f.dateTime(p.activated_at, { dateStyle: "long" }) }) : ""}</span>
@@ -86,7 +88,7 @@ export default async function ArchivePage({ params }: { params: Promise<{ locale
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <ShareButton title={`${title} — ${p.owner.username}`} text={t("shareText", { title })} />
-          <Link href={`/p/${p.code}`} className="btn btn-ghost" data-testid="archive-on-map">{t("seeOnMap")}</Link>
+          {p.status !== "covered" && <Link href={`/p/${p.code}`} className="btn btn-ghost" data-testid="archive-on-map">{t("seeOnMap")}</Link>}
         </div>
         {edition?.state === "closed" && <p className="mt-8 rounded-2xl bg-paper-2 p-4 text-sm text-ink-soft" data-testid="archive-closed">{t("closedNote")}</p>}
       </article>

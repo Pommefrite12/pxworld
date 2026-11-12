@@ -12,15 +12,16 @@ export const TILES_X = GRID_WIDTH / TILE_SIZE;
 export const TILES_Y = GRID_HEIGHT / TILE_SIZE;
 
 /**
- * [code, x, y, w, h, assetId | null, avgColor | null, water] — compact on purpose, a tile can hold thousands. `water` is 1 for a water
- * parcel (then `avgColor` is already one of its three blues, and is the medium blue while the creation is not published).
+ * [code, x, y, w, h, assetId | null, avgColor | null, water, free] — compact on purpose, a tile can hold thousands. `water` is 1 for a water
+ * parcel (then `avgColor` is already one of its three blues, and is the medium blue while the creation is not published). `free` is 1 for a
+ * free parcel (1 to 24 pixels, covered by any paid parcel that touches it): a purchase is never blocked by it.
  */
-export type TileParcel = [string, number, number, number, number, string | null, string | null, 0 | 1];
+export type TileParcel = [string, number, number, number, number, string | null, string | null, 0 | 1, 0 | 1];
 
 export async function getTile(tx: number, ty: number): Promise<TileParcel[]> {
   const x0 = tx * TILE_SIZE, y0 = ty * TILE_SIZE;
-  const rows = await query<{ code: string; x: number; y: number; w: number; h: number; kind: string; asset_id: string | null; color: string | null }>(
-    `select p.code, p.x, p.y, p.w, p.h, p.kind,
+  const rows = await query<{ code: string; x: number; y: number; w: number; h: number; kind: string; free: boolean; asset_id: string | null; color: string | null }>(
+    `select p.code, p.x, p.y, p.w, p.h, p.kind, (p.tier = 'free') as free,
             case when p.hidden_at is null then p.published_asset_id end as asset_id,
             case when p.hidden_at is null then a.avg_color end as color
        from public.parcels p
@@ -31,8 +32,8 @@ export async function getTile(tx: number, ty: number): Promise<TileParcel[]> {
     [x0, y0, x0 + TILE_SIZE - 1, y0 + TILE_SIZE - 1],
   );
   return rows.map((r) => (r.kind === "water"
-    ? [r.code, r.x, r.y, r.w, r.h, r.asset_id, tintColor(r.color), 1]
-    : [r.code, r.x, r.y, r.w, r.h, r.asset_id, r.color, 0]));
+    ? [r.code, r.x, r.y, r.w, r.h, r.asset_id, tintColor(r.color), 1, 0]
+    : [r.code, r.x, r.y, r.w, r.h, r.asset_id, r.color, 0, r.free ? 1 : 0]));
 }
 
 /**
@@ -66,10 +67,13 @@ export interface PublicStats {
   /** Of the pixels sold, how many are water (the sea is bought too), and in how many parcels. */
   waterPixels: number;
   waterParcels: number;
+  /** Free parcels standing on the map (not counted in the sold pixels above) and their pixels. */
+  freeParcels: number;
+  freePixels: number;
 }
 
 async function computeStats(): Promise<PublicStats> {
-  const r = await queryOne<{ sold_pixels: number; parcels: number; owners: number; published_creations: number; map_version: number; water_pixels: number; water_parcels: number }>(
+  const r = await queryOne<{ sold_pixels: number; parcels: number; owners: number; published_creations: number; map_version: number; water_pixels: number; water_parcels: number; free_parcels: number; free_pixels: number }>(
     "select * from public.px_public_stats()",
   );
   const sold = r?.sold_pixels ?? 0;
@@ -85,6 +89,8 @@ async function computeStats(): Promise<PublicStats> {
     mapVersion: r?.map_version ?? 1,
     waterPixels: Number(r?.water_pixels ?? 0),
     waterParcels: Number(r?.water_parcels ?? 0),
+    freeParcels: Number(r?.free_parcels ?? 0),
+    freePixels: Number(r?.free_pixels ?? 0),
   };
 }
 
@@ -138,6 +144,13 @@ export async function getPricing(currency?: SaleCurrency): Promise<Pricing> {
   };
 }
 
+/** Is the area free for a FREE parcel? Nothing may be there, free or paid, active or held (an order being paid, a collecting project). */
+export async function isAreaFreeOfAll(x: number, y: number, w: number, h: number): Promise<boolean> {
+  const r = await queryOne<{ f: boolean }>("select public.px_is_area_free_of_all($1, $2, $3, $4) as f", [x, y, w, h]);
+  return r?.f === true;
+}
+
+/** Is the area free for a PURCHASE? Free parcels do not count: a paid parcel covers them. */
 export async function isAreaFree(x: number, y: number, w: number, h: number, kind: ParcelKind = "land"): Promise<boolean> {
   const r = await queryOne<{ f: boolean }>("select public.px_is_area_free($1, $2, $3, $4, $5) as f", [x, y, w, h, kind]);
   return r?.f === true;

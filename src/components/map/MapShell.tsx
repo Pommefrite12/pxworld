@@ -18,6 +18,7 @@ import { ProjectMapCard } from "./ProjectMapCard";
 import type { MapProject } from "@/lib/map/projects";
 import type { PublicEdition } from "@/lib/edition";
 import { EditionClock } from "./EditionClock";
+import { isFreeSelection, type FreeInfo } from "@/lib/free";
 import { SearchBox, type SearchTarget } from "./SearchBox";
 
 export interface MapShellProps {
@@ -28,12 +29,14 @@ export interface MapShellProps {
   viewer: HeaderViewer | null;
   /** Where the edition stands (public data); null when it cannot be read: the clock is then simply not shown. */
   edition?: PublicEdition | null;
+  /** The free period for this visitor (null when it cannot be read: no free parcels are offered then). */
+  free?: FreeInfo | null;
   initial: { camera: Camera | null; parcelCode: string | null; buy: Rect | null; startBuy?: boolean; /** Land or water, when a purchase is resumed after signing in. */ kind?: ParcelKind };
 }
 
 const DEFAULT_SIZE = { w: 20, h: 20 };
 
-export function MapShell({ stats: initialStats, latest = [], pricing, viewer, edition = null, initial }: MapShellProps) {
+export function MapShell({ stats: initialStats, latest = [], pricing, viewer, edition = null, free = null, initial }: MapShellProps) {
   const t = useTranslations("map");
   const tc = useTranslations("common");
   const locale = useLocale();
@@ -47,6 +50,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, ed
   const [selection, setSelection] = useState<Rect | null>(null);
   const [selState, setSelState] = useState<SelectionState | null>(null);
   const [selLand, setSelLand] = useState<number | null>(null);
+  const [covers, setCovers] = useState(0); // free imprints that a PAID selection would cover
   const [serverFree, setServerFree] = useState<ServerFree>(null);
   const [kind, setKind] = useState<ParcelKind>(initial.kind ?? "land"); // what the buyer is acquiring: land, or water (the sea)
   const [parcelCode, setParcelCode] = useState<string | null>(initial.parcelCode);
@@ -58,6 +62,9 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, ed
   const [projectCode, setProjectCode] = useState<string | null>(null);
   const project = projectCode ? projects.find((p) => p.code === projectCode) ?? null : null;
   const engine = () => mapRef.current?.engine ?? null;
+  // a FREE imprint: land only, from 1 pixel up to the biggest free size, while it is open for this account
+  const freeSel = isFreeSelection(free, selection ? { w: selection.w, h: selection.h } : size, kind);
+  useEffect(() => { if (engineReady) engine()?.setFreeMode(mode === "buy" && freeSel); }, [engineReady, mode, freeSel]);
 
   /* ---------- live stats (real numbers, refreshed; a purchase bumps mapVersion and the map reloads its tiles) ---------- */
   useEffect(() => {
@@ -138,11 +145,11 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, ed
     setServerFree("checking");
     const ctl = new AbortController();
     const id = setTimeout(() => {
-      fetch(`/api/availability?x=${selection.x}&y=${selection.y}&w=${selection.w}&h=${selection.h}&kind=${kind}`, { signal: ctl.signal })
+      fetch(`/api/availability?x=${selection.x}&y=${selection.y}&w=${selection.w}&h=${selection.h}&kind=${kind}${freeSel ? "&free=1" : ""}`, { signal: ctl.signal })
         .then((r) => r.json()).then((j: { free?: boolean }) => setServerFree(j.free === true ? true : j.free === false ? false : null)).catch(() => undefined);
     }, 300);
     return () => { clearTimeout(id); ctl.abort(); };
-  }, [selection, selState, kind]);
+  }, [selection, selState, kind, freeSel]);
 
   const buyUrl = (r: Rect) => `/map?bx=${r.x}&by=${r.y}&bw=${r.w}&bh=${r.h}${kind === "water" ? "&bk=water" : ""}`;
   const continueBuy = (asProject = false) => {
@@ -215,6 +222,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, ed
           onPlace={(r) => setSelection(r)}
           onSelectionState={setSelState}
           onSelectionLand={setSelLand}
+          onSelectionCovers={setCovers}
         />
 
         {/* the page title stays for search engines and screen readers; the map itself is the hero */}
@@ -241,6 +249,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, ed
           <BuyPanel
             pricing={pricing} locale={locale} size={size} onSize={changeSize} selection={selection}
             state={selState} kind={kind} onKind={(k) => { setServerFree(null); setKind(k); }} landPixels={selLand} serverFree={serverFree} signedIn={Boolean(viewer)} onContinue={() => continueBuy(false)} onCollective={() => continueBuy(true)} onClose={stopBuy}
+            free={free} freeSel={freeSel} covers={covers}
           />
         )}
 
@@ -276,7 +285,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, ed
 
       {dialog && selection && (
         <CheckoutDialog
-          rect={selection} kind={kind} pricing={pricing} landPixels={selLand} mode={collective ? "collective" : "buy"}
+          rect={selection} kind={kind} pricing={pricing} landPixels={selLand} mode={freeSel ? "free" : collective ? "collective" : "buy"}
           onClose={() => { engine()?.setPreviewImage(null); setDialog(false); }}
           onSent={() => { engine()?.setPreviewImage(null); stopBuy(); }}
           onPreviewOnMap={(img) => { const e = engine(); e?.setPreviewImage(img); if (img && e) e.fitRect(selection, { padding: 110, maxScale: 14 }); }}

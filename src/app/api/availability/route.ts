@@ -1,4 +1,5 @@
-import { getPricing, isAreaFree } from "@/lib/data/map";
+import { getPricing, isAreaFree, isAreaFreeOfAll } from "@/lib/data/map";
+import { getFreeStatus } from "@/lib/data/free";
 import { landPixelsIn } from "@/lib/geo/landServer";
 import { json } from "@/lib/http/errors";
 import { intParam, route } from "@/lib/http/route";
@@ -17,6 +18,16 @@ export const GET = route(async (req) => {
   if (kindParam !== null && !isParcelKind(kindParam)) return json({ error: "px_invalid_rect" }, { status: 400 });
   const kind: ParcelKind = kindParam === "water" ? "water" : "land";
   const pricing = await getPricing(requestCurrency(req.headers));
+  if (q.get("free") === "1") {
+    // a FREE parcel: land only, 1 pixel up to the biggest free parcel, and nothing at all may be there (a paid parcel can cover it later, never the other way round)
+    const status = await getFreeStatus(null);
+    const area = (rect.w ?? 0) * (rect.h ?? 0);
+    if (!status || area < 1 || area > status.maxArea) return json({ error: "px_invalid_rect" }, { status: 400 });
+    const fr = rect as { x: number; y: number; w: number; h: number };
+    const landPx = await landPixelsIn(fr);
+    const ok = enoughForKind("land", landPx, area, pricing);
+    return json({ free: ok && (await isAreaFreeOfAll(fr.x, fr.y, fr.w, fr.h)), kind: "land", enough: ok, landPixels: landPx }, { cache: "no-store" });
+  }
   const err = validateRect(rect as { x: number; y: number; w: number; h: number }, { minArea: pricing.minArea, maxArea: pricing.maxArea });
   if (err) return json({ error: "px_invalid_rect", reason: err }, { status: 400 });
   const landPixels = await landPixelsIn(rect as { x: number; y: number; w: number; h: number });

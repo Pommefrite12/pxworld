@@ -12,6 +12,8 @@ export const DEV_COOKIE = "px_dev_session";
 export interface SessionUser {
   id: string;
   email: string | null;
+  /** The e-mail address was confirmed (Supabase's own flag; the development sign-in, which has no mailbox, counts as confirmed). */
+  emailConfirmed: boolean;
 }
 
 export interface Profile {
@@ -66,13 +68,13 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   if (supabaseConfigured()) {
     const { data, error } = await (await supabaseServer()).auth.getUser();
     if (error || !data.user) return null;
-    return { id: data.user.id, email: data.user.email ?? null };
+    return { id: data.user.id, email: data.user.email ?? null, emailConfirmed: Boolean(data.user.email_confirmed_at) };
   }
   if (devAuthEnabled()) {
     const id = verifyDevSession((await cookies()).get(DEV_COOKIE)?.value);
     if (!id) return null;
     const row = await queryOne<{ id: string; email: string | null }>("select id, email from auth.users where id = $1", [id]);
-    return row ? { id: row.id, email: row.email } : null;
+    return row ? { id: row.id, email: row.email, emailConfirmed: true } : null;
   }
   return null;
 });

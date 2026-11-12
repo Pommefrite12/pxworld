@@ -27,9 +27,10 @@ interface Props {
   onUnavailable: () => void;
   /**
    * `buy`: design, review, pay. `collective`: the same design, then the project is sent to moderation to be funded by several people
-   * (nothing is paid here).
+   * (nothing is paid here). `free`: a free imprint (1 to 24 pixels): the same design, no payment, the pixels are placed at once and a paid
+   * parcel that touches them covers them.
    */
-  mode?: "buy" | "collective";
+  mode?: "buy" | "collective" | "free";
   /** The project was sent: the page leaves the buying mode. */
   onSent?: () => void;
 }
@@ -53,6 +54,7 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const collective = mode === "collective";
+  const free = mode === "free";
   const [days, setDays] = useState<CampaignDays>(DEFAULT_CAMPAIGN_DAYS);
   const [sent, setSent] = useState<{ days: CampaignDays } | null>(null);
   const water = kind === "water";
@@ -89,10 +91,12 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
       fd.set("image", new File([blob], "creation.png", { type: "image/png" }));
       fd.set("title", title); fd.set("description", description); fd.set("link", link); fd.set("commercial", String(commercial)); fd.set("category", archive.category); fd.set("placeLabel", archive.placeLabel); fd.set("placeCountry", archive.placeCountry); fd.set("locale", locale); fd.set("currency", pricing.currency);
       if (collective) fd.set("days", String(days));
-      const r = await fetch(collective ? "/api/campaigns" : "/api/checkout", { method: "POST", body: fd });
+      if (free) { fd.delete("kind"); fd.delete("currency"); }
+      const r = await fetch(free ? "/api/free-parcel" : collective ? "/api/campaigns" : "/api/checkout", { method: "POST", body: fd });
       const j = await r.json().catch(() => ({}));
       if (collective && r.ok && j.code) { setSent({ days }); setBusy(false); return; } // sent to moderation: nothing to pay
-      if (!collective && r.ok && j.url) { window.location.assign(j.url); return; }
+      if (free && r.ok && j.code) { window.location.assign(`${locale === "en" ? "" : `/${locale}`}/archive/${j.code}`); return; } // placed: its own archive page
+      if (!collective && !free && r.ok && j.url) { window.location.assign(j.url); return; }
       const code = String(j.error ?? (r.status === 401 ? "unauthenticated" : "internal_error"));
       if (code === "px_parcel_unavailable") onUnavailable();
       if (code === "unauthenticated") { window.location.assign(`/auth/sign-in?next=${encodeURIComponent("/")}`); return; }
@@ -108,8 +112,8 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
         className="m-0 h-dvh max-h-none w-screen max-w-none overflow-y-auto bg-paper p-0 text-ink backdrop:bg-ink/50 md:m-auto md:h-auto md:max-h-[94dvh] md:w-[min(64rem,96vw)] md:rounded-[var(--radius-card)] md:shadow-[var(--shadow-float)]">
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-paper/95 px-5 py-3 backdrop-blur">
           <div>
-            <h2 id="co-title" className="text-lg font-extrabold">{sent ? t("collective.sentTitle") : collective ? (step === "design" ? t("collective.designTitle") : t("collective.reviewTitle")) : step === "design" ? t("designTitle") : t("reviewTitle")}</h2>
-            <p className="pixel-num text-xs text-ink-soft">{rect.w}×{rect.h} · {f.number(q.area)} px · {collective && `${t("collective.goal")} `}{formatMoney(q.totalCents, locale, pricing.currency)}</p>
+            <h2 id="co-title" className="text-lg font-extrabold">{sent ? t("collective.sentTitle") : collective ? (step === "design" ? t("collective.designTitle") : t("collective.reviewTitle")) : free ? (step === "design" ? t("free.designTitle") : t("free.reviewTitle")) : step === "design" ? t("designTitle") : t("reviewTitle")}</h2>
+            <p className="pixel-num text-xs text-ink-soft">{rect.w}×{rect.h} · {f.number(q.area)} px · {free ? t("free.price") : <>{collective && `${t("collective.goal")} `}{formatMoney(q.totalCents, locale, pricing.currency)}</>}</p>
           </div>
           <div className="flex items-center gap-2">
             <ol className="hidden items-center gap-1 text-xs font-semibold text-ink-faint sm:flex" aria-label={t("steps")}>
@@ -122,6 +126,7 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
         <div className="p-5">
           <div hidden={step !== "design"}>
             {collective && <p className="mb-3 rounded-xl bg-paper-2 px-3 py-2 text-sm text-ink-soft" data-testid="co-collective-note">{t("collective.designNote", { goal: formatMoney(q.totalCents, locale, pricing.currency) })}</p>}
+            {free && <p className="mb-3 rounded-xl bg-paper-2 px-3 py-2 text-sm text-ink-soft" data-testid="co-free-note">{t("free.designNote")}</p>}
             {water && <p className="mb-3 rounded-xl bg-sky px-3 py-2 text-sm font-semibold text-cobalt" data-testid="co-water-note">{t("kind.waterHint")}</p>}
             <ParcelEditor ref={editor} w={rect.w} h={rect.h} onChange={onChange} />
             <div className="mt-6 flex flex-wrap items-center justify-end gap-2 border-t border-line pt-4">
@@ -178,7 +183,7 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
                     {water && (
                       <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.kind")}</dt><dd className="font-semibold" data-testid="co-kind">{t("kind.water")}</dd></div>
                     )}
-                    {q.cutPixels > 0 && !water && (
+                    {q.cutPixels > 0 && !water && !free && (
                       <>
                         <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.land")}</dt><dd className="pixel-num">{f.number(q.landPixels)} px · {formatMoney(q.landPixels * q.unitPriceCents, locale, pricing.currency)}</dd></div>
                         <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.sea")}</dt><dd className="pixel-num" data-testid="co-sea">{f.number(q.seaPixels)} px · {pricing.seaPercent === 0 ? t("summary.seaFree") : formatMoney(q.totalCents - q.landPixels * q.unitPriceCents, locale, pricing.currency)}</dd></div>
@@ -190,15 +195,15 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
                         <div className="flex justify-between"><dt className="text-ink-soft">{t("summary.land")}</dt><dd className="pixel-num" data-testid="co-land">{f.number(q.cutPixels)} px · {pricing.landCutPercent === 0 ? t("summary.seaFree") : formatMoney(Math.floor((q.landPixels * q.unitPriceCents * q.seaPercent) / 100), locale, pricing.currency)}</dd></div>
                       </>
                     )}
-                    <div className="flex justify-between border-t border-line pt-2"><dt className="font-semibold">{collective ? t("collective.goalLabel") : t("summary.total")}</dt><dd className="pixel-display text-4xl text-signal" data-testid="co-total">{formatMoney(q.totalCents, locale, pricing.currency)}</dd></div>
+                    <div className="flex justify-between border-t border-line pt-2"><dt className="font-semibold">{collective ? t("collective.goalLabel") : free ? t("free.priceLabel") : t("summary.total")}</dt><dd className="pixel-display text-4xl text-signal" data-testid="co-total">{free ? t("free.price") : formatMoney(q.totalCents, locale, pricing.currency)}</dd></div>
                   </dl>
-                  <p className="mt-1 text-xs text-ink-faint">{collective ? t("collective.goalNote") : t("taxNote")}</p>
+                  <p className="mt-1 text-xs text-ink-faint">{collective ? t("collective.goalNote") : free ? t("free.coverNote") : t("taxNote")}</p>
                 </div>
                 <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} data-testid="co-accept" />
-                  <span>{t.rich(collective ? "collective.accept" : "accept", { terms: (c) => <Link href="/terms" target="_blank" className="underline">{c}</Link>, rules: (c) => <Link href="/rules" target="_blank" className="underline">{c}</Link> })}</span></label>
+                  <span>{t.rich(collective ? "collective.accept" : free ? "free.accept" : "accept", { terms: (c) => <Link href="/terms" target="_blank" className="underline">{c}</Link>, rules: (c) => <Link href="/rules" target="_blank" className="underline">{c}</Link> })}</span></label>
                 {error && <p role="alert" className="rounded-xl bg-danger/10 px-3 py-2 text-sm font-semibold text-danger" data-testid="co-error">{error}</p>}
-                <button className="btn btn-primary w-full" type="submit" disabled={busy || !accepted || !isValidTitle(title) || !archive.category} data-testid="co-pay">{collective ? (busy ? t("collective.sending") : t("collective.send")) : busy ? t("redirecting") : t("pay", { price: formatMoney(q.totalCents, locale, pricing.currency) })}</button>
-                <p className="text-center text-xs text-ink-faint">{collective ? t("collective.nothingPaid") : t("securePayment")}</p>
+                <button className="btn btn-primary w-full" type="submit" disabled={busy || !accepted || !isValidTitle(title) || !archive.category} data-testid="co-pay">{collective ? (busy ? t("collective.sending") : t("collective.send")) : free ? (busy ? t("free.placing") : t("free.place")) : busy ? t("redirecting") : t("pay", { price: formatMoney(q.totalCents, locale, pricing.currency) })}</button>
+                <p className="text-center text-xs text-ink-faint">{collective ? t("collective.nothingPaid") : free ? t("free.nothingPaid") : t("securePayment")}</p>
               </form>
             </div>
           )}

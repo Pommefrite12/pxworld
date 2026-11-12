@@ -2,7 +2,8 @@ import { isParcelCode } from "@/lib/grid/code";
 import { DEFAULT_PRICING } from "@/lib/grid/pricing";
 import { setRequestLocale } from "next-intl/server";
 import { MapShell } from "@/components/map/MapShell";
-import { getHeaderViewer } from "@/lib/auth/session";
+import { getHeaderViewer, getSessionUser } from "@/lib/auth/session";
+import { getFreeStatus } from "@/lib/data/free";
 import { getPricing, getPublicStats } from "@/lib/data/map";
 import { getEdition } from "@/lib/data/edition";
 import { toPublicEdition } from "@/lib/edition";
@@ -33,13 +34,13 @@ export default async function HomePage({ params, searchParams }: { params: Promi
   const sp = await searchParams;
   const currency = requestCurrency(await headers()); // euros in the euro area, dollars elsewhere
   const startBuy = sp.buy === "1";
-  const [stats, pricing, viewer, latest, edition] = await Promise.all([safe(getPublicStats), safe(() => getPricing(currency)), getHeaderViewer(), safe(() => latestCreations(4)), safe(getEdition)]);
+  const [stats, pricing, viewer, latest, edition, free] = await Promise.all([safe(getPublicStats), safe(() => getPricing(currency)), getHeaderViewer(), safe(() => latestCreations(4)), safe(getEdition), getSessionUser().then((u) => getFreeStatus(u?.id ?? null), () => getFreeStatus(null))]);
 
   // Deep links: ?x=&y=&z= (camera) and ?bx=&by=&bw=&bh= (resume a purchase after signing in)
   const x = num(sp.x), y = num(sp.y), z = num(sp.z);
   const camera = x !== null && y !== null && z !== null && x >= 0 && x <= GRID_WIDTH && y >= 0 && y <= GRID_HEIGHT && z > 0 && z <= 48 ? { x, y, scale: z } : null;
   const b = { x: num(sp.bx), y: num(sp.by), w: num(sp.bw), h: num(sp.bh) };
-  const buy = b.x !== null && b.y !== null && b.w !== null && b.h !== null && !validateRect({ x: b.x, y: b.y, w: b.w, h: b.h }) ? { x: b.x, y: b.y, w: b.w, h: b.h } : null;
+  const buy = b.x !== null && b.y !== null && b.w !== null && b.h !== null && !validateRect({ x: b.x, y: b.y, w: b.w, h: b.h }, { minArea: 1 }) ? { x: b.x, y: b.y, w: b.w, h: b.h } : null;
 
   return (
     <main id="main">
@@ -48,6 +49,7 @@ export default async function HomePage({ params, searchParams }: { params: Promi
         latest={(latest ?? []).map((c) => ({ code: c.code, x: c.x, y: c.y, w: c.w, h: c.h, assetId: c.asset_id, title: c.title }))}
         viewer={viewer}
         edition={edition ? toPublicEdition(edition) : null}
+        free={free}
         pricing={pricing ?? DEFAULT_PRICING}
         initial={{ camera, parcelCode: isParcelCode(sp.p) ? sp.p : null, buy, startBuy, kind: sp.bk === "water" ? "water" : "land" }}
       />

@@ -9,6 +9,9 @@ export interface ParcelView {
   /** `water`: a parcel of sea, shown in three blues. */
   kind: "land" | "water";
   status: string;
+  /** `free`: a free imprint (1 to 24 pixels), covered by any paid parcel that touches it; `covered`: it was (status). */
+  tier: "paid" | "free";
+  covered_at: Date | null;
   hidden: boolean;
   activated_at: Date | null;
   owner: { id: string; username: string; country: string | null; avatar: boolean };
@@ -30,7 +33,7 @@ export interface ParcelView {
 }
 
 const SELECT = `
-  select p.id, p.code, p.x, p.y, p.w, p.h, p.area, p.kind, p.status, (p.hidden_at is not null) as hidden, p.activated_at,
+  select p.id, p.code, p.x, p.y, p.w, p.h, p.area, p.kind, p.status, p.tier, p.covered_at, (p.hidden_at is not null) as hidden, p.activated_at,
          u.id as owner_id, u.username, u.country, (u.avatar_path is not null) as has_avatar,
          a.id as asset_id, a.title, a.description, a.link_url, a.is_commercial, a.published_at, a.avg_color, a.category, a.place_label, a.place_country,
          e.slug as edition_slug, e.name as edition_name,
@@ -41,7 +44,7 @@ const SELECT = `
     left join public.editions e on e.id = p.edition_id`;
 
 type Row = {
-  id: string; code: string; x: number; y: number; w: number; h: number; area: number; kind: string; status: string; hidden: boolean; activated_at: Date | null;
+  id: string; code: string; x: number; y: number; w: number; h: number; area: number; kind: string; status: string; tier: string; covered_at: Date | null; hidden: boolean; activated_at: Date | null;
   owner_id: string; username: string; country: string | null; has_avatar: boolean;
   asset_id: string | null; title: string | null; description: string | null; link_url: string | null; is_commercial: boolean | null;
   published_at: Date | null; avg_color: string | null; likes: number;
@@ -50,7 +53,7 @@ type Row = {
 
 function toView(r: Row): ParcelView {
   return {
-    id: r.id, code: r.code, x: r.x, y: r.y, w: r.w, h: r.h, area: r.area, kind: r.kind === "water" ? "water" : "land", status: r.status, hidden: r.hidden, activated_at: r.activated_at,
+    id: r.id, code: r.code, x: r.x, y: r.y, w: r.w, h: r.h, area: r.area, kind: r.kind === "water" ? "water" : "land", status: r.status, tier: r.tier === "free" ? "free" : "paid", covered_at: r.covered_at, hidden: r.hidden, activated_at: r.activated_at,
     owner: { id: r.owner_id, username: r.username, country: r.country, avatar: r.has_avatar },
     creation: r.asset_id && !r.hidden
       ? { asset_id: r.asset_id, title: r.title, description: r.description, link_url: r.link_url, is_commercial: r.is_commercial ?? false, published_at: r.published_at, avg_color: r.avg_color ?? "#cccccc",
@@ -61,27 +64,27 @@ function toView(r: Row): ParcelView {
   };
 }
 
-/** Public view of an ACTIVE parcel. Hidden parcels keep their place but expose no content. */
+/** Public view of an ACTIVE parcel, or of a free one that has been COVERED (it keeps its page in the archive, with the mention). Hidden parcels keep their place but expose no content. */
 export async function getPublicParcel(code: string): Promise<ParcelView | null> {
   if (!isParcelCode(code)) return null;
-  const r = await queryOne<Row>(`${SELECT} where p.code = $1 and p.status = 'active'`, [code]);
+  const r = await queryOne<Row>(`${SELECT} where p.code = $1 and p.status in ('active', 'covered')`, [code]);
   return r ? toView(r) : null;
 }
 
 export async function getParcelsOf(userId: string) {
   return query<{
-    id: string; code: string; x: number; y: number; w: number; h: number; area: number; status: string; hidden: boolean;
+    id: string; code: string; x: number; y: number; w: number; h: number; area: number; status: string; tier: string; covered_at: Date | null; hidden: boolean;
     published_asset_id: string | null; pending_asset_id: string | null; pending_title: string | null; last_rejection: string | null; title: string | null;
     activated_at: Date | null;
   }>(
-    `select p.id, p.code, p.x, p.y, p.w, p.h, p.area, p.status, (p.hidden_at is not null) as hidden, p.published_asset_id, p.activated_at,
+    `select p.id, p.code, p.x, p.y, p.w, p.h, p.area, p.status, p.tier, p.covered_at, (p.hidden_at is not null) as hidden, p.published_asset_id, p.activated_at,
             (select id from public.parcel_assets where parcel_id = p.id and status = 'pending') as pending_asset_id,
             (select title from public.parcel_assets where parcel_id = p.id and status = 'pending') as pending_title,
             (select rejection_reason from public.parcel_assets where parcel_id = p.id and status = 'rejected' order by version desc limit 1) as last_rejection,
             (select title from public.parcel_assets where id = p.published_asset_id) as title
        from public.parcels p
-      where p.owner_id = $1 and p.status = 'active'
-      order by p.activated_at desc`,
+      where p.owner_id = $1 and (p.status = 'active' or (p.status = 'covered' and p.tier = 'free'))
+      order by (p.status = 'covered'), p.activated_at desc`,
     [userId],
   );
 }
