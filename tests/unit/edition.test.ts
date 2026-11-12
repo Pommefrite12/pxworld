@@ -5,15 +5,15 @@ import { statusForPx } from "@/lib/http/errors";
 import { DEFAULT_PRICING } from "@/lib/grid/pricing";
 
 const info = (over: Partial<EditionInfo> = {}): EditionInfo => ({
-  id: "00000000-0000-0000-0000-000000000001", slug: "fondatrice", name: "Édition fondatrice", status: "open", state: "open", frozen: false, durationDays: 100,
-  opensAt: "2026-11-01T10:00:00Z", closesAt: "2027-02-09T10:00:00Z", closedAt: null, settlesAt: "2027-02-09T10:35:00Z", serverNow: "2026-11-11T10:00:00Z", snapshot: null, ...over,
+  id: "00000000-0000-0000-0000-000000000001", slug: "fondatrice", name: "Édition fondatrice", status: "open", state: "open", frozen: false, durationDays: 365,
+  opensAt: "2026-11-01T10:00:00Z", closesAt: "2027-11-01T10:00:00Z", closedAt: null, settlesAt: "2027-11-01T10:35:00Z", serverNow: "2026-11-11T10:00:00Z", snapshot: null, ...over,
 });
 
 describe("the edition as the interface sees it", () => {
   it("counts the days left on the SERVER's clock, never on the browser's", () => {
-    expect(daysLeft(info())).toBe(90); // 10 days into the 100
-    expect(daysLeft(info({ serverNow: "2027-02-09T09:59:00Z" }))).toBe(1); // a started last day still counts
-    expect(daysLeft(info({ serverNow: "2027-02-09T10:00:00Z", state: "closed" }))).toBe(0);
+    expect(daysLeft(info())).toBe(355); // 10 days into the 365
+    expect(daysLeft(info({ serverNow: "2027-11-01T09:59:00Z" }))).toBe(1); // a started last day still counts
+    expect(daysLeft(info({ serverNow: "2027-11-01T10:00:00Z", state: "closed" }))).toBe(0);
   });
 
   it("has no count before the opening (no date, nothing to count) and none once closed", () => {

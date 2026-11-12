@@ -17,7 +17,7 @@ describe("which addresses open the map and which the home page", () => {
 });
 
 describe("how much of the edition is gone (the progress bar of the home page)", () => {
-  const e = (state: "prelaunch" | "open" | "closed", serverNow: string) => ({ state, opensAt: "2026-11-01T00:00:00Z", closesAt: "2027-02-09T00:00:00Z", serverNow });
+  const e = (state: "prelaunch" | "open" | "closed", serverNow: string) => ({ state, opensAt: "2026-11-01T00:00:00Z", closesAt: "2027-11-01T00:00:00Z", serverNow });
 
   it("is 0 before the opening and 1 once closed, whatever the clock says", () => {
     expect(editionProgress({ ...e("prelaunch", "2026-12-01T00:00:00Z"), opensAt: null, closesAt: null })).toBe(0);
@@ -26,9 +26,9 @@ describe("how much of the edition is gone (the progress bar of the home page)", 
 
   it("follows the SERVER's clock in between, never leaves 0..1", () => {
     expect(editionProgress(e("open", "2026-11-01T00:00:00Z"))).toBe(0);
-    expect(editionProgress(e("open", "2026-12-21T00:00:00Z"))).toBeCloseTo(0.5, 5); // 50 of the 100 days
-    expect(editionProgress(e("open", "2027-02-09T00:00:00Z"))).toBe(1);
+    expect(editionProgress(e("open", "2027-05-02T12:00:00Z"))).toBeCloseTo(0.5, 5); // 182.5 of the 365 days
+    expect(editionProgress(e("open", "2027-11-01T00:00:00Z"))).toBe(1);
     expect(editionProgress(e("open", "2026-10-01T00:00:00Z"))).toBe(0);
-    expect(editionProgress(e("open", "2027-06-01T00:00:00Z"))).toBe(1);
+    expect(editionProgress(e("open", "2027-12-01T00:00:00Z"))).toBe(1);
   });
 });

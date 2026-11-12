@@ -25,7 +25,7 @@ function databaseUrl() {
 }
 
 /**
- * A freshly migrated database is in PRE-LAUNCH: no date, nothing for sale (the 100 days never start by themselves). On THIS machine's throwaway
+ * A freshly migrated database is in PRE-LAUNCH: no date, nothing for sale (the 365 days never start by themselves). On THIS machine's throwaway
  * development database only (the caller has checked it is local), the founding edition is opened so that `npm run dev` can sell something.
  * A real site's edition is opened by an administrator in /admin/edition, and nothing here can do that. To work on the pre-launch state
  * itself, start with PIXELWORLD_DEV_PRELAUNCH=1 and the edition is left alone.

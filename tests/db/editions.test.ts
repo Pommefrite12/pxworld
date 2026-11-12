@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { asRole, closeDb, createUser, expectPgError, fulfill, overlappingPairs, pool, resetData, startOrder } from "./helpers";
 
@@ -7,8 +8,8 @@ const NAME = "Édition fondatrice";
 const info = async () => (await pool.query(`select public.px_edition_info() as i`)).rows[0].i as Record<string, any>;
 const edition = async () => (await pool.query(`select * from public.editions`)).rows[0];
 const audit = async (action: string) => (await pool.query(`select * from public.audit_logs where action = $1 order by created_at`, [action])).rows;
-/** The clock cannot be set, so the edition is moved instead: it was opened 101 days ago and closed `minutes` ago. */
-const closedAgo = (minutes: number) => pool.query(`update public.editions set status = 'open', opens_at = now() - interval '101 days', closes_at = now() - make_interval(mins => $1), closed_at = null`, [minutes]);
+/** The clock cannot be set, so the edition is moved instead: it was opened 366 days ago and closed `minutes` ago. */
+const closedAgo = (minutes: number) => pool.query(`update public.editions set status = 'open', opens_at = now() - interval '366 days', closes_at = now() - make_interval(mins => $1), closed_at = null`, [minutes]);
 const sweep = async () => (await pool.query(`select public.px_edition_sweep() as r`)).rows[0].r as string;
 const snapshots = async () => (await pool.query(`select * from public.edition_snapshots order by revision`)).rows;
 const mod = () => createUser("mod", { role: "moderator" });
@@ -28,10 +29,10 @@ const addAsset = (owner: string, parcel: string, tag = "v2") =>
 
 /* ------------------------------------------------------------------------------------------------------------------ pre-launch */
 
-describe("a fresh database is in pre-launch: no date, nothing for sale, and the 100 days never start by themselves", () => {
+describe("a fresh database is in pre-launch: no date, nothing for sale, and the 365 days never start by themselves", () => {
   it("has the founding edition, with no date at all", async () => {
     const e = await edition();
-    expect(e).toMatchObject({ slug: "fondatrice", name: NAME, status: "prelaunch", duration_days: 100, opens_at: null, closes_at: null, closed_at: null });
+    expect(e).toMatchObject({ slug: "fondatrice", name: NAME, status: "prelaunch", duration_days: 365, opens_at: null, closes_at: null, closed_at: null });
     const i = await info();
     expect(i).toMatchObject({ status: "prelaunch", state: "prelaunch", frozen: false, opensAt: null, closesAt: null, settlesAt: null, snapshot: null });
     expect(Date.parse(i.serverNow)).toBeGreaterThan(Date.now() - 60_000);
@@ -52,7 +53,17 @@ describe("a fresh database is in pre-launch: no date, nothing for sale, and the 
     expect(await audit("edition.open")).toHaveLength(0);
   });
 
-  it("opens for 100 days from the moment of the click, and writes it to the audit log", async () => {
+  it("the length the site announces is the one the database applies: the texts and `duration_days` say the same number", async () => {
+    const days = (await edition()).duration_days as number;
+    const msgs = (lang: string) => JSON.parse(readFileSync(new URL(`../../src/messages/${lang}.json`, import.meta.url), "utf8"));
+    for (const lang of ["en", "fr"]) {
+      const m = msgs(lang);
+      const said = [m.home.time.title, m.home.time.lead, m.home.time.span, m.home.time.prelaunchNote, m.about.time.text, m.pages.terms.sections.find((x: { h: string }) => /dition/i.test(x.h)).p[0]] as string[];
+      for (const text of said) expect(text, `${lang}: ${String(text).slice(0, 60)}`).toMatch(new RegExp(`\\b${days}\\b`));
+    }
+  });
+
+  it("opens for 365 days from the moment of the click, and writes it to the audit log", async () => {
     const boss = await admin();
     const before = Date.now();
     const { rows: [r] } = await pool.query(`select public.px_edition_open($1, '  édition FONDATRICE ') as i`, [boss]); // case and spaces do not matter
@@ -61,7 +72,7 @@ describe("a fresh database is in pre-launch: no date, nothing for sale, and the 
     expect(e.status).toBe("open");
     expect(e.opens_at.getTime()).toBeGreaterThanOrEqual(before - 1000);
     expect(e.opens_at.getTime()).toBeLessThanOrEqual(Date.now() + 1000);
-    expect(e.closes_at.getTime() - e.opens_at.getTime()).toBe(100 * 86_400_000);
+    expect(e.closes_at.getTime() - e.opens_at.getTime()).toBe(365 * 86_400_000);
     const log = await audit("edition.open");
     expect(log).toHaveLength(1);
     expect(log[0]).toMatchObject({ actor_id: boss, actor_role: "admin", target_type: "edition" });
@@ -306,7 +317,7 @@ describe("group projects end with the edition (a contribution is a purchase)", (
 describe("what an administrator can do with the edition, all of it audited", () => {
   beforeEach(resetData);
 
-  it("postpones the closing, never brings it forward, never beyond 366 days, only while open", async () => {
+  it("postpones the closing, never brings it forward, never beyond twice its length, only while open", async () => {
     const [boss, moderator] = [await admin(), await mod()];
     const e0 = await edition();
     const plus = (days: number) => new Date(e0.closes_at.getTime() + days * 86_400_000).toISOString();

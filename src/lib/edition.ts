@@ -1,8 +1,8 @@
 /**
- * The edition (the 100 days) as the interface sees it. Pure types and helpers, no database: the state itself is decided by PostgreSQL
+ * The edition (the 365 days) as the interface sees it. Pure types and helpers, no database: the state itself is decided by PostgreSQL
  * (`px_edition_info()`, computed from the clock at every call), this file only describes what comes back.
  *
- *   prelaunch  no date, nothing is sold (the 100 days start only when an administrator opens the edition)
+ *   prelaunch  no date, nothing is sold (the 365 days start only when an administrator opens the edition)
  *   open       opens_at … closes_at: purchases, projects and creations are open
  *   closed     from closes_at on: nothing can be bought; the creations freeze once the payments under way have settled (`frozen`)
  */

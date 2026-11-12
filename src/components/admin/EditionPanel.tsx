@@ -8,7 +8,7 @@ import type { EditionInfo } from "@/lib/edition";
 type Action = { action: string } & Record<string, unknown>;
 
 /**
- * The 100 days. Every button here calls a function of the database that checks the role again, asks for the name of the edition when the
+ * The 365 days. Every button here calls a function of the database that checks the role again, asks for the name of the edition when the
  * move is serious, and writes to the audit log. The state shown is the database's own (computed from its clock), never the browser's.
  */
 export function EditionPanel({ info, text, canEdit }: {

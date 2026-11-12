@@ -3,7 +3,7 @@ import pg from "pg";
 import sharp from "sharp";
 
 /**
- * The edition (the 100 days): pre-launch, opening from the back office, postponing, and the closing decided by the clock.
+ * The edition (the 365 days): pre-launch, opening from the back office, postponing, and the closing decided by the clock.
  * The edition is ONE for the whole site, so this file puts it back as it found it (open) when it is done; the specs run one after the other.
  * It never calls /api/edition nor loads the back office while the edition is closed: those record the closing (ending the open group
  * projects), which other specs may be using. The recording itself is covered by tests/db/editions.test.ts.
@@ -18,8 +18,8 @@ async function sql<T = Record<string, unknown>>(text: string, params: unknown[] 
   try { return (await c.query(text, params)).rows as T[]; } finally { await c.end(); }
 }
 const setPrelaunch = () => sql(`update public.editions set status = 'prelaunch', opens_at = null, closes_at = null, closed_at = null`);
-const setOpen = () => sql(`update public.editions set status = 'open', opens_at = now() - interval '1 day', closes_at = now() + interval '99 days', closed_at = null`);
-const setClosedAgo = (minutes: number) => sql(`update public.editions set status = 'open', opens_at = now() - interval '101 days', closes_at = now() - make_interval(mins => $1), closed_at = null`, [minutes]);
+const setOpen = () => sql(`update public.editions set status = 'open', opens_at = now() - interval '1 day', closes_at = now() + interval '364 days', closed_at = null`);
+const setClosedAgo = (minutes: number) => sql(`update public.editions set status = 'open', opens_at = now() - interval '366 days', closes_at = now() - make_interval(mins => $1), closed_at = null`, [minutes]);
 
 async function login(email: string, role?: "admin"): Promise<APIRequestContext> {
   const ctx = await pwRequest.newContext({ baseURL: BASE });
@@ -74,7 +74,7 @@ test.describe.serial("the edition: pre-launch, opening, postponing, closing", ()
     await expect(page.getByTestId("home-plate")).toContainText("The map can already be explored");
   });
 
-  test("an administrator opens the edition from the back office, by typing its name; the 100 days start at that moment", async ({ page }) => {
+  test("an administrator opens the edition from the back office, by typing its name; the 365 days start at that moment", async ({ page }) => {
     const admin = await login("edition-admin@example.test", "admin");
     const cookies = (await admin.storageState()).cookies;
     await page.context().addCookies(cookies);
@@ -94,7 +94,7 @@ test.describe.serial("the edition: pre-launch, opening, postponing, closing", ()
     const e = (await sql<{ status: string; opens_at: Date; closes_at: Date }>(`select status, opens_at, closes_at from public.editions`))[0]!;
     expect(e.status).toBe("open");
     expect(Math.abs(e.opens_at.getTime() - before)).toBeLessThan(30_000);
-    expect(e.closes_at.getTime() - e.opens_at.getTime()).toBe(100 * 86_400_000);
+    expect(e.closes_at.getTime() - e.opens_at.getTime()).toBe(365 * 86_400_000);
     const log = await sql<{ actor_role: string }>(`select actor_role from public.audit_logs where action = 'edition.open'`);
     expect(log.length).toBeGreaterThanOrEqual(1);
   });

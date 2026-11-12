@@ -152,17 +152,17 @@
       "by": "par {author}"
     },
     "time": {
-      "title": "100 jours pour entrer dans l'archive.",
-      "lead": "L'édition fondatrice dure 100 jours\u00a0: c'est le temps qu'il reste pour y participer. À la fin, les créations sont figées dans une archive collective que les générations futures pourront consulter.",
+      "title": "365 jours pour entrer dans l'archive.",
+      "lead": "L'édition fondatrice dure 365 jours\u00a0: c'est le temps qu'il reste pour y participer. À la fin, les créations sont figées dans une archive collective que les générations futures pourront consulter.",
       "opening": "Ouverture",
-      "span": "100 jours",
+      "span": "365 jours",
       "closing": "Clôture",
       "archive": "Archive",
       "onDate": "le {date}",
       "toArchive": "pour participer",
       "explorable": "consultable",
       "prelaunchTitle": "Ouverture prochainement",
-      "prelaunchNote": "La carte est déjà consultable. Les 100 jours n'ont pas démarré.",
+      "prelaunchNote": "La carte est déjà consultable. Les 365 jours n'ont pas démarré.",
       "openLeft": "Temps restant pour participer",
       "dayOne": "jour",
       "dayMany": "jours",
@@ -190,7 +190,7 @@
     },
     "time": {
       "title": "Un temps pour la raconter",
-      "text": "L'édition fondatrice dure 100 jours\u00a0: c'est le temps qu'il reste pour y participer. À sa clôture, plus rien ne peut être acheté ni modifié : l'édition devient une archive historique, conservée telle qu'elle était et ouverte à tous. L'ouverture et la clôture sont décidées par nous, annoncées, et appliquées par le serveur, jamais par un navigateur."
+      "text": "L'édition fondatrice dure 365 jours\u00a0: c'est le temps qu'il reste pour y participer. À sa clôture, plus rien ne peut être acheté ni modifié : l'édition devient une archive historique, conservée telle qu'elle était et ouverte à tous. L'ouverture et la clôture sont décidées par nous, annoncées, et appliquées par le serveur, jamais par un navigateur."
     },
     "buy": {
       "title": "Ce que vous payez",
@@ -889,7 +889,7 @@
         {
           "h": "Éditions et clôture",
           "p": [
-            "L'archive est organisée en éditions. L'édition fondatrice dure 100 jours à partir du jour où l'exploitant l'ouvre. L'ouverture et la clôture sont décidées par l'exploitant, annoncées sur le site et appliquées par le serveur, jamais par un navigateur.",
+            "L'archive est organisée en éditions. L'édition fondatrice dure 365 jours à partir du jour où l'exploitant l'ouvre. L'ouverture et la clôture sont décidées par l'exploitant, annoncées sur le site et appliquées par le serveur, jamais par un navigateur.",
             "À la clôture d'une édition, plus rien ne peut être acheté et ses créations sont figées\u00a0: elles restent lisibles et la carte reste consultable, mais leurs auteurs ne peuvent plus les modifier. La modération garde le pouvoir de masquer ou de retirer une création qui enfreint les règles ou la loi, même après la clôture\u00a0; le retrait est consigné. Un paiement déjà commencé à la clôture dispose d'un court délai pour aboutir\u00a0; celui qui aboutirait après est remboursé.",
             "[À faire relire par un juriste\u00a0: la date de clôture comme condition du contrat, et le sort d'un achat fait peu avant.]"
           ]
@@ -1008,7 +1008,7 @@
       "parcels": "Parcelles",
       "users": "Utilisateurs",
       "orders": "Commandes et paiements",
-      "edition": "Édition (les 100 jours)",
+      "edition": "Édition (les 365 jours)",
       "settings": "Paramètres",
       "audit": "Journal d'audit",
       "role": "Connecté en tant que {role}",
@@ -1153,8 +1153,8 @@
       "empty": "Aucune commande."
     },
     "edition": {
-      "title": "L'édition (les 100 jours)",
-      "lead": "L'état de l'édition est décidé par la base de données, avec sa propre horloge. Les 100 jours ne démarrent que lorsqu'un administrateur ouvre l'édition ici : rien d'autre (ni un déploiement, ni un réglage) ne peut les démarrer. Chaque action ci-dessous est inscrite au journal d'audit.",
+      "title": "L'édition (les 365 jours)",
+      "lead": "L'état de l'édition est décidé par la base de données, avec sa propre horloge. Les 365 jours ne démarrent que lorsqu'un administrateur ouvre l'édition ici : rien d'autre (ni un déploiement, ni un réglage) ne peut les démarrer. Chaque action ci-dessous est inscrite au journal d'audit.",
       "unavailable": "L'édition est illisible : il manque sans doute la dernière migration dans la base (lancez node scripts/migrate.mjs).",
       "current": "État actuel",
       "state": {
@@ -1164,7 +1164,7 @@
         "closed": "Close — archive"
       },
       "explain": {
-        "prelaunch": "Aucune date, rien n'est en vente. La carte se visite. Les 100 jours n'ont pas démarré.",
+        "prelaunch": "Aucune date, rien n'est en vente. La carte se visite. Les 365 jours n'ont pas démarré.",
         "open": "Les achats, les projets collectifs et les créations sont ouverts jusqu'à la date de clôture.",
         "settling": "Plus rien ne peut s'acheter. Les paiements déjà lancés peuvent encore aboutir, et leurs acheteurs envoyer leur création, jusqu'à la fin du délai de réservation. Ensuite les créations sont gelées et le cliché est pris.",
         "closed": "Rien ne peut s'acheter, aucune création ne peut changer. L'archive se visite. Les modérateurs peuvent toujours retirer un contenu."
@@ -1186,7 +1186,7 @@
       },
       "extend": {
         "title": "Reporter la clôture",
-        "help": "La clôture ne peut être que repoussée, jamais avancée, et jamais au-delà de 366 jours après l'ouverture. Elle est inscrite au journal d'audit avec votre note.",
+        "help": "La clôture ne peut être que repoussée, jamais avancée, et jamais au-delà du double de la durée de l'édition après l'ouverture. Elle est inscrite au journal d'audit avec votre note.",
         "days": "Jours à ajouter",
         "note": "Motif (gardé au journal d'audit)",
         "button": "Reporter de {n} jours"
@@ -1213,7 +1213,7 @@
         "generic": "Un problème est survenu.",
         "px_forbidden": "Réservé aux administrateurs.",
         "px_edition_bad_state": "Impossible dans l'état actuel de l'édition.",
-        "px_edition_bad_date": "Cette date n'est pas permise : après la clôture actuelle, et au plus 366 jours après l'ouverture.",
+        "px_edition_bad_date": "Cette date n'est pas permise : après la clôture actuelle, et au plus le double de la durée de l'édition après l'ouverture.",
         "px_edition_confirm_mismatch": "Le nom saisi ne correspond pas au nom de l'édition.",
         "px_edition_not_empty": "Refusé : une parcelle est réservée ou achetée, ou un paiement a eu lieu. Seul un site vide peut revenir au pré-lancement."
       }

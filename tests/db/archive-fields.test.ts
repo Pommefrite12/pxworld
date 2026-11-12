@@ -68,7 +68,7 @@ describe("the archive fields of a creation: a category, and the place it is abou
   it("are frozen with the creations once the edition is frozen", async () => {
     const owner = await createUser("owner");
     const a = await newVersion(owner, await parcelOf(owner));
-    await pool.query(`update public.editions set opens_at = now() - interval '101 days', closes_at = now() - interval '40 minutes'`);
+    await pool.query(`update public.editions set opens_at = now() - interval '366 days', closes_at = now() - interval '40 minutes'`);
     await expectPgError(annotate(owner, a.id, "arts", null, null), "px_edition_frozen");
   });
 

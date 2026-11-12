@@ -14,7 +14,7 @@ beforeEach(resetData);
  * The snapshot of the closing, and what is made of it: the manifest carries the archive fields (migration 21), is the text the hash is the hash of,
  * and an export built from it — pictures from a storage, written to a real folder — checks out, and betrays a change.
  */
-const closedAgo = (minutes: number) => pool.query(`update public.editions set status = 'open', opens_at = now() - interval '101 days', closes_at = now() - make_interval(mins => $1), closed_at = null`, [minutes]);
+const closedAgo = (minutes: number) => pool.query(`update public.editions set status = 'open', opens_at = now() - interval '366 days', closes_at = now() - make_interval(mins => $1), closed_at = null`, [minutes]);
 const sweep = async () => (await pool.query(`select public.px_edition_sweep() as r`)).rows[0].r as string;
 const picture = (n: number) => new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, n, n * 3 % 251, n * 7 % 251]);
 

@@ -33,9 +33,9 @@ parcelle côtière peut contenir de la mer (offerte) mais doit être à moitié 
 
 Quelqu'un qui veut une grande parcelle sans en avoir les moyens la dessine, l'envoie à la modération (rien n'est payé), et, une fois acceptée, la zone est **réservée 7, 14 ou 30 jours** et le projet entre dans une liste publique où **chacun peut participer** (minimum 2 €, participations **anonymes**). Objectif atteint : la parcelle devient celle du créateur. Temps écoulé ou projet retiré : **tout le monde est remboursé automatiquement**. La base de données garantit que l'objectif n'est jamais dépassé, même si beaucoup de gens paient en même temps (testé). Les paiements restent simulés tant que Stripe n'est pas branché.
 
-## L'histoire « 100 jours pour sauver le monde » (optionnelle, éteinte tant qu'une date n'est pas fixée)
+## L'histoire « 365 jours pour sauver le monde » (optionnelle, éteinte tant qu'une date n'est pas fixée)
 
-Un compte à rebours de 100 jours annonce la **« suppression du monde numérique »**. Au fur et à mesure, la terre non achetée se **corrompt** (style
+Un compte à rebours de 365 jours annonce la **« suppression du monde numérique »**. Au fur et à mesure, la terre non achetée se **corrompt** (style
 « glitch » : lavande, cyan, magenta). À zéro, une séquence finale efface tout (un flash, une secousse, un balayage de 12 secondes qui détruit aussi
 tous les noms de pays et de villes) : **seules les parcelles achetées survivent**, intactes. Après zéro : **plus aucun achat**, un bouton
 « Rejouer la destruction », un bouton « Partager », et l'image de partage change selon l'état (normal, compte à rebours, fin du monde avec le nombre

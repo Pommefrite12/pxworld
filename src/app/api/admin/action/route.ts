@@ -22,7 +22,7 @@ const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("feature_parcel"), parcelId: uuid, featured: z.boolean(), note: z.string().max(140).optional() }),
   z.object({ action: z.literal("set_setting"), key: z.string().max(60), value: z.union([z.number(), z.boolean()]) }),
   z.object({ action: z.literal("refund_order"), orderId: uuid, reason: z.string().min(3).max(300) }),
-  // the edition (the 100 days): administrators only, each one confirmed by typing the name of the edition (except the postponement), all audited
+  // the edition (the 365 days): administrators only, each one confirmed by typing the name of the edition (except the postponement), all audited
   z.object({ action: z.literal("edition_open"), confirm: z.string().max(100) }),
   z.object({ action: z.literal("edition_close_now"), confirm: z.string().max(100) }),
   z.object({ action: z.literal("edition_reset"), confirm: z.string().max(100) }),

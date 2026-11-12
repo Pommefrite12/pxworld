@@ -393,7 +393,7 @@ Sans cela, le lien de confirmation reçu par e-mail ne ramènerait pas vers votr
 
 ## Étape 8 : retirer les anciennes variables du compte à rebours (si vous les aviez ajoutées)
 
-Le compte à rebours « 100 jours pour sauver le monde » (le Protocole ZÉRO) a été **retiré du site**. Les variables `NEXT_PUBLIC_STORY_PREVIEW` et `NEXT_PUBLIC_WORLD_END_AT` ne servent plus à rien. Si vous les aviez ajoutées dans Vercel :
+Le compte à rebours « 365 jours pour sauver le monde » (le Protocole ZÉRO) a été **retiré du site**. Les variables `NEXT_PUBLIC_STORY_PREVIEW` et `NEXT_PUBLIC_WORLD_END_AT` ne servent plus à rien. Si vous les aviez ajoutées dans Vercel :
 
 1. Vercel → projet → **Settings → Environment Variables**.
 2. Pour chacune des deux : **⋯ → Remove**.
@@ -441,9 +441,9 @@ la base contient déjà un paiement réel ; ou l'identifiant du projet Supabase 
 > Je n'ai pu essayer la création de comptes par l'API d'administration de Supabase que sur une base locale, pas sur un vrai projet : si Supabase refuse un compte, le message est affiché tel quel (collez-le moi).
 > Si c'est l'adresse `…@demo.invalid` qui est refusée, ajoutez `--email-domain exemple.test` (même option pour `demo:clear`).
 
-## Étape 9b : « l'édition » — les 100 jours s'ouvrent à la main (10 min)
+## Étape 9b : « l'édition » — les 365 jours s'ouvrent à la main (10 min)
 
-**Nouveauté (migration 19).** La date de fin n'est plus une variable de configuration : l'état du site (**pré-lancement**, **ouvert**, **clos**) est décidé par la base de données, avec sa propre horloge. Et **les 100 jours ne démarrent jamais tout seuls** : après la migration, le site est en **pré-lancement** (la carte se visite, **rien ne s'achète**) tant qu'un administrateur n'a pas cliqué sur « Ouvrir l'édition ».
+**Nouveauté (migration 19).** La date de fin n'est plus une variable de configuration : l'état du site (**pré-lancement**, **ouvert**, **clos**) est décidé par la base de données, avec sa propre horloge. Et **les 365 jours ne démarrent jamais tout seuls** : après la migration, le site est en **pré-lancement** (la carte se visite, **rien ne s'achète**) tant qu'un administrateur n'a pas cliqué sur « Ouvrir l'édition ».
 
 1. Mettez la base à jour (comme à l'étape 1F) :
 ```bash
@@ -451,12 +451,12 @@ git pull origin claude/funny-bell-k7v5xf
 node scripts/migrate.mjs --env .env.production.local
 ```
 Attendu : `applying …_editions.sql … ok` puis `applying …_archive_fields.sql … ok` (la migration 20 ajoute la catégorie et le lieu de chaque trace ; rien n'est perdu, les créations existantes n'ont simplement ni catégorie ni lieu).
-2. **Sur le site de test, rien ne s'achète plus** tant que l'édition n'est pas ouverte : c'est voulu. Connectez-vous avec votre compte **administrateur**, ouvrez `/admin/edition` (menu « Édition (les 100 jours) »).
-3. Vous voyez l'état « Pré-lancement » et la phrase « Les 100 jours n'ont pas démarré ». Tapez le nom de l'édition (**Édition fondatrice**, majuscules sans importance) puis cliquez **« Ouvrir l'édition maintenant »** : l'état passe à « Ouverte » et la date de clôture s'affiche (100 jours plus tard, à la minute près).
+2. **Sur le site de test, rien ne s'achète plus** tant que l'édition n'est pas ouverte : c'est voulu. Connectez-vous avec votre compte **administrateur**, ouvrez `/admin/edition` (menu « Édition (les 365 jours) »).
+3. Vous voyez l'état « Pré-lancement » et la phrase « Les 365 jours n'ont pas démarré ». Tapez le nom de l'édition (**Édition fondatrice**, majuscules sans importance) puis cliquez **« Ouvrir l'édition maintenant »** : l'état passe à « Ouverte » et la date de clôture s'affiche (365 jours plus tard, à la minute près).
 4. Pour **répéter** (essayer l'ouverture plusieurs fois sur le site de test) : « Revenir au pré-lancement » existe, mais il est **refusé dès qu'une parcelle est réservée ou achetée, ou qu'un paiement a eu lieu** ; effacez d'abord les données de démonstration (`demo:clear`). Sur le vrai site, ce bouton ne servira jamais.
 5. Le mot de passe de l'étape suivante n'est pas concerné : rien d'autre à configurer. **Vous pouvez supprimer** la variable `NEXT_PUBLIC_WORLD_END_AT` si vous l'aviez mise : elle ne fait plus rien (le compte à rebours a été retiré du site).
 
-**Pour essayer la clôture sans attendre 100 jours (site de test seulement)** : dans `/admin/edition`, « Clore les ventes maintenant » (tapez le nom). Les achats s'arrêtent à la seconde ; les paiements déjà lancés ont encore le délai de réservation (35 min) pour aboutir ; ensuite les créations sont gelées et le **cliché** (la liste figée de ce que le public voyait, avec son empreinte) est pris par la tâche planifiée — ou dès que vous rechargez la page « Édition ». « Reporter la clôture » ne fait que repousser (jamais avancer).
+**Pour essayer la clôture sans attendre 365 jours (site de test seulement)** : dans `/admin/edition`, « Clore les ventes maintenant » (tapez le nom). Les achats s'arrêtent à la seconde ; les paiements déjà lancés ont encore le délai de réservation (35 min) pour aboutir ; ensuite les créations sont gelées et le **cliché** (la liste figée de ce que le public voyait, avec son empreinte) est pris par la tâche planifiée — ou dès que vous rechargez la page « Édition ». « Reporter la clôture » ne fait que repousser (jamais avancer).
 
 ## Étape 9c : répéter l'export de l'archive, et le vérifier (15 min)
 

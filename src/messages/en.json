@@ -152,17 +152,17 @@
       "by": "by {author}"
     },
     "time": {
-      "title": "100 days to join the archive.",
-      "lead": "The founding edition lasts 100 days: the time left to take part. At the end, the creations are frozen in a collective archive that the generations to come can explore.",
+      "title": "365 days to join the archive.",
+      "lead": "The founding edition lasts 365 days: the time left to take part. At the end, the creations are frozen in a collective archive that the generations to come can explore.",
       "opening": "Opening",
-      "span": "100 days",
+      "span": "365 days",
       "closing": "Closing",
       "archive": "Archive",
       "onDate": "on {date}",
       "toArchive": "to take part",
       "explorable": "explorable",
       "prelaunchTitle": "Opening soon",
-      "prelaunchNote": "The map can already be explored. The 100 days have not started.",
+      "prelaunchNote": "The map can already be explored. The 365 days have not started.",
       "openLeft": "Time left to take part",
       "dayOne": "day",
       "dayMany": "days",
@@ -190,7 +190,7 @@
     },
     "time": {
       "title": "A time to tell it",
-      "text": "The founding edition lasts 100 days: this is the time left to take part. When it closes, nothing can be bought or changed any more: the edition becomes a historical archive, kept as it was and open to everybody. The opening and the closing are decided by us, announced, and enforced by the server, never by a browser."
+      "text": "The founding edition lasts 365 days: this is the time left to take part. When it closes, nothing can be bought or changed any more: the edition becomes a historical archive, kept as it was and open to everybody. The opening and the closing are decided by us, announced, and enforced by the server, never by a browser."
     },
     "buy": {
       "title": "What you pay for",
@@ -889,7 +889,7 @@
         {
           "h": "Editions and the closing",
           "p": [
-            "The archive is organised in editions. The founding edition lasts 100 days from the day the operator opens it. The opening and the closing are decided by the operator, announced on the site, and enforced by the server, never by a browser.",
+            "The archive is organised in editions. The founding edition lasts 365 days from the day the operator opens it. The opening and the closing are decided by the operator, announced on the site, and enforced by the server, never by a browser.",
             "When an edition closes, nothing can be bought any more and its creations are frozen: they stay readable and the map can still be explored, but their authors can no longer change them. Moderators keep the power to hide or remove a creation that breaks the rules or the law, even after the closing; the removal is recorded. A payment already started when the edition closes has a short delay to complete; one that would complete after it is refunded.",
             "[To be reviewed by a lawyer: the closing date as a term of the contract, and what happens to a purchase made shortly before it.]"
           ]
@@ -1008,7 +1008,7 @@
       "parcels": "Parcels",
       "users": "Users",
       "orders": "Orders & payments",
-      "edition": "Edition (the 100 days)",
+      "edition": "Edition (the 365 days)",
       "settings": "Settings",
       "audit": "Audit log",
       "role": "Signed in as {role}",
@@ -1153,8 +1153,8 @@
       "empty": "No order."
     },
     "edition": {
-      "title": "The edition (the 100 days)",
-      "lead": "The state of the edition is decided by the database, from its own clock. The 100 days only start when an administrator opens the edition here: nothing else (no deployment, no setting) can start them. Every action below is written to the audit log.",
+      "title": "The edition (the 365 days)",
+      "lead": "The state of the edition is decided by the database, from its own clock. The 365 days only start when an administrator opens the edition here: nothing else (no deployment, no setting) can start them. Every action below is written to the audit log.",
       "unavailable": "The edition cannot be read: the database is probably missing the latest migration (run node scripts/migrate.mjs).",
       "current": "Current state",
       "state": {
@@ -1164,7 +1164,7 @@
         "closed": "Closed — archive"
       },
       "explain": {
-        "prelaunch": "No date, nothing is for sale. The map can be visited. The 100 days have not started.",
+        "prelaunch": "No date, nothing is for sale. The map can be visited. The 365 days have not started.",
         "open": "Purchases, group projects and creations are open until the closing date.",
         "settling": "Nothing can be bought any more. The payments that were already under way can still finish, and their buyers can still send their creation, until the end of the reservation delay. Then the creations freeze and the snapshot is taken.",
         "closed": "Nothing can be bought, no creation can be changed. The archive can be visited. Moderators can still take things down."
@@ -1186,7 +1186,7 @@
       },
       "extend": {
         "title": "Postpone the closing",
-        "help": "The closing can only be moved later, never brought forward, and never beyond 366 days after the opening. It is recorded in the audit log with your note.",
+        "help": "The closing can only be moved later, never brought forward, and never beyond twice the length of the edition after the opening. It is recorded in the audit log with your note.",
         "days": "Days to add",
         "note": "Reason (kept in the audit log)",
         "button": "Postpone by {n} days"
@@ -1213,7 +1213,7 @@
         "generic": "Something went wrong.",
         "px_forbidden": "Administrators only.",
         "px_edition_bad_state": "Not possible in the current state of the edition.",
-        "px_edition_bad_date": "That date is not allowed: later than the current closing, and within 366 days of the opening.",
+        "px_edition_bad_date": "That date is not allowed: later than the current closing, and within twice the length of the edition after the opening.",
         "px_edition_confirm_mismatch": "The name typed does not match the name of the edition.",
         "px_edition_not_empty": "Refused: a parcel is reserved or bought, or a payment was made. Only an empty site can go back to pre-launch."
       }

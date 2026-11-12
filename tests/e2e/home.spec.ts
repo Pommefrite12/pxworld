@@ -188,7 +188,7 @@ test.describe("the home page", () => {
     const left = Number(await page.getByTestId("home-days-left").innerText());
     const expected = Math.ceil((e.closes_at!.getTime() - Date.now()) / 86_400_000);
     expect(Math.abs(left - expected)).toBeLessThanOrEqual(1);
-    await expect(time).toContainText("100 days to join the archive.");
+    await expect(time).toContainText("365 days to join the archive.");
     await expect(time).toContainText("Time left to take part");
     await expect(time).toContainText("Founding edition");
   });
@@ -234,7 +234,7 @@ test.describe("the home page", () => {
     await expect(page.getByTestId("home-explore")).toHaveText("Explorer les archives");
     await expect(page.getByTestId("home-fine")).toHaveCount(0);
     expect(await page.locator("main").innerText()).not.toContain("Chaque cadre cyan");
-    await expect(page.getByTestId("home-time")).toContainText("100 jours pour entrer dans l'archive.");
+    await expect(page.getByTestId("home-time")).toContainText("365 jours pour entrer dans l'archive.");
   });
 
   test("the page is indexable, has a title and a description, and is in the sitemap with the map", async ({ page, request }) => {
