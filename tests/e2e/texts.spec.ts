@@ -5,7 +5,8 @@ import { expect, test } from "@playwright/test";
  * pixels"). The legal texts are provisional and say so; they now say what the archive promises and what it does not. Nothing is bought here.
  */
 const OLD_EN = ["One planet", "Your mark", "Claim your pixels", "Claim a piece", "piece of the planet", "Find your spot", "collaborative world map"];
-const OLD_FR = ["Une planète", "Votre empreinte", "Réservez vos pixels", "morceau de la planète", "Trouvez votre place", "planisphère collaboratif"];
+// ("Votre empreinte" used to be on this list; « empreinte » is now the French word for a trace, the owner's choice of November 2026)
+const OLD_FR = ["Une planète", "Réservez vos pixels", "morceau de la planète", "Trouvez votre place", "planisphère collaboratif"];
 
 test.describe("vocabulary", () => {
   test("no page of the public side still sells a piece of the planet", async ({ page }) => {

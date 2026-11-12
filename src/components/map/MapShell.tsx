@@ -199,7 +199,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, ed
         viewer={viewer}
         center={<SearchBox onGo={goTo} />}
         cta={mode === "explore" ? (
-          <button className="btn btn-primary btn-sm max-sm:!px-3 sm:!min-h-10 sm:!px-5" onClick={() => startBuy()} data-testid="find-your-spot">{t("findYourSpot")}</button>
+          <button className="btn btn-primary btn-sm max-sm:!px-3 max-[359px]:!px-2 max-[359px]:!text-[0.8rem] sm:!min-h-10 sm:!px-5" onClick={() => startBuy()} data-testid="find-your-spot">{t("findYourSpot")}</button>
         ) : null}
       />
       <div className="relative min-h-0 flex-1">
