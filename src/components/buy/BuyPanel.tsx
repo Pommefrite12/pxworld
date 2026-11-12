@@ -35,11 +35,13 @@ interface Props {
   free: FreeInfo | null;
   freeSel: boolean;
   covers: number;
+  /** The map is seen whole (zoomed out): a first tap zooms towards the place, the next one puts the parcel. */
+  farView: boolean;
 }
 
 const num = (v: string) => (v === "" ? 0 : Math.max(0, Math.min(99999, Math.floor(Number(v)) || 0)));
 
-export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind, onKind, landPixels, serverFree, signedIn, onContinue, onCollective, onClose, free, freeSel, covers }: Props) {
+export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind, onKind, landPixels, serverFree, signedIn, onContinue, onCollective, onClose, free, freeSel, covers, farView }: Props) {
   const t = useTranslations("buy");
   const f = useFormatter();
   const [fine, setFine] = useState(false); // mobile: position fine-tuning is folded away to keep the map visible
@@ -58,7 +60,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind
   const status = !freeSel && !pricing.salesOpen ? { tone: "bad", text: t(pricing.editionState === "prelaunch" ? "status.notOpen" : pricing.editionState === "closed" ? "status.editionClosed" : "status.closed") }
     : sizeErr === "area_too_small" && freeWhy ? { tone: "bad", text: t(`free.why.${freeWhy}`, { max: free?.lifetimeMax ?? 3 }) }
     : sizeErr ? { tone: "bad", text: t(`sizeError.${sizeErr}`, { min: f.number(pricing.minArea), max: f.number(pricing.maxArea), side: MAX_SIDE }) }
-    : !selection ? { tone: "info", text: t("status.place") }
+    : !selection ? { tone: "info", text: t(farView ? "status.placeFar" : "status.place") }
     : state === "out" ? { tone: "bad", text: t("status.out") }
     : state === "water" ? { tone: "bad", text: t("status.water", { pct: pricing.minLandPercent }) }
     : state === "land" ? { tone: "bad", text: t("status.land", { pct: pricing.minWaterPercent }) }
@@ -69,6 +71,8 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind
     : covers > 0 ? { tone: "ok", text: t("free.statusCovers", { n: covers }) }
     : { tone: "ok", text: t("status.free") };
 
+  // on a phone, while the whole planisphere is in view and nothing is chosen yet, the sheet shrinks to its title and one sentence: the map stays visible
+  const compact = farView && !selection;
   const tone = { ok: "bg-mint/12 text-(--color-mint-ink)", bad: "bg-danger/10 text-danger", info: "bg-paper-2 text-ink-soft" }[status.tone as "ok" | "bad" | "info"];
 
   return (
@@ -82,7 +86,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind
         <button className="btn btn-ghost btn-icon btn-sm shrink-0 text-lg" onClick={onClose} aria-label={t("close")}>×</button>
       </div>
 
-      <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-0.5">
+      <div className={`mt-3 min-h-0 flex-1 overflow-y-auto pr-0.5 ${compact ? "max-md:hidden" : ""}`}>
         <fieldset data-testid="buy-kind">
           <legend className="label">{t("kind.label")}</legend>
           <div className="grid grid-cols-2 gap-1.5">
@@ -162,15 +166,15 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind
         </div>
       </div>
 
-      <div className="shrink-0 pt-3">
+      <div className="shrink-0 pt-3 max-md:pt-2">
         <p role="status" data-testid="buy-status" className={`rounded-[8px] px-3 py-2 text-sm font-semibold ${tone}`}>{status.text}</p>
-        <button className="btn btn-primary mt-2.5 w-full" disabled={!ready} onClick={onContinue} data-testid="buy-continue">
+        <button className={`btn btn-primary mt-2.5 w-full ${compact ? "max-md:hidden" : ""}`} disabled={!ready} onClick={onContinue} data-testid="buy-continue">
           {signedIn ? (freeSel ? t("free.continue") : t("continue")) : t("signInToContinue")}
         </button>
-        {!freeSel && <button className="btn btn-secondary mt-1.5 w-full" disabled={!ready || tooSmall} onClick={onCollective} data-testid="buy-collective" aria-describedby="buy-collective-note">
+        {!freeSel && <button className={`btn btn-secondary mt-1.5 w-full ${compact ? "max-md:hidden" : ""}`} disabled={!ready || tooSmall} onClick={onCollective} data-testid="buy-collective" aria-describedby="buy-collective-note">
           {t("collective.button")}
         </button>}
-        {!freeSel && <p id="buy-collective-note" className="mt-1 text-[0.7rem] leading-snug text-ink-faint" data-testid="buy-collective-note">
+        {!freeSel && <p id="buy-collective-note" className={`mt-1 text-[0.7rem] leading-snug text-ink-faint ${compact ? "max-md:hidden" : ""}`} data-testid="buy-collective-note">
           {ready && tooSmall ? t("collective.tooSmall", { min: f.number(pricing.campaignMinArea) }) : t("collective.hint")}{" "}
           <Link href="/projects" className="font-semibold text-cobalt underline" data-testid="buy-collective-browse">{t("collective.browse")}</Link>
         </p>}

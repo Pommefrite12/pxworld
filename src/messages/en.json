@@ -308,6 +308,7 @@
     "taxNote": "Taxes, if any, are calculated at checkout.",
     "status": {
       "place": "Click or tap the map to place your parcel, then drag it to adjust.",
+      "placeFar": "Tap the spot you want: the map zooms there, then tap again to place your parcel.",
       "free": "This spot is free.",
       "blocked": "This area overlaps an existing parcel.",
       "reserved": "Someone is currently reserving part of this area. Try again in a few minutes or pick another spot.",

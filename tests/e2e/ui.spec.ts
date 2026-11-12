@@ -240,6 +240,30 @@ test.describe("map interaction", () => {
     expect(problems).toEqual([]);
   });
 
+  test("arriving to leave a trace keeps the whole planisphere in view: nothing zooms by itself; the first click zooms where it was made, the next one puts the parcel", async ({ page }) => {
+    type Eng = { cam: { x: number; y: number; scale: number }; fitScale: number; selection: unknown; worldToScreen(x: number, y: number): { x: number; y: number } };
+    await page.goto("/map?buy=1"); // the address of every "Leave my trace" button
+    await page.waitForFunction(() => { const e = (window as unknown as { __pxEngine?: Eng & { geo: unknown; geoPending: boolean } }).__pxEngine; return Boolean(e && e.geo && !e.geoPending); }, undefined, { timeout: 60_000 });
+    await expect(page.getByTestId("buy-panel")).toBeVisible();
+    await page.waitForTimeout(1800); // a zoom, if there was one, would be done by now
+    const cam = () => page.evaluate(() => { const e = (window as unknown as { __pxEngine: Eng }).__pxEngine; return { ...e.cam, fit: e.fitScale, selection: e.selection }; });
+    const world = await cam();
+    expect(world.scale, "the whole planisphere: the scale that fits the world").toBeCloseTo(world.fit, 6);
+    expect([Math.round(world.x), Math.round(world.y)]).toEqual([20_000, 12_500]);
+    // a click on Kazakhstan: the first click only zooms, towards that very place; no parcel is put yet
+    const kz = await page.evaluate(() => { const e = (window as unknown as { __pxEngine: Eng }).__pxEngine, a = e.worldToScreen(26_000, 11_000), r = document.querySelector("canvas")!.getBoundingClientRect(); return { x: r.x + a.x, y: r.y + a.y }; });
+    await page.mouse.click(kz.x, kz.y);
+    await expect.poll(async () => (await cam()).scale, { timeout: 5000 }).toBeGreaterThanOrEqual(0.6);
+    await expect.poll(async () => Math.abs((await cam()).x - 26_000) + Math.abs((await cam()).y - 11_000), { timeout: 5000 }).toBeLessThan(60);
+    expect((await cam()).selection, "no parcel yet").toBeNull();
+    // the next click puts it (dry land all around)
+    await page.waitForTimeout(900);
+    const box = (await page.getByRole("application").boundingBox())!;
+    await page.mouse.click(box.x + box.width * 0.4, box.y + box.height * 0.5);
+    await expect(page.getByTestId("buy-status")).toContainText(/free/i, { timeout: 10_000 });
+    expect((await cam()).selection).not.toBeNull();
+  });
+
   test("buy mode: clicking the map places a parcel, collisions and bounds are reported", async ({ page }) => {
     await page.goto("/map?x=26000&y=11000&z=0.6"); // Kazakhstan: dry land all around
     // the button works once the page is interactive: a click before hydration does nothing

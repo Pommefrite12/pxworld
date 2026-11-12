@@ -8,11 +8,25 @@ test.describe("mobile (touch)", () => {
     await expect(page.getByRole("application")).toBeVisible(); // the home page is the map
     await expect(page.getByTestId("find-your-spot")).toBeVisible();
     await page.waitForFunction(() => Boolean((window as unknown as { __pxEngine?: unknown }).__pxEngine)); // interactive
-    await page.getByTestId("find-your-spot").click(); // buy mode, on the same page
+    await page.getByTestId("find-your-spot").click(); // buy mode, on the same page: the planisphere stays whole, nothing zooms by itself
     await expect(page.getByTestId("buy-panel")).toBeVisible();
-    await page.waitForTimeout(1800);
-    const box = (await page.getByRole("application").boundingBox())!;
-    await page.touchscreen.tap(box.x + box.width * 0.4, box.y + 120);
+    await page.waitForTimeout(1000);
+    // while the whole planisphere is in view and nothing is chosen, the sheet shrinks to its title and one sentence: the world stays visible
+    const vh = page.viewportSize()!.height;
+    expect((await page.getByTestId("buy-panel").boundingBox())!.y, "the buying sheet leaves most of the screen to the map").toBeGreaterThan(vh * 0.55);
+    await expect(page.getByTestId("buy-status")).toContainText(/tap the spot you want/i);
+    type Eng = { cam: { x: number; y: number; scale: number }; worldToScreen(x: number, y: number): { x: number; y: number } };
+    const cam = () => page.evaluate(() => { const e = (window as unknown as { __pxEngine: Eng }).__pxEngine; return { ...e.cam }; });
+    const world = await cam();
+    // Greenland, seen on the whole planisphere, above the buying sheet (which covers the lower part of a phone)
+    const spot = await page.evaluate(() => { const e = (window as unknown as { __pxEngine: Eng }).__pxEngine, a = e.worldToScreen(14_278, 2_100), r = document.querySelector("canvas")!.getBoundingClientRect(); return { x: r.x + a.x, y: r.y + a.y }; });
+    // the first tap zooms towards the place tapped (a parcel is a dot on the whole planisphere), the next one chooses the spot
+    await page.touchscreen.tap(spot.x, spot.y);
+    await expect.poll(async () => (await cam()).scale, { timeout: 5000 }).toBeGreaterThan(world.scale * 5);
+    await page.waitForTimeout(1200);
+    // the map is now centred on Greenland; the buying sheet is back to its full size over the lower part of the phone: choose a spot of the same island above it
+    const next = await page.evaluate(() => { const e = (window as unknown as { __pxEngine: Eng }).__pxEngine, a = e.worldToScreen(14_278, 1_700), r = document.querySelector("canvas")!.getBoundingClientRect(); return { x: r.x + a.x, y: r.y + a.y }; });
+    await page.touchscreen.tap(next.x, next.y);
     await expect(page.getByTestId("buy-status")).toContainText(/free/i, { timeout: 10_000 });
     await expect(page.getByTestId("buy-continue")).toBeVisible(); // the primary action is never pushed off-screen
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);

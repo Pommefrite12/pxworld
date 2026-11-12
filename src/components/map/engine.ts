@@ -82,6 +82,7 @@ const CAMERA_NOTIFY_MS = 120;
 const MAX_IMAGES_IN_FLIGHT = 20; // over HTTP/2 (every host that matters) requests share one connection: more at once is faster, not slower
 const MAX_SCALE = 48;
 const RASTER_BELOW = 1; // below this zoom the server-composited rasters are shown; above it, parcels are drawn individually
+export const BUY_PLACE_FROM = 0.3; // in the buy mode a click zooms (instead of placing) while the map is zoomed out below this
 const JSON_ABOVE = 0.1; // below this zoom parcels are sub-2px: no metadata needed
 const STAND_IN_MIN_PX = 12; // a creation at least this big on screen, whose picture is still on its way, shows the raster picture meanwhile (not a flat colour)
 const NAME_AVOIDS_PARCEL_PX = 24; // zoomed out, a place name is not written over a parcel at least this big on screen (a creation hides the names under it, as it does zoomed in)
@@ -672,6 +673,9 @@ export class MapEngine {
       // rectangle stays where it is. A click on free land puts the rectangle there, and closes any card.
       const taken = this.cam.scale >= JSON_ABOVE ? this.parcelAt(w.x, w.y) : null;
       if (taken) { this.invalidate(); this.cb.onSelectParcel?.(taken, { x: sx, y: sy }); return; }
+      // Zoomed far out (the whole planisphere in view) a parcel is a dot of less than ten screen pixels: nothing can be placed with any
+      // care. The click is the person's own, so it zooms towards the place clicked (the camera never moves by itself); the next one places.
+      if (this.cam.scale < BUY_PLACE_FROM) { this.flyTo({ x: w.x, y: w.y, scale: Math.max(this.cam.scale * 4, 0.6) }, 700); return; }
       this.cb.onSelectParcel?.(null, { x: sx, y: sy });
       this.place(centeredRect(w.x, w.y, this.brush.w, this.brush.h));
       return;

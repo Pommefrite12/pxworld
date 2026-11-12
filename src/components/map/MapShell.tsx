@@ -11,7 +11,7 @@ import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { centeredRect, clampToGrid, type Rect } from "@/lib/grid/geometry";
 import type { PublicStats } from "@/lib/data/map";
 import { MapView, type MapViewHandle } from "./MapView";
-import type { Camera, MapParcel, Mode, SelectionState } from "./engine";
+import { BUY_PLACE_FROM, type Camera, type MapParcel, type Mode, type SelectionState } from "./engine";
 import { LatestTile, MapControls, StatsCard, type LatestCreation } from "./Hud";
 import { ParcelCard } from "./ParcelCard";
 import { ProjectMapCard } from "./ProjectMapCard";
@@ -118,9 +118,9 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, ed
       const r = clampToGrid(preset);
       applySelection(r);
       e.fitRect(r, { padding: 140, maxScale: 8, offsetX: -190 });
-    } else if (e.cam.scale < 0.35) {
-      e.flyTo({ x: e.cam.x, y: e.cam.y, scale: 0.6 }, 700);
     }
+    // Without a preset the view does not move: the planisphere stays whole (the camera never moves by itself). Zoomed out, the first click
+    // of the buy mode zooms towards the place clicked (see MapEngine.click), the next one puts the parcel.
   }, [size, applySelection]);
 
   const stopBuy = useCallback(() => {
@@ -249,7 +249,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, ed
           <BuyPanel
             pricing={pricing} locale={locale} size={size} onSize={changeSize} selection={selection}
             state={selState} kind={kind} onKind={(k) => { setServerFree(null); setKind(k); }} landPixels={selLand} serverFree={serverFree} signedIn={Boolean(viewer)} onContinue={() => continueBuy(false)} onCollective={() => continueBuy(true)} onClose={stopBuy}
-            free={free} freeSel={freeSel} covers={covers}
+            free={free} freeSel={freeSel} covers={covers} farView={cam.scale < BUY_PLACE_FROM}
           />
         )}
 

@@ -14,7 +14,7 @@ const rng = (seed: number) => { let s = seed >>> 0; return () => ((s = (s * 1664
 /**
  * The planisphere of the home page: the REAL land of the site (the same Natural Earth outlines the map is drawn from), in the night palette, one
  * cell a pixel; the traces of the archive sit on it at their true places. It is a picture, not the map: nothing to drag, so the page scrolls
- * normally; "Explore the archives" opens the interactive map. Without any trace there is only the world: nothing is ever made up.
+ * normally; "Explore the archives" opens the interactive map. It is always shown WHOLE (`object-contain`, on a frame of the ocean's colour): no zoom on a zone, on any screen. Without any trace there is only the world: nothing is ever made up.
  */
 export function HeroWorld({ markers, label }: { markers: HeroMarker[]; label: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -104,7 +104,7 @@ export function HeroWorld({ markers, label }: { markers: HeroMarker[]; label: st
     return () => { alive = false; };
   }, [markers]);
 
-  return <canvas ref={ref} role="img" aria-label={label} data-testid="hero-world" className="block h-full w-full object-cover object-[62%_40%] [image-rendering:pixelated] max-sm:absolute max-sm:left-1/2 max-sm:top-0 max-sm:h-[105%] max-sm:w-auto max-sm:max-w-none max-sm:-translate-x-[52.8%] max-sm:object-fill" />;
+  return <canvas ref={ref} role="img" aria-label={label} data-testid="hero-world" className="block h-full w-full object-contain object-center [image-rendering:pixelated]" />; // the WHOLE planisphere, never cropped to a zone: it is fitted in its frame (the frame is the colour of the ocean)
 }
 
 /** A few points of light over the picture (deterministic: the server and the browser agree). */

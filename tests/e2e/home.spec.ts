@@ -70,6 +70,20 @@ test.describe("the home page", () => {
     expect(c.violet).toBeLessThan(0.6); // and the land is not all of it
   });
 
+  test("the planisphere of the home page is shown whole, never cropped to a zone, on a wide screen and on a phone", async ({ page }) => {
+    for (const vp of [{ width: 1920, height: 1080 }, { width: 1360, height: 860 }, { width: 390, height: 844 }]) {
+      await page.setViewportSize(vp);
+      await page.goto("/");
+      const canvas = page.getByTestId("hero-world");
+      await expect(canvas).toBeVisible();
+      // the whole bitmap is fitted inside its box (a crop would be "cover"), and the box is inside the screen
+      expect(await canvas.evaluate((el) => getComputedStyle(el).objectFit), `${vp.width}px`).toBe("contain");
+      const b = (await canvas.boundingBox())!;
+      expect(b.x, `${vp.width}px`).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width, `${vp.width}px`).toBeLessThanOrEqual(vp.width + 0.5);
+    }
+  });
+
   test("the eras: five stations in the order they happened, each with its picture, and the last one is Pixel World", async ({ page }) => {
     await page.goto("/");
     const eras = page.getByTestId("era");

@@ -308,6 +308,7 @@
     "taxNote": "Les taxes éventuelles sont calculées au paiement.",
     "status": {
       "place": "Cliquez ou touchez la carte pour poser votre parcelle, puis faites-la glisser pour l'ajuster.",
+      "placeFar": "Touchez l'endroit voulu : la carte s'y rapproche, puis touchez à nouveau pour poser votre parcelle.",
       "free": "Cet emplacement est libre.",
       "blocked": "Cette zone chevauche une parcelle existante.",
       "reserved": "Quelqu'un réserve actuellement une partie de cette zone. Réessayez dans quelques minutes ou choisissez un autre emplacement.",

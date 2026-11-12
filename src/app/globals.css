@@ -250,10 +250,10 @@
   .spark { position: absolute; width: 3px; height: 3px; background: var(--color-signal); opacity: 0.8; animation: twinkle 3.4s ease-in-out infinite; pointer-events: none; }
   .spark.c { background: var(--color-cobalt); }
 }
-/* the home page: the ocean fades into the page, from the left (where the title sits) and from below; on a phone the map is above the text, fading downwards */
+/* the home page: the whole planisphere is shown (nothing cropped); a light veil from the left (where the title sits) keeps the words readable, and the ocean fades into the page from below; on a phone the map is above the text, fading downwards */
 .hero-veil {
   position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(90deg, rgb(var(--ocean-rgb) / 0.94) 0, rgb(var(--ocean-rgb) / 0.84) 36%, rgb(var(--ocean-rgb) / 0.25) 55%, transparent 68%), linear-gradient(0deg, var(--color-paper) 0, transparent 22%);
+  background: linear-gradient(90deg, rgb(var(--ocean-rgb) / 0.5) 0, rgb(var(--ocean-rgb) / 0.4) 36%, rgb(var(--ocean-rgb) / 0.12) 55%, transparent 68%), linear-gradient(0deg, var(--color-paper) 0, transparent 22%);
 }
 @media (max-width: 639px) { .hero-veil { background: linear-gradient(0deg, var(--color-paper) 0, rgb(var(--ocean-rgb) / 0.6) 22%, transparent 55%); } }
 /* the eras of the home page: a gold thread with a square for each one (on the left on a phone, down the middle from 768 px), the picture on one side and the words on the other, switching sides at each era */
