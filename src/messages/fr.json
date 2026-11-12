@@ -46,6 +46,7 @@
     "eyebrowOpen": "Temps restant pour participer",
     "eyebrowOther": "Édition fondatrice",
     "prelaunch": "Ouverture bientôt",
+    "prelaunchDuration": "{n, plural, one {# jour} other {# jours}}\u00a0à partir de l'ouverture",
     "closed": "Terminée · archive figée",
     "remaining": "{d}\u00a0j {h}\u00a0h {m}\u00a0min {s}\u00a0s",
     "daysAria": "{n, plural, one {# jour restant} other {# jours restants}}"

@@ -31,7 +31,7 @@ describe("the edition as the interface sees it", () => {
   it("gives the public only what a visitor may know: no identifier, no snapshot, no recorded status", () => {
     const withSnapshot = info({ snapshot: { revision: 2, takenAt: "2027-02-10T00:00:00Z", parcelCount: 5, hash: "a".repeat(64) } });
     const p = toPublicEdition(withSnapshot);
-    expect(Object.keys(p).sort()).toEqual(["closedAt", "closesAt", "frozen", "name", "opensAt", "serverNow", "slug", "state"]);
+    expect(Object.keys(p).sort()).toEqual(["closedAt", "closesAt", "durationDays", "frozen", "name", "opensAt", "serverNow", "slug", "state"]);
     expect(JSON.stringify(p)).not.toContain("aaaa");
   });
 });

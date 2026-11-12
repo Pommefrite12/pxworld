@@ -40,10 +40,12 @@ export interface PublicEdition {
   closesAt: string | null;
   closedAt: string | null;
   serverNow: string;
+  /** How long the edition lasts once an administrator opens it (365): what the map announces before the opening. */
+  durationDays: number;
 }
 
 export function toPublicEdition(i: EditionInfo): PublicEdition {
-  return { slug: i.slug, name: i.name, state: i.state, frozen: i.frozen, opensAt: i.opensAt, closesAt: i.closesAt, closedAt: i.closedAt, serverNow: i.serverNow };
+  return { slug: i.slug, name: i.name, state: i.state, frozen: i.frozen, opensAt: i.opensAt, closesAt: i.closesAt, closedAt: i.closedAt, serverNow: i.serverNow, durationDays: i.durationDays };
 }
 
 /** Share of the edition already gone: 0 before the opening, 1 once closed, on the SERVER's clock in between. */

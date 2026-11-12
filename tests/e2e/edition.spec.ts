@@ -76,7 +76,10 @@ test.describe.serial("the edition: pre-launch, opening, postponing, closing", ()
     await page.goto("/map");
     await expect(page.getByTestId("map-clock")).toHaveAttribute("data-state", "prelaunch");
     await expect(page.getByTestId("map-clock-text")).toHaveText("Opening soon");
+    await expect(page.getByTestId("map-clock-duration")).toHaveText("365 days from the opening"); // the length is announced; nothing ticks
     await expect(page.getByTestId("map-clock-time")).toHaveCount(0);
+    await page.goto("/fr/map");
+    await expect(page.getByTestId("map-clock-duration")).toHaveText(/^365 jours\sà partir de l'ouverture$/);
   });
 
   test("an administrator opens the edition from the back office, by typing its name; the 365 days start at that moment", async ({ page }) => {
