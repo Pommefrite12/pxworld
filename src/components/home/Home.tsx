@@ -35,7 +35,7 @@ export async function Home({ viewer, edition, traces }: { viewer: HeaderViewer |
           <div className="absolute inset-0 -z-10 bg-[rgb(var(--ocean-rgb))] max-sm:relative max-sm:inset-auto max-sm:z-0 max-sm:h-[300px] max-sm:overflow-hidden">
             <HeroWorld label={t("hero.mapLabel")} markers={traces.map((x) => ({ code: x.code, x: x.x + x.w / 2, y: x.y + x.h / 2, assetId: x.asset_id }))} />
             <div className="hero-veil" />
-            <Sparks />
+            <Sparks n={64} />
           </div>
           <div className="relative mx-auto w-full max-w-[1180px] px-5 pb-10 pt-2 sm:py-24" data-testid="home-hero">
             <p className="eyebrow">{t("hero.eyebrow")}{editionName ? ` · ${editionName}` : ""}</p>

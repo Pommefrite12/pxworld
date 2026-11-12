@@ -84,6 +84,26 @@ test.describe("the home page", () => {
     }
   });
 
+  test("the planisphere of the home page is alive: the coasts breathe, a band of light crosses the land; and it stands still for a visitor who asked for less motion", async ({ page }) => {
+    const read = () => page.getByTestId("hero-world").evaluate((el: HTMLCanvasElement) => {
+      const d = el.getContext("2d")!.getImageData(0, 0, el.width, el.height).data;
+      let s = 0;
+      for (let i = 0; i < d.length; i += 4 * 53) s += d[i]! + d[i + 1]! + d[i + 2]!;
+      return s;
+    });
+    const sample = async () => { const out: number[] = []; for (let i = 0; i < 4; i++) { out.push(await read()); await page.waitForTimeout(700); } return out; };
+    await page.goto("/");
+    await expect(page.getByTestId("hero-world")).toBeVisible();
+    await page.waitForTimeout(2500); // the land is drawn
+    expect(new Set(await sample()).size, "the picture changes from one moment to the next").toBeGreaterThan(1);
+
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await expect(page.getByTestId("hero-world")).toBeVisible();
+    await page.waitForTimeout(2500);
+    expect(new Set(await sample()).size, "nothing moves for a visitor who asked for less motion").toBe(1);
+  });
+
   test("the eras: five stations in the order they happened, each with its picture, and the last one is Pixel World", async ({ page }) => {
     await page.goto("/");
     const eras = page.getByTestId("era");
