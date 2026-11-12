@@ -1,14 +1,14 @@
 {
   "meta": {
     "siteName": "Pixel World",
-    "tagline": "Chaque époque laisse une trace. Voici la nôtre.",
-    "description": "Pixel World est une archive collective mondiale de notre époque\u00a0: une carte du monde où chacun peut laisser une trace — une création, un souvenir, une passion — pour les générations futures."
+    "tagline": "Chaque époque laisse une empreinte. Voici la nôtre.",
+    "description": "Pixel World est une archive collective mondiale de notre époque\u00a0: une carte du monde où chacun peut laisser une empreinte — une création, un souvenir, une passion — pour les générations futures."
   },
   "nav": {
     "home": "pixelworld — accueil",
     "main": "Navigation principale",
     "discover": "Découvrir",
-    "leaveTrace": "Laisser ma trace",
+    "leaveTrace": "Laisser mon empreinte",
     "signIn": "Connexion",
     "signOut": "Se déconnecter",
     "myParcels": "Mes parcelles",
@@ -18,12 +18,12 @@
     "language": "Langue"
   },
   "map": {
-    "canvasLabel": "Carte interactive de l'archive\u00a0: chaque trace est à sa place sur le monde. Glissez pour déplacer, molette ou pincement pour zoomer, flèches pour se déplacer, plus et moins pour zoomer.",
-    "sloganA": "Chaque époque laisse une trace.",
+    "canvasLabel": "Carte interactive de l'archive\u00a0: chaque empreinte est à sa place sur le monde. Glissez pour déplacer, molette ou pincement pour zoomer, flèches pour se déplacer, plus et moins pour zoomer.",
+    "sloganA": "Chaque époque laisse une empreinte.",
     "sloganB": "Voici la nôtre.",
     "sloganC": "Laissez la vôtre.",
-    "pitch": "Une archive collective de notre époque, sur une carte du monde. Choisissez une place et laissez votre trace.",
-    "findYourSpot": "Laisser ma trace",
+    "pitch": "Une archive collective de notre époque, sur une carte du monde. Choisissez une place et laissez votre empreinte.",
+    "findYourSpot": "Laisser mon empreinte",
     "zoomIn": "Zoom avant",
     "zoomOut": "Zoom arrière",
     "recenter": "Afficher le monde entier",
@@ -51,10 +51,10 @@
   },
   "latest": {
     "title": "Récemment archivées",
-    "all": "Voir toutes les traces",
-    "empty": "Les premières traces apparaîtront ici.",
+    "all": "Voir toutes les empreintes",
+    "empty": "Les premières empreintes apparaîtront ici.",
     "open": "Ouvrir {title}",
-    "untitled": "trace sans titre"
+    "untitled": "empreinte sans titre"
   },
   "comments": {
     "title": "Commentaires",
@@ -99,16 +99,16 @@
   "home": {
     "hero": {
       "eyebrow": "Archive collective",
-      "title": "<nb>Chaque époque</nb> <nb>laisse une trace.</nb> <gold>Voici la nôtre.</gold>",
+      "title": "<nb>Chaque époque</nb> <nb>laisse une empreinte.</nb> <gold>Voici la nôtre.</gold>",
       "hook": "Dans 100 ans, que restera-t-il de nous\u00a0?",
       "subtitle": "Une archive collective mondiale où chacun peut déposer une création, un souvenir, une passion, un morceau de notre monde, pour les générations futures.",
-      "primary": "Laisser ma trace",
+      "primary": "Laisser mon empreinte",
       "secondary": "Explorer les archives",
-      "mapLabel": "Planisphère : la carte du monde, où chaque trace est à sa place"
+      "mapLabel": "Planisphère : la carte du monde, où chaque empreinte est à sa place"
     },
     "eras": {
       "eyebrow": "De tout temps",
-      "title": "L'humanité a toujours laissé une trace.",
+      "title": "L'humanité a toujours laissé une empreinte.",
       "lead": "Chaque époque a eu sa manière de transmettre son histoire aux générations futures. Aujourd'hui, c'est au tour de Pixel World.",
       "cave": {
         "when": "Il y a des dizaines de milliers d'années",
@@ -133,16 +133,16 @@
       "pixelworld": {
         "when": "Aujourd'hui",
         "title": "Pixel World",
-        "text": "Notre archive collective où chacun laisse une trace de notre époque sur une carte du monde, à lire dans 100 ans.",
-        "alt": "Carte du monde en pixel art, violette et bleue, où chaque trace sera à sa place."
+        "text": "Notre archive collective où chacun laisse une empreinte de notre époque sur une carte du monde, à lire dans 100 ans.",
+        "alt": "Carte du monde en pixel art, violette et bleue, où chaque empreinte sera à sa place."
       }
     },
     "steps": {
       "eyebrow": "En trois gestes",
-      "title": "Laisser sa trace, c'est simple.",
+      "title": "Laisser son empreinte, c'est simple.",
       "one": {
         "title": "Choisissez une parcelle",
-        "text": "Tracez un rectangle sur la carte du monde, là où vous voulez que votre trace se trouve."
+        "text": "Tracez un rectangle sur la carte du monde, là où vous voulez que votre empreinte se trouve."
       },
       "two": {
         "title": "Archivez ce qui compte",
@@ -150,13 +150,13 @@
       },
       "three": {
         "title": "Transmettez",
-        "text": "Partagez votre page, invitez d'autres personnes à co-créer. Votre trace entre dans l'archive."
+        "text": "Partagez votre page, invitez d'autres personnes à co-créer. Votre empreinte entre dans l'archive."
       }
     },
     "recent": {
       "eyebrow": "La communauté",
       "title": "Archivées récemment",
-      "lead": "Les dernières traces validées par la modération.",
+      "lead": "Les dernières empreintes validées par la modération.",
       "all": "Tout explorer",
       "by": "par {author}"
     },
@@ -182,20 +182,20 @@
     },
     "manifest": {
       "a": "Nos conversations s'effacent, nos photos dorment dans des téléphones.",
-      "b": "Ici, chaque trace choisie devient un fragment lisible de notre époque.",
+      "b": "Ici, chaque empreinte choisie devient un fragment lisible de notre époque.",
       "more": "En savoir plus"
     }
   },
   "about": {
-    "title": "Chaque époque laisse une trace. Voici la nôtre.",
+    "title": "Chaque époque laisse une empreinte. Voici la nôtre.",
     "lead": "Pixel World est une archive collective mondiale de notre époque\u00a0: une carte du monde sur laquelle chacun peut laisser une création, un souvenir, une passion, pour celles et ceux qui viendront après nous.",
     "why": {
       "title": "Pourquoi",
-      "text": "L'humanité a toujours cherché à laisser une trace de son passage\u00a0: peintures sur les parois des cavernes, hiéroglyphes gravés dans la pierre, manuscrits, livres, photographies. Chaque époque a eu sa manière de transmettre son histoire. La nôtre est faite de conversations qui s'effacent, de photos qui dorment dans des téléphones et de sites qui disparaissent\u00a0: peu de ce que nous vivons chaque jour est gardé sous une forme que quelqu'un pourrait lire dans cent ans. Ici, chaque trace est choisie, avec un titre, un auteur, une date et un lieu, et toutes ensemble elles font un fragment lisible de notre époque. Aujourd'hui, c'est au tour de Pixel World."
+      "text": "L'humanité a toujours cherché à laisser une empreinte de son passage\u00a0: peintures sur les parois des cavernes, hiéroglyphes gravés dans la pierre, manuscrits, livres, photographies. Chaque époque a eu sa manière de transmettre son histoire. La nôtre est faite de conversations qui s'effacent, de photos qui dorment dans des téléphones et de sites qui disparaissent\u00a0: peu de ce que nous vivons chaque jour est gardé sous une forme que quelqu'un pourrait lire dans cent ans. Ici, chaque empreinte est choisie, avec un titre, un auteur, une date et un lieu, et toutes ensemble elles font un fragment lisible de notre époque. Aujourd'hui, c'est au tour de Pixel World."
     },
     "how": {
       "title": "Comment ça marche",
-      "text": "Vous choisissez un rectangle sur la carte, vous créez votre trace dans l'éditeur (une image, un dessin, un texte), vous lui donnez un titre, une catégorie et, si vous le souhaitez, le lieu dont elle parle. Après un coup d'œil rapide des modérateurs, elle a sa propre page, que vous pouvez partager, et vous pouvez inviter d'autres personnes à dessiner dessus avec vous."
+      "text": "Vous choisissez un rectangle sur la carte, vous créez votre empreinte dans l'éditeur (une image, un dessin, un texte), vous lui donnez un titre, une catégorie et, si vous le souhaitez, le lieu dont elle parle. Après un coup d'œil rapide des modérateurs, elle a sa propre page, que vous pouvez partager, et vous pouvez inviter d'autres personnes à dessiner dessus avec vous."
     },
     "time": {
       "title": "Un temps pour la raconter",
@@ -207,7 +207,7 @@
       "terms": "Lire les conditions"
     },
     "draft": "Ce texte est une première version, écrite pour le lancement : il sera relu avec le texte juridique.",
-    "cta": "Laisser ma trace",
+    "cta": "Laisser mon empreinte",
     "explore": "Explorer les archives"
   },
   "archive": {
@@ -235,7 +235,7 @@
     },
     "page": {
       "eyebrow": "Archive collective",
-      "untitled": "Trace sans titre",
+      "untitled": "Empreinte sans titre",
       "by": "Par",
       "archivedOn": "Archivée le {date}",
       "category": "Catégorie",
@@ -245,14 +245,14 @@
       "size_value": "{w} × {h} px",
       "kindWater": "Une parcelle de mer",
       "seeOnMap": "La voir sur la carte",
-      "share": "Partager cette trace",
+      "share": "Partager cette empreinte",
       "copied": "Lien copié.",
       "likes": "{n, plural, =0 {Aucun j'aime pour l'instant} one {# j'aime} other {# j'aime}}",
-      "pending": "Cette trace sera publique dès qu'un modérateur l'aura validée.",
-      "hidden": "Le contenu de cette trace est actuellement masqué par la modération.",
-      "closedNote": "Cette édition est close : ses traces sont conservées telles qu'elles étaient et ne peuvent plus être modifiées.",
-      "shareText": "{title}, une trace laissée dans l'archive collective de notre époque.",
-      "descriptionFallback": "Une trace laissée par {author} dans l'archive collective de notre époque.",
+      "pending": "Cette empreinte sera publique dès qu'un modérateur l'aura validée.",
+      "hidden": "Le contenu de cette empreinte est actuellement masqué par la modération.",
+      "closedNote": "Cette édition est close : ses empreintes sont conservées telles qu'elles étaient et ne peuvent plus être modifiées.",
+      "shareText": "{title}, une empreinte laissée dans l'archive collective de notre époque.",
+      "descriptionFallback": "Une empreinte laissée par {author} dans l'archive collective de notre époque.",
       "backToArchive": "L'archive",
       "imageAlt": "La création « {title} »"
     },
@@ -266,7 +266,7 @@
     "close": "Fermer",
     "notFound": "Cette parcelle est introuvable.",
     "untitled": "Création sans titre",
-    "pending": "Cette trace a été archivée. Son titre et sa création apparaîtront une fois validés par nos modérateurs.",
+    "pending": "Cette empreinte a été archivée. Son titre et sa création apparaîtront une fois validés par nos modérateurs.",
     "hidden": "Le contenu de cette parcelle est actuellement masqué.",
     "ad": "Publicité",
     "size": "Taille",
@@ -289,11 +289,11 @@
       "violence": "Violence ou contenu dangereux",
       "other": "Autre"
     },
-    "shareDescription": "Une trace de {area} pixels ({w}×{h}) de {owner} dans l'archive Pixel World, une archive collective de notre époque.",
+    "shareDescription": "Une empreinte de {area} pixels ({w}×{h}) de {owner} dans l'archive Pixel World, une archive collective de notre époque.",
     "comment": "Commenter"
   },
   "buy": {
-    "title": "Laissez votre trace",
+    "title": "Laissez votre empreinte",
     "unitPrice": "{price} le pixel · paiement unique",
     "close": "Fermer",
     "presets": "Tailles courantes",
@@ -323,12 +323,12 @@
       "area_too_small": "La surface minimale est de {min} pixels.",
       "area_too_large": "La surface maximale est de {max} pixels."
     },
-    "continue": "Créer ma trace",
+    "continue": "Créer mon empreinte",
     "signInToContinue": "Connectez-vous pour continuer",
     "legal": "Droit d'usage numérique d'un emplacement virtuel sur la carte — ni bien immobilier, ni droit de propriété intellectuelle.",
     "terms": "Conditions",
     "rules": "Règles de la communauté",
-    "designTitle": "Créez votre trace",
+    "designTitle": "Créez votre empreinte",
     "reviewTitle": "Vérifier et payer",
     "steps": "Étapes",
     "stepDesign": "Créer",
@@ -341,10 +341,10 @@
     "backToEditor": "Retour à l'éditeur",
     "discardConfirm": "Abandonner votre création ?",
     "finalRender": "Rendu final, pixel pour pixel",
-    "moderationNote": "Votre trace est publiée, sur une page à elle, une fois validée par la modération. Nous ne pouvons pas promettre que toutes les images soient acceptées\u00a0; si la vôtre est refusée, vous pouvez en proposer une autre pour la même parcelle. À la clôture de l'édition, les traces sont figées\u00a0: elles restent lisibles mais ne peuvent plus être modifiées.",
+    "moderationNote": "Votre empreinte est publiée, sur une page à elle, une fois validée par la modération. Nous ne pouvons pas promettre que toutes les images soient acceptées\u00a0; si la vôtre est refusée, vous pouvez en proposer une autre pour la même parcelle. À la clôture de l'édition, les empreintes sont figées\u00a0: elles restent lisibles mais ne peuvent plus être modifiées.",
     "fields": {
       "title": "Titre",
-      "titleHint": "Au moins {min} caractères. Il s'affiche sur la page de votre trace et quand quelqu'un clique dessus sur la carte.",
+      "titleHint": "Au moins {min} caractères. Il s'affiche sur la page de votre empreinte et quand quelqu'un clique dessus sur la carte.",
       "description": "Courte description (facultatif)",
       "link": "Lien (facultatif)",
       "linkHint": "https uniquement. Les liens externes affichent leur domaine et sont marqués nofollow.",
@@ -529,12 +529,12 @@
     "devBanner": "Mode développement : aucun mot de passe requis. Ce formulaire n'existe pas en production.",
     "sign-in": {
       "title": "Connexion",
-      "lead": "Bon retour. Connectez-vous pour laisser une trace et gérer les vôtres.",
+      "lead": "Bon retour. Connectez-vous pour laisser une empreinte et gérer les vôtres.",
       "submit": "Se connecter"
     },
     "sign-up": {
       "title": "Créez votre compte",
-      "lead": "Cela prend une minute. Ensuite, laissez votre trace.",
+      "lead": "Cela prend une minute. Ensuite, laissez votre empreinte.",
       "submit": "Créer mon compte"
     },
     "forgot": {
@@ -570,7 +570,7 @@
     "parcels": {
       "title": "Mes parcelles",
       "summary": "{parcels} parcelles · {pixels} pixels",
-      "buyMore": "Laisser une autre trace",
+      "buyMore": "Laisser une autre empreinte",
       "empty": "Vous n'avez encore rien archivé.",
       "findSpot": "Trouvez votre place",
       "noImage": "Pas encore d'image",
@@ -617,7 +617,7 @@
     "form": {
       "avatar": "Changer l'avatar",
       "username": "Pseudonyme",
-      "usernameHint": "3 à 24 caractères\u00a0: lettres, chiffres, point, tiret, tiret bas. Affiché sur vos traces.",
+      "usernameHint": "3 à 24 caractères\u00a0: lettres, chiffres, point, tiret, tiret bas. Affiché sur vos empreintes.",
       "country": "Pays (facultatif)",
       "bio": "Courte biographie (facultatif)",
       "save": "Enregistrer",
@@ -694,7 +694,7 @@
     "title": "Dessiner ensemble",
     "leadTitled": "Toutes les personnes ayant ce lien peuvent ajouter des pixels à « {title} » de {owner}.",
     "lead": "Toutes les personnes ayant ce lien peuvent ajouter des pixels à cette parcelle de {owner}.",
-    "rule": "Ce que vous peignez s'affiche tout de suite pour tous ceux qui ont le lien. Ce n'est pas sur la carte\u00a0: l'auteur de la trace choisit quand le publier, et les modérateurs le valident d'abord.",
+    "rule": "Ce que vous peignez s'affiche tout de suite pour tous ceux qui ont le lien. Ce n'est pas sur la carte\u00a0: l'auteur de l'empreinte choisit quand le publier, et les modérateurs le valident d'abord.",
     "canvas": "Toile partagée de {w} × {h} pixels, dessinée jusqu'à une fraction de pixel. Cliquez ou glissez pour peindre.",
     "palette": "Couleurs",
     "customColor": "Choisir une couleur",
@@ -749,7 +749,7 @@
   "checkout": {
     "confirming": "Confirmation de votre paiement…",
     "confirmingLead": "Nous attendons la confirmation du prestataire de paiement. Cela prend en général quelques secondes.",
-    "paidTitle": "Votre trace fait désormais partie de l'archive collective de notre époque.",
+    "paidTitle": "Votre empreinte fait désormais partie de l'archive collective de notre époque.",
     "paidLead": "Elle sera publique, sur sa propre page, dès qu'un modérateur l'aura validée. Vous pouvez déjà la partager avec les personnes qui comptent.",
     "viewParcel": "Voir ma page d'archive",
     "myParcels": "Mes parcelles",
@@ -773,15 +773,15 @@
   },
   "discover": {
     "title": "Découvrir",
-    "lead": "Les traces les plus récentes, les plus grandes parcelles, les favoris de la communauté et les plus commentées.",
-    "latest": "Dernières traces",
+    "lead": "Les empreintes les plus récentes, les plus grandes parcelles, les favoris de la communauté et les plus commentées.",
+    "latest": "Dernières empreintes",
     "large": "Plus grandes parcelles",
     "largeHint": "Classées par surface en pixels.",
     "popular": "Les plus aimées ce mois-ci",
     "popularHint": "Classées par nombre de « j'aime » reçus ces 30 derniers jours.",
     "commented": "Les plus commentées",
     "commentedHint": "Classées par nombre de commentaires reçus (les commentaires de la personne qui a créé la parcelle ne comptent pas).",
-    "empty": "Rien d'archivé pour l'instant — soyez la première personne à laisser une trace.",
+    "empty": "Rien d'archivé pour l'instant — soyez la première personne à laisser une empreinte.",
     "emptyPopular": "Aucune création n'a encore reçu de « j'aime » ce mois-ci.",
     "emptyCommented": "Aucune création n'a encore été commentée.",
     "commentsCount": "{n, plural, one {# commentaire} other {# commentaires}}",
@@ -849,7 +849,7 @@
     },
     "terms": {
       "title": "Conditions d'utilisation",
-      "intro": "Ces conditions régissent votre usage de Pixel World et le paiement que vous faites pour laisser une trace sur sa carte. Il s'agit d'un texte provisoire, écrit pour le lancement\u00a0: le conseil juridique de l'exploitant doit le relire et le compléter avant le lancement public.",
+      "intro": "Ces conditions régissent votre usage de Pixel World et le paiement que vous faites pour laisser une empreinte sur sa carte. Il s'agit d'un texte provisoire, écrit pour le lancement\u00a0: le conseil juridique de l'exploitant doit le relire et le compléter avant le lancement public.",
       "sections": [
         {
           "h": "Qui sommes-nous",
@@ -861,7 +861,7 @@
           "h": "Ce que vous payez",
           "p": [
             "Pixel World est une archive collective de notre époque. Elle est dessinée sur une grille virtuelle de 1 000 000 000 de pixels (40 000 × 25 000). Une parcelle est un rectangle d'au moins 25 pixels. Votre paiement est une contribution à cette œuvre collaborative\u00a0; en échange, vous obtenez un droit d'usage numérique de ce rectangle, selon les présentes conditions, pour y afficher une création.",
-            "Une parcelle est un emplacement virtuel sur une carte numérique. Ce n'est ni un bien immobilier, ni un droit géographique, territorial ou de propriété intellectuelle, et elle ne vous donne aucun droit sur les lieux représentés par la carte. Ce n'est pas non plus la promesse que l'archive sera conservée pour toujours\u00a0: voir «\u00a0Durée de conservation d'une trace\u00a0» plus bas.",
+            "Une parcelle est un emplacement virtuel sur une carte numérique. Ce n'est ni un bien immobilier, ni un droit géographique, territorial ou de propriété intellectuelle, et elle ne vous donne aucun droit sur les lieux représentés par la carte. Ce n'est pas non plus la promesse que l'archive sera conservée pour toujours\u00a0: voir «\u00a0Durée de conservation d'une empreinte\u00a0» plus bas.",
             "La terre et l'eau sont à vendre, en deux catégories distinctes. Une parcelle de terre couvre les pixels de terre de son rectangle : elle peut inclure un peu de mer le long d'une côte, mais au moins la moitié de ses pixels doit être de la terre (la part exacte est fixée par les administrateurs). Une parcelle d'eau couvre les pixels d'eau de son rectangle : elle peut inclure un peu de terre le long d'une côte, mais au moins la moitié de ses pixels doit être de l'eau. Vous ne payez que les pixels que votre parcelle couvre : les pixels de votre rectangle qui appartiennent à l'autre catégorie sont coupés et offerts, ou à prix réduit si un tarif réduit est en vigueur, et le récapitulatif de commande montre la répartition avant le paiement. Une parcelle de terre et une parcelle d'eau peuvent partager le même rectangle, puisqu'elles ne partagent aucun pixel. Tout ce que vous créez sur une parcelle d'eau s'affiche en trois teintes de bleu. Les compteurs de la carte comptent les pixels couverts par les parcelles, terre et eau."
           ]
         },
@@ -904,9 +904,9 @@
           ]
         },
         {
-          "h": "Durée de conservation d'une trace",
+          "h": "Durée de conservation d'une empreinte",
           "p": [
-            "Une trace reste attribuée à votre compte, et sur la carte, tant que le service est exploité et que ces conditions sont respectées. Nous voulons que l'archive reste lisible longtemps, mais nous ne promettons pas qu'elle sera conservée pour toujours. [Durée minimale, préavis en cas d'arrêt du service, conservation de l'archive après l'arrêt et règles de cession\u00a0: à définir par l'exploitant avec son conseil juridique.]"
+            "Une empreinte reste attribuée à votre compte, et sur la carte, tant que le service est exploité et que ces conditions sont respectées. Nous voulons que l'archive reste lisible longtemps, mais nous ne promettons pas qu'elle sera conservée pour toujours. [Durée minimale, préavis en cas d'arrêt du service, conservation de l'archive après l'arrêt et règles de cession\u00a0: à définir par l'exploitant avec son conseil juridique.]"
           ]
         },
         {
@@ -939,7 +939,7 @@
             "Compte : adresse e-mail, pseudonyme, pays, biographie et avatar facultatifs.",
             "Achats : détails de commande, montants, pays de facturation et, s'ils sont fournis, identifiants fiscaux, tels que transmis par Stripe. Nous ne recevons jamais votre numéro de carte.",
             "Les créations que vous publiez, avec leur titre, leur description, leur lien, leur catégorie et le lieu dont elles parlent\u00a0: elles sont publiques, avec votre pseudonyme et la date d'archivage.",
-            "Signalements : lorsque vous signalez une création, nous conservons le signalement et une copie de ce qui était affiché. Une empreinte salée de votre adresse IP sert à prévenir les abus ; nous ne conservons pas l'adresse elle-même.",
+            "Signalements : lorsque vous signalez une création, nous conservons le signalement et une copie de ce qui était affiché. Un condensat (hash) salé de votre adresse IP sert à prévenir les abus ; nous ne conservons pas l'adresse elle-même.",
             "Technique : le minimum nécessaire pour exploiter et sécuriser le service (journaux d'erreurs, compteurs de limitation de débit)."
           ]
         },

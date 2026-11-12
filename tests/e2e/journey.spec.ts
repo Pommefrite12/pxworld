@@ -252,10 +252,10 @@ test.describe.serial("buy → pay → moderate → publish", () => {
 
   test("the interface is bilingual", async ({ page }) => {
     await page.goto("/fr");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText(/Chaque époque laisse une trace/);
-    await expect(page.getByTestId("home-leave-trace")).toHaveText("Laisser ma trace");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(/Chaque époque laisse une empreinte/);
+    await expect(page.getByTestId("home-leave-trace")).toHaveText("Laisser mon empreinte");
     await page.goto("/fr/map");
-    await expect(page.getByTestId("find-your-spot")).toHaveText("Laisser ma trace");
+    await expect(page.getByTestId("find-your-spot")).toHaveText("Laisser mon empreinte");
     await page.goto("/fr/discover");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Découvrir");
   });

@@ -26,7 +26,7 @@ test.describe("vocabulary", () => {
     await expect(page.getByTestId("latest-tile").getByRole("heading")).toHaveText("Recently archived");
     await expect(page.locator("h1")).toHaveText("Every era leaves a trace. Here is ours. Leave yours.");
     await page.goto("/fr/map");
-    await expect(page.getByTestId("find-your-spot")).toHaveText("Laisser ma trace");
+    await expect(page.getByTestId("find-your-spot")).toHaveText("Laisser mon empreinte");
     await expect(page.getByText("Pixels archivés")).toBeVisible();
     await expect(page.getByRole("progressbar", { name: "Part de la carte archivée" })).toBeVisible();
     await expect(page.getByTestId("latest-tile").getByRole("heading")).toHaveText("Récemment archivées");
@@ -37,7 +37,7 @@ test.describe("vocabulary", () => {
     expect(html).toContain("Every era leaves a trace. Here is ours.");
     expect(html).toMatch(/<meta name="description" content="Pixel World is a worldwide collective archive of our time/);
     const fr = await (await request.get("/fr")).text();
-    expect(fr).toContain("Chaque époque laisse une trace. Voici la nôtre.");
+    expect(fr).toContain("Chaque époque laisse une empreinte. Voici la nôtre.");
     expect(fr).toMatch(/<meta name="description" content="Pixel World est une archive collective mondiale de notre époque/);
   });
 });
@@ -52,7 +52,7 @@ test.describe("the legal texts (provisional)", () => {
     expect(text, "nothing says a parcel is owned").not.toMatch(/\bowns\b|exclusive right/i);
     await page.goto("/fr/terms");
     const fr = await page.locator("main").innerText();
-    for (const part of ["Ce que vous payez", "droit d'usage numérique", "Éditions et clôture", "Durée de conservation d'une trace", "À faire relire par un juriste", "0,25"]) expect(fr, part).toContain(part);
+    for (const part of ["Ce que vous payez", "droit d'usage numérique", "Éditions et clôture", "Durée de conservation d'une empreinte", "À faire relire par un juriste", "0,25"]) expect(fr, part).toContain(part);
   });
 
   test("the privacy page speaks of the public archive and of erasure", async ({ page }) => {

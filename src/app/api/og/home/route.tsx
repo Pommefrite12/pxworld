@@ -3,7 +3,7 @@ import { CYAN, GOLD, IVORY, NIGHT, VIOLET, VIOLET_DEEP, Wordmark, pixelFont } fr
 
 /** The words of the share image of the home page (and of every page that has no image of its own). */
 const TEXT = {
-  fr: { kicker: "ARCHIVE COLLECTIVE", a: "Chaque époque", b: "laisse une trace.", hl: "Voici la nôtre.", foot: "Dans 100 ans, que restera-t-il de nous ?" },
+  fr: { kicker: "ARCHIVE COLLECTIVE", a: "Chaque époque", b: "laisse une empreinte.", hl: "Voici la nôtre.", foot: "Dans 100 ans, que restera-t-il de nous ?" },
   en: { kicker: "COLLECTIVE ARCHIVE", a: "Every era", b: "leaves a trace.", hl: "Here is ours.", foot: "In 100 years, what will remain of us?" },
 };
 

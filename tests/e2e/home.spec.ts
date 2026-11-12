@@ -149,14 +149,14 @@ test.describe("the home page", () => {
 
   test("in French: the eras, with their dates", async ({ page }) => {
     await page.goto("/fr");
-    await expect(page.getByTestId("home-eras")).toContainText("L'humanité a toujours laissé une trace.");
+    await expect(page.getByTestId("home-eras")).toContainText("L'humanité a toujours laissé une empreinte.");
     const eras = page.getByTestId("era");
     await expect(eras.nth(0).getByRole("heading", { level: 3 })).toHaveText("Les peintures préhistoriques");
     await expect(eras.nth(1)).toContainText("Il y a plus de 5 000 ans");
     await expect(eras.nth(3).getByRole("heading", { level: 3 })).toHaveText("La photographie");
     await expect(eras.nth(4)).toContainText("Aujourd'hui");
-    await expect(eras.nth(4).locator(".era-text p:not(.eyebrow)")).toHaveText("Notre archive collective où chacun laisse une trace de notre époque sur une carte du monde, à lire dans 100 ans.");
-    await expect(page.getByTestId("eras-leave-trace")).toHaveText("Laisser ma trace");
+    await expect(eras.nth(4).locator(".era-text p:not(.eyebrow)")).toHaveText("Notre archive collective où chacun laisse une empreinte de notre époque sur une carte du monde, à lire dans 100 ans.");
+    await expect(page.getByTestId("eras-leave-trace")).toHaveText("Laisser mon empreinte");
   });
 
   test("the pictures of the eras are served as WebP, in two sizes, and stay light", async ({ request }) => {
@@ -227,9 +227,9 @@ test.describe("the home page", () => {
 
   test("in French: the slogan, the hook, the buttons", async ({ page }) => {
     await page.goto("/fr");
-    await expect(page.getByTestId("home-title")).toContainText("Chaque époque laisse une trace. Voici la nôtre.");
+    await expect(page.getByTestId("home-title")).toContainText("Chaque époque laisse une empreinte. Voici la nôtre.");
     await expect(page.getByTestId("home-hook")).toHaveText("Dans 100 ans, que restera-t-il de nous ?");
-    await expect(page.getByTestId("home-leave-trace")).toHaveText("Laisser ma trace");
+    await expect(page.getByTestId("home-leave-trace")).toHaveText("Laisser mon empreinte");
     await expect(page.getByTestId("home-leave-trace")).toHaveAttribute("href", "/fr/map?buy=1");
     await expect(page.getByTestId("home-explore")).toHaveText("Explorer les archives");
     await expect(page.getByTestId("home-fine")).toHaveCount(0);
