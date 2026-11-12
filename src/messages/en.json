@@ -302,6 +302,7 @@
     "unitPrice": "{price} per pixel · one-time payment",
     "close": "Close",
     "presets": "Popular sizes",
+    "custom": "Custom dimensions",
     "width": "Width (px)",
     "height": "Height (px)",
     "area": "Surface",

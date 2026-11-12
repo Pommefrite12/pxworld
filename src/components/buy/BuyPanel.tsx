@@ -137,10 +137,13 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind
 
         <button className="mt-2 text-xs font-semibold text-cobalt underline md:hidden" onClick={() => setFine((v) => !v)} aria-expanded={fine}>{t("fineTune")}</button>
         <div className={`${fine ? "" : "hidden md:block"}`}>
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          <fieldset className="mt-3" data-testid="buy-custom">
+            <legend className="label">{t("custom")}</legend>
+            <div className="grid grid-cols-2 gap-2">
             <div><label className="label" htmlFor="bp-w">{t("width")}</label><input id="bp-w" className="field pixel-num" inputMode="numeric" value={size.w || ""} onChange={(e) => onSize(num(e.target.value), size.h)} /></div>
             <div><label className="label" htmlFor="bp-h">{t("height")}</label><input id="bp-h" className="field pixel-num" inputMode="numeric" value={size.h || ""} onChange={(e) => onSize(size.w, num(e.target.value))} /></div>
-          </div>
+            </div>
+          </fieldset>
         </div>
 
         <div className="mt-3 rounded-2xl bg-paper-2 p-3 md:mt-4 md:p-3.5" aria-live="polite">

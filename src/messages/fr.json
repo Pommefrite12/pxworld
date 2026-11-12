@@ -302,6 +302,7 @@
     "unitPrice": "{price} le pixel · paiement unique",
     "close": "Fermer",
     "presets": "Tailles courantes",
+    "custom": "Dimensions personnalisées",
     "width": "Largeur (px)",
     "height": "Hauteur (px)",
     "area": "Surface",

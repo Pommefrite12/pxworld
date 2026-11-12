@@ -114,6 +114,7 @@ test("the buy panel offers a free imprint: free sizes, the price says Free, the 
   await expect(page.getByTestId("buy-continue")).toHaveText("Create my free trace");
   await expect(page.getByTestId("buy-collective")).toHaveCount(0); // a group project is for big parcels
   await expect(page.getByTestId("buy-free-note")).toContainText("precarious");
+  await expect(page.getByTestId("buy-custom").locator("legend")).toHaveText("Custom dimensions"); // the width and height fields have a title
 
   await page.getByTestId("buy-continue").click();
   const dialog = page.getByRole("dialog");
