@@ -17,7 +17,7 @@ test("the pixel grid is a guide to FREE land: a taken parcel shows its creation 
   expect((await api.post("/api/dev/login", { data: { email: "gridowner@example.test" } })).ok()).toBeTruthy();
   expect((await admin.post("/api/dev/login", { data: { email: "admin.grid@example.test", role: "admin" } })).ok()).toBeTruthy();
   const image = await sharp({ create: { width: SPOT.w, height: SPOT.h, channels: 3, background: "#2b35e0" } }).png().toBuffer();
-  const r = await api.post("/api/checkout", { multipart: { x: String(SPOT.x), y: String(SPOT.y), w: String(SPOT.w), h: String(SPOT.h), title: "Grid test", image: { name: "c.png", mimeType: "image/png", buffer: image } } });
+  const r = await api.post("/api/checkout", { multipart: { x: String(SPOT.x), y: String(SPOT.y), w: String(SPOT.w), h: String(SPOT.h), description: "A short description", title: "Grid test", image: { name: "c.png", mimeType: "image/png", buffer: image } } });
   expect(r.status(), await r.text()).toBe(200);
   const { orderId } = await r.json();
   expect((await (await api.post("/api/dev/pay", { data: { orderId, outcome: "paid" } })).json()).outcome).toBe("processed");
@@ -61,7 +61,7 @@ test("a parcel on the coast keeps its rectangle, but its drawing is cut along th
   const probe = await (await api.get(`/api/availability?x=${COAST.x}&y=${COAST.y}&w=60&h=60`)).json();
   expect(probe).toMatchObject({ free: true, onLand: true, landPixels: 1903 });
   const image = await sharp({ create: { width: COAST.w, height: COAST.h, channels: 3, background: "#2b35e0" } }).png().toBuffer();
-  const r = await api.post("/api/checkout", { multipart: { x: String(COAST.x), y: String(COAST.y), w: "60", h: "60", title: "Coast test", image: { name: "c.png", mimeType: "image/png", buffer: image } } });
+  const r = await api.post("/api/checkout", { multipart: { x: String(COAST.x), y: String(COAST.y), w: "60", h: "60", description: "A short description", title: "Coast test", image: { name: "c.png", mimeType: "image/png", buffer: image } } });
   expect(r.status(), await r.text()).toBe(200);
   const { orderId } = await r.json();
   expect((await (await api.post("/api/dev/pay", { data: { orderId, outcome: "paid" } })).json()).outcome).toBe("processed");
@@ -101,7 +101,7 @@ test("the latest-creations tile shows real published creations; one click flies 
   expect((await api.post("/api/dev/login", { data: { email: "latestowner@example.test" } })).ok()).toBeTruthy();
   expect((await admin.post("/api/dev/login", { data: { email: "admin.latest@example.test", role: "admin" } })).ok()).toBeTruthy();
   const image = await sharp({ create: { width: SPOT2.w, height: SPOT2.h, channels: 3, background: "#d12b2b" } }).png().toBuffer();
-  const r = await api.post("/api/checkout", { multipart: { x: String(SPOT2.x), y: String(SPOT2.y), w: String(SPOT2.w), h: String(SPOT2.h), title: TITLE, image: { name: "c.png", mimeType: "image/png", buffer: image } } });
+  const r = await api.post("/api/checkout", { multipart: { x: String(SPOT2.x), y: String(SPOT2.y), w: String(SPOT2.w), h: String(SPOT2.h), description: "A short description", title: TITLE, image: { name: "c.png", mimeType: "image/png", buffer: image } } });
   expect(r.status(), await r.text()).toBe(200);
   const { orderId } = await r.json();
   expect((await (await api.post("/api/dev/pay", { data: { orderId, outcome: "paid" } })).json()).outcome).toBe("processed");
@@ -148,7 +148,7 @@ test("zooming in or out, a big creation is never a flat colour while its picture
   const raw = Buffer.alloc(BIG.w * BIG.h * 3);
   for (let y = 0; y < BIG.h; y++) for (let x = 0; x < BIG.w; x++) raw.set(x < BIG.w / 2 ? LEFT : RIGHT, (y * BIG.w + x) * 3);
   const image = await sharp(raw, { raw: { width: BIG.w, height: BIG.h, channels: 3 } }).png().toBuffer();
-  const r = await api.post("/api/checkout", { multipart: { x: String(BIG.x), y: String(BIG.y), w: String(BIG.w), h: String(BIG.h), title: "Big creation", image: { name: "c.png", mimeType: "image/png", buffer: image } } });
+  const r = await api.post("/api/checkout", { multipart: { x: String(BIG.x), y: String(BIG.y), w: String(BIG.w), h: String(BIG.h), description: "A short description", title: "Big creation", image: { name: "c.png", mimeType: "image/png", buffer: image } } });
   expect(r.status(), await r.text()).toBe(200);
   const { orderId } = await r.json();
   expect((await (await api.post("/api/dev/pay", { data: { orderId, outcome: "paid" } })).json()).outcome).toBe("processed");
@@ -213,7 +213,7 @@ test("buying: a click on a taken parcel opens its card (the rectangle stays); a 
   expect((await api.post("/api/dev/login", { data: { email: "cardowner@example.test" } })).ok()).toBeTruthy();
   expect((await admin.post("/api/dev/login", { data: { email: "admin.card@example.test", role: "admin" } })).ok()).toBeTruthy();
   const image = await sharp({ create: { width: TAKEN.w, height: TAKEN.h, channels: 3, background: "#2b35e0" } }).png().toBuffer();
-  const r = await api.post("/api/checkout", { multipart: { x: String(TAKEN.x), y: String(TAKEN.y), w: String(TAKEN.w), h: String(TAKEN.h), title: TITLE, image: { name: "c.png", mimeType: "image/png", buffer: image } } });
+  const r = await api.post("/api/checkout", { multipart: { x: String(TAKEN.x), y: String(TAKEN.y), w: String(TAKEN.w), h: String(TAKEN.h), description: "A short description", title: TITLE, image: { name: "c.png", mimeType: "image/png", buffer: image } } });
   expect(r.status(), await r.text()).toBe(200);
   const { orderId } = await r.json();
   expect((await (await api.post("/api/dev/pay", { data: { orderId, outcome: "paid" } })).json()).outcome).toBe("processed");

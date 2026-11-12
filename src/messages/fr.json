@@ -216,11 +216,7 @@
     "fields": {
       "legend": "Pour l'archive",
       "category": "Catégorie",
-      "categoryPlaceholder": "Choisissez une catégorie…",
-      "place": "Le lieu concerné (facultatif)",
-      "placeHint": "Une ville, un village, un pays… pas une adresse : rien de précis.",
-      "country": "Pays (facultatif)",
-      "countryNone": "—"
+      "categoryPlaceholder": "Choisissez une catégorie…"
     },
     "categories": {
       "arts": "Arts et culture",
@@ -352,7 +348,8 @@
     "fields": {
       "title": "Titre",
       "titleHint": "Au moins {min} caractères. Il s'affiche sur la page de votre empreinte et quand quelqu'un clique dessus sur la carte.",
-      "description": "Courte description (facultatif)",
+      "description": "Courte description",
+      "descriptionHint": "Au moins {min} caractères. Dites en quelques mots ce qu'elle montre, ou pourquoi elle compte.",
       "link": "Lien (facultatif)",
       "linkHint": "https uniquement. Les liens externes affichent leur domaine et sont marqués nofollow.",
       "commercial": "Cette création est une publicité (elle sera signalée comme telle)."
@@ -403,6 +400,7 @@
       "invalid_link": "Le lien doit être une adresse https valide.",
       "rate_limited": "Trop de tentatives. Patientez un peu.",
       "title_required": "Donnez un titre à votre création (3 caractères minimum).",
+      "description_required": "Décrivez votre création en quelques mots (3 caractères minimum).",
       "payments_not_configured": "Les paiements ne sont pas encore disponibles.",
       "px_not_on_land": "Cette parcelle n'a pas assez de terre. Choisissez un emplacement avec plus de terre, ou passez en mode eau.",
       "px_not_on_water": "Cette parcelle n'a pas assez d'eau. Choisissez un emplacement avec plus de mer ou d'océan, ou passez en mode terre.",

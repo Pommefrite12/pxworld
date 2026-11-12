@@ -26,7 +26,7 @@ const sql = async <T,>(text: string, params: unknown[] = []) => {
   try { return (await db.query(text, params)).rows as T[]; } finally { await db.end(); }
 };
 const place = async (ctx: APIRequestContext, r: { x: number; y: number; w: number; h: number }, title = "A free trace") =>
-  ctx.post("/api/free-parcel", { multipart: { x: String(r.x), y: String(r.y), w: String(r.w), h: String(r.h), title, category: "daily", image: { name: "c.png", mimeType: "image/png", buffer: await png(r.w, r.h, "#e0352b") } } });
+  ctx.post("/api/free-parcel", { multipart: { x: String(r.x), y: String(r.y), w: String(r.w), h: String(r.h), description: "A short description", title, category: "daily", image: { name: "c.png", mimeType: "image/png", buffer: await png(r.w, r.h, "#e0352b") } } });
 
 test("a free imprint: placed for nothing, counted apart, limited per account; a purchase that touches it covers it, and its owner is told", async ({ page }) => {
   const SPOT = { x: 27_800, y: 11_000, w: 3, h: 3 };
@@ -70,7 +70,7 @@ test("a free imprint: placed for nothing, counted apart, limited per account; a 
 
   // a PURCHASE is never blocked by it: bob buys a 5 × 5 that touches one corner, and pays
   const image = await png(5, 5, "#2b35e0");
-  const c = await bob.post("/api/checkout", { multipart: { x: String(SPOT.x - 3), y: String(SPOT.y - 3), w: "5", h: "5", title: "Over a free one", category: "daily", image: { name: "c.png", mimeType: "image/png", buffer: image } } });
+  const c = await bob.post("/api/checkout", { multipart: { x: String(SPOT.x - 3), y: String(SPOT.y - 3), w: "5", h: "5", description: "A short description", title: "Over a free one", category: "daily", image: { name: "c.png", mimeType: "image/png", buffer: image } } });
   expect(c.status(), await c.text()).toBe(200);
   const { orderId } = await c.json();
   expect((await (await bob.post("/api/dev/pay", { data: { orderId, outcome: "paid" } })).json()).outcome).toBe("processed");
@@ -127,6 +127,7 @@ test("the buy panel offers a free imprint: free sizes, the price says Free, the 
   await page.mouse.up();
   await dialog.getByTestId("to-review").click();
   await dialog.getByTestId("co-title").fill("My first free trace");
+  await dialog.getByTestId("co-description").fill("A first free trace.");
   await dialog.getByTestId("co-category").selectOption("daily");
   await expect(dialog.getByTestId("co-total")).toHaveText("Free");
   await dialog.getByTestId("co-accept").check();

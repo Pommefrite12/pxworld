@@ -2,6 +2,8 @@
 //
 //   npm run demo:seed   -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id> [--count 50] [--water 20]
 //     --water N adds N MORE accounts, each with a parcel on the sea (what is already there is left alone: running it again completes, never doubles)
+//     --set heritage instead makes the 100 hand-drawn "world heritage" parcels (historic places, cultures, food, music, science, today's world), each on its
+//     real place, 50 × 50 pixels at most, one account each (--count and --water are then ignored)
 //   npm run demo:status -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id>
 //   npm run demo:clear  -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id> --yes
 //
@@ -18,6 +20,7 @@ import { createClient } from "@supabase/supabase-js";
 import { shouldUseSsl } from "../src/lib/db/ssl";
 import { demoGuard } from "../src/lib/demo/plan";
 import { clearDemo, demoStatus, seedDemo, type DemoPorts } from "../src/lib/demo/seed";
+import { heritagePlan } from "../src/lib/demo/heritage";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -96,12 +99,15 @@ try {
 
   const target = mode === "supabase" ? `Supabase project ${new URL(supabaseUrl).hostname.split(".")[0]}` : `local database ${new URL(databaseUrl).hostname}`;
   if (command === "seed") {
-    const count = Number(opt("count") ?? 50);
+    const set = opt("set");
+    if (set !== undefined && set !== "heritage") die('--set must be "heritage"');
+    const plan = set === "heritage" ? heritagePlan() : undefined;
+    const count = plan ? plan.length : Number(opt("count") ?? 50);
     if (!Number.isInteger(count) || count < 1 || count > 500) die("--count must be a whole number from 1 to 500");
-    const water = Number(opt("water") ?? 0);
+    const water = plan ? 0 : Number(opt("water") ?? 0);
     if (!Number.isInteger(water) || water < 0 || water > 200) die("--water must be a whole number from 0 to 200");
     console.log(`Filling ${target} with ${count} demonstration accounts and parcels${water ? `, then ${water} more on the sea` : ""} (pictures: ${bucket ? `Supabase bucket ${env.SUPABASE_PUBLIC_BUCKET || "pixel-world-creations"}` : "local folder"})…`);
-    const r = await seedDemo(ports, { count, water, seed: Number(opt("seed") ?? 1), emailDomain });
+    const r = await seedDemo(ports, { count, water, seed: Number(opt("seed") ?? 1), emailDomain, plan });
     console.log(`\nDone: ${r.usersCreated} accounts created (${r.usersFound} already there), ${r.parcelsCreated} parcels created (${r.parcelsSkipped} already there).`);
     if (r.failed.length) { console.log(`${r.failed.length} could not be made:\n${r.failed.map((f) => `  - ${f}`).join("\n")}`); process.exitCode = 1; }
   } else if (command === "clear") {

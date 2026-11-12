@@ -42,7 +42,7 @@ test.beforeAll(async () => {
   for (let i = 0; i < 3; i++) {
     const s = SPOTS[i]!;
     const image = await sharp({ create: { width: s.w, height: s.h, channels: 3, background: ["#d02a8a", "#1f7a8c", "#e0a020"][i]! }, }).png().toBuffer();
-    const r = await owners[i]!.post("/api/checkout", { multipart: { x: String(s.x), y: String(s.y), w: String(s.w), h: String(s.h), title: TITLES[i]!, image: { name: "c.png", mimeType: "image/png", buffer: image } } });
+    const r = await owners[i]!.post("/api/checkout", { multipart: { x: String(s.x), y: String(s.y), w: String(s.w), h: String(s.h), description: "A short description", title: TITLES[i]!, image: { name: "c.png", mimeType: "image/png", buffer: image } } });
     expect(r.status(), await r.text()).toBe(200);
     const { orderId } = await r.json();
     expect((await (await owners[i]!.post("/api/dev/pay", { data: { orderId, outcome: "paid" } })).json()).outcome).toBe("processed");

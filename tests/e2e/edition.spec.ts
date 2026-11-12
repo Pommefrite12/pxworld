@@ -28,7 +28,7 @@ async function login(email: string, role?: "admin"): Promise<APIRequestContext> 
 }
 const png = (w: number, h: number) => sharp({ create: { width: w, height: h, channels: 3, background: "#2b35e0" } }).png().toBuffer();
 async function tryBuy(ctx: APIRequestContext) {
-  return ctx.post("/api/checkout", { multipart: { x: "20000", y: "9000", w: "10", h: "10", title: "Edition test", image: { name: "c.png", mimeType: "image/png", buffer: await png(10, 10) } } });
+  return ctx.post("/api/checkout", { multipart: { x: "20000", y: "9000", w: "10", h: "10", description: "A short description", title: "Edition test", image: { name: "c.png", mimeType: "image/png", buffer: await png(10, 10) } } });
 }
 async function openBuyPanel(page: import("@playwright/test").Page) {
   await page.goto("/map?x=26000&y=11000&z=0.6");

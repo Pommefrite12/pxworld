@@ -138,7 +138,7 @@ test.describe.serial("group projects: send, moderate, hold, withdraw", () => {
   test("while the project is open nobody can buy or start a project on its zone", async () => {
     expect(await free(bob, A)).toBe(false);
     expect(await free(bob, { x: A.x + 40, y: A.y + 40, w: 30, h: 30 })).toBe(false);
-    const buy = await bob.post("/api/checkout", { multipart: { x: String(A.x + 10), y: String(A.y + 10), w: "30", h: "30", title: "Mine now", image: { name: "c.png", mimeType: "image/png", buffer: await png(30, 30) } } });
+    const buy = await bob.post("/api/checkout", { multipart: { x: String(A.x + 10), y: String(A.y + 10), w: "30", h: "30", description: "A short description", title: "Mine now", image: { name: "c.png", mimeType: "image/png", buffer: await png(30, 30) } } });
     expect(buy.status()).toBe(409);
     expect((await buy.json()).error).toBe("px_parcel_unavailable");
     const rival = await send(bob, A, "Same spot");
@@ -184,6 +184,7 @@ test.describe.serial("group projects: send, moderate, hold, withdraw", () => {
     await dialog.getByTestId("to-review").click();
 
     await dialog.getByTestId("co-title").fill("Bob's mural");
+    await dialog.getByTestId("co-description").fill("A mural made together.");
     await dialog.getByTestId("co-category").selectOption("arts");
     await expect(dialog.getByTestId("co-total")).toContainText(/\d/); // the goal
     await expect(dialog.getByTestId("co-pay")).toBeDisabled(); // terms not accepted yet

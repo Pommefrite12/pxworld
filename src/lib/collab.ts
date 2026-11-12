@@ -6,7 +6,7 @@ import { objectStore } from "@/lib/storage";
 import { processCreation } from "@/lib/images/validate";
 import { storeCreation } from "@/lib/creations";
 import { creationScale } from "@/lib/grid/constants";
-import { TITLE_MAX, isValidTitle } from "@/lib/security/text";
+import { TITLE_MAX, isValidDescription, isValidTitle } from "@/lib/security/text";
 import { isCategory } from "@/lib/archive";
 
 /**
@@ -145,7 +145,7 @@ export async function publishSnapshot(userId: string, parcel: { id: string; w: n
     "select title, description, link_url, is_commercial, category, place_label, place_country from public.parcel_assets where parcel_id = $1 order by version desc limit 1", [parcel.id]));
   const title = latest?.title && isValidTitle(latest.title) ? latest.title : "Community drawing";
   return storeCreation(userId, parcel.id, img, {
-    title: title.slice(0, TITLE_MAX), description: latest?.description ?? null, link: latest?.link_url ?? null, commercial: latest?.is_commercial ?? false,
+    title: title.slice(0, TITLE_MAX), description: latest?.description && isValidDescription(latest.description) ? latest.description : "A drawing made together by the community.", link: latest?.link_url ?? null, commercial: latest?.is_commercial ?? false,
     // the community drawing is the same trace: it keeps its category and its place
     category: isCategory(latest?.category) ? latest.category : null, placeLabel: latest?.place_label ?? null, placeCountry: latest?.place_country ?? null,
   });

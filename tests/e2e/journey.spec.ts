@@ -88,12 +88,15 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await dialog.getByTestId("to-review").click();
 
     await dialog.getByTestId("co-title").fill("Hello world");
-    // the archive: a category is asked (the button stays off without one), the place is optional
+    // a short description is asked, and a category (the button stays off without either); the place and the country are not asked any more
     await expect(dialog.getByTestId("co-pay")).toBeDisabled();
+    await expect(dialog.getByTestId("co-description")).toHaveAttribute("required", "");
+    await expect(dialog.getByTestId("co-place")).toHaveCount(0);
+    await expect(dialog.getByTestId("co-country")).toHaveCount(0);
     await dialog.getByTestId("co-category").selectOption("food");
-    await dialog.getByTestId("co-place").fill("Naples");
-    await expect.poll(async () => dialog.getByTestId("co-country").locator("option").count()).toBeGreaterThan(150); // the full list appears once the page is alive
-    await dialog.getByTestId("co-country").selectOption("IT");
+    await dialog.getByTestId("co-accept").check();
+    await expect(dialog.getByTestId("co-pay"), "without a description").toBeDisabled();
+    await dialog.getByTestId("co-description").fill("A first test creation.");
     await expect(dialog.getByTestId("co-total")).toHaveText("€100");
     await expect(dialog.getByTestId("co-area")).toHaveText("400 px");
     await expect(dialog).not.toContainText("km²");
@@ -156,7 +159,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
       return c.toDataURL("image/png");
     });
     form.set("image", new Blob([Buffer.from(png.split(",")[1]!, "base64")], { type: "image/png" }), "c.png");
-    const res = await page.request.post("/api/checkout", { multipart: { x: String(SPOT.x + 10), y: String(SPOT.y + 10), w: "20", h: "20", title: "Too late", image: { name: "c.png", mimeType: "image/png", buffer: Buffer.from(png.split(",")[1]!, "base64") } } });
+    const res = await page.request.post("/api/checkout", { multipart: { x: String(SPOT.x + 10), y: String(SPOT.y + 10), w: "20", h: "20", description: "A short description", title: "Too late", image: { name: "c.png", mimeType: "image/png", buffer: Buffer.from(png.split(",")[1]!, "base64") } } });
     expect(res.status()).toBe(409);
     expect((await res.json()).error).toBe("px_parcel_unavailable");
     // an adjacent parcel is fine
@@ -167,7 +170,7 @@ test.describe.serial("buy → pay → moderate → publish", () => {
 
   test("security: anonymous and non-staff users cannot use protected endpoints", async ({ browser, request }) => {
     // paying needs an account, whatever the request carries (even an e-mail address, as a guest checkout would)
-    const noAccount = await request.post("/api/checkout", { multipart: { x: "25000", y: "10000", w: "20", h: "20", title: "No account", email: "guest@example.test", image: { name: "c.png", mimeType: "image/png", buffer: Buffer.from("x") } } });
+    const noAccount = await request.post("/api/checkout", { multipart: { x: "25000", y: "10000", w: "20", h: "20", description: "A short description", title: "No account", email: "guest@example.test", image: { name: "c.png", mimeType: "image/png", buffer: Buffer.from("x") } } });
     expect([noAccount.status(), (await noAccount.json()).error]).toEqual([401, "unauthenticated"]);
     // orders are private to their buyer
     expect((await request.get("/api/orders/00000000-0000-4000-8000-000000000000")).status()).toBe(401);

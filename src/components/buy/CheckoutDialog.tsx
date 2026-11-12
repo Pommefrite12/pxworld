@@ -8,7 +8,7 @@ import { fitSize } from "@/components/map/ParcelCard";
 import { formatMoney, quote, type ParcelKind } from "@/lib/grid/pricing";
 import { tintedBlob } from "@/lib/images/waterTintBrowser";
 import type { Rect } from "@/lib/grid/geometry";
-import { TITLE_MAX, TITLE_MIN, isValidTitle } from "@/lib/security/text";
+import { DESCRIPTION_MAX, DESCRIPTION_MIN, TITLE_MAX, TITLE_MIN, isValidDescription, isValidTitle } from "@/lib/security/text";
 import { CAMPAIGN_DAYS, DEFAULT_CAMPAIGN_DAYS, type CampaignDays } from "@/lib/campaign";
 import type { Pricing } from "./BuyPanel";
 import { ArchiveFields, EMPTY_ARCHIVE, type ArchiveValue } from "@/components/archive/ArchiveFields";
@@ -163,7 +163,7 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
               </div>
               <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void pay(); }}>
                 <div><label className="label" htmlFor="co-title-in">{t("fields.title")}</label><input id="co-title-in" className="field" required minLength={TITLE_MIN} maxLength={TITLE_MAX} autoComplete="off" value={title} onChange={(e) => setTitle(e.target.value)} data-testid="co-title" /><p className="mt-1 text-xs text-ink-faint">{t("fields.titleHint", { min: TITLE_MIN })}</p></div>
-                <div><label className="label" htmlFor="co-desc">{t("fields.description")}</label><textarea id="co-desc" className="field !min-h-20" maxLength={280} rows={3} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+                <div><label className="label" htmlFor="co-desc">{t("fields.description")}</label><textarea id="co-desc" className="field !min-h-20" required minLength={DESCRIPTION_MIN} maxLength={DESCRIPTION_MAX} rows={3} value={description} onChange={(e) => setDescription(e.target.value)} data-testid="co-description" /><p className="mt-1 text-xs text-ink-faint">{t("fields.descriptionHint", { min: DESCRIPTION_MIN })}</p></div>
                 <ArchiveFields id="co" value={archive} onChange={setArchive} />
                 <div><label className="label" htmlFor="co-link">{t("fields.link")}</label><input id="co-link" className="field" type="url" inputMode="url" placeholder="https://" maxLength={500} value={link} onChange={(e) => setLink(e.target.value)} /><p className="mt-1 text-xs text-ink-faint">{t("fields.linkHint")}</p></div>
                 {collective && (
@@ -202,7 +202,7 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
                 <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} data-testid="co-accept" />
                   <span>{t.rich(collective ? "collective.accept" : free ? "free.accept" : "accept", { terms: (c) => <Link href="/terms" target="_blank" className="underline">{c}</Link>, rules: (c) => <Link href="/rules" target="_blank" className="underline">{c}</Link> })}</span></label>
                 {error && <p role="alert" className="rounded-xl bg-danger/10 px-3 py-2 text-sm font-semibold text-danger" data-testid="co-error">{error}</p>}
-                <button className="btn btn-primary w-full" type="submit" disabled={busy || !accepted || !isValidTitle(title) || !archive.category} data-testid="co-pay">{collective ? (busy ? t("collective.sending") : t("collective.send")) : free ? (busy ? t("free.placing") : t("free.place")) : busy ? t("redirecting") : t("pay", { price: formatMoney(q.totalCents, locale, pricing.currency) })}</button>
+                <button className="btn btn-primary w-full" type="submit" disabled={busy || !accepted || !isValidTitle(title) || !isValidDescription(description) || !archive.category} data-testid="co-pay">{collective ? (busy ? t("collective.sending") : t("collective.send")) : free ? (busy ? t("free.placing") : t("free.place")) : busy ? t("redirecting") : t("pay", { price: formatMoney(q.totalCents, locale, pricing.currency) })}</button>
                 <p className="text-center text-xs text-ink-faint">{collective ? t("collective.nothingPaid") : free ? t("free.nothingPaid") : t("securePayment")}</p>
               </form>
             </div>

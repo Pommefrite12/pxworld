@@ -14,7 +14,7 @@ import { processCreation } from "@/lib/images/validate";
 import { lonLatToPixel } from "@/lib/grid/geometry";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { renderArt } from "./art";
-import { demoPlan } from "./plan";
+import { demoPlan, type DemoItem } from "./plan";
 
 export interface Rect { x: number; y: number; w: number; h: number }
 
@@ -30,7 +30,7 @@ export interface DemoPorts {
   log(message: string): void;
 }
 
-export interface SeedOptions { count: number; /** MORE accounts, each with a parcel on the sea, after the `count` first ones. */ water?: number; seed?: number; emailDomain: string; now?: number }
+export interface SeedOptions { /** A ready-made plan (the curated "heritage" set): `count` and `water` are then ignored. */ plan?: DemoItem[]; count: number; /** MORE accounts, each with a parcel on the sea, after the `count` first ones. */ water?: number; seed?: number; emailDomain: string; now?: number }
 export interface SeedReport { usersCreated: number; usersFound: number; parcelsCreated: number; parcelsSkipped: number; failed: string[] }
 
 const MIN_LAND_SHARE = 0.85;
@@ -39,7 +39,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 const sqlLike = (domain: string) => `demo-%@${domain}`;
 
 export async function seedDemo(p: DemoPorts, opts: SeedOptions): Promise<SeedReport> {
-  const now = opts.now ?? Date.now(), plan = demoPlan(opts.count, opts.seed ?? 1, opts.water ?? 0);
+  const now = opts.now ?? Date.now(), plan = opts.plan ?? demoPlan(opts.count, opts.seed ?? 1, opts.water ?? 0);
   const report: SeedReport = { usersCreated: 0, usersFound: 0, parcelsCreated: 0, parcelsSkipped: 0, failed: [] };
   const known = new Map((await p.query<{ id: string; email: string }>("select id, email from auth.users where email like $1", [sqlLike(opts.emailDomain)])).map((r) => [r.email, r.id]));
   const placed: Rect[] = (await p.query<Rect>("select x, y, w, h from public.parcels where status in ('reserved', 'active')")).map((r) => ({ x: Number(r.x), y: Number(r.y), w: Number(r.w), h: Number(r.h) }));
@@ -57,12 +57,20 @@ export async function seedDemo(p: DemoPorts, opts: SeedOptions): Promise<SeedRep
       // a place: around the anchor city, mostly on land, clear of every other parcel; the circle grows (and the parcel shrinks) when it is crowded
       const c = lonLatToPixel({ lon: item.spot.lon, lat: item.spot.lat });
       let done = false;
-      for (let attempt = 0; attempt < 160 && !done; attempt++) {
-        const shrink = attempt < 60 ? 1 : attempt < 110 ? 0.75 : 0.5;
-        const w = Math.max(40, Math.round(item.w * shrink)), h = Math.max(40, Math.round(item.h * shrink));
-        const angle = ((item.seed * 97 + attempt * 137) % 360) * (Math.PI / 180), radius = 80 + attempt * 14 + ((item.seed * 31 + attempt * 17) % 220);
-        const r: Rect = { x: clamp(Math.round(c.x + Math.cos(angle) * radius - w / 2), 0, GRID_WIDTH - w), y: clamp(Math.round(c.y + Math.sin(angle) * radius * 0.7 - h / 2), 0, GRID_HEIGHT - h), w, h };
-        if (placed.some((o) => overlaps(r, o, 6))) continue;
+      for (let attempt = 0; attempt < (item.exact ? 400 : 160) && !done; attempt++) {
+        const shrink = item.exact || attempt < 60 ? 1 : attempt < 110 ? 0.75 : 0.5;
+        const w = item.exact ? item.w : Math.max(40, Math.round(item.w * shrink)), h = item.exact ? item.h : Math.max(40, Math.round(item.h * shrink));
+        let r: Rect;
+        if (item.exact) {
+          // a curated parcel goes right on its place; when that is taken or half in the sea, it moves outwards in a spiral, as little as it can
+          const angle = attempt * 2.399963, radius = attempt === 0 ? 0 : 2.2 * Math.sqrt(attempt) * 3;
+          r = { x: clamp(Math.round(c.x + Math.cos(angle) * radius - w / 2), 0, GRID_WIDTH - w), y: clamp(Math.round(c.y + Math.sin(angle) * radius - h / 2), 0, GRID_HEIGHT - h), w, h };
+          if (placed.some((o) => overlaps(r, o, 2))) continue;
+        } else {
+          const angle = ((item.seed * 97 + attempt * 137) % 360) * (Math.PI / 180), radius = 80 + attempt * 14 + ((item.seed * 31 + attempt * 17) % 220);
+          r = { x: clamp(Math.round(c.x + Math.cos(angle) * radius - w / 2), 0, GRID_WIDTH - w), y: clamp(Math.round(c.y + Math.sin(angle) * radius * 0.7 - h / 2), 0, GRID_HEIGHT - h), w, h };
+          if (placed.some((o) => overlaps(r, o, 6))) continue;
+        }
         const land = await p.landPixels(r), water = item.kind === "water";
         if ((water ? w * h - land : land) < MIN_LAND_SHARE * w * h) continue; // a parcel is placed where it owns (nearly) all its rectangle
 
@@ -77,15 +85,15 @@ export async function seedDemo(p: DemoPorts, opts: SeedOptions): Promise<SeedRep
           if ((e as { code?: string }).code === "23P01") { placed.push(r); continue; } // somebody else's parcel is there: try elsewhere
           throw e;
         }
-        const raster = renderArt(item.style, w, h, item.seed, item.title);
+        const raster = item.render ? item.render(w, h, item.seed) : renderArt(item.style, w, h, item.seed, item.title);
         const png = await sharp(Buffer.from(raster.data), { raw: { width: w, height: h, channels: 3 } }).png().toBuffer();
         const img = await processCreation(png, { w, h }); // the pipeline of a real upload: canonical PNG, hash, average colour
         const key = `creations/${parcel.id}/${now}-${img.sha256.slice(0, 12)}.png`;
         await p.putObject(key, img.png);
         const [asset] = await p.query<{ id: string }>(
-          `insert into public.parcel_assets (parcel_id, uploader_id, version, storage_path, content_hash, width, height, bytes, avg_color, title, description, status, reviewed_at, published_at, created_at)
-           values ($1, $2, 1, $3, $4, $5, $6, $7, $8, $9, $10, 'approved', $11, $11, $11) returning id`,
-          [parcel.id, userId, key, img.sha256, img.width, img.height, img.bytes, img.avgColor, item.title, item.description, at],
+          `insert into public.parcel_assets (parcel_id, uploader_id, version, storage_path, content_hash, width, height, bytes, avg_color, title, description, status, reviewed_at, published_at, created_at, category)
+           values ($1, $2, 1, $3, $4, $5, $6, $7, $8, $9, $10, 'approved', $11, $11, $11, $12) returning id`,
+          [parcel.id, userId, key, img.sha256, img.width, img.height, img.bytes, img.avgColor, item.title, item.description, at, item.category ?? null],
         ) as [{ id: string }];
         await p.query("update public.parcels set published_asset_id = $1 where id = $2", [asset.id, parcel.id]);
         placed.push(r);

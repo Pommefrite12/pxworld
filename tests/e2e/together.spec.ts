@@ -36,7 +36,7 @@ test.describe.serial("drawing together", () => {
   test.beforeAll(async () => {
     owner = await login("streamer@example.test");
     admin = await login("admin.together@example.test", "admin");
-    const r = await owner.post("/api/checkout", { multipart: { x: String(SPOT.x), y: String(SPOT.y), w: String(SPOT.w), h: String(SPOT.h), title: "Chat canvas", image: { name: "c.png", mimeType: "image/png", buffer: await png(SPOT.w, SPOT.h) } } });
+    const r = await owner.post("/api/checkout", { multipart: { x: String(SPOT.x), y: String(SPOT.y), w: String(SPOT.w), h: String(SPOT.h), description: "A short description", title: "Chat canvas", image: { name: "c.png", mimeType: "image/png", buffer: await png(SPOT.w, SPOT.h) } } });
     expect(r.status(), await r.text()).toBe(200);
     const { orderId } = await r.json();
     expect((await (await owner.post("/api/dev/pay", { data: { orderId, outcome: "paid" } })).json()).outcome).toBe("processed");

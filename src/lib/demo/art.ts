@@ -25,20 +25,20 @@ export const makeRaster = (w: number, h: number, bg: RGB): Raster => {
   for (let i = 0; i < w * h; i++) { data[i * 3] = bg[0]; data[i * 3 + 1] = bg[1]; data[i * 3 + 2] = bg[2]; }
   return { w, h, data };
 };
-const put = (r: Raster, x: number, y: number, c: RGB) => {
+export const put = (r: Raster, x: number, y: number, c: RGB) => {
   if (x < 0 || y < 0 || x >= r.w || y >= r.h) return;
   const i = (y * r.w + x) * 3; r.data[i] = c[0]; r.data[i + 1] = c[1]; r.data[i + 2] = c[2];
 };
-const rect = (r: Raster, x: number, y: number, w: number, h: number, c: RGB) => {
+export const rect = (r: Raster, x: number, y: number, w: number, h: number, c: RGB) => {
   for (let j = Math.max(0, Math.round(y)); j < Math.min(r.h, Math.round(y + h)); j++) for (let i = Math.max(0, Math.round(x)); i < Math.min(r.w, Math.round(x + w)); i++) put(r, i, j, c);
 };
-const disc = (r: Raster, cx: number, cy: number, rad: number, c: RGB, inner = 0) => {
+export const disc = (r: Raster, cx: number, cy: number, rad: number, c: RGB, inner = 0) => {
   for (let j = Math.floor(cy - rad); j <= Math.ceil(cy + rad); j++) for (let i = Math.floor(cx - rad); i <= Math.ceil(cx + rad); i++) {
     const d = Math.hypot(i + 0.5 - cx, j + 0.5 - cy);
     if (d <= rad && d >= inner) put(r, i, j, c);
   }
 };
-const poly = (r: Raster, pts: [number, number][], c: RGB) => {
+export const poly = (r: Raster, pts: [number, number][], c: RGB) => {
   const ys = pts.map((p) => p[1]), y0 = Math.max(0, Math.floor(Math.min(...ys))), y1 = Math.min(r.h - 1, Math.ceil(Math.max(...ys)));
   for (let y = y0; y <= y1; y++) {
     const xs: number[] = [];
@@ -50,7 +50,7 @@ const poly = (r: Raster, pts: [number, number][], c: RGB) => {
     for (let k = 0; k + 1 < xs.length; k += 2) for (let x = Math.ceil(xs[k]! - 0.5); x < xs[k + 1]! - 0.5; x++) put(r, x, y, c);
   }
 };
-const mix = (a: RGB, b: RGB, t: number): RGB => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t].map((v) => Math.round(v)) as RGB;
+export const mix = (a: RGB, b: RGB, t: number): RGB => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t].map((v) => Math.round(v)) as RGB;
 const luma = (c: RGB) => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
 
 /* ------------------------------------------------------------------ a 5 × 7 pixel font (A–Z) */

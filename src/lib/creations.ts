@@ -2,7 +2,7 @@ import "server-only";
 import { query } from "@/lib/db/pool";
 import { HttpError } from "@/lib/http/errors";
 import { objectStore } from "@/lib/storage";
-import { TITLE_MAX, cleanText, isValidTitle } from "@/lib/security/text";
+import { DESCRIPTION_MAX, TITLE_MAX, cleanText, isValidDescription, isValidTitle } from "@/lib/security/text";
 import { sanitizeExternalUrl } from "@/lib/security/url";
 import { ImageError, MAX_UPLOAD_BYTES, processCreation, type ProcessedImage } from "@/lib/images/validate";
 import { PLACE_MAX, isCategory, normalizeCountry, type ArchiveFields } from "@/lib/archive";
@@ -10,7 +10,8 @@ import { PLACE_MAX, isCategory, normalizeCountry, type ArchiveFields } from "@/l
 export interface CreationMeta extends ArchiveFields {
   /** Required (see `isValidTitle`): it is what people read when they click the parcel on the map. */
   title: string;
-  description: string | null;
+  /** Required too (see `isValidDescription`). */
+  description: string;
   link: string | null;
   commercial: boolean;
 }
@@ -21,7 +22,10 @@ export function parseCreationMeta(form: FormData): CreationMeta {
   if (typeof rawLink === "string" && rawLink.trim() && !link) throw new HttpError(400, "invalid_link");
   const title = cleanText(form.get("title"), TITLE_MAX);
   if (!title || !isValidTitle(title)) throw new HttpError(400, "title_required");
-  // the archive fields: all optional for the API (a creation made before had none), but never wrong
+  const description = cleanText(form.get("description"), DESCRIPTION_MAX);
+  if (!description || !isValidDescription(description)) throw new HttpError(400, "description_required");
+  // the archive fields: all optional for the API (a creation made before had none), but never wrong. The form only asks for the category: the place and
+  // the country are still understood (and kept on a creation that has them), but nobody is asked for them any more
   const rawCategory = form.get("category");
   const category = typeof rawCategory === "string" && rawCategory.trim() ? rawCategory.trim() : null;
   if (category !== null && !isCategory(category)) throw new HttpError(400, "invalid_category");
@@ -30,7 +34,7 @@ export function parseCreationMeta(form: FormData): CreationMeta {
   if (typeof rawCountry === "string" && rawCountry.trim() && !placeCountry) throw new HttpError(400, "invalid_country");
   return {
     title,
-    description: cleanText(form.get("description"), 280),
+    description,
     link,
     commercial: form.get("commercial") === "true" || form.get("commercial") === "on",
     category,

@@ -429,6 +429,11 @@ la base contient déjà un paiement réel ; ou l'identifiant du projet Supabase 
    npm run demo:seed -- --env .env.production.local --i-know-this-is-a-test-site --project VOTRE_ID_PROJET --water 20
    ```
    Résultat attendu : `Done: 20 accounts created (50 already there), 20 parcels created (50 already there).`
+   **Pour remplacer les 50 parcelles de démonstration par 100 parcelles « patrimoine du monde »** (monuments, cultures, cuisines, musiques, découvertes, actualité : dessinées en pixel art, chacune à sa vraie place, **50 × 50 pixels au plus**, un compte par parcelle, avec un titre et une phrase) : faites d'abord l'étape 6 ci-dessous (effacer l'ancien jeu), puis :
+   ```bash
+   npm run demo:seed -- --env .env.production.local --i-know-this-is-a-test-site --project VOTRE_ID_PROJET --set heritage
+   ```
+   Résultat attendu : `Done: 100 accounts created … 100 parcels created`. Relancer ne double rien. À ces tailles, les parcelles ne sont que des points sur la vue du monde entier : zoomez sur Gizeh, Rome, Kyoto, Paris… pour voir les dessins. L'étape 6 les efface aussi.
 5. Rechargez le site avec **Ctrl+Maj+R** : sous une minute, la carte montre les parcelles habillées, et les compteurs affichent les chiffres de démonstration. Zoomez sur Paris, Londres, New York, Tokyo… : c'est là qu'elles se concentrent.
 6. **Pour tout retirer** (comptes, parcelles, images, y compris dans le dossier privé de Supabase) :
    ```bash

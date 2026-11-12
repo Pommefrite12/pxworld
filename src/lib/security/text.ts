@@ -16,4 +16,9 @@ export const TITLE_MIN = 3;
 export const TITLE_MAX = 80;
 export const isValidTitle = (title: string): boolean => [...title.trim()].length >= TITLE_MIN;
 
+/** A creation must also have a short description (the owner's rule): a few characters at least, 280 at most. */
+export const DESCRIPTION_MIN = 3;
+export const DESCRIPTION_MAX = 280;
+export const isValidDescription = (description: string): boolean => [...description.trim()].length >= DESCRIPTION_MIN;
+
 export const USERNAME_RE = /^[A-Za-z0-9_.-]{3,24}$/;

@@ -27,7 +27,7 @@ test.afterAll(async () => { await Promise.all(contexts.map((c) => c.dispose()));
 async function publish(spot: (typeof SPOTS)[keyof typeof SPOTS], admin: APIRequestContext) {
   const owner = await as(spot.owner);
   const image = await sharp({ create: { width: spot.w, height: spot.h, channels: 3, background: "#2b35e0" } }).png().toBuffer();
-  const r = await owner.post("/api/checkout", { multipart: { x: String(spot.x), y: String(spot.y), w: String(spot.w), h: String(spot.h), title: spot.title, image: { name: "c.png", mimeType: "image/png", buffer: image } } });
+  const r = await owner.post("/api/checkout", { multipart: { x: String(spot.x), y: String(spot.y), w: String(spot.w), h: String(spot.h), description: "A short description", title: spot.title, image: { name: "c.png", mimeType: "image/png", buffer: image } } });
   expect(r.status(), await r.text()).toBe(200);
   const { orderId } = await r.json();
   expect((await (await owner.post("/api/dev/pay", { data: { orderId, outcome: "paid" } })).json()).outcome).toBe("processed");

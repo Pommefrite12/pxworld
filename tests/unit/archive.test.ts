@@ -30,7 +30,7 @@ describe("the archive fields", () => {
 });
 
 describe("what the API accepts for a creation (the same form for a purchase, a project and a new version)", () => {
-  const base = { title: "Hello world" };
+  const base = { title: "Hello world", description: "A short description" };
 
   it("does not require the archive fields: a creation sent without them is simply not classified", () => {
     expect(parseCreationMeta(form(base))).toMatchObject({ category: null, placeLabel: null, placeCountry: null });
@@ -52,6 +52,15 @@ describe("what the API accepts for a creation (the same form for a purchase, a p
     expect(fails({ ...base, placeCountry: "ITA" })).toEqual([400, "invalid_country"]);
     expect(fails({ ...base, placeCountry: "1!" })).toEqual([400, "invalid_country"]);
     expect(fails({ ...base, category: "food", placeCountry: "IT" })).toBeNull();
+  });
+
+  it("requires a short description too, after the title (owner's rule): missing, blank or too short is refused", () => {
+    expect(fails({ title: "Hello world", category: "food" })).toEqual([400, "description_required"]);
+    expect(fails({ title: "Hello world", description: "   " })).toEqual([400, "description_required"]);
+    expect(fails({ title: "Hello world", description: " ab " })).toEqual([400, "description_required"]);
+    expect(fails({ description: "A short description" })).toEqual([400, "title_required"]); // the title is checked first
+    expect(parseCreationMeta(form({ ...base, description: "  a \u0000 b  " })).description).toBe("a b");
+    expect(parseCreationMeta(form({ ...base, description: "x".repeat(400) })).description).toHaveLength(280);
   });
 
   it("still requires the title (the archive fields do not replace it)", () => {

@@ -23,7 +23,7 @@ const SEA = (() => { const c = lonLatToPixel({ lon: -25, lat: 34 }); return { x:
 
 async function buy(api: APIRequestContext, admin: APIRequestContext, rect: { x: number; y: number; w: number; h: number }, kind: "land" | "water", title: string, colour: string) {
   const image = await sharp({ create: { width: rect.w, height: rect.h, channels: 3, background: colour } }).png().toBuffer();
-  const r = await api.post("/api/checkout", { multipart: { x: String(rect.x), y: String(rect.y), w: String(rect.w), h: String(rect.h), kind, title, image: { name: "c.png", mimeType: "image/png", buffer: image } } });
+  const r = await api.post("/api/checkout", { multipart: { x: String(rect.x), y: String(rect.y), w: String(rect.w), h: String(rect.h), kind, description: "A short description", title, image: { name: "c.png", mimeType: "image/png", buffer: image } } });
   expect(r.status(), await r.text()).toBe(200);
   const { orderId } = await r.json();
   expect((await (await api.post("/api/dev/pay", { data: { orderId, outcome: "paid" } })).json()).outcome).toBe("processed");
@@ -56,7 +56,7 @@ test("water is bought like land: priced for its water, refused on land, shown in
   expect((await api.get(`/api/availability?x=${SEA.x}&y=${SEA.y}&w=20&h=20&kind=lava`)).status()).toBe(400);
   // and the wrong kind is refused when buying
   const red = await sharp({ create: { width: 20, height: 20, channels: 3, background: "#ff0000" } }).png().toBuffer();
-  const wrong = await api.post("/api/checkout", { multipart: { x: String(SEA.x), y: String(SEA.y), w: "20", h: "20", kind: "land", title: "Nope", image: { name: "c.png", mimeType: "image/png", buffer: red } } });
+  const wrong = await api.post("/api/checkout", { multipart: { x: String(SEA.x), y: String(SEA.y), w: "20", h: "20", kind: "land", description: "A short description", title: "Nope", image: { name: "c.png", mimeType: "image/png", buffer: red } } });
   expect([wrong.status(), (await wrong.json()).error]).toEqual([422, "px_not_on_land"]);
 
   const assetId = await buy(api, admin, SEA, "water", "Sailor", "#ff0000");

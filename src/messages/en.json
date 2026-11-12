@@ -216,11 +216,7 @@
     "fields": {
       "legend": "For the archive",
       "category": "Category",
-      "categoryPlaceholder": "Choose a category…",
-      "place": "The place it is about (optional)",
-      "placeHint": "A city, a village, a country… not an address: nothing precise.",
-      "country": "Country (optional)",
-      "countryNone": "—"
+      "categoryPlaceholder": "Choose a category…"
     },
     "categories": {
       "arts": "Arts and culture",
@@ -352,7 +348,8 @@
     "fields": {
       "title": "Title",
       "titleHint": "At least {min} characters. It is shown on the page of your trace and when someone clicks it on the map.",
-      "description": "Short description (optional)",
+      "description": "Short description",
+      "descriptionHint": "At least {min} characters. Say in a few words what it shows, or why it matters.",
       "link": "Link (optional)",
       "linkHint": "https only. External links are shown with their domain and marked nofollow.",
       "commercial": "This creation is an advertisement (it will be labelled as such)."
@@ -403,6 +400,7 @@
       "invalid_link": "The link must be a valid https address.",
       "rate_limited": "Too many attempts. Please wait a little.",
       "title_required": "Please give your creation a title (at least 3 characters).",
+      "description_required": "Please describe your creation in a few words (at least 3 characters).",
       "payments_not_configured": "Payments are not available yet.",
       "px_not_on_land": "This parcel does not have enough land. Choose a spot with more land, or switch to water.",
       "px_not_on_water": "This parcel does not have enough water. Choose a spot with more sea or ocean, or switch to land.",

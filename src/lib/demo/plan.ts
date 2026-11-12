@@ -65,6 +65,10 @@ export interface DemoItem {
   seed: number;
   /** How long ago the parcel was "bought", in hours (so that the newest creations are not all the same minute). */
   ageHours: number;
+  /** A curated item (`heritage.ts`): its own drawing, exactly this size, as near as possible to exactly this place, with this category. */
+  exact?: boolean;
+  render?: (w: number, h: number, seed: number) => import("./art").Raster;
+  category?: string;
 }
 
 function mulberry(seed: number) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }

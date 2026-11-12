@@ -24,7 +24,7 @@ async function login(email: string, role?: "admin" | "moderator"): Promise<APIRe
 }
 const png = (w: number, h: number) => sharp({ create: { width: w, height: h, channels: 3, background: "#d98a2b" } }).png().toBuffer();
 const checkout = async (ctx: APIRequestContext, fields: Record<string, string>) =>
-  ctx.post("/api/checkout", { multipart: { x: String(SPOT.x), y: String(SPOT.y), w: String(SPOT.w), h: String(SPOT.h), title: "La pizza du dimanche", ...fields, image: { name: "c.png", mimeType: "image/png", buffer: await png(SPOT.w, SPOT.h) } } });
+  ctx.post("/api/checkout", { multipart: { x: String(SPOT.x), y: String(SPOT.y), w: String(SPOT.w), h: String(SPOT.h), description: "A short description", title: "La pizza du dimanche", ...fields, image: { name: "c.png", mimeType: "image/png", buffer: await png(SPOT.w, SPOT.h) } } });
 const admin = (ctx: APIRequestContext, data: Record<string, unknown>) => ctx.post("/api/admin/action", { data, headers: { origin: BASE } });
 const pendingAsset = async (code: string) =>
   (await sql<{ id: string }>(`select a.id from public.parcel_assets a join public.parcels p on p.id = a.parcel_id where p.code = $1 and a.status = 'pending' order by a.version desc limit 1`, [code]))[0]!.id;
@@ -159,7 +159,7 @@ test.describe.serial("a trace in the archive: category, place, and a page of its
   });
 
   test("a new version keeps its own fields, and the edit form starts from the current ones", async ({ page }) => {
-    const r = await owner.post(`/api/parcels/${code}/creation`, { multipart: { title: "La pizza du dimanche", category: "family", placeLabel: "Chez Nonna", image: { name: "c.png", mimeType: "image/png", buffer: await png(SPOT.w, SPOT.h) } } });
+    const r = await owner.post(`/api/parcels/${code}/creation`, { multipart: { description: "A short description", title: "La pizza du dimanche", category: "family", placeLabel: "Chez Nonna", image: { name: "c.png", mimeType: "image/png", buffer: await png(SPOT.w, SPOT.h) } } });
     expect(r.status(), await r.text()).toBe(201);
     const v = (await sql<{ category: string; place_label: string; place_country: string | null }>(`select category, place_label, place_country from public.parcel_assets where id = $1`, [await pendingAsset(code)]))[0]!;
     expect(v).toEqual({ category: "family", place_label: "Chez Nonna", place_country: null });
@@ -170,8 +170,9 @@ test.describe.serial("a trace in the archive: category, place, and a page of its
     await page.context().addCookies((await owner.storageState()).cookies);
     await page.goto(`/account/parcels/${code}/edit`);
     await expect(page.getByTestId("ec-category")).toHaveValue("food");
-    await expect(page.getByTestId("ec-place")).toHaveValue("Naples");
-    await expect(page.getByTestId("ec-country")).toHaveValue("IT");
+    await expect(page.getByTestId("ec-description")).toHaveValue("A short description"); // the description is asked on the edit form too
+    await expect(page.getByTestId("ec-place")).toHaveCount(0); // the place and the country are not asked any more (an existing one is kept)
+    await expect(page.getByTestId("ec-country")).toHaveCount(0);
     expect((await admin(mod, { action: "review_asset", assetId: await pendingAsset(code), decision: "approve" })).ok()).toBeTruthy();
     await page.goto(`/archive/${code}`);
     await expect(page.getByTestId("archive-category")).toHaveText("Family and memories");
