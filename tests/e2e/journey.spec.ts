@@ -95,8 +95,10 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await expect(dialog.getByTestId("co-country")).toHaveCount(0);
     await dialog.getByTestId("co-category").selectOption("food");
     await dialog.getByTestId("co-accept").check();
-    await expect(dialog.getByTestId("co-pay"), "without a description").toBeDisabled();
+    await expect(dialog.getByTestId("co-pay"), "terms accepted, but no description").toBeDisabled();
     await dialog.getByTestId("co-description").fill("A first test creation.");
+    await expect(dialog.getByTestId("co-pay"), "title, description, category and terms: ready").toBeEnabled();
+    await dialog.getByTestId("co-accept").uncheck(); // the terms are checked again below, on purpose
     await expect(dialog.getByTestId("co-total")).toHaveText("€100");
     await expect(dialog.getByTestId("co-area")).toHaveText("400 px");
     await expect(dialog).not.toContainText("km²");
