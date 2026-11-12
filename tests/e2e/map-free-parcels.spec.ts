@@ -156,6 +156,11 @@ test("the free period has an off switch in the back office, and the counter card
   expect(off.status()).toBe(200);
   const dave = await as("free-dave@example.test");
   expect((await (await place(dave, { x: 27_860, y: 11_000, w: 2, h: 2 })).json()).error).toBe("px_free_closed");
+  // and in the panel a size below the paid minimum is refused again, with its explanation, and no free sizes are offered
+  await page.goto("/map?bx=27870&by=11000&bw=4&bh=6");
+  await expect(page.getByTestId("buy-status")).toContainText(/minimum surface is 25/i);
+  await expect(page.getByTestId("buy-free")).toHaveCount(0);
+  await expect(page.getByTestId("buy-continue")).toBeDisabled();
   await page.goto("/admin/settings");
   await expect(page.getByTestId("s-free-open")).not.toBeChecked();
   expect((await admin.post("/api/admin/action", { data: { action: "set_setting", key: "free_parcels_open", value: true } })).status()).toBe(200);

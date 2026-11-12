@@ -250,11 +250,11 @@ test.describe("map interaction", () => {
     const box = (await page.getByRole("application").boundingBox())!;
     await page.mouse.click(box.x + box.width * 0.4, box.y + box.height * 0.5);
     await expect(page.getByTestId("buy-status")).toContainText(/free/i, { timeout: 10_000 });
-    // a size below the minimum is refused with an explanation, no parcel can be bought
+    // below the paid minimum (25 pixels) is a FREE imprint while the free period is open: no price (the refusal when it is closed is in map-free-parcels.spec)
     await page.getByLabel("Width (px)").fill("4");
     await page.getByLabel("Height (px)").fill("6");
-    await expect(page.getByTestId("buy-status")).toContainText(/minimum surface is 25/i); // 24 pixels
-    await expect(page.getByTestId("buy-continue")).toBeDisabled();
+    await expect(page.getByTestId("buy-status")).toContainText(/free spot/i); // 24 pixels
+    await expect(page.getByTestId("buy-price")).toHaveText("Free");
     // the smallest parcel: 5 × 5 pixels = 25, €6.25
     await page.getByLabel("Width (px)").fill("5");
     await page.getByLabel("Height (px)").fill("5");
