@@ -40,6 +40,15 @@
     "owners": "Contributors",
     "creations": "Creations"
   },
+  "clock": {
+    "label": "Countdown of the founding edition",
+    "eyebrowOpen": "Time left to take part",
+    "eyebrowOther": "Founding edition",
+    "prelaunch": "Opening soon",
+    "closed": "Closed · archive frozen",
+    "remaining": "{d}d {h}h {m}m {s}s",
+    "daysAria": "{n, plural, one {# day left} other {# days left}}"
+  },
   "latest": {
     "title": "Recently archived",
     "all": "See all traces",

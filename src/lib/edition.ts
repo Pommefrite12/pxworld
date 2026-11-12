@@ -60,3 +60,12 @@ export function daysLeft(e: Pick<PublicEdition, "state" | "closesAt" | "serverNo
   if (e.state === "closed") return 0;
   return Math.max(0, Math.ceil((Date.parse(e.closesAt) - Date.parse(e.serverNow)) / 86_400_000));
 }
+
+/**
+ * The time left until the closing, split for a clock. `nowMs` is the SERVER's moment (the page ticks on the server's clock as measured once in
+ * the browser, never on the browser's own). All zeros once the closing has passed.
+ */
+export function timeLeft(closesAt: string, nowMs: number): { d: number; h: number; m: number; s: number } {
+  const total = Math.max(0, Math.floor((Date.parse(closesAt) - nowMs) / 1000));
+  return { d: Math.floor(total / 86_400), h: Math.floor((total % 86_400) / 3_600), m: Math.floor((total % 3_600) / 60), s: total % 60 };
+}

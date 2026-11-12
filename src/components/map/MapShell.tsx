@@ -16,6 +16,8 @@ import { LatestTile, MapControls, StatsCard, type LatestCreation } from "./Hud";
 import { ParcelCard } from "./ParcelCard";
 import { ProjectMapCard } from "./ProjectMapCard";
 import type { MapProject } from "@/lib/map/projects";
+import type { PublicEdition } from "@/lib/edition";
+import { EditionClock } from "./EditionClock";
 import { SearchBox, type SearchTarget } from "./SearchBox";
 
 export interface MapShellProps {
@@ -24,12 +26,14 @@ export interface MapShellProps {
   latest?: LatestCreation[];
   pricing: Pricing;
   viewer: HeaderViewer | null;
+  /** Where the edition stands (public data); null when it cannot be read: the clock is then simply not shown. */
+  edition?: PublicEdition | null;
   initial: { camera: Camera | null; parcelCode: string | null; buy: Rect | null; startBuy?: boolean; /** Land or water, when a purchase is resumed after signing in. */ kind?: ParcelKind };
 }
 
 const DEFAULT_SIZE = { w: 20, h: 20 };
 
-export function MapShell({ stats: initialStats, latest = [], pricing, viewer, initial }: MapShellProps) {
+export function MapShell({ stats: initialStats, latest = [], pricing, viewer, edition = null, initial }: MapShellProps) {
   const t = useTranslations("map");
   const tc = useTranslations("common");
   const locale = useLocale();
@@ -220,6 +224,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, in
         <div className="pointer-events-none absolute inset-3 z-10 flex flex-col justify-end sm:inset-5">
           <div className="flex max-w-[calc(100%-4.5rem)] flex-col items-start gap-2 sm:max-w-none">
             {mode === "explore" && <LatestTile items={latest} onPick={pickLatest} />}
+            {edition && <EditionClock edition={edition} />}
             {stats ? <StatsCard stats={stats} compact={!fullStats} /> : <p className="card pointer-events-auto px-4 py-3 text-sm text-ink-soft">{t("statsUnavailable")}</p>}
             <p className="pointer-events-auto badge-px px-3 py-1 text-[0.65rem] text-ink-faint">
               © Natural Earth · GeoNames · <Link href="/credits" className="underline">{t("credits")}</Link>

@@ -40,6 +40,15 @@
     "owners": "Contributeurs",
     "creations": "Créations"
   },
+  "clock": {
+    "label": "Compte à rebours de l'édition fondatrice",
+    "eyebrowOpen": "Temps restant pour participer",
+    "eyebrowOther": "Édition fondatrice",
+    "prelaunch": "Ouverture bientôt",
+    "closed": "Terminée · archive figée",
+    "remaining": "{d}\u00a0j {h}\u00a0h {m}\u00a0min {s}\u00a0s",
+    "daysAria": "{n, plural, one {# jour restant} other {# jours restants}}"
+  },
   "latest": {
     "title": "Récemment archivées",
     "all": "Voir toutes les traces",

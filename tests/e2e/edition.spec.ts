@@ -72,6 +72,11 @@ test.describe.serial("the edition: pre-launch, opening, postponing, closing", ()
     await expect(page.getByTestId("home-plate-title")).toHaveText("Opening soon");
     await expect(page.getByTestId("home-days-left")).toHaveCount(0);
     await expect(page.getByTestId("home-plate")).toContainText("The map can already be explored");
+    // the map carries the clock too: before the opening it says so, and counts nothing
+    await page.goto("/map");
+    await expect(page.getByTestId("map-clock")).toHaveAttribute("data-state", "prelaunch");
+    await expect(page.getByTestId("map-clock-text")).toHaveText("Opening soon");
+    await expect(page.getByTestId("map-clock-time")).toHaveCount(0);
   });
 
   test("an administrator opens the edition from the back office, by typing its name; the 365 days start at that moment", async ({ page }) => {
@@ -97,6 +102,18 @@ test.describe.serial("the edition: pre-launch, opening, postponing, closing", ()
     expect(e.closes_at.getTime() - e.opens_at.getTime()).toBe(365 * 86_400_000);
     const log = await sql<{ actor_role: string }>(`select actor_role from public.audit_logs where action = 'edition.open'`);
     expect(log.length).toBeGreaterThanOrEqual(1);
+    // the clock on the map starts at that moment: 365 days less a few seconds, ticking on the server's clock, in both languages
+    await page.goto("/map");
+    await expect(page.getByTestId("map-clock")).toHaveAttribute("data-state", "open");
+    const time = page.getByTestId("map-clock-time");
+    await expect(time).toHaveText(/^364d 23h \d{2}m \d{2}s$/);
+    await expect(time).toHaveAttribute("role", "timer");
+    await expect(time).toHaveAttribute("aria-label", "364 days left");
+    const first = await time.innerText();
+    await expect.poll(() => time.innerText(), { timeout: 5_000, message: "the seconds run" }).not.toBe(first);
+    await page.goto("/fr/map");
+    await expect(page.getByTestId("map-clock")).toContainText("Temps restant pour participer");
+    await expect(page.getByTestId("map-clock-time")).toHaveText(/^364[\s\u00a0]j 23[\s\u00a0]h/);
   });
 
   test("the closing can be postponed from the back office (never brought forward), and is audited", async ({ page }) => {
@@ -137,6 +154,10 @@ test.describe.serial("the edition: pre-launch, opening, postponing, closing", ()
     await expect(page.getByTestId("home-plate-title")).toHaveText("Historical archive");
     await expect(page.getByTestId("home-days-left")).toHaveCount(0);
     await expect(page.getByTestId("home-plate").getByRole("link", { name: "Explore the archive" })).toHaveAttribute("href", "/map");
+    await page.goto("/map"); // and so does the map: no clock to count, the edition is over
+    await expect(page.getByTestId("map-clock")).toHaveAttribute("data-state", "closed");
+    await expect(page.getByTestId("map-clock-text")).toHaveText("Closed · archive frozen");
+    await expect(page.getByTestId("map-clock-time")).toHaveCount(0);
     expect((await sql<{ status: string }>(`select status from public.editions`))[0]!.status).toBe("open"); // nothing recorded it: the clock decided
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { daysLeft, toPublicEdition, type EditionInfo } from "@/lib/edition";
+import { daysLeft, timeLeft, toPublicEdition, type EditionInfo } from "@/lib/edition";
 import { assertSalesOpen } from "@/lib/data/edition";
 import { statusForPx } from "@/lib/http/errors";
 import { DEFAULT_PRICING } from "@/lib/grid/pricing";
@@ -10,6 +10,13 @@ const info = (over: Partial<EditionInfo> = {}): EditionInfo => ({
 });
 
 describe("the edition as the interface sees it", () => {
+  it("splits the time left for a clock (days, hours, minutes, seconds) on the SERVER's moment, and never goes below zero", () => {
+    expect(timeLeft("2027-11-01T10:00:00Z", Date.parse("2026-11-11T10:00:00Z"))).toEqual({ d: 355, h: 0, m: 0, s: 0 });
+    expect(timeLeft("2027-11-01T10:00:00Z", Date.parse("2027-10-31T08:58:57Z"))).toEqual({ d: 1, h: 1, m: 1, s: 3 });
+    expect(timeLeft("2027-11-01T10:00:00Z", Date.parse("2027-11-01T09:59:59.500Z"))).toEqual({ d: 0, h: 0, m: 0, s: 0 }); // under a second: zero
+    expect(timeLeft("2027-11-01T10:00:00Z", Date.parse("2027-11-02T00:00:00Z"))).toEqual({ d: 0, h: 0, m: 0, s: 0 }); // past the closing
+  });
+
   it("counts the days left on the SERVER's clock, never on the browser's", () => {
     expect(daysLeft(info())).toBe(355); // 10 days into the 365
     expect(daysLeft(info({ serverNow: "2027-11-01T09:59:00Z" }))).toBe(1); // a started last day still counts

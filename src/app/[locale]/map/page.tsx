@@ -4,6 +4,8 @@ import { setRequestLocale } from "next-intl/server";
 import { MapShell } from "@/components/map/MapShell";
 import { getHeaderViewer } from "@/lib/auth/session";
 import { getPricing, getPublicStats } from "@/lib/data/map";
+import { getEdition } from "@/lib/data/edition";
+import { toPublicEdition } from "@/lib/edition";
 import { latestCreations } from "@/lib/data/parcels";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { validateRect } from "@/lib/grid/geometry";
@@ -31,7 +33,7 @@ export default async function HomePage({ params, searchParams }: { params: Promi
   const sp = await searchParams;
   const currency = requestCurrency(await headers()); // euros in the euro area, dollars elsewhere
   const startBuy = sp.buy === "1";
-  const [stats, pricing, viewer, latest] = await Promise.all([safe(getPublicStats), safe(() => getPricing(currency)), getHeaderViewer(), safe(() => latestCreations(4))]);
+  const [stats, pricing, viewer, latest, edition] = await Promise.all([safe(getPublicStats), safe(() => getPricing(currency)), getHeaderViewer(), safe(() => latestCreations(4)), safe(getEdition)]);
 
   // Deep links: ?x=&y=&z= (camera) and ?bx=&by=&bw=&bh= (resume a purchase after signing in)
   const x = num(sp.x), y = num(sp.y), z = num(sp.z);
@@ -45,6 +47,7 @@ export default async function HomePage({ params, searchParams }: { params: Promi
         stats={stats}
         latest={(latest ?? []).map((c) => ({ code: c.code, x: c.x, y: c.y, w: c.w, h: c.h, assetId: c.asset_id, title: c.title }))}
         viewer={viewer}
+        edition={edition ? toPublicEdition(edition) : null}
         pricing={pricing ?? DEFAULT_PRICING}
         initial={{ camera, parcelCode: isParcelCode(sp.p) ? sp.p : null, buy, startBuy, kind: sp.bk === "water" ? "water" : "land" }}
       />
