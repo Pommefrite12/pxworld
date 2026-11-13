@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HERITAGE, HERITAGE_RES, heritagePlan } from "@/lib/demo/heritage";
+import { HERITAGE, HERITAGE_BLOCK, HERITAGE_RES, heritagePlan } from "@/lib/demo/heritage";
 import { Canvas, C } from "@/lib/demo/scene";
 import { HERITAGE_I18N, HERITAGE_LANGS } from "@/lib/demo/heritage-i18n";
 import { CATEGORIES } from "@/lib/archive";
@@ -61,6 +61,22 @@ describe("the heritage set", () => {
     const first = heritagePlan()[0]!, r = first.render!(first.w, first.h, first.seed);
     expect([r.w, r.h]).toEqual([first.w * HERITAGE_RES, first.h * HERITAGE_RES]);
     expect(r.w * r.h).toBeLessThanOrEqual(4_000_000); // CREATION_MAX_DOTS
+  });
+
+  it("is PIXEL ART all through: each art pixel is a block of identical dots, edges are hard, backgrounds are dithered steps (a small palette, not a smooth gradient)", () => {
+    expect(HERITAGE_BLOCK).toBe(5); // half a pixel of the grid: a 30 × 30 parcel is drawn on a 60 × 60 grid of visible pixels
+    for (const p of heritagePlan()) {
+      const r = p.render!(p.w, p.h, p.seed), b = HERITAGE_BLOCK, colours = new Set<number>();
+      for (let y = 0; y < r.h; y += b) for (let x = 0; x < r.w; x += b) {
+        const q = (y * r.w + x) * 3, ref = [r.data[q]!, r.data[q + 1]!, r.data[q + 2]!];
+        colours.add((ref[0]! << 16) | (ref[1]! << 8) | ref[2]!);
+        for (let j = 0; j < b; j++) for (let i = 0; i < b; i++) {
+          const t = ((y + j) * r.w + x + i) * 3;
+          if (r.data[t] !== ref[0] || r.data[t + 1] !== ref[1] || r.data[t + 2] !== ref[2]) throw new Error(`${p.title}: the block at ${x},${y} is not one colour`);
+        }
+      }
+      expect(colours.size, `${p.title} has a small palette (a smooth gradient has thousands of colours)`).toBeLessThan(450);
+    }
   });
 
   it("has the title and the sentence of every picture in English, Spanish and Chinese (and nothing for a picture that does not exist)", () => {

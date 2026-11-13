@@ -614,7 +614,9 @@ export const HERITAGE_COUNT = HERITAGE.length;
  */
 /** Dots per grid pixel side: 10 is a tenth of a pixel, the finest the site accepts (a 30 × 30 parcel is a 300 × 300 picture). */
 export const HERITAGE_RES = 10;
-export function heritagePlan(res = HERITAGE_RES): DemoItem[] {
+/** The width of an art pixel, in dots: 5 of 10 is half a pixel of the grid (a 30 × 30 parcel is drawn on a 60 × 60 grid of visible pixels). */
+export const HERITAGE_BLOCK = 5;
+export function heritagePlan(res = HERITAGE_RES, block = Math.min(HERITAGE_BLOCK, res)): DemoItem[] {
   return HERITAGE.map((e, i) => ({
     index: i,
     username: `demo_${e.id}`.slice(0, 24),
@@ -633,6 +635,6 @@ export function heritagePlan(res = HERITAGE_RES): DemoItem[] {
     illustration: true,
     category: e.category,
     i18n: Object.fromEntries(HERITAGE_LANGS.flatMap((l) => { const t = HERITAGE_I18N[e.id]?.[l]; return t ? [[l, { title: t[0], description: t[1] }]] : []; })),
-    render: (w: number, h: number, seed: number) => { const k = new Canvas(w, h, C.black, seed, res); e.draw(k); return k.finish(); },
+    render: (w: number, h: number, seed: number) => { const k = new Canvas(w, h, C.black, seed, res, block); e.draw(k); return k.finish(); },
   }));
 }

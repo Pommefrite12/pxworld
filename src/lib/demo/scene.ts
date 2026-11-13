@@ -2,9 +2,12 @@
  * A small kit to DRAW pictures for the demonstration data, in unit coordinates (x and y from 0 to 1 across the parcel, radii and thicknesses as a
  * share of its shorter side), so that the same drawing works at any parcel size and at any fineness.
  *
- * `res` is the number of dots per grid pixel: 1 is a pixel, 5 a fifth of a pixel, 10 a tenth of a pixel (the finest the site accepts). The picture
- * is drawn twice as fine as it is kept (`SS`) and averaged down, so that every edge is smooth; every fill is lit from above (and from the left, for
- * round shapes), the sky is a smooth gradient, suns and lamps glow, and `finish()` adds a thin ink line where two colours meet and a soft vignette.
+ * `res` is the number of dots per grid pixel: 1 is a pixel, 5 a fifth of a pixel, 10 a tenth of a pixel (the finest the site accepts).
+ * Two looks. `block` = 1: the picture is drawn twice as fine as it is kept and averaged down, so that every edge is smooth; fills are lit from above
+ * (and from the left, for round shapes), the sky is a smooth gradient, suns and lamps glow, `finish()` adds a thin ink line where two colours meet and
+ * a soft vignette. `block` > 1 (PIXEL ART, what the demonstration pictures use): the picture is drawn on a grid of big dots, `block` dots wide, with
+ * hard edges and no smoothing at all; shading is a few flat steps, skies are bands with an ordered dither between them, glows are stepped, and `finish()`
+ * blows each art pixel up to `block` × `block` identical dots, so that the picture is kept at its fine size (`res`) but looks like pixels.
  * Pure and deterministic: no file, no network, no randomness except a seeded one. Used by `heritage.ts`; nothing of it is part of the real site.
  */
 import { makeRaster, rng, type RGB, type Raster } from "./art";
@@ -24,7 +27,8 @@ export const C = {
   skin: [226, 170, 128] as RGB, skinDark: [150, 96, 66] as RGB,
 };
 
-const SS = 2; // drawn twice as fine as it is kept
+const SS = 2; // smooth look: drawn twice as fine as it is kept
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]; // 4 × 4 ordered dither, thresholds / 16
 const clamp255 = (v: number) => (v < 0 ? 0 : v > 255 ? 255 : v);
 const lum = (r: number, g: number, b: number) => 0.299 * r + 0.587 * g + 0.114 * b;
 const mixc = (a: RGB, b: RGB, t: number): RGB => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
@@ -32,6 +36,8 @@ const mixc = (a: RGB, b: RGB, t: number): RGB => [a[0] + (b[0] - a[0]) * t, a[1]
 export class Canvas {
   /** The size of the parcel, in grid pixels, and the dots per pixel side. */
   readonly pw: number; readonly ph: number; readonly res: number;
+  /** Width of an art pixel, in kept dots (1: the smooth look). */
+  readonly block: number;
   /** The size of what is drawn (twice the fineness it is kept at). */
   readonly w: number; readonly h: number;
   /** The shorter side: radii and thicknesses are shares of it. */
@@ -43,26 +49,39 @@ export class Canvas {
   /** How much a fill is lit from above (0 = flat). */
   grad = 0.16;
 
-  constructor(w: number, h: number, bg: RGB = C.black, seed = 1, res = 1) {
-    this.pw = w; this.ph = h; this.res = res;
-    this.w = w * res * SS; this.h = h * res * SS; this.s = Math.min(this.w, this.h); this.px = res * SS;
+  constructor(w: number, h: number, bg: RGB = C.black, seed = 1, res = 1, block = 1) {
+    if (block > 1 && res % block !== 0) throw new Error("res must be a whole number of blocks");
+    this.pw = w; this.ph = h; this.res = res; this.block = block;
+    const k = block > 1 ? res / block : res * SS; // drawing dots per grid pixel
+    this.w = w * k; this.h = h * k; this.s = Math.min(this.w, this.h); this.px = k;
     this.d = new Uint8ClampedArray(this.w * this.h * 3);
     this.g = rng(seed);
+    if (block > 1) this.grad = 0.3; // flat steps need more contrast between them to be seen
     this.fill(bg);
   }
 
   private put(x: number, y: number, c: RGB) { if (x < 0 || y < 0 || x >= this.w || y >= this.h) return; const i = (y * this.w + x) * 3; this.d[i] = c[0]; this.d[i + 1] = c[1]; this.d[i + 2] = c[2]; }
   private blend(x: number, y: number, c: RGB, a: number) { if (x < 0 || y < 0 || x >= this.w || y >= this.h || a <= 0) return; const i = (y * this.w + x) * 3; const d = this.d; d[i] = d[i]! + (c[0] - d[i]!) * a; d[i + 1] = d[i + 1]! + (c[1] - d[i + 1]!) * a; d[i + 2] = d[i + 2]! + (c[2] - d[i + 2]!) * a; }
   /** A colour lit by its place in the shape: `t` from 0 (top) to 1 (bottom). */
-  private lit(c: RGB, t: number, side = 0): RGB { const f = 1 + this.grad * (0.5 - t) - this.grad * 0.4 * side; return [clamp255(c[0] * f), clamp255(c[1] * f), clamp255(c[2] * f)]; }
+  private lit(c: RGB, t: number, side = 0): RGB {
+    if (this.block > 1) { t = Math.round(t * 3) / 3; side = Math.round(side * 2) / 2; } // pixel art: three flat steps, not a gradient
+    const f = 1 + this.grad * (0.5 - t) - this.grad * 0.4 * side; return [clamp255(c[0] * f), clamp255(c[1] * f), clamp255(c[2] * f)]; }
 
   fill(c: RGB) { for (let i = 0; i < this.d.length; i += 3) { this.d[i] = c[0]; this.d[i + 1] = c[1]; this.d[i + 2] = c[2]; } return this; }
-  /** A sky: a smooth vertical gradient from `a` (at `from`) to `b` (at `to`). (`bands` is kept for the old drawings and ignored.) */
-  sky(a: RGB, b: RGB, from = 0, to = 1, _bands = 0) {
+  /** A sky: a vertical gradient from `a` (at `from`) to `b` (at `to`): smooth, or in `bands` dithered steps in the pixel look. */
+  sky(a: RGB, b: RGB, from = 0, to = 1, bands = 7) {
     const y0 = Math.floor(from * this.h), y1 = Math.ceil(to * this.h);
     for (let j = Math.max(0, y0); j < Math.min(this.h, y1); j++) {
-      const t = (j + 0.5 - y0) / Math.max(1, y1 - y0), c = mixc(a, b, t * t * (3 - 2 * t) * 0.5 + t * 0.5);
-      for (let i = 0; i < this.w; i++) this.put(i, j, c);
+      const t = (j + 0.5 - y0) / Math.max(1, y1 - y0), g = t * t * (3 - 2 * t) * 0.5 + t * 0.5;
+      if (this.block > 1) {
+        // pixel art: `bands` flat colours, with an ordered dither where one band gives way to the next
+        // (the dither is as coarse as one pixel of the grid, so that the background shows its pixels as plainly as the drawing does)
+        const v = g * bands, k = Math.floor(v), f = v - k, cell = Math.max(1, Math.round(this.px)), bj = Math.floor(j / cell) & 3;
+        for (let i = 0; i < this.w; i++) this.put(i, j, mixc(a, b, Math.min(1, (k + (f > (BAYER[bj * 4 + (Math.floor(i / cell) & 3)]! + 0.5) / 16 ? 1 : 0)) / bands)));
+      } else {
+        const c = mixc(a, b, g);
+        for (let i = 0; i < this.w; i++) this.put(i, j, c);
+      }
     }
     // what is above and below the band carries on in the colour of its edge (no black gap between a sky and the ground that is drawn later)
     for (let j = 0; j < Math.min(this.h, Math.max(0, y0)); j++) for (let i = 0; i < this.w; i++) this.put(i, j, a);
@@ -71,7 +90,9 @@ export class Canvas {
   }
   /** Rectangle: x, y, width, height in units. */
   rect(x: number, y: number, w: number, h: number, c: RGB) {
-    const x0 = Math.round(x * this.w), y0 = Math.round(y * this.h), x1 = Math.round((x + w) * this.w), y1 = Math.round((y + h) * this.h);
+    const x0 = Math.round(x * this.w), y0 = Math.round(y * this.h);
+    let x1 = Math.round((x + w) * this.w), y1 = Math.round((y + h) * this.h);
+    if (this.block > 1) { if (w > 0 && x1 <= x0) x1 = x0 + 1; if (h > 0 && y1 <= y0) y1 = y0 + 1; } // a thin thing stays one pixel wide, it does not vanish
     for (let j = Math.max(0, y0); j < Math.min(this.h, y1); j++) { const col = this.lit(c, (j + 0.5 - y0) / Math.max(1, y1 - y0)); for (let i = Math.max(0, x0); i < Math.min(this.w, x1); i++) this.put(i, j, col); }
     return this;
   }
@@ -106,7 +127,8 @@ export class Canvas {
   /** A thick line from (x1, y1) to (x2, y2); `th` is the thickness as a share of the shorter side. */
   line(x1: number, y1: number, x2: number, y2: number, th: number, c: RGB) {
     const ax = x1 * this.w, ay = y1 * this.h, bx = x2 * this.w, by = y2 * this.h, dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy) || 1;
-    const nx = (-dy / len) * (th * this.s) / 2, ny = (dx / len) * (th * this.s) / 2;
+    const t = this.block > 1 ? Math.max(th * this.s, 1.2) : th * this.s; // in pixel art a line is at least one pixel thick
+    const nx = (-dy / len) * t / 2, ny = (dx / len) * t / 2;
     return this.poly([[(ax + nx) / this.w, (ay + ny) / this.h], [(bx + nx) / this.w, (by + ny) / this.h], [(bx - nx) / this.w, (by - ny) / this.h], [(ax - nx) / this.w, (ay - ny) / this.h]], c);
   }
   /** Half a disc, flat side down (a dome, an arch). */
@@ -129,14 +151,18 @@ export class Canvas {
     const cx = x * this.w, cy = y * this.h, r = rad * this.s;
     for (let j = Math.floor(cy - r); j <= Math.ceil(cy + r); j++) for (let i = Math.floor(cx - r); i <= Math.ceil(cx + r); i++) {
       const d = Math.hypot(i + 0.5 - cx, j + 0.5 - cy) / r;
-      if (d < 1) this.blend(i, j, c, strength * (1 - d) * (1 - d));
+      if (d >= 1) continue;
+      const a = strength * (1 - d) * (1 - d);
+      const cell = Math.max(1, Math.round(this.px));
+      this.blend(i, j, c, this.block > 1 ? Math.floor(a * 4 + (BAYER[((Math.floor(j / cell) & 3) * 4 + (Math.floor(i / cell) & 3))]! + 0.5) / 16) / 4 : a); // stepped and dithered in pixel art
     }
     return this;
   }
   /** One round dot (or a few design pixels wide: `n`) at a unit position. */
   dot(x: number, y: number, c: RGB, n = 1) {
     const cx = x * this.w, cy = y * this.h, r = (n * this.px) / 2;
-    if (this.res === 1) { for (let j = Math.round(cy - r); j < Math.round(cy + r); j++) for (let i = Math.round(cx - r); i < Math.round(cx + r); i++) this.put(i, j, c); return this; }
+    if (this.block > 1 && n * this.px <= 2.6) { const d = Math.max(1, Math.round(n * this.px)), x0 = Math.round(cx - d / 2), y0 = Math.round(cy - d / 2); for (let j = 0; j < d; j++) for (let i = 0; i < d; i++) this.put(x0 + i, y0 + j, c); return this; } // a tiny dot is a square of art pixels
+    if (this.res === 1 && this.block === 1) { for (let j = Math.round(cy - r); j < Math.round(cy + r); j++) for (let i = Math.round(cx - r); i < Math.round(cx + r); i++) this.put(i, j, c); return this; }
     for (let j = Math.floor(cy - r); j <= Math.ceil(cy + r); j++) for (let i = Math.floor(cx - r); i <= Math.ceil(cx + r); i++) if (Math.hypot(i + 0.5 - cx, j + 0.5 - cy) <= r) this.put(i, j, c);
     return this;
   }
@@ -202,6 +228,7 @@ export class Canvas {
    * vignette. `res` dots per grid pixel side: the raster is `pw · res` by `ph · res`.
    */
   finish(): Raster {
+    if (this.block > 1) return this.finishPixels();
     const W = this.pw * this.res, H = this.ph * this.res, out = makeRaster(W, H, C.black), o = out.data;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       let r = 0, g = 0, b = 0;
@@ -226,6 +253,28 @@ export class Canvas {
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const d = Math.hypot((x + 0.5) / W - 0.5, (y + 0.5) / H - 0.5) / 0.7071, v = d <= 0.55 ? 1 : 1 - 0.13 * ((d - 0.55) / 0.45) ** 2, q = (y * W + x) * 3;
       o[q] = o[q]! * v; o[q + 1] = o[q + 1]! * v; o[q + 2] = o[q + 2]! * v;
+    }
+    return out;
+  }
+
+  /**
+   * Pixel art: a one-pixel dark line where two clearly different colours meet (a dithered sky is not clearly different: its steps are small), then every
+   * art pixel is blown up to `block` × `block` identical dots. No smoothing anywhere: the picture is kept fine (`res`) but made of visible pixels.
+   */
+  private finishPixels(): Raster {
+    const aw = this.w, ah = this.h, src = Uint8Array.from(this.d), o = Uint8Array.from(this.d), L = (q: number) => lum(src[q]!, src[q + 1]!, src[q + 2]!), dark = 0.8, T = 34;
+    for (let y = 0; y < ah; y++) for (let x = 0; x < aw; x++) {
+      const q = (y * aw + x) * 3, lc = L(q);
+      for (const nq of [x + 1 < aw ? q + 3 : -1, y + 1 < ah ? q + aw * 3 : -1]) {
+        if (nq < 0 || Math.abs(lc - L(nq)) <= T) continue;
+        const t = lc < L(nq) ? q : nq;
+        o[t] = src[t]! * dark; o[t + 1] = src[t + 1]! * dark; o[t + 2] = src[t + 2]! * dark;
+      }
+    }
+    const W = this.pw * this.res, H = this.ph * this.res, out = makeRaster(W, H, C.black), z = out.data, b = this.block;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const q = (Math.floor(y / b) * aw + Math.floor(x / b)) * 3, t = (y * W + x) * 3;
+      z[t] = o[q]!; z[t + 1] = o[q + 1]!; z[t + 2] = o[q + 2]!;
     }
     return out;
   }
