@@ -42,8 +42,15 @@ export default async function HomePage({ params, searchParams }: { params: Promi
   const b = { x: num(sp.bx), y: num(sp.by), w: num(sp.bw), h: num(sp.bh) };
   const buy = b.x !== null && b.y !== null && b.w !== null && b.h !== null && !validateRect({ x: b.x, y: b.y, w: b.w, h: b.h }, { minArea: 1 }) ? { x: b.x, y: b.y, w: b.w, h: b.h } : null;
 
+  // The whole planisphere is what a visit opens on: its pictures (level 5, the one a laptop screen asks for; a wider one draws them while
+  // its own level arrives) are asked for NOW, with the page, instead of after the scripts have been downloaded and have run. The version in
+  // the address is the one the map will ask for, so the browser's own request is answered from this one. Phones (a finer level) do not.
+  const openingWorld = !camera && !buy && !isParcelCode(sp.p) && stats !== null;
   return (
     <main id="main">
+      {openingWorld && Array.from({ length: 4 }, (_, ty) => Array.from({ length: 5 }, (_, tx) => (
+        <link key={`${tx}-${ty}`} rel="preload" as="image" media="(min-width: 1024px)" href={`/api/map/raster/5/${tx}/${ty}?v=${stats.mapVersion}`} />
+      )))}
       <MapShell
         stats={stats}
         latest={(latest ?? []).map((c) => ({ code: c.code, x: c.x, y: c.y, w: c.w, h: c.h, assetId: c.asset_id, title: c.title }))}

@@ -240,6 +240,45 @@ test.describe("map interaction", () => {
     expect(problems).toEqual([]);
   });
 
+  test("the page that opens on the whole planisphere asks for its pictures at once (before the scripts have run); a deep link to a place does not", async ({ page, request }) => {
+    const version = (await (await request.get("/api/stats")).json()).mapVersion as number;
+    const links = (html: string) => [...html.matchAll(/<link rel="preload" as="image"[^>]*href="(\/api\/map\/raster\/5\/\d+\/\d+\?v=\d+)"[^>]*>/g)];
+    const plain = await (await request.get("/map")).text();
+    const found = links(plain);
+    expect(found).toHaveLength(20); // 5 × 4 tiles of the level a laptop screen shows the world at
+    for (const m of found) expect(m[1]).toContain(`?v=${version}`); // the very address the map will ask for: the browser's own request is answered from it
+    expect(found[0]![0]).toContain('media="(min-width: 1024px)"'); // a phone shows the world at a finer level: it is not made to download these
+    expect(links(await (await request.get("/map?x=18900&y=11800&z=6")).text())).toHaveLength(0); // heading somewhere else: not the world
+    expect(links(await (await request.get("/map?buy=1")).text())).toHaveLength(20);
+    await page.goto("/map");
+    await expect(page.getByRole("application")).toBeVisible(); // and the map is the same map
+  });
+
+  test("a flight asks for the pictures of where it lands: the levels it only passes through are asked for only on the way to the destination", async ({ page }) => {
+    await page.goto("/map");
+    await page.waitForFunction(() => Boolean((window as unknown as { __pxEngine?: unknown }).__pxEngine));
+    await page.waitForTimeout(2500); // the world view has its pictures
+    const raster: string[] = [];
+    page.on("request", (r) => { if (r.url().includes("/api/map/raster/")) raster.push(r.url()); });
+    // a long flight, from the whole planisphere down to a street-level view
+    const dest = await page.evaluate(() => {
+      type Eng = { w: number; h: number; dpr: number; flyTo(c: { x: number; y: number; scale: number }, ms: number): void };
+      const e = (window as unknown as { __pxEngine: Eng }).__pxEngine, to = { x: 18900, y: 11800, scale: 6 };
+      e.flyTo(to, 900);
+      return { x0: to.x - e.w / 2 / to.scale, x1: to.x + e.w / 2 / to.scale, y0: to.y - e.h / 2 / to.scale, y1: to.y + e.h / 2 / to.scale, zDest: Math.max(0, Math.min(8, Math.floor(-Math.log2(to.scale * e.dpr) + 0.4))) };
+    });
+    await page.waitForTimeout(3000);
+    const asked = raster.map((u) => { const m = /\/raster\/(\d+)\/(\d+)\/(\d+)/.exec(u)!; return { z: Number(m[1]), tx: Number(m[2]), ty: Number(m[3]) }; });
+    expect(asked.length, "the flight did ask for pictures on its way").toBeGreaterThan(0);
+    for (const a of asked) {
+      const span = 256 * 2 ** a.z;
+      const inside = a.tx * span < dest.x1 && (a.tx + 1) * span > dest.x0 && a.ty * span < dest.y1 && (a.ty + 1) * span > dest.y0;
+      expect(a.z === dest.zDest || inside, `raster ${a.z}/${a.tx}/${a.ty} is neither of the destination's level nor on the way to it`).toBe(true);
+    }
+    const cam = await page.evaluate(() => ({ ...(window as unknown as { __pxEngine: { cam: { x: number; y: number; scale: number } } }).__pxEngine.cam }));
+    expect([Math.round(cam.x), Math.round(cam.y), cam.scale]).toEqual([18900, 11800, 6]); // and it landed
+  });
+
   test("arriving to leave a trace keeps the whole planisphere in view: nothing zooms by itself; the first click zooms where it was made, the next one puts the parcel", async ({ page }) => {
     type Eng = { cam: { x: number; y: number; scale: number }; fitScale: number; selection: unknown; worldToScreen(x: number, y: number): { x: number; y: number } };
     await page.goto("/map?buy=1"); // the address of every "Leave my trace" button

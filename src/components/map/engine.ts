@@ -91,6 +91,8 @@ const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const rasterSpan = (z: number) => RASTER_PX * 2 ** z;
 /** The map wraps around horizontally (like every web map): x is taken modulo the world width. */
 const wrapX = (x: number) => ((x % W) + W) % W;
+/** The raster level whose picture pixel is about one DEVICE pixel (a little finer rather than coarser): on an ordinary screen that is one level coarser than for a dense one. */
+const rasterLevel = (scale: number, dpr: number) => clamp(Math.floor(-Math.log2(scale * dpr) + 0.4), 0, MAX_Z);
 /** Shortest signed horizontal distance between two positions on the wrapped world. */
 const wrapDelta = (d: number) => ((((d + W / 2) % W) + W) % W) - W / 2;
 
@@ -736,7 +738,7 @@ export class MapEngine {
       // interpolate the *screen-space* focus so the zoom feels anchored rather than swooping
       this.cam = { scale, x: wrapX(from.x + (to.x - from.x) * e), y: from.y + (to.y - from.y) * e };
       this.lastMoveAt = performance.now();
-      if (k >= 1) { this.anim = null; this.emitCamera(); } else { this.notifyCamera(); again = true; }
+      if (k >= 1) { this.anim = null; this.emitCamera(); } else { this.notifyCamera(); again = true; this.prefetchDestination(); }
     } else if (this.velocity.x || this.velocity.y) {
       this.cam = this.constrained({ ...this.cam, x: this.cam.x - (this.velocity.x * dt) / this.cam.scale, y: this.cam.y - (this.velocity.y * dt) / this.cam.scale });
       const decay = Math.exp(-dt / 325);
@@ -1398,7 +1400,11 @@ export class MapEngine {
   private drawRasters(s: number, v: { x0: number; y0: number; x1: number; y1: number }, request = true, layer: "l" | "w" = "l") {
     // the level whose picture pixel is about one DEVICE pixel (a little finer rather than coarser): on an ordinary screen that is one level
     // coarser than for a dense one, four times fewer tiles to ask for, to draw, to decode
-    const z = clamp(Math.floor(-Math.log2(s * this.dpr) + 0.4), 0, MAX_Z);
+    const z = rasterLevel(s, this.dpr);
+    // While the camera FLIES (a zoom, a search), the levels it passes on the way are crossed in a few frames: asking for ALL their tiles costs
+    // a request each (a server call, on a slow network seconds of queue) for pictures that are gone before they arrive. Of a level the flight only
+    // passes through, the tiles on the way to the destination (inside the view it ends on) are asked for; the others are drawn from what is in memory.
+    const dest = request && this.anim ? this.destinationView() : null, zDest = dest ? rasterLevel(this.anim!.to.scale, this.dpr) : z;
     const span = rasterSpan(z);
     if (layer === "w") this.ensureWaterCells();
     const { ctx } = this;
@@ -1408,7 +1414,8 @@ export class MapEngine {
       for (let tx = Math.max(0, Math.floor(v.x0 / span)); tx <= Math.min(Math.floor(W / span), Math.floor(v.x1 / span)); tx++) {
         if (layer === "w" && !this.waterIn(tx * span, ty * span, span)) continue; // no water parcel there: nothing to ask for, nothing to draw
         const key = `${layer === "w" ? "w" : ""}${z}/${tx}/${ty}`;
-        const img = request ? this.loadImage(this.rasters, key, `/api/map/raster/${z}/${tx}/${ty}?v=${this.version}${layer === "w" ? "&k=w" : ""}`, 300) : (this.rasters.get(key) ?? { el: new Image(), state: "loading" as const, used: 0 });
+        const wanted = request && (!dest || z === zDest || (tx * span < dest.x1 && (tx + 1) * span > dest.x0 && ty * span < dest.y1 && (ty + 1) * span > dest.y0));
+        const img = wanted ? this.loadImage(this.rasters, key, `/api/map/raster/${z}/${tx}/${ty}?v=${this.version}${layer === "w" ? "&k=w" : ""}`, 300) : (this.rasters.get(key) ?? { el: new Image(), state: "loading" as const, used: 0 });
         const a = this.worldToScreen(tx * span, ty * span);
         const size = span * s;
         if (img.state === "ready") {
@@ -1424,6 +1431,55 @@ export class MapEngine {
             const k = span / sp * RASTER_PX;
             ctx.drawImage(anc.el, ((tx * span) - ax * sp) / sp * RASTER_PX, ((ty * span) - ay * sp) / sp * RASTER_PX, k, k, a.x, a.y, size + 0.5, size + 0.5);
             break;
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * The camera is flying somewhere: ask now for what it will show on arrival, so that the picture is there when it lands instead of
+   * a network round trip (or two: the tiles, then the pictures in them) later. Asked for again each frame (a tile not wanted for a couple
+   * of frames is forgotten, see `pumpTiles`), cheap: the same few tiles, already in memory after the first frame.
+   */
+  /** The part of the world the flight in progress ends on (grid pixels), or null when the camera is not flying. */
+  private destinationView() {
+    const a = this.anim;
+    if (!a) return null;
+    const { to } = a, { w, h } = this, cx = wrapX(to.x);
+    return { x0: cx - w / 2 / to.scale, y0: to.y - h / 2 / to.scale, x1: cx + w / 2 / to.scale, y1: to.y + h / 2 / to.scale };
+  }
+
+  private prefetchDestination() {
+    const a = this.anim, v = this.destinationView();
+    if (!a || !v) return;
+    const { to } = a;
+    if (to.scale < RASTER_BELOW) {
+      const z = rasterLevel(to.scale, this.dpr), span = rasterSpan(z);
+      const layers: ("l" | "w")[] = this.waterCells?.ver === this.version ? ["l", "w"] : ["l"];
+      for (const layer of layers) {
+        for (let ty = Math.max(0, Math.floor(v.y0 / span)); ty <= Math.min(Math.floor(H / span), Math.floor(v.y1 / span)); ty++) {
+          for (let tx = Math.max(0, Math.floor(v.x0 / span)); tx <= Math.min(Math.floor(W / span), Math.floor(v.x1 / span)); tx++) {
+            if (layer === "w" && !this.waterIn(tx * span, ty * span, span)) continue;
+            this.loadImage(this.rasters, `${layer === "w" ? "w" : ""}${z}/${tx}/${ty}`, `/api/map/raster/${z}/${tx}/${ty}?v=${this.version}${layer === "w" ? "&k=w" : ""}`, 300);
+          }
+        }
+      }
+    }
+    if (to.scale >= JSON_ABOVE) {
+      const tx0 = Math.max(0, Math.floor(v.x0 / TILE)), tx1 = Math.min(W / TILE - 1, Math.floor(v.x1 / TILE));
+      const ty0 = Math.max(0, Math.floor(v.y0 / TILE)), ty1 = Math.min(H / TILE - 1, Math.floor(v.y1 / TILE));
+      if ((tx1 - tx0 + 1) * (ty1 - ty0 + 1) <= 36) {
+        for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+          this.ensureTile(tx, ty);
+          // the pictures of the parcels the destination shows, as soon as their tile is here (at the size the destination will need)
+          const tile = this.tiles.get(`${tx},${ty}`);
+          if (to.scale < RASTER_BELOW || !tile || tile.state !== "ready") continue;
+          for (const p of tile.parcels) {
+            if (!p.assetId || p.x > v.x1 || p.y > v.y1 || p.x + p.w < v.x0 || p.y + p.h < v.y0) continue;
+            const side = Math.max(p.w, p.h) * to.scale;
+            if (side < 2) continue;
+            this.loadImage(this.images, `${p.assetId}@${assetSizeFor(side * this.dpr)}`, assetUrl(p.assetId, side * this.dpr), 400);
           }
         }
       }
