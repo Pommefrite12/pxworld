@@ -279,9 +279,14 @@ A parcel that **several people pay for** (plan and decisions: `PLAN_FINANCEMENT_
 
 ## 5. Internationalisation
 
-All user-facing text lives in `src/messages/<locale>.json`; a unit test enforces identical keys and placeholders between
-languages. English is the default (served at `/`), French at `/fr`. To add a language: create `src/messages/xx.json`, add
-`"xx"` to `src/i18n/routing.ts`. Prices and numbers use `Intl` for the active locale; country names use `Intl.DisplayNames`.
+All user-facing text lives in `src/messages/<locale>.json`. English is the default (served at `/`), French at `/fr`, **Spanish at `/es` and Simplified
+Chinese at `/zh`** (November 2026, owner's request). Prices, numbers and dates use `Intl` for the active locale.
+
+* **English and French are complete and identical in keys** (a unit test enforces keys and placeholders). **Spanish and Chinese translate everything the public sees** (the 27 namespaces other than `admin` and `pages`, 5 of whose strings are translated: the mention below, "last updated", and the contact page): the staff back office (`admin`) and the legal texts (`pages.terms/privacy/rules/credits`, still to be reviewed by the lawyer) **stay in English**. `src/i18n/request.ts` completes every language with English (`withFallback`: a missing key never breaks a page), and the legal pages of `es` and `zh` show **a mention in the visitor's language** ("Legal texts are shown in English: the English version is the official one") with the English text under it (`legalInEnglishOnly` in `routing.ts`, `LegalPage.tsx`, `lang="en"` on the text). `tests/unit/i18n.test.ts` checks that Spanish and Chinese miss nothing public, add nothing, and keep every placeholder, tag and plural structure.
+* **Wording.** Spanish: *huella* for "trace" (as French *empreinte*), *parcela*, informal *tú*. Chinese: *印记* for "trace", *地块* for "parcel", *作品* for "creation", *示意图* for "Illustration image". The Chinese plural forms have only `other`.
+* **What else knows the languages.** The share images (`lib/og/lang.ts`: French and Spanish have their own words; Chinese is shared with English words because neither the pixel font nor the renderer's font has Chinese letters); Stripe's pages (`lib/stripe/locale.ts`: it has all four, `zh` is Simplified Chinese); the **country names** of the map and of the search (`components/map/countryName.ts`: French and English from the data, Spanish and Chinese from `Intl.DisplayNames` by ISO code; **cities keep their English names** in the other languages: the data has no more); the font stack for Chinese (`html:lang(zh)` in `globals.css`: the site's fonts first, then the system's Chinese fonts); the sitemap (one URL and one `hreflang` per language, automatically).
+* **To add a language:** create `src/messages/xx.json` (everything may be left out except what the language translates: English completes it), add `"xx"` and its name to `src/i18n/routing.ts`, a case in `lib/og/lang.ts` if it has share-image words and in `lib/stripe/locale.ts`, and a case in `countryName.ts`.
+* **Limits.** Machine-made translations by the assistant, to be read by native speakers before launch; place names of cities, the Chinese share image, and the staff back office are English; searching for a city in Spanish or Chinese uses its English name.
 
 ## 6. Public statistics
 

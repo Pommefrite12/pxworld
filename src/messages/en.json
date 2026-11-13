@@ -723,7 +723,7 @@
       "see": "See my projects",
       "seeParcel": "See the parcel",
       "read": "Read",
-      "covered": "Your free trace \u201c{title}\u201d was covered by a paid parcel. It stays in the history of the archive, and you can place another one.",
+      "covered": "Your free trace “{title}” was covered by a paid parcel. It stays in the history of the archive, and you can place another one.",
       "coveredSee": "See it",
       "coveredAgain": "Place another"
     }
@@ -834,6 +834,7 @@
     "none": "No published creation yet."
   },
   "pages": {
+    "officialNotice": "Legal texts are shown in English only for now: the English version is the official one.",
     "updated": "Last updated: {date}",
     "rules": {
       "title": "Community rules",

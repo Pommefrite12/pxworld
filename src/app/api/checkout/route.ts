@@ -1,4 +1,5 @@
 import { requireActiveViewer } from "@/lib/auth/session";
+import { requestLocale } from "@/lib/stripe/locale";
 import { query } from "@/lib/db/pool";
 import { getPricing } from "@/lib/data/map";
 import { HttpError, json } from "@/lib/http/errors";
@@ -47,7 +48,7 @@ export const POST = route(async (req) => {
   // coastal parcels are allowed, never mostly of the other kind: the land count is made HERE, from the server's own map data
   const landPx = await landPixelsIn(r);
   if (!enoughForKind(kind, landPx, r.w * r.h, pricing)) throw new HttpError(422, kind === "water" ? "px_not_on_water" : "px_not_on_land");
-  const locale = form.get("locale") === "fr" ? "fr" : "en";
+  const locale = requestLocale(form.get("locale"));
 
   const meta = parseCreationMeta(form);
   const img = await readCreationImage(form, r); // fail fast, before any pixel is held

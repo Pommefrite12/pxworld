@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ogLangQuery } from "@/lib/og/lang";
 import { DEFAULT_PRICING } from "@/lib/grid/pricing";
 import { notFound } from "next/navigation";
 import { redirect } from "@/i18n/navigation";
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const owner = p.tier === "illustration" ? t("illustration") : p.owner.username; // an illustration has no author
   const description = p.creation?.description ?? t("shareDescription", { owner, w: p.w, h: p.h, area: f.number(p.area) });
   const url = `${siteUrl()}${path(locale, code)}`;
-  const image = `${siteUrl()}/api/og/parcel/${code}${locale === "fr" ? "?lang=fr" : ""}`; // in the language of the page
+  const image = `${siteUrl()}/api/og/parcel/${code}${ogLangQuery(locale)}`; // in the language of the page
   return {
     title: `${title} — ${owner}`,
     description,

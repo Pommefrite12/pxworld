@@ -1,4 +1,5 @@
 import { requireActiveViewer } from "@/lib/auth/session";
+import { requestLocale } from "@/lib/stripe/locale";
 import { query } from "@/lib/db/pool";
 import { HttpError, json } from "@/lib/http/errors";
 import { assertSameOrigin, route } from "@/lib/http/route";
@@ -23,7 +24,7 @@ export const POST = route(async (req, ctx: { params: Promise<{ id: string }> }) 
   const body = (await req.json().catch(() => null)) as { amountCents?: unknown; locale?: unknown } | null;
   const amount = typeof body?.amountCents === "number" && Number.isSafeInteger(body.amountCents) ? body.amountCents : null;
   if (amount === null) throw new HttpError(400, "px_invalid_amount");
-  const locale = body?.locale === "fr" ? "fr" : "en";
+  const locale = requestLocale(body?.locale);
 
   // the function FIRST, alone: joined with another table, the planner may decide it need not run it at all
   const [s] = await query<{ contribution_id: string; amount_cents: string; currency: string; expires_at: Date }>(

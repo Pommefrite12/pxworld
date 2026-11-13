@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ogLangQuery } from "@/lib/og/lang";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { ArchiveChips } from "@/components/archive/ArchiveChips";
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const author = p.tier === "illustration" ? t("illustration") : p.owner.username; // an illustration has no author
   const description = p.creation?.description ?? t("descriptionFallback", { author });
   const url = `${siteUrl()}${path(locale, code)}`;
-  const image = `${siteUrl()}/api/og/parcel/${code}${locale === "fr" ? "?lang=fr" : ""}`; // in the language of the page
+  const image = `${siteUrl()}/api/og/parcel/${code}${ogLangQuery(locale)}`; // in the language of the page
   return {
     title: `${title} — ${author}`,
     description,

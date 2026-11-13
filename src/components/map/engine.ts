@@ -1,4 +1,5 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
+import { countryNamer, nameLang } from "./countryName";
 import { gridAlpha } from "@/lib/map/pixelGrid";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
 import { enoughLand, enoughWater } from "@/lib/grid/pricing";
@@ -1168,7 +1169,7 @@ export class MapEngine {
     if (!this.places || !this.geo || s < 0.025) return;
     const { ctx, w, h } = this;
     const v = this.visibleWorld();
-    const lang = document.documentElement.lang === "fr" ? "fr" : "en";
+    const lang = nameLang(document.documentElement.lang), countryName = countryNamer(lang);
     const FONT = `"Instrument Sans Variable", system-ui, sans-serif`;
     ctx.save();
     ctx.textBaseline = "middle";
@@ -1207,7 +1208,7 @@ export class MapEngine {
       const byArea = [...this.places.countries].sort((a, b) => (b.bbox[2] - b.bbox[0]) * (b.bbox[3] - b.bbox[1]) - (a.bbox[2] - a.bbox[0]) * (a.bbox[3] - a.bbox[1]));
       for (const c of byArea) {
         const [bx0, by0, bx1, by1] = c.bbox;
-        const name = (lang === "fr" ? c.fr : c.en).toUpperCase();
+        const name = countryName(c).toUpperCase();
         if ((bx1 - bx0) * s < ctx.measureText(name).width * 0.9 || (by1 - by0) * s < 14) continue;
         const p = this.worldToScreen((bx0 + bx1) / 2, (by0 + by1) / 2);
         if (onScreen(p, 60)) label(name, p.x, p.y, fade);

@@ -3,11 +3,13 @@ import sharp from "sharp";
 import { getPublicParcel } from "@/lib/data/parcels";
 import { queryOne } from "@/lib/db/pool";
 import { CYAN, GOLD, IVORY, NIGHT, VIOLET_DEEP, Wordmark, fitsPixelFont, pixelFont } from "@/lib/og/brand";
+import { ogLang } from "@/lib/og/lang";
 import { objectStore } from "@/lib/storage";
 
 const TEXT = {
   fr: { kicker: "ARCHIVE COLLECTIVE", by: "par", illustration: "Image d'illustration", pixels: "pixels", tagline: "Dans 100 ans, que restera-t-il de nous ?", locale: "fr-FR" },
   en: { kicker: "COLLECTIVE ARCHIVE", by: "by", illustration: "Illustration image", pixels: "pixels", tagline: "In 100 years, what will remain of us?", locale: "en" },
+  es: { kicker: "ARCHIVO COLECTIVO", by: "por", illustration: "Imagen ilustrativa", pixels: "píxeles", tagline: "Dentro de 100 años, ¿qué quedará de nosotros?", locale: "es-ES" },
 };
 
 /**
@@ -17,7 +19,7 @@ const TEXT = {
  */
 export async function GET(req: Request, ctx: { params: Promise<{ code: string }> }) {
   const { code } = await ctx.params;
-  const lang = new URL(req.url).searchParams.get("lang") === "fr" ? "fr" : "en", t = TEXT[lang];
+  const lang = ogLang(new URL(req.url).searchParams.get("lang")), t = TEXT[lang];
   const p = await getPublicParcel(code).catch(() => null);
   if (!p) return new Response("Not found", { status: 404 });
 

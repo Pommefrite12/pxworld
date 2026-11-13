@@ -1,4 +1,5 @@
 import "server-only";
+import { stripeLocale } from "@/lib/stripe/locale";
 import { env, siteUrl, stripeMockEnabled } from "@/lib/env";
 import { query, queryOne } from "@/lib/db/pool";
 import { stripe } from "./client";
@@ -33,7 +34,7 @@ export async function createCheckoutSession(order: OrderForCheckout, email: stri
       mode: "payment",
       client_reference_id: order.id,
       customer_email: email ?? undefined,
-      locale: locale === "fr" ? "fr" : "en",
+      locale: stripeLocale(locale),
       line_items: [
         {
           quantity: 1,

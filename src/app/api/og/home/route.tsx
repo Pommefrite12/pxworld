@@ -1,10 +1,12 @@
 import { ImageResponse } from "next/og";
 import { CYAN, GOLD, IVORY, NIGHT, VIOLET, VIOLET_DEEP, Wordmark, pixelFont } from "@/lib/og/brand";
+import { ogLang } from "@/lib/og/lang";
 
 /** The words of the share image of the home page (and of every page that has no image of its own). */
 const TEXT = {
   fr: { kicker: "ARCHIVE COLLECTIVE", a: "Chaque époque", b: "laisse une empreinte.", hl: "Voici la nôtre.", foot: "Dans 100 ans, que restera-t-il de nous ?" },
   en: { kicker: "COLLECTIVE ARCHIVE", a: "Every era", b: "leaves a trace.", hl: "Here is ours.", foot: "In 100 years, what will remain of us?" },
+  es: { kicker: "ARCHIVO COLECTIVO", a: "Cada época", b: "deja su huella.", hl: "Esta es la nuestra.", foot: "Dentro de 100 años, ¿qué quedará de nosotros?" },
 };
 
 /** A row of pixels, like the product's own motif: a few of them are lit (the traces left by people). Always the same ones. */
@@ -19,7 +21,7 @@ function Pixels() {
 
 /** Share image for the home page and any page without a specific one: 1200 × 630, in the language asked (`?lang=fr`, otherwise English). */
 export async function GET(req: Request) {
-  const lang = new URL(req.url).searchParams.get("lang") === "fr" ? "fr" : "en", t = TEXT[lang];
+  const lang = ogLang(new URL(req.url).searchParams.get("lang")), t = TEXT[lang];
   const fonts = [{ name: "Jersey", data: await pixelFont(), weight: 400 as const, style: "normal" as const }];
   return new ImageResponse(
     (

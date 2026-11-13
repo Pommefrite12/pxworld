@@ -834,6 +834,7 @@
     "none": "Aucune création publiée pour le moment."
   },
   "pages": {
+    "officialNotice": "Les textes juridiques ne sont affichés qu'en anglais pour le moment\u00a0: la version anglaise est la version officielle.",
     "updated": "Dernière mise à jour : {date}",
     "rules": {
       "title": "Règles de la communauté",

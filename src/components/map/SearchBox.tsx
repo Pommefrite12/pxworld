@@ -1,6 +1,7 @@
 "use client";
 
 import { PARCEL_CODE_RE } from "@/lib/grid/code";
+import { countryNamer, nameLang } from "./countryName";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
@@ -85,7 +86,8 @@ export function SearchBox({ onGo, className = "" }: { onGo: (t: SearchTarget) =>
     if (!places) return [];
     const n = norm(raw);
     const out: Result[] = [];
-    const cs = places.countries.map((c) => ({ c, name: locale === "fr" ? c.fr : c.en })).filter(({ name, c }) => norm(name).includes(n) || norm(c.en).includes(n));
+    const countryName = countryNamer(nameLang(locale));
+    const cs = places.countries.map((c) => ({ c, name: countryName(c) })).filter(({ name, c }) => norm(name).includes(n) || norm(c.en).includes(n));
     cs.sort((a, b) => Number(norm(b.name).startsWith(n)) - Number(norm(a.name).startsWith(n)) || a.name.localeCompare(b.name));
     for (const { c, name } of cs.slice(0, 4)) {
       const [x0, y0, x1, y1] = c.bbox;

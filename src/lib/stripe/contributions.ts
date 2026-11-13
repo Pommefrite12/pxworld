@@ -1,4 +1,5 @@
 import "server-only";
+import { stripeLocale } from "@/lib/stripe/locale";
 import type Stripe from "stripe";
 import { env, siteUrl, stripeMockEnabled } from "@/lib/env";
 import { query, queryOne } from "@/lib/db/pool";
@@ -36,7 +37,7 @@ export async function createContributionSession(k: ContributionForCheckout, emai
       mode: "payment",
       client_reference_id: k.id,
       customer_email: email ?? undefined,
-      locale: locale === "fr" ? "fr" : "en",
+      locale: stripeLocale(locale),
       line_items: [{ quantity: 1, price_data: { currency: k.currency, unit_amount: k.amount_cents, product_data: { name: desc } } }],
       metadata: { contribution_id: k.id, campaign_id: k.campaign_id, user_id: k.user_id },
       payment_intent_data: { description: desc, metadata: { contribution_id: k.id, campaign_id: k.campaign_id } },

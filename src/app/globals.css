@@ -301,3 +301,10 @@
 
 .pixelated { image-rendering: pixelated; image-rendering: crisp-edges; }
 .checker { background-color: var(--checker-a); background-image: linear-gradient(45deg, var(--checker-b) 25%, transparent 25%, transparent 75%, var(--checker-b) 75%), linear-gradient(45deg, var(--checker-b) 25%, transparent 25%, transparent 75%, var(--checker-b) 75%); background-size: 16px 16px; background-position: 0 0, 8px 8px; }
+
+/* Chinese: the site's own fonts have no Chinese letters; the system's own come right after them, in the order of the usual platforms */
+html:lang(zh) {
+  --cjk: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", "WenQuanYi Micro Hei";
+  --font-sans: "Instrument Sans Variable", var(--cjk), ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", var(--cjk), ui-sans-serif, system-ui, sans-serif;
+}

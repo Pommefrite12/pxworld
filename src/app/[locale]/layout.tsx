@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { ogLang } from "@/lib/og/lang";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -13,7 +14,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "meta" });
-  const image = `/api/og/home?lang=${locale === "fr" ? "fr" : "en"}`; // the share image of the site (anything but French is English)
+  const image = `/api/og/home?lang=${ogLang(locale)}`; // the share image of the site (French and Spanish have their own words, the rest is English)
   return {
     metadataBase: new URL(siteUrl()),
     title: { default: `${t("siteName")} — ${t("tagline")}`, template: `%s · ${t("siteName")}` },
