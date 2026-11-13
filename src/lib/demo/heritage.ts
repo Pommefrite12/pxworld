@@ -611,7 +611,9 @@ export const HERITAGE_COUNT = HERITAGE.length;
  * The plan of the "heritage" set for `seedDemo`: one account per parcel, the parcel exactly this size and as near as it can be to the real place,
  * its own drawing, title, sentence and category. Deterministic (the same plan every time).
  */
-export function heritagePlan(): DemoItem[] {
+/** Dots per grid pixel side: 10 is a tenth of a pixel, the finest the site accepts (a 30 × 30 parcel is a 300 × 300 picture). */
+export const HERITAGE_RES = 10;
+export function heritagePlan(res = HERITAGE_RES): DemoItem[] {
   return HERITAGE.map((e, i) => ({
     index: i,
     username: `demo_${e.id}`.slice(0, 24),
@@ -629,6 +631,6 @@ export function heritagePlan(): DemoItem[] {
     exact: true,
     illustration: true,
     category: e.category,
-    render: (w: number, h: number, seed: number) => { const k = new Canvas(w, h, C.black, seed); e.draw(k); return k.r; },
+    render: (w: number, h: number, seed: number) => { const k = new Canvas(w, h, C.black, seed, res); e.draw(k); return k.finish(); },
   }));
 }

@@ -107,7 +107,7 @@ export async function seedDemo(p: DemoPorts, opts: SeedOptions): Promise<SeedRep
           throw e;
         }
         const raster = item.render ? item.render(w, h, item.seed) : renderArt(item.style, w, h, item.seed, item.title);
-        const png = await sharp(Buffer.from(raster.data), { raw: { width: w, height: h, channels: 3 } }).png().toBuffer();
+        const png = await sharp(Buffer.from(raster.data), { raw: { width: raster.w, height: raster.h, channels: 3 } }).png().toBuffer();
         const img = await processCreation(png, { w, h }); // the pipeline of a real upload: canonical PNG, hash, average colour
         const key = `creations/${parcel.id}/${now}-${img.sha256.slice(0, 12)}.png`;
         await p.putObject(key, img.png);

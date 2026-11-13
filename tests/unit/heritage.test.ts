@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HERITAGE, heritagePlan } from "@/lib/demo/heritage";
+import { HERITAGE, HERITAGE_RES, heritagePlan } from "@/lib/demo/heritage";
 import { Canvas, C } from "@/lib/demo/scene";
 import { CATEGORIES } from "@/lib/archive";
 
@@ -31,7 +31,7 @@ describe("the heritage set", () => {
 
   it("draws a real picture for each one: several colours, not a flat fill, and the same one every time", () => {
     for (const e of HERITAGE) {
-      const draw = (seed: number) => { const k = new Canvas(e.w, e.h, C.black, seed); e.draw(k); return k.r.data; };
+      const draw = (seed: number) => { const k = new Canvas(e.w, e.h, C.black, seed, 2); e.draw(k); return k.finish().data; };
       const a = draw(7), colours = new Map<string, number>();
       for (let i = 0; i < a.length; i += 3) { const key = `${a[i]},${a[i + 1]},${a[i + 2]}`; colours.set(key, (colours.get(key) ?? 0) + 1); }
       expect(colours.size, `${e.id} uses several colours`).toBeGreaterThanOrEqual(4);
@@ -51,8 +51,14 @@ describe("the heritage set", () => {
       expect(p.username.length).toBeLessThanOrEqual(24);
       expect(p.emailLocal).toMatch(/^demo-h\d{3}$/); // recognised (and removed) by `clear` like every demonstration account
       expect(p.category).toBeTruthy();
-      const r = p.render!(p.w, p.h, p.seed);
-      expect([r.w, r.h]).toEqual([p.w, p.h]);
     }
+  });
+
+  it("draws every picture finer than the parcel: a whole number of dots per pixel, a tenth of a pixel at the default fineness", () => {
+    expect(HERITAGE_RES).toBe(10); // the finest the site accepts (0.1 px)
+    for (const p of heritagePlan(2)) { const r = p.render!(p.w, p.h, p.seed); expect([r.w, r.h]).toEqual([p.w * 2, p.h * 2]); }
+    const first = heritagePlan()[0]!, r = first.render!(first.w, first.h, first.seed);
+    expect([r.w, r.h]).toEqual([first.w * HERITAGE_RES, first.h * HERITAGE_RES]);
+    expect(r.w * r.h).toBeLessThanOrEqual(4_000_000); // CREATION_MAX_DOTS
   });
 });

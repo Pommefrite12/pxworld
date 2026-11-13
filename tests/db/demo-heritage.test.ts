@@ -3,7 +3,7 @@ import { closeDb, createUser, fulfill, pool, resetData, startOrder } from "./hel
 import { lonLatToPixel } from "@/lib/grid/geometry";
 import { CATEGORIES } from "@/lib/archive";
 import { clearDemo, clearIllustrations, seedDemo, type DemoPorts, type Rect } from "@/lib/demo/seed";
-import { HERITAGE, heritagePlan } from "@/lib/demo/heritage";
+import { HERITAGE, HERITAGE_RES, heritagePlan } from "@/lib/demo/heritage";
 import { landPixelsIn } from "@/lib/geo/landServer";
 
 afterAll(closeDb);
@@ -37,7 +37,7 @@ describe("the heritage set on a database (illustration parcels)", () => {
     expect(r.failed).toEqual([]);
     expect([r.usersCreated, r.parcelsCreated]).toEqual([1, 100]); // one account for all of them
 
-    const { rows } = await pool.query(`select pc.owner_id, pc.x, pc.y, pc.w, pc.h, pc.status, pc.kind, pc.tier, a.title, a.description, a.category, a.status as asset_status, a.storage_path, pr.bio
+    const { rows } = await pool.query(`select pc.owner_id, pc.x, pc.y, pc.w, pc.h, pc.status, pc.kind, pc.tier, a.title, a.description, a.category, a.status as asset_status, a.storage_path, a.width, a.height, pr.bio
       from public.parcels pc join public.parcel_assets a on a.id = pc.published_asset_id join public.profiles pr on pr.id = pc.owner_id order by a.title`);
     expect(rows).toHaveLength(100);
     expect(new Set(rows.map((p) => p.owner_id)).size).toBe(1); // one technical account, nobody to sign in to it
@@ -48,6 +48,7 @@ describe("the heritage set on a database (illustration parcels)", () => {
       const e = byTitle.get(p.title)!;
       expect(e, p.title).toBeTruthy();
       expect([p.status, p.kind, p.asset_status]).toEqual(["active", "land", "approved"]);
+      expect([p.width, p.height], `${p.title} is kept a tenth of a pixel fine`).toEqual([p.w * HERITAGE_RES, p.h * HERITAGE_RES]);
       expect([p.w, p.h], p.title).toEqual([e.w, e.h]);
       expect(p.w).toBeLessThanOrEqual(50); expect(p.h).toBeLessThanOrEqual(50);
       expect(p.description).toBe(e.text);
