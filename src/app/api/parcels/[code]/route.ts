@@ -1,11 +1,16 @@
 import { getPublicParcel } from "@/lib/data/parcels";
+import { locales } from "@/i18n/routing";
 import { json } from "@/lib/http/errors";
 import { route } from "@/lib/http/route";
 
-/** Public JSON card of a parcel (used by the map popover). Hidden parcels expose no creation. */
-export const GET = route(async (_req, ctx: { params: Promise<{ code: string }> }) => {
+/**
+ * Public JSON card of a parcel (used by the map popover). Hidden parcels expose no creation. `?lang=fr|en|es|zh`: the language of the visitor, for the
+ * title and the sentence of an illustration parcel (the address is the cache key, so each language is cached on its own); without it, the stored text.
+ */
+export const GET = route(async (req, ctx: { params: Promise<{ code: string }> }) => {
   const { code } = await ctx.params;
-  const p = await getPublicParcel(code);
+  const lang = new URL(req.url).searchParams.get("lang");
+  const p = await getPublicParcel(code, (locales as readonly string[]).includes(lang ?? "") ? lang! : undefined);
   if (!p) return json({ error: "not_found" }, { status: 404 });
   return json(
     {

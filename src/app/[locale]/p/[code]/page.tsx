@@ -22,7 +22,7 @@ const path = (locale: string, code: string) => `${locale === "en" ? "" : `/${loc
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; code: string }> }): Promise<Metadata> {
   const { locale, code } = await params;
-  const p = await getPublicParcel(code).catch(() => null);
+  const p = await getPublicParcel(code, locale).catch(() => null);
   if (!p) return { title: "Pixel World", robots: { index: false } };
   const t = await getTranslations({ locale, namespace: "parcel" });
   const f = await getFormatter({ locale });
@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function ParcelPage({ params }: { params: Promise<{ locale: string; code: string }> }) {
   const { locale, code } = await params;
   setRequestLocale(locale);
-  const p = await getPublicParcel(code);
+  const p = await getPublicParcel(code, locale);
   if (!p) notFound();
   if (p.status === "covered") redirect({ href: `/archive/${p.code}`, locale }); // covered: not on the map any more, its place is the archive
   const currency = requestCurrency(await headers()); // euros in the euro area, dollars elsewhere

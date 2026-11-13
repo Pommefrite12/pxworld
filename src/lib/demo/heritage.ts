@@ -4,6 +4,7 @@
  * Pure data and drawing code (see `scene.ts`); nothing is fetched, nothing is a photograph or a logo, no real person is shown.
  * Used by `seedDemo` through `heritagePlan` (`npm run demo:seed -- … --set heritage`).
  */
+import { HERITAGE_I18N, HERITAGE_LANGS } from "./heritage-i18n";
 import type { DemoItem } from "./plan";
 import { C, Canvas, type RGB } from "./scene";
 
@@ -218,7 +219,7 @@ export const HERITAGE: Heritage[] = [
     k.disc(0.2, 0.8, 0.07, C.greenDark).disc(0.82, 0.82, 0.08, C.greenDark).rect(0.18, 0.84, 0.04, 0.1, C.brownDark).rect(0.8, 0.86, 0.04, 0.1, C.brownDark);
     k.cloud(0.2, 0.28, 0.05).cloud(0.78, 0.18, 0.05);
   }),
-  H("table", "La montagne de la Table", "Le Cap, Afrique du Sud", "ZA", -33.963, 18.403, "nature", [28, 28], "Un plateau rocheux, souvent coiffé d'un « nappe » de nuages, veille sur la ville du Cap.", (k) => {
+  H("table", "La montagne de la Table", "Le Cap, Afrique du Sud", "ZA", -33.963, 18.403, "nature", [28, 28], "Un plateau rocheux, souvent coiffé d'une « nappe » de nuages, veille sur la ville du Cap.", (k) => {
     day(k, 0.6).rect(0.0, 0.34, 1, 0.34, C.stoneDark).rect(0.0, 0.34, 1, 0.05, C.stone).ground(0.68, C.green).waves(0.84, 0.16, C.water, C.waterLight);
     k.cloud(0.3, 0.3, 0.07, C.white).cloud(0.66, 0.3, 0.06, C.white);
   }),
@@ -631,6 +632,7 @@ export function heritagePlan(res = HERITAGE_RES): DemoItem[] {
     exact: true,
     illustration: true,
     category: e.category,
+    i18n: Object.fromEntries(HERITAGE_LANGS.flatMap((l) => { const t = HERITAGE_I18N[e.id]?.[l]; return t ? [[l, { title: t[0], description: t[1] }]] : []; })),
     render: (w: number, h: number, seed: number) => { const k = new Canvas(w, h, C.black, seed, res); e.draw(k); return k.finish(); },
   }));
 }

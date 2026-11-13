@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { HERITAGE, HERITAGE_RES, heritagePlan } from "@/lib/demo/heritage";
 import { Canvas, C } from "@/lib/demo/scene";
+import { HERITAGE_I18N, HERITAGE_LANGS } from "@/lib/demo/heritage-i18n";
 import { CATEGORIES } from "@/lib/archive";
 
 /** The "world heritage" set of the demonstration tool: 100 hand-drawn parcels, each on its real place, 50 × 50 pixels at most. */
@@ -60,5 +61,24 @@ describe("the heritage set", () => {
     const first = heritagePlan()[0]!, r = first.render!(first.w, first.h, first.seed);
     expect([r.w, r.h]).toEqual([first.w * HERITAGE_RES, first.h * HERITAGE_RES]);
     expect(r.w * r.h).toBeLessThanOrEqual(4_000_000); // CREATION_MAX_DOTS
+  });
+
+  it("has the title and the sentence of every picture in English, Spanish and Chinese (and nothing for a picture that does not exist)", () => {
+    expect(Object.keys(HERITAGE_I18N).sort()).toEqual(HERITAGE.map((e) => e.id).sort());
+    const cjk = /[\u4e00-\u9fff]/;
+    for (const e of HERITAGE) for (const l of HERITAGE_LANGS) {
+      const [title, text] = HERITAGE_I18N[e.id]![l];
+      expect(title.trim().length, `${e.id} ${l} title`).toBeGreaterThan(0); expect(title.length, `${e.id} ${l} title is short`).toBeLessThanOrEqual(60); // the share image cuts at 60
+      expect(text.trim().length, `${e.id} ${l} sentence`).toBeGreaterThan(10);
+      if (l === "zh") { expect(cjk.test(title), `${e.id} zh title is Chinese`).toBe(true); expect(cjk.test(text), `${e.id} zh sentence is Chinese`).toBe(true); }
+      else expect(cjk.test((title + text).replace("(永)", "")), `${e.id} ${l} has no Chinese (but the character the calligraphy picture is about)`).toBe(false);
+      if (l === "en") expect(title, `${e.id} en title is not the French one by mistake`).not.toMatch(/^(Les|Le|La|L'|Des|Du)\b/);
+    }
+    // each language says something of its own (not the French sentence copied)
+    for (const l of ["en", "es"] as const) expect(HERITAGE.filter((e) => HERITAGE_I18N[e.id]![l][1] === e.text)).toEqual([]);
+    // the plan carries them, keyed by language, ready for the database
+    const first = heritagePlan(2)[0]!;
+    expect(Object.keys(first.i18n ?? {}).sort()).toEqual(["en", "es", "zh"]);
+    expect(first.i18n!.en).toEqual({ title: HERITAGE_I18N[HERITAGE[0]!.id]!.en[0], description: HERITAGE_I18N[HERITAGE[0]!.id]!.en[1] });
   });
 });

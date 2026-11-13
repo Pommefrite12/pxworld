@@ -109,9 +109,11 @@ See [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
 
 `parcel_collab` (one row per shared parcel: secret `token` of 40 hex characters, `enabled`, a `version` counter, `reset_version`) and `parcel_collab_pixels` (`parcel_id, x, y, rgb, version`; x/y in dots, relative to the parcel). Both are server-only (RLS on, nothing granted to `anon`/`authenticated`). `px_collab_enable(user, parcel, rotate)`, `px_collab_disable`, `px_collab_reset` are owner-only and journalled; `px_collab_paint(token, xs[], ys[], rgb[])` is the one write open to the holder of a token: all-or-nothing, ≤ 2 000 pixels, bounds-checked, last write wins, and serialised per parcel by a row lock so that versions follow commit order (`tests/db/collab.test.ts`, including 40 concurrent writers).
 
-## Illustration parcels (migration 24)
+## Illustration parcels (migration 24) and their translations (migration 25)
 
 `parcels.tier` gains `'illustration'`: 25–2 500 pixels (`parcels_min_area`), land only (`parcels_free_is_land`), kept apart from free parcels by `parcels_no_overlap_free` (now `tier in ('free', 'illustration')`). `px_cover_free_parcels` covers both tiers. `px_public_stats` ignores them everywhere (sold, parcels, owners, free, and `published_creations`). Owned by the technical account `image_illustration` (made by the demonstration tool, `illustration@<domain>`). To undo: no illustration may exist; restore the constraints and the function of migration 23 and the counter of migration 23. See `ARCHITECTURE.md` §3j bis.
+
+Migration 25 adds `parcel_assets.i18n jsonb` (null, or an object `{ "en": { "title", "description" }, "es": …, "zh": … }`, checked by `parcel_assets_i18n_object`): the title and description of an illustration parcel in the other languages, written by the demonstration tool only and read by the site only for `tier = 'illustration'`. To undo: drop the column (the French text is in `title` / `description`).
 
 ## Free imprints (migration 23)
 

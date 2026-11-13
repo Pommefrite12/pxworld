@@ -115,6 +115,9 @@ try {
       // the illustration parcels need migration 24 (the third tier): say so before anything is written, not through a constraint error
       const ok = await query("select 1 from pg_constraint where conname = 'parcels_tier_check' and pg_get_constraintdef(oid) like '%illustration%'");
       if (!ok.length) die("Refused (nothing was touched): the database does not have migration 24 yet (the illustration parcels).\n  Apply it first:  node scripts/migrate.mjs --env .env.production.local");
+      // ... and the translations of their title and sentence need migration 25
+      const col = await query("select 1 from information_schema.columns where table_schema = 'public' and table_name = 'parcel_assets' and column_name = 'i18n'");
+      if (!col.length) die("Refused (nothing was touched): the database does not have migration 25 yet (the translations of the illustration parcels).\n  Apply it first:  node scripts/migrate.mjs --env .env.production.local");
     }
     const count = plan ? plan.length : Number(opt("count") ?? 50);
     if (!Number.isInteger(count) || count < 1 || count > 500) die("--count must be a whole number from 1 to 500");

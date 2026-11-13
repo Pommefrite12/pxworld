@@ -36,7 +36,7 @@ export interface ParcelView {
 const SELECT = `
   select p.id, p.code, p.x, p.y, p.w, p.h, p.area, p.kind, p.status, p.tier, p.covered_at, (p.hidden_at is not null) as hidden, p.activated_at,
          u.id as owner_id, u.username, u.country, (u.avatar_path is not null) as has_avatar,
-         a.id as asset_id, a.title, a.description, a.link_url, a.is_commercial, a.published_at, a.avg_color, a.category, a.place_label, a.place_country,
+         a.id as asset_id, a.title, a.description, a.i18n, a.link_url, a.is_commercial, a.published_at, a.avg_color, a.category, a.place_label, a.place_country,
          e.slug as edition_slug, e.name as edition_name,
          (select count(*) from public.parcel_likes l where l.parcel_id = p.id)::int as likes
     from public.parcels p
@@ -47,17 +47,28 @@ const SELECT = `
 type Row = {
   id: string; code: string; x: number; y: number; w: number; h: number; area: number; kind: string; status: string; tier: string; covered_at: Date | null; hidden: boolean; activated_at: Date | null;
   owner_id: string; username: string; country: string | null; has_avatar: boolean;
-  asset_id: string | null; title: string | null; description: string | null; link_url: string | null; is_commercial: boolean | null;
+  asset_id: string | null; title: string | null; description: string | null; i18n: unknown; link_url: string | null; is_commercial: boolean | null;
   published_at: Date | null; avg_color: string | null; likes: number;
   category: string | null; place_label: string | null; place_country: string | null; edition_slug: string | null; edition_name: string | null;
 };
 
-function toView(r: Row): ParcelView {
+/**
+ * The title and the description to show in `lang`. Only an illustration parcel has translations (stored by the demonstration tool, migration 25):
+ * what a visitor wrote is shown as it was written, whatever the language of the page. Without a translation for `lang` (French is the text itself,
+ * and an unknown language has none), the stored text is shown.
+ */
+function localized(r: Row, lang: string | undefined): { title: string | null; description: string | null } {
+  const t = r.tier === "illustration" && lang && r.i18n && typeof r.i18n === "object" ? (r.i18n as Record<string, { title?: unknown; description?: unknown } | undefined>)[lang] : undefined;
+  return { title: typeof t?.title === "string" && t.title ? t.title : r.title, description: typeof t?.description === "string" && t.description ? t.description : r.description };
+}
+
+function toView(r: Row, lang?: string): ParcelView {
+  const { title, description } = localized(r, lang);
   return {
     id: r.id, code: r.code, x: r.x, y: r.y, w: r.w, h: r.h, area: r.area, kind: r.kind === "water" ? "water" : "land", status: r.status, tier: toTier(r.tier), covered_at: r.covered_at, hidden: r.hidden, activated_at: r.activated_at,
     owner: { id: r.owner_id, username: r.username, country: r.country, avatar: r.has_avatar },
     creation: r.asset_id && !r.hidden
-      ? { asset_id: r.asset_id, title: r.title, description: r.description, link_url: r.link_url, is_commercial: r.is_commercial ?? false, published_at: r.published_at, avg_color: r.avg_color ?? "#cccccc",
+      ? { asset_id: r.asset_id, title, description, link_url: r.link_url, is_commercial: r.is_commercial ?? false, published_at: r.published_at, avg_color: r.avg_color ?? "#cccccc",
           category: r.category, place_label: r.place_label, place_country: r.place_country }
       : null,
     edition: r.edition_slug && r.edition_name ? { slug: r.edition_slug, name: r.edition_name } : null,
@@ -65,11 +76,14 @@ function toView(r: Row): ParcelView {
   };
 }
 
-/** Public view of an ACTIVE parcel, or of a free one that has been COVERED (it keeps its page in the archive, with the mention). Hidden parcels keep their place but expose no content. */
-export async function getPublicParcel(code: string): Promise<ParcelView | null> {
+/**
+ * Public view of an ACTIVE parcel, or of a free one that has been COVERED (it keeps its page in the archive, with the mention). Hidden parcels keep their place but expose no content.
+ * `lang`: the language of the visitor, for the title and the sentence of an illustration parcel (see `localized`); nothing else is translated.
+ */
+export async function getPublicParcel(code: string, lang?: string): Promise<ParcelView | null> {
   if (!isParcelCode(code)) return null;
   const r = await queryOne<Row>(`${SELECT} where p.code = $1 and p.status in ('active', 'covered')`, [code]);
-  return r ? toView(r) : null;
+  return r ? toView(r, lang) : null;
 }
 
 export async function getParcelsOf(userId: string) {

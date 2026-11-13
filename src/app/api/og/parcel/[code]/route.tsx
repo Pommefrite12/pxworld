@@ -20,7 +20,7 @@ const TEXT = {
 export async function GET(req: Request, ctx: { params: Promise<{ code: string }> }) {
   const { code } = await ctx.params;
   const lang = ogLang(new URL(req.url).searchParams.get("lang")), t = TEXT[lang];
-  const p = await getPublicParcel(code).catch(() => null);
+  const p = await getPublicParcel(code, lang).catch(() => null); // an illustration's title in the language of the image (French, Spanish, English)
   if (!p) return new Response("Not found", { status: 404 });
 
   const BOX = 500;

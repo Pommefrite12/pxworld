@@ -4,6 +4,7 @@ import { lonLatToPixel } from "@/lib/grid/geometry";
 import { CATEGORIES } from "@/lib/archive";
 import { clearDemo, clearIllustrations, seedDemo, type DemoPorts, type Rect } from "@/lib/demo/seed";
 import { HERITAGE, HERITAGE_RES, heritagePlan } from "@/lib/demo/heritage";
+import { HERITAGE_I18N, HERITAGE_LANGS } from "@/lib/demo/heritage-i18n";
 import { landPixelsIn } from "@/lib/geo/landServer";
 
 afterAll(closeDb);
@@ -37,7 +38,7 @@ describe("the heritage set on a database (illustration parcels)", () => {
     expect(r.failed).toEqual([]);
     expect([r.usersCreated, r.parcelsCreated]).toEqual([1, 100]); // one account for all of them
 
-    const { rows } = await pool.query(`select pc.owner_id, pc.x, pc.y, pc.w, pc.h, pc.status, pc.kind, pc.tier, a.title, a.description, a.category, a.status as asset_status, a.storage_path, a.width, a.height, pr.bio
+    const { rows } = await pool.query(`select pc.owner_id, pc.x, pc.y, pc.w, pc.h, pc.status, pc.kind, pc.tier, a.title, a.description, a.category, a.status as asset_status, a.storage_path, a.width, a.height, a.i18n, pr.bio
       from public.parcels pc join public.parcel_assets a on a.id = pc.published_asset_id join public.profiles pr on pr.id = pc.owner_id order by a.title`);
     expect(rows).toHaveLength(100);
     expect(new Set(rows.map((p) => p.owner_id)).size).toBe(1); // one technical account, nobody to sign in to it
@@ -52,6 +53,8 @@ describe("the heritage set on a database (illustration parcels)", () => {
       expect([p.w, p.h], p.title).toEqual([e.w, e.h]);
       expect(p.w).toBeLessThanOrEqual(50); expect(p.h).toBeLessThanOrEqual(50);
       expect(p.description).toBe(e.text);
+      // the same title and sentence in the other languages, next to the French text
+      for (const l of HERITAGE_LANGS) expect(p.i18n?.[l], `${p.title} in ${l}`).toEqual({ title: HERITAGE_I18N[e.id]![l][0], description: HERITAGE_I18N[e.id]![l][1] });
       expect(p.category).toBe(e.category);
       expect(CATEGORIES as readonly string[]).toContain(p.category);
       expect(files.get(p.storage_path)!.subarray(1, 4).toString()).toBe("PNG");
@@ -79,6 +82,10 @@ describe("the heritage set on a database (illustration parcels)", () => {
     await seedDemo(ports(), { count: 100, emailDomain: DOMAIN, plan: heritagePlan() });
     const again = await seedDemo(ports(), { count: 100, emailDomain: DOMAIN, plan: heritagePlan() });
     expect([again.usersCreated, again.parcelsCreated, again.parcelsSkipped, again.failed]).toEqual([0, 0, 100, []]);
+    // a run on parcels that are already there brings their translations up to date (a list of languages that came later reaches them)
+    await pool.query("update public.parcel_assets set i18n = null");
+    await seedDemo(ports(), { count: 100, emailDomain: DOMAIN, plan: heritagePlan() });
+    expect(Number((await pool.query("select count(*) from public.parcel_assets where i18n ? 'en' and i18n ? 'es' and i18n ? 'zh'")).rows[0].count)).toBe(100);
     // the demonstration accounts go, the illustrations do not
     await seedDemo(ports(), { count: 5, seed: 3, emailDomain: DOMAIN }); // a few ordinary demonstration accounts beside them
     const gone = await clearDemo(ports(), { emailDomain: DOMAIN });

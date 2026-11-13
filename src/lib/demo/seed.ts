@@ -65,7 +65,11 @@ export async function seedDemo(p: DemoPorts, opts: SeedOptions): Promise<SeedRep
       if (item.illustration) {
         userId = await systemAccount();
         // done already (also when a purchase has covered it since): one illustration per title
-        if ((await p.query("select 1 from public.parcels pc join public.parcel_assets a on a.parcel_id = pc.id where pc.owner_id = $1 and pc.tier = 'illustration' and a.title = $2 limit 1", [userId, item.title])).length) { report.parcelsSkipped++; continue; }
+        if ((await p.query("select 1 from public.parcels pc join public.parcel_assets a on a.parcel_id = pc.id where pc.owner_id = $1 and pc.tier = 'illustration' and a.title = $2 limit 1", [userId, item.title])).length) {
+          // done already: only its translations are brought up to date (so that a later list of languages reaches the parcels that are there)
+          if (item.i18n) await p.query("update public.parcel_assets a set i18n = $3::jsonb from public.parcels pc where a.parcel_id = pc.id and pc.owner_id = $1 and pc.tier = 'illustration' and a.title = $2", [userId, item.title, JSON.stringify(item.i18n)]);
+          report.parcelsSkipped++; continue;
+        }
       } else {
         const known_ = known.get(email);
         if (known_) report.usersFound++;
@@ -112,9 +116,9 @@ export async function seedDemo(p: DemoPorts, opts: SeedOptions): Promise<SeedRep
         const key = `creations/${parcel.id}/${now}-${img.sha256.slice(0, 12)}.png`;
         await p.putObject(key, img.png);
         const [asset] = await p.query<{ id: string }>(
-          `insert into public.parcel_assets (parcel_id, uploader_id, version, storage_path, content_hash, width, height, bytes, avg_color, title, description, status, reviewed_at, published_at, created_at, category)
-           values ($1, $2, 1, $3, $4, $5, $6, $7, $8, $9, $10, 'approved', $11, $11, $11, $12) returning id`,
-          [parcel.id, userId, key, img.sha256, img.width, img.height, img.bytes, img.avgColor, item.title, item.description, at, item.category ?? null],
+          `insert into public.parcel_assets (parcel_id, uploader_id, version, storage_path, content_hash, width, height, bytes, avg_color, title, description, status, reviewed_at, published_at, created_at, category, i18n)
+           values ($1, $2, 1, $3, $4, $5, $6, $7, $8, $9, $10, 'approved', $11, $11, $11, $12, $13::jsonb) returning id`,
+          [parcel.id, userId, key, img.sha256, img.width, img.height, img.bytes, img.avgColor, item.title, item.description, at, item.category ?? null, item.i18n ? JSON.stringify(item.i18n) : null],
         ) as [{ id: string }];
         await p.query("update public.parcels set published_asset_id = $1 where id = $2", [asset.id, parcel.id]);
         placed.push(r);

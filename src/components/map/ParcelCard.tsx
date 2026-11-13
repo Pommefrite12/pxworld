@@ -40,9 +40,9 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
 
   useEffect(() => {
     let alive = true;
-    fetch(`/api/parcels/${code}`).then((r) => (r.ok ? r.json() : Promise.reject())).then((p: ParcelInfo) => { if (alive) { setInfo(p); setLikes(p.likes); } }).catch(() => alive && setInfo("error"));
+    fetch(`/api/parcels/${code}?lang=${locale}`).then((r) => (r.ok ? r.json() : Promise.reject())).then((p: ParcelInfo) => { if (alive) { setInfo(p); setLikes(p.likes); } }).catch(() => alive && setInfo("error"));
     return () => { alive = false; };
-  }, [code]);
+  }, [code, locale]);
 
   const url = typeof window === "undefined" ? "" : `${window.location.origin}${locale === "en" ? "" : `/${locale}`}/p/${code}`;
   const share = async () => {
@@ -78,7 +78,7 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
             )}
           </div>
           <div className="space-y-2 p-4">
-            <h2 className="pr-8 text-lg font-bold leading-tight">{info.creation?.title ?? t("untitled")}</h2>
+            <h2 className="pr-8 text-lg font-bold leading-tight" data-testid="parcel-title">{info.creation?.title ?? t("untitled")}</h2>
             {info.kind === "water" && <span className="chip !bg-sky !text-cobalt" data-testid="parcel-water">{t("water")}</span>}
             {info.tier === "free" && <span className="chip" data-testid="parcel-free">{t("free")}</span>}
             {info.creation?.commercial && <span className="chip !bg-warn/15 !text-warn">{t("ad")}</span>}

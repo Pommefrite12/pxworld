@@ -19,7 +19,7 @@ const path = (locale: string, code: string) => `${locale === "en" ? "" : `/${loc
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; code: string }> }): Promise<Metadata> {
   const { locale, code } = await params;
-  const p = await getPublicParcel(code).catch(() => null);
+  const p = await getPublicParcel(code, locale).catch(() => null);
   if (!p) return { title: "Pixel World", robots: { index: false } };
   const t = await getTranslations({ locale, namespace: "archive.page" });
   const title = p.creation?.title ?? t("untitled");
@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function ArchivePage({ params }: { params: Promise<{ locale: string; code: string }> }) {
   const { locale, code } = await params;
   setRequestLocale(locale);
-  const p = await getPublicParcel(code);
+  const p = await getPublicParcel(code, locale);
   if (!p) notFound();
   const [t, f, edition] = await Promise.all([getTranslations("archive.page"), getFormatter(), getEdition()]);
   const te = await getTranslations("archive.editions");
