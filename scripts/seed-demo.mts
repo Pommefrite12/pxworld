@@ -98,6 +98,13 @@ try {
   };
 
   const target = mode === "supabase" ? `Supabase project ${new URL(supabaseUrl).hostname.split(".")[0]}` : `local database ${new URL(databaseUrl).hostname}`;
+  // the keys are tried BEFORE anything is changed: a refused key must never leave a half-done job (parcels deleted, accounts still there)
+  if (admin && bucket && command !== "status") {
+    const users = await admin.auth.admin.listUsers({ page: 1, perPage: 1 });
+    if (users.error) die(`Refused (nothing was touched): Supabase does not accept SUPABASE_SERVICE_ROLE_KEY from this environment file (${users.error.message}).\n  Copy the CURRENT secret key from Supabase > Project Settings > API Keys (it starts with sb_secret_), with no space and no quotes. A key that was deleted or rotated is "unregistered".`);
+    const files = await bucket.list("", { limit: 1 });
+    if (files.error) die(`Refused (nothing was touched): the storage bucket "${env.SUPABASE_PUBLIC_BUCKET || "pixel-world-creations"}" cannot be read with this key (${files.error.message}).`);
+  }
   if (command === "seed") {
     const set = opt("set");
     if (set !== undefined && set !== "heritage") die('--set must be "heritage"');
