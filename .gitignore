@@ -16,4 +16,4 @@ playwright-report
 .next-e2e
 .next-build
 .next-prod
-.next-perf
+.next-perf*
