@@ -88,6 +88,9 @@ export function configProblems(v: Vars): ConfigProblem[] {
   // development doors, which a production build ignores but which should not be there
   for (const k of ["DEV_AUTH", "NEXT_PUBLIC_DEV_AUTH", "DEV_AUTH_SECRET", "STRIPE_MOCK", "LOCAL_STORAGE_DIR"]) if (has(k)) add("warn", k, "is a development variable: remove it from the production environment");
 
+  // what visitors write is sent to Claude to be translated: only to Anthropic. A different address is for the tests, and would send their words elsewhere.
+  if (has("ANTHROPIC_BASE_URL")) add("error", "ANTHROPIC_BASE_URL", "redirects what visitors write (sent to be translated) to another address: it is for the tests, remove it from the production environment");
+
   // legal identity of the seller
   const operator = [...["NAME", "ADDRESS", "REGISTRATION", "VAT"].filter((k) => !has(`NEXT_PUBLIC_OPERATOR_${k}`)).map((k) => k.toLowerCase()), ...(has("NEXT_PUBLIC_CONTACT_EMAIL") ? [] : ["contact e-mail"])];
   if (operator.length) add("warn", "NEXT_PUBLIC_OPERATOR_*", `the seller's identity is incomplete (${operator.join(", ")}): the legal pages show gaps`);

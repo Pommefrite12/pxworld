@@ -255,7 +255,10 @@
       "imageAlt": "La creación «{title}»",
       "covered": "Esta huella gratuita fue cubierta el {date} por una parcela de pago. Permanece aquí, en la historia del archivo, pero ya no está en el mapa.",
       "free": "Huella gratuita",
-      "illustration": "Imagen ilustrativa"
+      "illustration": "Imagen ilustrativa",
+      "autoTranslatedFrom": "Traducción automática (idioma original: {language})",
+      "autoTranslated": "Traducción automática",
+      "showOriginal": "Ver original"
     },
     "editions": {
       "fondatrice": "Edición fundadora"
@@ -264,6 +267,10 @@
   "parcel": {
     "free": "Huella gratuita",
     "illustration": "Imagen ilustrativa",
+    "autoTranslatedFrom": "Traducción automática (idioma original: {language})",
+    "autoTranslated": "Traducción automática",
+    "showOriginal": "Ver original",
+    "showTranslation": "Ver traducción",
     "water": "Agua",
     "label": "Detalles de la parcela",
     "close": "Cerrar",

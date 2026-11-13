@@ -2,6 +2,7 @@ import { isParcelCode } from "@/lib/grid/code";
 import { ILLUSTRATION_USERNAME, toTier, type Tier } from "@/lib/illustration";
 import "server-only";
 import { query, queryOne } from "@/lib/db/pool";
+import { ensureAutoTranslation, needsAutoTranslation } from "@/lib/i18n/autotranslate";
 
 export interface ParcelView {
   id: string;
@@ -27,6 +28,8 @@ export interface ParcelView {
     category: string | null;
     place_label: string | null;
     place_country: string | null;
+    /** Set when `title` / `description` are an automatic translation: the language the text was written in ("und" when unknown) and the original. */
+    translation: null | { from: string; original: { title: string | null; description: string | null } };
   };
   /** The edition the parcel belongs to (the founding one today). */
   edition: { slug: string; name: string } | null;
@@ -53,23 +56,27 @@ type Row = {
 };
 
 /**
- * The title and the description to show in `lang`. Only an illustration parcel has translations (stored by the demonstration tool, migration 25):
- * what a visitor wrote is shown as it was written, whatever the language of the page. Without a translation for `lang` (French is the text itself,
- * and an unknown language has none), the stored text is shown.
+ * The title and the description to show in `lang`. An illustration parcel has translations written by the site's owner (the demonstration tool,
+ * migration 25); the text of a visitor has an automatic one (`lib/i18n/autotranslate.ts`, marked `auto`), made on the first view of the parcel. Without
+ * an entry for `lang` (the language the text is written in has none: the original is shown, and so is an unknown language) the stored text is shown.
  */
-function localized(r: Row, lang: string | undefined): { title: string | null; description: string | null } {
-  const t = r.tier === "illustration" && lang && r.i18n && typeof r.i18n === "object" ? (r.i18n as Record<string, { title?: unknown; description?: unknown } | undefined>)[lang] : undefined;
-  return { title: typeof t?.title === "string" && t.title ? t.title : r.title, description: typeof t?.description === "string" && t.description ? t.description : r.description };
+function localized(r: Row, lang: string | undefined): { title: string | null; description: string | null; translation: ParcelViewTranslation } {
+  const i18n = r.i18n && typeof r.i18n === "object" ? (r.i18n as Record<string, { title?: unknown; description?: unknown; auto?: unknown } | undefined>) : null;
+  const t = lang && i18n ? i18n[lang] : undefined;
+  const title = typeof t?.title === "string" && t.title ? t.title : r.title, description = typeof t?.description === "string" && t.description ? t.description : r.description;
+  const src = i18n?._auto && typeof (i18n._auto as { src?: unknown }).src === "string" ? (i18n._auto as { src: string }).src : "und";
+  return { title, description, translation: t?.auto === true ? { from: src, original: { title: r.title, description: r.description } } : null };
 }
+type ParcelViewTranslation = NonNullable<ParcelView["creation"]>["translation"];
 
 function toView(r: Row, lang?: string): ParcelView {
-  const { title, description } = localized(r, lang);
+  const { title, description, translation } = localized(r, lang);
   return {
     id: r.id, code: r.code, x: r.x, y: r.y, w: r.w, h: r.h, area: r.area, kind: r.kind === "water" ? "water" : "land", status: r.status, tier: toTier(r.tier), covered_at: r.covered_at, hidden: r.hidden, activated_at: r.activated_at,
     owner: { id: r.owner_id, username: r.username, country: r.country, avatar: r.has_avatar },
     creation: r.asset_id && !r.hidden
       ? { asset_id: r.asset_id, title, description, link_url: r.link_url, is_commercial: r.is_commercial ?? false, published_at: r.published_at, avg_color: r.avg_color ?? "#cccccc",
-          category: r.category, place_label: r.place_label, place_country: r.place_country }
+          category: r.category, place_label: r.place_label, place_country: r.place_country, translation }
       : null,
     edition: r.edition_slug && r.edition_name ? { slug: r.edition_slug, name: r.edition_name } : null,
     likes: r.likes,
@@ -82,8 +89,14 @@ function toView(r: Row, lang?: string): ParcelView {
  */
 export async function getPublicParcel(code: string, lang?: string): Promise<ParcelView | null> {
   if (!isParcelCode(code)) return null;
-  const r = await queryOne<Row>(`${SELECT} where p.code = $1 and p.status in ('active', 'covered')`, [code]);
-  return r ? toView(r, lang) : null;
+  let r = await queryOne<Row>(`${SELECT} where p.code = $1 and p.status in ('active', 'covered')`, [code]);
+  if (!r) return null;
+  // what a visitor wrote is translated on its first view, in whatever language (once for all the languages, then kept); an illustration has its own translations
+  if (lang && r.asset_id && !r.hidden && r.tier !== "illustration" && needsAutoTranslation(r.i18n, { title: r.title, description: r.description })) {
+    const t = await ensureAutoTranslation({ id: r.asset_id, title: r.title, description: r.description, i18n: r.i18n }).catch(() => null);
+    if (t) r = { ...r, i18n: t };
+  }
+  return toView(r, lang);
 }
 
 export async function getParcelsOf(userId: string) {

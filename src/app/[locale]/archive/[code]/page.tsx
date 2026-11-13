@@ -8,6 +8,7 @@ import { PageShell } from "@/components/layout/PageShell";
 import { Link } from "@/i18n/navigation";
 import { getEdition } from "@/lib/data/edition";
 import { getPublicParcel } from "@/lib/data/parcels";
+import { languageName } from "@/lib/i18n/languageName";
 import { siteUrl } from "@/lib/env";
 import { assetUrl } from "@/lib/images/sizes";
 import { locales } from "@/i18n/routing";
@@ -80,6 +81,15 @@ export default async function ArchivePage({ params }: { params: Promise<{ locale
         </div>
 
         {c?.description && <p className="mt-6 max-w-2xl whitespace-pre-line text-lg" data-testid="archive-description">{c.description}</p>}
+        {c?.translation && (
+          <details className="mt-3 max-w-2xl text-sm text-ink-soft" data-testid="archive-translation">
+            <summary className="cursor-pointer">{languageName(c.translation.from, locale) ? t("autoTranslatedFrom", { language: languageName(c.translation.from, locale)! }) : t("autoTranslated")} · <span className="font-semibold underline underline-offset-2">{t("showOriginal")}</span></summary>
+            <div className="mt-2 rounded-2xl bg-paper-2 p-4" data-testid="archive-original">
+              {c.translation.original.title && <p className="font-bold text-ink">{c.translation.original.title}</p>}
+              {c.translation.original.description && <p className="mt-1 whitespace-pre-line">{c.translation.original.description}</p>}
+            </div>
+          </details>
+        )}
         {c?.link_url && (
           <p className="mt-3"><a href={c.link_url} target="_blank" rel={`noopener noreferrer nofollow ugc${c.is_commercial ? " sponsored" : ""}`} className="break-all font-semibold text-cobalt underline underline-offset-2">{hostOf(c.link_url)} ↗</a></p>
         )}

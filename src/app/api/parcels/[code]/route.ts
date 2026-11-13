@@ -20,6 +20,7 @@ export const GET = route(async (req, ctx: { params: Promise<{ code: string }> })
         assetId: p.creation.asset_id, title: p.creation.title, description: p.creation.description, link: p.creation.link_url,
         commercial: p.creation.is_commercial, publishedAt: p.creation.published_at, color: p.creation.avg_color,
         category: p.creation.category, placeLabel: p.creation.place_label, placeCountry: p.creation.place_country,
+        translation: p.creation.translation, // set when title and description are an automatic translation (with the original)
       },
     },
     { cache: "public, s-maxage=30, stale-while-revalidate=300" },

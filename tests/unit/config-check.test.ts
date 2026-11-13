@@ -39,6 +39,7 @@ describe("the production configuration check", () => {
   });
   it("warns about development variables left in production", () => {
     expect(keys({ ...GOOD, DEV_AUTH: "true", STRIPE_MOCK: "true", LOCAL_STORAGE_DIR: ".data" }, "warn").sort()).toEqual(["DEV_AUTH", "LOCAL_STORAGE_DIR", "STRIPE_MOCK"]);
+    expect(keys({ ...GOOD, ANTHROPIC_BASE_URL: "http://127.0.0.1:9" }, "error")).toEqual(["ANTHROPIC_BASE_URL"]); // the translation service's address is for the tests: in production it would send visitors' words elsewhere
   });
   it("warns about an incomplete seller identity, naming what is missing", () => {
     const w = configProblems({ ...GOOD, NEXT_PUBLIC_OPERATOR_VAT: undefined, NEXT_PUBLIC_CONTACT_EMAIL: undefined });

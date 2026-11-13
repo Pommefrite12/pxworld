@@ -519,6 +519,21 @@ Résultat attendu : des lignes `applying …_campaigns.sql … ok` et `applying 
 > Tant que Stripe n'est pas configuré, la participation répond « Les paiements ne sont pas encore disponibles » : c'est normal.
 > L'**échéance** d'un projet est traitée chaque nuit par la tâche planifiée (`CRON_SECRET` doit être réglé, voir l'étape 3D) : un projet dont le temps est écoulé est fermé, sa zone libérée, et tous les participants remboursés.
 
+## Étape 11 : la traduction automatique de ce que écrivent les visiteurs (facultatif, 10 min)
+
+Le titre et la description de **chaque parcelle** (pas seulement celles d'illustration) peuvent s'afficher **dans la langue du visiteur**, sans que personne ne traduise : à la **première fois** qu'une parcelle est regardée, le site demande une traduction à **Claude** (l'IA d'Anthropic) dans les 4 langues d'un coup, la garde dans la base, et ne la redemande **plus jamais** pour cette parcelle (une nouvelle version de la création est retraduite). La fiche indique « Traduction automatique (langue d'origine : …) » avec un bouton **« Voir l'original »**. **Tant que vous n'ajoutez pas de clé, rien n'est traduit** (le texte reste tel qu'il a été écrit) : le site marche exactement comme avant.
+
+1. **Appliquez la migration 25** si ce n'est pas fait (`node scripts/migrate.mjs --env .env.production.local`) : elle ajoute la colonne des traductions.
+2. **Créez une clé.** Allez sur **console.anthropic.com**, créez un compte, puis **Settings → API keys → Create key**. **Avant tout, mettez une limite de dépense mensuelle** (Settings → Limits) : c'est votre vrai garde-fou (le site en a un autre, voir ci-dessous). Copiez la clé (elle commence par `sk-ant-`) dans votre fichier de notes. **Ne la collez jamais dans le chat ni dans GitHub.**
+3. **Vercel** → votre projet → **Settings → Environment Variables** → ajoutez `ANTHROPIC_API_KEY` = la clé (Production, et Preview si vous voulez), puis **Redeploy** le dernier déploiement.
+4. **Essayez** : sur une parcelle dont le titre n'est pas en français, passez le site en français (menu de langue) : la première fois, la fiche met quelques secondes (la traduction se fait), puis le titre apparaît traduit avec la mention et le bouton « Voir l'original ». Les fois suivantes, c'est instantané, dans toutes les langues.
+
+**Ce que ça coûte.** Environ **un à deux centimes par parcelle, une seule fois** avec le modèle par défaut (`claude-opus-5-5`, le plus capable). Pour des textes aussi courts, vous pouvez prendre **~40 fois moins cher et plus rapide** avec `TRANSLATE_MODEL` = `claude-haiku-5-5` (variable Vercel, à ajouter comme la clé). **Plafond du site :** `TRANSLATE_DAILY_LIMIT` (2000 parcelles par jour par défaut) : au-delà, le texte reste dans sa langue d'origine jusqu'au lendemain. **Pour couper** sans toucher à la clé : `TRANSLATE_USER_CONTENT` = `false`.
+
+**Si la traduction échoue** (clé fausse, service indisponible, limite atteinte) : le visiteur voit le texte d'origine, sans message d'erreur, et le site réessaie une première fois au bout de deux minutes. Les journaux Vercel montrent `[autotranslate]` suivi du code (jamais le texte ni la clé).
+
+**À faire valider par un juriste avant le lancement :** ce que les visiteurs écrivent est **envoyé à Anthropic** pour être traduit. La **politique de confidentialité** doit le dire (qui reçoit les données, pourquoi, où, combien de temps), et il faut vérifier les conditions d'Anthropic sur la conservation des données. Tant que vous n'avez pas de clé, rien n'est envoyé.
+
 ## Quand c'est fait
 
 - **Ne partagez pas encore l'adresse publiquement** : c'est un site de test (paiements fictifs).

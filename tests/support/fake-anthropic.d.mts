@@ -1,0 +1,1 @@
+export function startFakeAnthropic(port?: number): Promise<{ port: number; calls: () => Array<{ model: string; system: string; user: string; outputConfig: unknown; apiKey: string | null }>; reset: () => void; close: () => Promise<void> }>;

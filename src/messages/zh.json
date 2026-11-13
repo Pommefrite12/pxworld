@@ -255,7 +255,10 @@
       "imageAlt": "作品《{title}》",
       "covered": "这个免费印记已于 {date} 被一块付费地块覆盖。它仍保存在档案的历史中，但不再显示在地图上。",
       "free": "免费印记",
-      "illustration": "示意图"
+      "illustration": "示意图",
+      "autoTranslatedFrom": "自动翻译（原文语言：{language}）",
+      "autoTranslated": "自动翻译",
+      "showOriginal": "查看原文"
     },
     "editions": {
       "fondatrice": "创始版"
@@ -264,6 +267,10 @@
   "parcel": {
     "free": "免费印记",
     "illustration": "示意图",
+    "autoTranslatedFrom": "自动翻译（原文语言：{language}）",
+    "autoTranslated": "自动翻译",
+    "showOriginal": "查看原文",
+    "showTranslation": "查看译文",
     "water": "水域",
     "label": "地块详情",
     "close": "关闭",

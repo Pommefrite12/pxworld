@@ -255,7 +255,10 @@
       "imageAlt": "La création « {title} »",
       "covered": "Cette empreinte gratuite a été recouverte le {date} par une parcelle payante. Elle reste ici, dans l'historique de l'archive, mais n'est plus sur la carte.",
       "free": "Empreinte gratuite",
-      "illustration": "Image d'illustration"
+      "illustration": "Image d'illustration",
+      "autoTranslatedFrom": "Traduction automatique (langue d'origine\u00a0: {language})",
+      "autoTranslated": "Traduction automatique",
+      "showOriginal": "Voir l'original"
     },
     "editions": {
       "fondatrice": "Édition fondatrice"
@@ -264,6 +267,10 @@
   "parcel": {
     "free": "Empreinte gratuite",
     "illustration": "Image d'illustration",
+    "autoTranslatedFrom": "Traduction automatique (langue d'origine\u00a0: {language})",
+    "autoTranslated": "Traduction automatique",
+    "showOriginal": "Voir l'original",
+    "showTranslation": "Voir la traduction",
     "water": "Eau",
     "label": "Détails de la parcelle",
     "close": "Fermer",

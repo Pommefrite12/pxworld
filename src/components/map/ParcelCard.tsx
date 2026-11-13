@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { assetUrl } from "@/lib/images/sizes";
+import { languageName } from "@/lib/i18n/languageName";
 import { hostOf } from "@/lib/security/url";
 import { ArchiveChips } from "@/components/archive/ArchiveChips";
 import { CommentsPanel, useComments } from "./Comments";
@@ -17,7 +18,7 @@ export function fitSize(w: number, h: number, box: number) {
 export interface ParcelInfo {
   code: string; x: number; y: number; w: number; h: number; area: number; kind: "land" | "water"; tier?: "paid" | "free" | "illustration"; hidden: boolean; likes: number; activatedAt: string | null;
   owner: { username: string; country: string | null; avatarId: string | null };
-  creation: null | { assetId: string; title: string | null; description: string | null; link: string | null; commercial: boolean; publishedAt: string | null; color: string; category: string | null; placeLabel: string | null; placeCountry: string | null };
+  creation: null | { assetId: string; title: string | null; description: string | null; link: string | null; commercial: boolean; publishedAt: string | null; color: string; category: string | null; placeLabel: string | null; placeCountry: string | null; translation?: null | { from: string; original: { title: string | null; description: string | null } } };
 }
 
 /** Small public "card" of a parcel: shown on the map and reused by the permalink page. */
@@ -36,6 +37,7 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
   const [msg, setMsg] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
   const [commenting, setCommenting] = useState(false);
+  const [original, setOriginal] = useState(false); // an automatic translation: show what was written instead
   const comments = useComments(code);
 
   useEffect(() => {
@@ -78,7 +80,7 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
             )}
           </div>
           <div className="space-y-2 p-4">
-            <h2 className="pr-8 text-lg font-bold leading-tight" data-testid="parcel-title">{info.creation?.title ?? t("untitled")}</h2>
+            <h2 className="pr-8 text-lg font-bold leading-tight" data-testid="parcel-title">{(original && info.creation?.translation ? info.creation.translation.original.title : info.creation?.title) ?? t("untitled")}</h2>
             {info.kind === "water" && <span className="chip !bg-sky !text-cobalt" data-testid="parcel-water">{t("water")}</span>}
             {info.tier === "free" && <span className="chip" data-testid="parcel-free">{t("free")}</span>}
             {info.creation?.commercial && <span className="chip !bg-warn/15 !text-warn">{t("ad")}</span>}
@@ -91,7 +93,14 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
               </p>
             )}
             {info.creation && <ArchiveChips category={info.creation.category} placeLabel={info.creation.placeLabel} placeCountry={info.creation.placeCountry} />}
-            {info.creation?.description && <p className="text-sm">{info.creation.description}</p>}
+            {info.creation?.description && <p className="text-sm" data-testid="parcel-description">{(original && info.creation.translation ? info.creation.translation.original.description : info.creation.description) ?? ""}</p>}
+            {info.creation?.translation && (
+              <p className="text-xs text-ink-soft" data-testid="parcel-translation">
+                {languageName(info.creation.translation.from, locale) ? t("autoTranslatedFrom", { language: languageName(info.creation.translation.from, locale)! }) : t("autoTranslated")}
+                {" · "}
+                <button type="button" className="font-semibold underline underline-offset-2" onClick={() => setOriginal((v) => !v)} data-testid="parcel-translation-toggle">{original ? t("showTranslation") : t("showOriginal")}</button>
+              </p>
+            )}
             {info.creation?.link && (
               <a href={info.creation.link} target="_blank" rel={`noopener noreferrer nofollow ugc${info.creation.commercial ? " sponsored" : ""}`} className="inline-block break-all text-sm font-semibold text-cobalt underline underline-offset-2">
                 {hostOf(info.creation.link)} ↗

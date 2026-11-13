@@ -255,7 +255,10 @@
       "imageAlt": "The creation “{title}”",
       "covered": "This free trace was covered on {date} by a paid parcel. It stays here, in the history of the archive, but is no longer on the map.",
       "free": "Free trace",
-      "illustration": "Illustration image"
+      "illustration": "Illustration image",
+      "autoTranslatedFrom": "Automatic translation (original language: {language})",
+      "autoTranslated": "Automatic translation",
+      "showOriginal": "Show original"
     },
     "editions": {
       "fondatrice": "Founding edition"
@@ -264,6 +267,10 @@
   "parcel": {
     "free": "Free trace",
     "illustration": "Illustration image",
+    "autoTranslatedFrom": "Automatic translation (original language: {language})",
+    "autoTranslated": "Automatic translation",
+    "showOriginal": "Show original",
+    "showTranslation": "Show translation",
     "water": "Water",
     "label": "Parcel details",
     "close": "Close",

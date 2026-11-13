@@ -6,6 +6,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import pg from "pg";
+import { startFakeAnthropic } from "../tests/support/fake-anthropic.mjs";
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const ADMIN_URL = process.env.TEST_PG_ADMIN_URL ?? "postgres://pixel:pixel@127.0.0.1:54329/postgres";
@@ -31,6 +32,9 @@ const storage = path.join(root, ".data/e2e-storage");
 fs.rmSync(storage, { recursive: true, force: true });
 fs.rmSync(path.join(root, ".next-e2e"), { recursive: true, force: true }); // never reuse a stale dev cache: it can make the dev server reload pages in a loop
 
+// A stand-in for the translation service (what visitors write is translated by Claude on its first view): no key, no network, no money.
+const fakeAi = await startFakeAnthropic(Number(PORT) + 2);
+
 const child = spawn("npx", ["next", "dev", "-p", PORT], {
   cwd: root,
   stdio: "inherit",
@@ -41,13 +45,14 @@ const child = spawn("npx", ["next", "dev", "-p", PORT], {
     NEXT_PUBLIC_SITE_URL: `http://localhost:${PORT}`,
     DEV_AUTH: "true", NEXT_PUBLIC_DEV_AUTH: "true", DEV_AUTH_SECRET: "e2e-secret",
     STRIPE_MOCK: "true", STRIPE_SECRET_KEY: "", STRIPE_WEBHOOK_SECRET: "",
+    ANTHROPIC_API_KEY: "e2e-key", ANTHROPIC_BASE_URL: `http://127.0.0.1:${fakeAi.port}`, TRANSLATE_MODEL: "claude-opus-5-5",
     CRON_SECRET: "e2e-cron-secret", // so that the maintenance job (ends projects, refunds contributions) can be called by the tests
     NEXT_PUBLIC_SUPABASE_URL: "", NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
     LOCAL_STORAGE_DIR: storage,
     NEXT_DIST_DIR: ".next-e2e",
   },
 });
-const stop = () => { try { process.kill(-child.pid, "SIGTERM"); } catch { /* already gone */ } };
+const stop = () => { try { process.kill(-child.pid, "SIGTERM"); } catch { /* already gone */ } void fakeAi.close(); };
 process.on("SIGTERM", stop); process.on("SIGINT", stop);
 child.on("exit", (code) => process.exit(code ?? 0));
 process.on("exit", stop);
