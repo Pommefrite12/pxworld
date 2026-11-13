@@ -69,6 +69,8 @@ export interface DemoItem {
   exact?: boolean;
   render?: (w: number, h: number, seed: number) => import("./art").Raster;
   category?: string;
+  /** An illustration parcel (migration 24): owned by the one technical account, shown as "Illustration image", covered by any purchase, kept by `clear`. */
+  illustration?: boolean;
 }
 
 function mulberry(seed: number) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }

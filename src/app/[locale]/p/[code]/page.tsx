@@ -26,15 +26,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const t = await getTranslations({ locale, namespace: "parcel" });
   const f = await getFormatter({ locale });
   const title = p.creation?.title ?? t("untitled");
-  const description = p.creation?.description ?? t("shareDescription", { owner: p.owner.username, w: p.w, h: p.h, area: f.number(p.area) });
+  const owner = p.tier === "illustration" ? t("illustration") : p.owner.username; // an illustration has no author
+  const description = p.creation?.description ?? t("shareDescription", { owner, w: p.w, h: p.h, area: f.number(p.area) });
   const url = `${siteUrl()}${path(locale, code)}`;
   const image = `${siteUrl()}/api/og/parcel/${code}${locale === "fr" ? "?lang=fr" : ""}`; // in the language of the page
   return {
-    title: `${title} — ${p.owner.username}`,
+    title: `${title} — ${owner}`,
     description,
     alternates: { canonical: url, languages: Object.fromEntries(locales.map((l) => [l, `${siteUrl()}${path(l, code)}`])) },
-    openGraph: { type: "website", url, title: `${title} — ${p.owner.username}`, description, images: [{ url: image, width: 1200, height: 630, alt: title }], locale },
-    twitter: { card: "summary_large_image", title: `${title} — ${p.owner.username}`, description, images: [image] },
+    openGraph: { type: "website", url, title: `${title} — ${owner}`, description, images: [{ url: image, width: 1200, height: 630, alt: title }], locale },
+    twitter: { card: "summary_large_image", title: `${title} — ${owner}`, description, images: [image] },
     robots: { index: !p.hidden },
   };
 }
@@ -54,7 +55,7 @@ export default async function ParcelPage({ params }: { params: Promise<{ locale:
       {/* Crawlable summary of what the map shows */}
       <article className="sr-only">
         <h1>{p.creation?.title ?? t("untitled")}</h1>
-        <p>{p.owner.username} — {p.w}×{p.h} px ({p.x}, {p.y})</p>
+        <p>{p.tier === "illustration" ? t("illustration") : p.owner.username} — {p.w}×{p.h} px ({p.x}, {p.y})</p>
         {p.creation?.description && <p>{p.creation.description}</p>}
       </article>
       <MapShell

@@ -6,8 +6,8 @@ import { CYAN, GOLD, IVORY, NIGHT, VIOLET_DEEP, Wordmark, fitsPixelFont, pixelFo
 import { objectStore } from "@/lib/storage";
 
 const TEXT = {
-  fr: { kicker: "ARCHIVE COLLECTIVE", by: "par", pixels: "pixels", tagline: "Dans 100 ans, que restera-t-il de nous ?", locale: "fr-FR" },
-  en: { kicker: "COLLECTIVE ARCHIVE", by: "by", pixels: "pixels", tagline: "In 100 years, what will remain of us?", locale: "en" },
+  fr: { kicker: "ARCHIVE COLLECTIVE", by: "par", illustration: "Image d'illustration", pixels: "pixels", tagline: "Dans 100 ans, que restera-t-il de nous ?", locale: "fr-FR" },
+  en: { kicker: "COLLECTIVE ARCHIVE", by: "by", illustration: "Illustration image", pixels: "pixels", tagline: "In 100 years, what will remain of us?", locale: "en" },
 };
 
 /**
@@ -37,7 +37,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ code: string }>
       dataUrl = `data:image/png;base64,${out.toString("base64")}`;
     }
   }
-  const title = (p.creation?.title ?? "Pixel World").slice(0, 60), author = p.owner.username;
+  const title = (p.creation?.title ?? "Pixel World").slice(0, 60), author = p.tier === "illustration" ? t.illustration : p.owner.username; // an illustration has no author
   const shown = k2(p.w, p.h, BOX);
   const pixel = fitsPixelFont(title + author);
   const fonts = pixel ? [{ name: "Jersey", data: await pixelFont(), weight: 400 as const, style: "normal" as const }] : undefined;
@@ -60,7 +60,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ code: string }>
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", fontSize: titleSize, lineHeight: 1.0, letterSpacing: pixel ? 1 : -2 }}>{title}</div>
-            <div style={{ display: "flex", fontSize: pixel ? 44 : 34, marginTop: 20, color: GOLD }}>{t.by} {author}</div>
+            <div style={{ display: "flex", fontSize: pixel ? 44 : 34, marginTop: 20, color: GOLD }}>{p.tier === "illustration" ? author : `${t.by} ${author}`}</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", fontSize: pixel ? 32 : 26, color: "#b9aebf" }}>{p.w}×{p.h} px · {p.area.toLocaleString(t.locale).replace(/[\u202f\u00a0]/g, " ")} {t.pixels}</div>

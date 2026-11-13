@@ -1,4 +1,5 @@
 import { isParcelCode } from "@/lib/grid/code";
+import { ILLUSTRATION_USERNAME, toTier, type Tier } from "@/lib/illustration";
 import "server-only";
 import { query, queryOne } from "@/lib/db/pool";
 
@@ -10,7 +11,7 @@ export interface ParcelView {
   kind: "land" | "water";
   status: string;
   /** `free`: a free imprint (1 to 24 pixels), covered by any paid parcel that touches it; `covered`: it was (status). */
-  tier: "paid" | "free";
+  tier: Tier;
   covered_at: Date | null;
   hidden: boolean;
   activated_at: Date | null;
@@ -53,7 +54,7 @@ type Row = {
 
 function toView(r: Row): ParcelView {
   return {
-    id: r.id, code: r.code, x: r.x, y: r.y, w: r.w, h: r.h, area: r.area, kind: r.kind === "water" ? "water" : "land", status: r.status, tier: r.tier === "free" ? "free" : "paid", covered_at: r.covered_at, hidden: r.hidden, activated_at: r.activated_at,
+    id: r.id, code: r.code, x: r.x, y: r.y, w: r.w, h: r.h, area: r.area, kind: r.kind === "water" ? "water" : "land", status: r.status, tier: toTier(r.tier), covered_at: r.covered_at, hidden: r.hidden, activated_at: r.activated_at,
     owner: { id: r.owner_id, username: r.username, country: r.country, avatar: r.has_avatar },
     creation: r.asset_id && !r.hidden
       ? { asset_id: r.asset_id, title: r.title, description: r.description, link_url: r.link_url, is_commercial: r.is_commercial ?? false, published_at: r.published_at, avg_color: r.avg_color ?? "#cccccc",
@@ -125,8 +126,8 @@ export async function getUserStats(userId: string) {
 
 export async function getPublicProfile(username: string) {
   const p = await queryOne<{ id: string; username: string; country: string | null; bio: string | null; created_at: Date; has_avatar: boolean }>(
-    "select id, username, country, bio, created_at, (avatar_path is not null) as has_avatar from public.profiles where lower(username) = lower($1) and deleted_at is null and status = 'active'",
-    [username],
+    "select id, username, country, bio, created_at, (avatar_path is not null) as has_avatar from public.profiles where lower(username) = lower($1) and username <> $2 and deleted_at is null and status = 'active'",
+    [username, ILLUSTRATION_USERNAME],
   );
   if (!p) return null;
   const stats = await getUserStats(p.id);
@@ -144,16 +145,17 @@ export async function getPublicProfile(username: string) {
 
 export interface Card { code: string; w: number; h: number; x: number; y: number; area: number; asset_id: string; title: string | null; username: string; country: string | null; published_at: Date | null; score?: number; comments?: number }
 
+// the lists of people's creations (Discover, the latest, the most talked about) never hold an illustration: it is decoration, not a contribution
 const CARD = `select p.code, p.w, p.h, p.x, p.y, p.area, a.id as asset_id, a.title, u.username, u.country, a.published_at
                 from public.parcels p join public.parcel_assets a on a.id = p.published_asset_id join public.profiles u on u.id = p.owner_id
-               where p.status = 'active' and p.hidden_at is null and u.status = 'active'`;
+               where p.status = 'active' and p.tier <> 'illustration' and p.hidden_at is null and u.status = 'active'`;
 
 /** The traces the home page shows: what the public can see (validated, not hidden, a visible author), with what the archive says about each. */
 export interface Trace { code: string; x: number; y: number; w: number; h: number; asset_id: string; title: string | null; username: string; activated_at: Date | null; category: string | null; place_label: string | null; place_country: string | null }
 export const recentTraces = (limit = 6) => query<Trace>(
   `select p.code, p.x, p.y, p.w, p.h, a.id as asset_id, a.title, u.username, p.activated_at, a.category, a.place_label, a.place_country
      from public.parcels p join public.parcel_assets a on a.id = p.published_asset_id join public.profiles u on u.id = p.owner_id
-    where p.status = 'active' and p.hidden_at is null and u.status = 'active' and u.deleted_at is null
+    where p.status = 'active' and p.tier <> 'illustration' and p.hidden_at is null and u.status = 'active' and u.deleted_at is null
     order by a.published_at desc nulls last limit $1`, [limit]);
 
 export const latestCreations = (limit = 12) => query<Card>(`${CARD} order by a.published_at desc nulls last limit $1`, [limit]);

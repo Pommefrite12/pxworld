@@ -254,7 +254,8 @@
       "backToArchive": "The archive",
       "imageAlt": "The creation “{title}”",
       "covered": "This free trace was covered on {date} by a paid parcel. It stays here, in the history of the archive, but is no longer on the map.",
-      "free": "Free trace"
+      "free": "Free trace",
+      "illustration": "Illustration image"
     },
     "editions": {
       "fondatrice": "Founding edition"
@@ -262,6 +263,7 @@
   },
   "parcel": {
     "free": "Free trace",
+    "illustration": "Illustration image",
     "water": "Water",
     "label": "Parcel details",
     "close": "Close",
@@ -427,7 +429,7 @@
       "priceLabel": "Price",
       "subtitle": "Free trace · can be covered by a paid parcel",
       "statusOk": "Free spot: your free trace can be placed here.",
-      "statusCovers": "This area will cover {n, plural, one {# free trace} other {# free traces}}.",
+      "statusCovers": "This area will cover {n, plural, one {# free or illustration parcel} other {# free or illustration parcels}}.",
       "continue": "Create my free trace",
       "designTitle": "Create your free trace",
       "reviewTitle": "Check your free trace",

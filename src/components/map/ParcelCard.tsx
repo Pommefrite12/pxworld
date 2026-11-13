@@ -15,7 +15,7 @@ export function fitSize(w: number, h: number, box: number) {
 }
 
 export interface ParcelInfo {
-  code: string; x: number; y: number; w: number; h: number; area: number; kind: "land" | "water"; tier?: "paid" | "free"; hidden: boolean; likes: number; activatedAt: string | null;
+  code: string; x: number; y: number; w: number; h: number; area: number; kind: "land" | "water"; tier?: "paid" | "free" | "illustration"; hidden: boolean; likes: number; activatedAt: string | null;
   owner: { username: string; country: string | null; avatarId: string | null };
   creation: null | { assetId: string; title: string | null; description: string | null; link: string | null; commercial: boolean; publishedAt: string | null; color: string; category: string | null; placeLabel: string | null; placeCountry: string | null };
 }
@@ -82,10 +82,14 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
             {info.kind === "water" && <span className="chip !bg-sky !text-cobalt" data-testid="parcel-water">{t("water")}</span>}
             {info.tier === "free" && <span className="chip" data-testid="parcel-free">{t("free")}</span>}
             {info.creation?.commercial && <span className="chip !bg-warn/15 !text-warn">{t("ad")}</span>}
-            <p className="text-sm text-ink-soft">
-              <Link href={`/u/${info.owner.username}`} className="font-semibold text-ink underline-offset-2 hover:underline">{info.owner.username}</Link>
-              {info.owner.country && <span> · {new Intl.DisplayNames([locale], { type: "region" }).of(info.owner.country)}</span>}
-            </p>
+            {info.tier === "illustration" ? (
+              <p className="text-sm font-semibold text-ink-soft" data-testid="parcel-illustration">{t("illustration")}</p>
+            ) : (
+              <p className="text-sm text-ink-soft">
+                <Link href={`/u/${info.owner.username}`} className="font-semibold text-ink underline-offset-2 hover:underline">{info.owner.username}</Link>
+                {info.owner.country && <span> · {new Intl.DisplayNames([locale], { type: "region" }).of(info.owner.country)}</span>}
+              </p>
+            )}
             {info.creation && <ArchiveChips category={info.creation.category} placeLabel={info.creation.placeLabel} placeCountry={info.creation.placeCountry} />}
             {info.creation?.description && <p className="text-sm">{info.creation.description}</p>}
             {info.creation?.link && (

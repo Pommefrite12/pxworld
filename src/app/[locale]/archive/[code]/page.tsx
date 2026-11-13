@@ -22,15 +22,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   if (!p) return { title: "Pixel World", robots: { index: false } };
   const t = await getTranslations({ locale, namespace: "archive.page" });
   const title = p.creation?.title ?? t("untitled");
-  const description = p.creation?.description ?? t("descriptionFallback", { author: p.owner.username });
+  const author = p.tier === "illustration" ? t("illustration") : p.owner.username; // an illustration has no author
+  const description = p.creation?.description ?? t("descriptionFallback", { author });
   const url = `${siteUrl()}${path(locale, code)}`;
   const image = `${siteUrl()}/api/og/parcel/${code}${locale === "fr" ? "?lang=fr" : ""}`; // in the language of the page
   return {
-    title: `${title} — ${p.owner.username}`,
+    title: `${title} — ${author}`,
     description,
     alternates: { canonical: url, languages: Object.fromEntries(locales.map((l) => [l, `${siteUrl()}${path(l, code)}`])) },
-    openGraph: { type: "article", url, title: `${title} — ${p.owner.username}`, description, images: [{ url: image, width: 1200, height: 630, alt: title }], locale },
-    twitter: { card: "summary_large_image", title: `${title} — ${p.owner.username}`, description, images: [image] },
+    openGraph: { type: "article", url, title: `${title} — ${author}`, description, images: [{ url: image, width: 1200, height: 630, alt: title }], locale },
+    twitter: { card: "summary_large_image", title: `${title} — ${author}`, description, images: [image] },
     robots: { index: Boolean(p.creation) && !p.hidden },
   };
 }
@@ -49,6 +50,7 @@ export default async function ArchivePage({ params }: { params: Promise<{ locale
   const te = await getTranslations("archive.editions");
   const c = p.creation;
   const title = c?.title ?? t("untitled");
+  const author = p.tier === "illustration" ? t("illustration") : p.owner.username;
   const shown = Math.max(1, Math.floor(512 / Math.max(p.w, p.h)));
   const size = shown >= 1 && Math.max(p.w, p.h) <= 512 ? { width: p.w * shown, height: p.h * shown } : { width: 512, height: Math.round((512 * p.h) / p.w) };
   const editionName = p.edition ? (te.has(p.edition.slug) ? te(p.edition.slug) : p.edition.name) : null;
@@ -60,7 +62,9 @@ export default async function ArchivePage({ params }: { params: Promise<{ locale
         {p.tier === "free" && <p className="mt-2"><span className="chip" data-testid="archive-free">{t("free")}</span></p>}
         {p.status === "covered" && p.covered_at && <p className="mt-3 rounded-2xl bg-paper-2 p-4 text-sm text-ink-soft" data-testid="archive-covered">{t("covered", { date: f.dateTime(p.covered_at, { dateStyle: "long" }) })}</p>}
         <p className="mt-2 text-ink-soft">
-          {t("by")} <Link href={`/u/${p.owner.username}`} className="font-semibold text-ink underline underline-offset-2" data-testid="archive-author">{p.owner.username}</Link>
+          {p.tier === "illustration"
+            ? <span className="font-semibold text-ink" data-testid="archive-illustration">{t("illustration")}</span>
+            : <>{t("by")} <Link href={`/u/${p.owner.username}`} className="font-semibold text-ink underline underline-offset-2" data-testid="archive-author">{p.owner.username}</Link></>}
           {" · "}<span data-testid="archive-date">{p.activated_at ? t("archivedOn", { date: f.dateTime(p.activated_at, { dateStyle: "long" }) }) : ""}</span>
         </p>
         {c && <ArchiveChips className="mt-3" category={c.category} placeLabel={c.place_label} placeCountry={c.place_country} />}
@@ -87,7 +91,7 @@ export default async function ArchivePage({ params }: { params: Promise<{ locale
         </dl>
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
-          <ShareButton title={`${title} — ${p.owner.username}`} text={t("shareText", { title })} />
+          <ShareButton title={`${title} — ${author}`} text={t("shareText", { title })} />
           {p.status !== "covered" && <Link href={`/p/${p.code}`} className="btn btn-ghost" data-testid="archive-on-map">{t("seeOnMap")}</Link>}
         </div>
         {edition?.state === "closed" && <p className="mt-8 rounded-2xl bg-paper-2 p-4 text-sm text-ink-soft" data-testid="archive-closed">{t("closedNote")}</p>}

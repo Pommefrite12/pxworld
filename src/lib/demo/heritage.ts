@@ -627,6 +627,7 @@ export function heritagePlan(): DemoItem[] {
     // spread over the last weeks, the way people arrive: not all in the same minute
     ageHours: 6 + ((i * 37) % 600),
     exact: true,
+    illustration: true,
     category: e.category,
     render: (w: number, h: number, seed: number) => { const k = new Canvas(w, h, C.black, seed); e.draw(k); return k.r; },
   }));

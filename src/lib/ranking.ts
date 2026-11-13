@@ -23,7 +23,7 @@ const VOTES = `votes as (
   select l.parcel_id, count(*)::int as likes
     from public.parcel_likes l
     join public.profiles v on v.id = l.user_id and v.status = 'active' and v.deleted_at is null
-    join public.parcels p on p.id = l.parcel_id
+    join public.parcels p on p.id = l.parcel_id and p.tier <> 'illustration'
    where l.user_id <> p.owner_id and ($1::int is null or l.created_at > now() - make_interval(days => $1::int))
    group by l.parcel_id
 )`;

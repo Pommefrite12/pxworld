@@ -14,6 +14,7 @@ import { processCreation } from "@/lib/images/validate";
 import { lonLatToPixel } from "@/lib/grid/geometry";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { renderArt } from "./art";
+import { ILLUSTRATION_USERNAME, illustrationEmail } from "@/lib/illustration";
 import { demoPlan, type DemoItem } from "./plan";
 
 export interface Rect { x: number; y: number; w: number; h: number }
@@ -44,15 +45,35 @@ export async function seedDemo(p: DemoPorts, opts: SeedOptions): Promise<SeedRep
   const known = new Map((await p.query<{ id: string; email: string }>("select id, email from auth.users where email like $1", [sqlLike(opts.emailDomain)])).map((r) => [r.email, r.id]));
   const placed: Rect[] = (await p.query<Rect>("select x, y, w, h from public.parcels where status in ('reserved', 'active')")).map((r) => ({ x: Number(r.x), y: Number(r.y), w: Number(r.w), h: Number(r.h) }));
 
+  // the ONE technical account that owns every illustration parcel (made the first time one is needed)
+  let illustrationOwner: string | null = null;
+  const systemAccount = async (): Promise<string> => {
+    if (illustrationOwner) return illustrationOwner;
+    const email = illustrationEmail(opts.emailDomain);
+    const [found] = await p.query<{ id: string }>("select id from auth.users where email = $1", [email]);
+    if (found) { report.usersFound++; return (illustrationOwner = found.id); }
+    const id = await p.createUser(email, ILLUSTRATION_USERNAME);
+    report.usersCreated++;
+    await p.query("update public.profiles set bio = $2 where id = $1", [id, "Compte technique des images d'illustration : personne ne s'y connecte."]);
+    return (illustrationOwner = id);
+  };
+
   for (const item of plan) {
     const email = `${item.emailLocal}@${opts.emailDomain}`;
     try {
-      let userId = known.get(email);
-      if (userId) report.usersFound++;
-      else { userId = await p.createUser(email, item.username); report.usersCreated++; }
-      await p.query("update public.profiles set country = $2, bio = $3 where id = $1", [userId, item.anchor.country, "Compte de démonstration (site de test)."]);
-
-      if ((await p.query("select 1 from public.parcels where owner_id = $1 and status = 'active' limit 1", [userId])).length) { report.parcelsSkipped++; continue; }
+      let userId: string;
+      if (item.illustration) {
+        userId = await systemAccount();
+        // done already (also when a purchase has covered it since): one illustration per title
+        if ((await p.query("select 1 from public.parcels pc join public.parcel_assets a on a.parcel_id = pc.id where pc.owner_id = $1 and pc.tier = 'illustration' and a.title = $2 limit 1", [userId, item.title])).length) { report.parcelsSkipped++; continue; }
+      } else {
+        const known_ = known.get(email);
+        if (known_) report.usersFound++;
+        else { userId = await p.createUser(email, item.username); report.usersCreated++; }
+        userId = known_ ?? userId!;
+        await p.query("update public.profiles set country = $2, bio = $3 where id = $1", [userId, item.anchor.country, "Compte de démonstration (site de test)."]);
+        if ((await p.query("select 1 from public.parcels where owner_id = $1 and status = 'active' limit 1", [userId])).length) { report.parcelsSkipped++; continue; }
+      }
 
       // a place: around the anchor city, mostly on land, clear of every other parcel; the circle grows (and the parcel shrinks) when it is crowded
       const c = lonLatToPixel({ lon: item.spot.lon, lat: item.spot.lat });
@@ -78,8 +99,8 @@ export async function seedDemo(p: DemoPorts, opts: SeedOptions): Promise<SeedRep
         let parcel: { id: string };
         try {
           [parcel] = await p.query<{ id: string }>(
-            "insert into public.parcels (owner_id, x, y, w, h, status, land_px, created_at, activated_at, updated_at, kind) values ($1, $2, $3, $4, $5, 'active', $6, $7, $7, $7, $8) returning id",
-            [userId, r.x, r.y, w, h, land, at, item.kind],
+            "insert into public.parcels (owner_id, x, y, w, h, status, land_px, created_at, activated_at, updated_at, kind, tier) values ($1, $2, $3, $4, $5, 'active', $6, $7, $7, $7, $8, $9) returning id",
+            [userId, r.x, r.y, w, h, land, at, item.kind, item.illustration ? "illustration" : "paid"],
           ) as [{ id: string }];
         } catch (e) {
           if ((e as { code?: string }).code === "23P01") { placed.push(r); continue; } // somebody else's parcel is there: try elsewhere
@@ -126,11 +147,25 @@ export async function clearDemo(p: DemoPorts, opts: { emailDomain: string }): Pr
   return { users: ids.length, parcels: gone.length, files };
 }
 
-export interface DemoStatus { users: number; parcels: number; publicCounters: { soldPixels: number; parcels: number; owners: number; creations: number } }
+/** Removes the illustration parcels (covered ones too), their files and the technical account. Only when asked for: `clearDemo` leaves them. */
+export async function clearIllustrations(p: DemoPorts, opts: { emailDomain: string }): Promise<{ parcels: number; files: number; accounts: number }> {
+  const paths = (await p.query<{ storage_path: string }>(
+    "select a.storage_path from public.parcel_assets a join public.parcels pc on pc.id = a.parcel_id where pc.tier = 'illustration'")).map((r) => r.storage_path);
+  const gone = await p.query<{ id: string }>("delete from public.parcels where tier = 'illustration' returning id");
+  let files = 0;
+  for (const key of paths) { try { await p.removeObject(key); files++; } catch { p.log(`  (could not remove the file ${key})`); } }
+  const [acc] = await p.query<{ id: string }>("select id from auth.users where email = $1", [illustrationEmail(opts.emailDomain)]);
+  if (acc) await p.deleteUser(acc.id);
+  await p.query("update public.map_state set version = version + 1, updated_at = now() where id = 1");
+  return { parcels: gone.length, files, accounts: acc ? 1 : 0 };
+}
+
+export interface DemoStatus { users: number; parcels: number; illustrations: number; publicCounters: { soldPixels: number; parcels: number; owners: number; creations: number } }
 
 export async function demoStatus(p: DemoPorts, opts: { emailDomain: string }): Promise<DemoStatus> {
   const [u] = await p.query<{ n: number }>("select count(*)::int as n from auth.users where email like $1", [sqlLike(opts.emailDomain)]);
   const [pc] = await p.query<{ n: number }>("select count(*)::int as n from public.parcels pc join auth.users u on u.id = pc.owner_id where u.email like $1 and pc.status = 'active'", [sqlLike(opts.emailDomain)]);
   const [s] = await p.query<{ sold_pixels: number; parcels: number; owners: number; published_creations: number }>("select * from public.px_public_stats()");
-  return { users: Number(u?.n ?? 0), parcels: Number(pc?.n ?? 0), publicCounters: { soldPixels: Number(s?.sold_pixels ?? 0), parcels: Number(s?.parcels ?? 0), owners: Number(s?.owners ?? 0), creations: Number(s?.published_creations ?? 0) } };
+  const [il] = await p.query<{ n: number }>("select count(*)::int as n from public.parcels where tier = 'illustration' and status in ('active', 'covered')");
+  return { users: Number(u?.n ?? 0), parcels: Number(pc?.n ?? 0), illustrations: Number(il?.n ?? 0), publicCounters: { soldPixels: Number(s?.sold_pixels ?? 0), parcels: Number(s?.parcels ?? 0), owners: Number(s?.owners ?? 0), creations: Number(s?.published_creations ?? 0) } };
 }

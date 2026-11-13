@@ -254,7 +254,8 @@
       "backToArchive": "L'archive",
       "imageAlt": "La création « {title} »",
       "covered": "Cette empreinte gratuite a été recouverte le {date} par une parcelle payante. Elle reste ici, dans l'historique de l'archive, mais n'est plus sur la carte.",
-      "free": "Empreinte gratuite"
+      "free": "Empreinte gratuite",
+      "illustration": "Image d'illustration"
     },
     "editions": {
       "fondatrice": "Édition fondatrice"
@@ -262,6 +263,7 @@
   },
   "parcel": {
     "free": "Empreinte gratuite",
+    "illustration": "Image d'illustration",
     "water": "Eau",
     "label": "Détails de la parcelle",
     "close": "Fermer",
@@ -427,7 +429,7 @@
       "priceLabel": "Prix",
       "subtitle": "Empreinte gratuite · peut être recouverte par une parcelle payante",
       "statusOk": "Place libre\u00a0: votre empreinte gratuite peut être posée ici.",
-      "statusCovers": "{n, plural, one {Cette zone recouvrira # empreinte gratuite.} other {Cette zone recouvrira # empreintes gratuites.}}",
+      "statusCovers": "{n, plural, one {Cette zone recouvrira # parcelle gratuite ou d'illustration.} other {Cette zone recouvrira # parcelles gratuites ou d'illustration.}}",
       "continue": "Créer mon empreinte gratuite",
       "designTitle": "Créez votre empreinte gratuite",
       "reviewTitle": "Vérifiez votre empreinte gratuite",

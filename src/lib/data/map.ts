@@ -21,7 +21,7 @@ export type TileParcel = [string, number, number, number, number, string | null,
 export async function getTile(tx: number, ty: number): Promise<TileParcel[]> {
   const x0 = tx * TILE_SIZE, y0 = ty * TILE_SIZE;
   const rows = await query<{ code: string; x: number; y: number; w: number; h: number; kind: string; free: boolean; asset_id: string | null; color: string | null }>(
-    `select p.code, p.x, p.y, p.w, p.h, p.kind, (p.tier = 'free') as free,
+    `select p.code, p.x, p.y, p.w, p.h, p.kind, (p.tier <> 'paid') as free,
             case when p.hidden_at is null then p.published_asset_id end as asset_id,
             case when p.hidden_at is null then a.avg_color end as color
        from public.parcels p

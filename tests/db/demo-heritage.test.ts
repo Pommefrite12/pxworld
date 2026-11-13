@@ -1,8 +1,8 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { closeDb, pool, resetData } from "./helpers";
+import { closeDb, createUser, fulfill, pool, resetData, startOrder } from "./helpers";
 import { lonLatToPixel } from "@/lib/grid/geometry";
 import { CATEGORIES } from "@/lib/archive";
-import { clearDemo, seedDemo, type DemoPorts, type Rect } from "@/lib/demo/seed";
+import { clearDemo, clearIllustrations, seedDemo, type DemoPorts, type Rect } from "@/lib/demo/seed";
 import { HERITAGE, heritagePlan } from "@/lib/demo/heritage";
 import { landPixelsIn } from "@/lib/geo/landServer";
 
@@ -31,16 +31,17 @@ beforeEach(async () => {
   files = new Map();
 });
 
-describe("the heritage set on a database", () => {
-  it("puts the 100 parcels on land, on their real places, none over another, each with its drawing, its sentence and its category", async () => {
+describe("the heritage set on a database (illustration parcels)", () => {
+  it("puts the 100 parcels on land, on their real places, none over another, each with its drawing, its sentence and its category, all owned by ONE technical account", async () => {
     const r = await seedDemo(ports(), { count: 100, emailDomain: DOMAIN, plan: heritagePlan() });
     expect(r.failed).toEqual([]);
-    expect([r.usersCreated, r.parcelsCreated]).toEqual([100, 100]);
+    expect([r.usersCreated, r.parcelsCreated]).toEqual([1, 100]); // one account for all of them
 
-    const { rows } = await pool.query(`select pc.owner_id, pc.x, pc.y, pc.w, pc.h, pc.status, pc.kind, a.title, a.description, a.category, a.status as asset_status, a.storage_path, pr.bio
+    const { rows } = await pool.query(`select pc.owner_id, pc.x, pc.y, pc.w, pc.h, pc.status, pc.kind, pc.tier, a.title, a.description, a.category, a.status as asset_status, a.storage_path, pr.bio
       from public.parcels pc join public.parcel_assets a on a.id = pc.published_asset_id join public.profiles pr on pr.id = pc.owner_id order by a.title`);
     expect(rows).toHaveLength(100);
-    expect(new Set(rows.map((p) => p.owner_id)).size).toBe(100); // one account each
+    expect(new Set(rows.map((p) => p.owner_id)).size).toBe(1); // one technical account, nobody to sign in to it
+    expect(rows.every((p) => p.tier === "illustration")).toBe(true);
     const byTitle = new Map(HERITAGE.map((e) => [e.title, e]));
     const away: number[] = [];
     for (const p of rows) {
@@ -53,7 +54,7 @@ describe("the heritage set on a database", () => {
       expect(p.category).toBe(e.category);
       expect(CATEGORIES as readonly string[]).toContain(p.category);
       expect(files.get(p.storage_path)!.subarray(1, 4).toString()).toBe("PNG");
-      expect(p.bio).toMatch(/démonstration/i);
+      expect(p.bio).toMatch(/technique/i);
       const c = lonLatToPixel({ lon: e.lon, lat: e.lat });
       away.push(Math.hypot(p.x + p.w / 2 - c.x, p.y + p.h / 2 - c.y));
     }
@@ -67,17 +68,37 @@ describe("the heritage set on a database", () => {
       const a = rects[i]!, b = rects[j]!;
       expect(a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h, `${i} and ${j} overlap`).toBe(false);
     }
+    // they are counted nowhere: the public counters stay at zero (a real launch starts from zero with them in place)
+    expect((await pool.query(`select * from public.px_public_stats()`)).rows[0]).toMatchObject({ sold_pixels: "0", parcels: "0", owners: "0", free_parcels: "0" });
     // no order, no payment: no fake revenue
     for (const t of ["orders", "stripe_events", "audit_logs", "moderation_actions"]) expect(Number((await pool.query(`select count(*) from public.${t}`)).rows[0].count), t).toBe(0);
   });
 
-  it("completes instead of doubling when it is run again, and `clear` takes all of it away", async () => {
+  it("completes instead of doubling when it is run again; `clear` leaves the illustrations (they stay when the site opens); only an explicit request takes them away", async () => {
     await seedDemo(ports(), { count: 100, emailDomain: DOMAIN, plan: heritagePlan() });
     const again = await seedDemo(ports(), { count: 100, emailDomain: DOMAIN, plan: heritagePlan() });
     expect([again.usersCreated, again.parcelsCreated, again.parcelsSkipped, again.failed]).toEqual([0, 0, 100, []]);
+    // the demonstration accounts go, the illustrations do not
+    await seedDemo(ports(), { count: 5, seed: 3, emailDomain: DOMAIN }); // a few ordinary demonstration accounts beside them
     const gone = await clearDemo(ports(), { emailDomain: DOMAIN });
-    expect([gone.users, gone.parcels, gone.files]).toEqual([100, 100, 100]);
+    expect(gone.users).toBe(5);
+    expect(Number((await pool.query("select count(*) from public.parcels where tier = 'illustration'")).rows[0].count)).toBe(100);
+    expect(files.size).toBe(100);
+    // asked for: parcels, files and the technical account are removed
+    const all = await clearIllustrations(ports(), { emailDomain: DOMAIN });
+    expect([all.parcels, all.files, all.accounts]).toEqual([100, 100, 1]);
     expect(Number((await pool.query("select count(*) from public.parcels")).rows[0].count)).toBe(0);
     expect(files.size).toBe(0);
+  });
+
+  it("is covered by a purchase like a free parcel: the illustration under a bought parcel is gone from the map, whole", async () => {
+    await seedDemo(ports(), { count: 100, emailDomain: DOMAIN, plan: heritagePlan() });
+    const { rows: [target] } = await pool.query(`select p.id, p.x, p.y from public.parcels p join public.parcel_assets a on a.id = p.published_asset_id where a.title = 'La tour Eiffel'`);
+    const buyer = await createUser("buyer");
+    const o = await startOrder(buyer, { x: target.x + 2, y: target.y + 2, w: 5, h: 5 });
+    expect(await fulfill(o.order_id)).toBe("fulfilled");
+    expect((await pool.query(`select status, covered_by from public.parcels where id = $1`, [target.id])).rows[0]).toMatchObject({ status: "covered", covered_by: o.parcel_id });
+    expect(Number((await pool.query("select count(*) from public.parcels where tier = 'illustration' and status = 'active'")).rows[0].count)).toBe(99);
+    expect((await pool.query(`select * from public.px_public_stats()`)).rows[0]).toMatchObject({ sold_pixels: "25", parcels: "1", owners: "1" });
   });
 });
