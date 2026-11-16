@@ -177,7 +177,7 @@ test("the free period has an off switch in the back office, and the counter card
   expect((await place(dave, { x: 27_860, y: 11_000, w: 2, h: 2 })).status()).toBe(201);
 });
 
-test("an administrator places as many free imprints as it wants: no quota, no rate limit, published at once (and journalised); the panel says so; a visitor stays limited", async ({ page }) => {
+test("an administrator places as many free imprints as it wants: no quota, no rate limit; its creations still go through moderation; the panel says so; a visitor stays limited", async ({ page }) => {
   const admin = await as("admin.many@example.test", "admin"), visitor = await as("free-limited@example.test");
   const adminId = (await sql<{ id: string }>(`select id from auth.users where email = 'admin.many@example.test'`))[0]!.id;
   try {
@@ -188,14 +188,16 @@ test("an administrator places as many free imprints as it wants: no quota, no ra
       expect(r.status(), `${i}: ${await r.text()}`).toBe(201);
       codes.push(((await r.json()) as { code: string }).code);
     }
-    // published at once, with no moderation step: nothing waits in the queue, each approval is journalised
-    for (const code of [codes[0]!, codes[13]!]) {
-      const info = await (await admin.get(`/api/parcels/${code}`)).json();
-      expect(info).toMatchObject({ tier: "free", creation: { title: expect.stringMatching(/^Admin free/) } });
-      expect(info.creation.assetId).toBeTruthy();
-    }
-    expect((await sql<{ n: number }>(`select count(*)::int as n from public.parcel_assets a join public.parcels p on p.id = a.parcel_id where p.owner_id = $1 and a.status = 'pending'`, [adminId]))[0]!.n).toBe(0);
-    expect((await sql<{ n: number }>(`select count(*)::int as n from public.audit_logs where actor_id = $1 and action = 'asset.approve'`, [adminId]))[0]!.n).toBe(14);
+    // moderation applies to an administrator like to anybody (so that it can be tried): the fourteen creations wait in the queue and none is shown yet
+    expect((await sql<{ n: number }>(`select count(*)::int as n from public.parcel_assets a join public.parcels p on p.id = a.parcel_id where p.owner_id = $1 and a.status = 'pending'`, [adminId]))[0]!.n).toBe(14);
+    const waiting = await (await admin.get(`/api/parcels/${codes[0]!}`)).json();
+    expect(waiting).toMatchObject({ tier: "free", creation: null });
+    // the administrator approves one by hand in the back office, and it is on the map; the other thirteen are still waiting
+    const asset = (await sql<{ id: string }>(`select a.id from public.parcel_assets a join public.parcels p on p.id = a.parcel_id where p.code = $1 and a.status = 'pending'`, [codes[0]!]))[0]!.id;
+    expect((await admin.post("/api/admin/action", { data: { action: "review_asset", assetId: asset, decision: "approve" } })).status()).toBe(200);
+    expect((await (await admin.get(`/api/parcels/${codes[0]!}`)).json()).creation).toMatchObject({ title: "Admin free 0" });
+    expect((await (await admin.get(`/api/parcels/${codes[13]!}`)).json()).creation).toBeNull();
+    expect((await sql<{ n: number }>(`select count(*)::int as n from public.audit_logs where actor_id = $1 and action = 'asset.approve'`, [adminId]))[0]!.n).toBe(1);
 
     // a visitor is still limited to one at a time
     expect((await place(visitor, { x: 27_900, y: 11_030, w: 2, h: 2 })).status()).toBe(201);
