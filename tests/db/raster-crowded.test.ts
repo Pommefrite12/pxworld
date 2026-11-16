@@ -67,5 +67,23 @@ describe("the raster tiles of a crowded world", () => {
     }
     expect(total).toBe(n);
     expect(drawn / total, "every parcel is painted").toBeGreaterThanOrEqual(0.99);
+
+  });
+
+  it("the world in one tile holds every parcel of the map, not only the biggest few thousand", async () => {
+    // 4300 small parcels, each alone on its own pixel of the world tile (a tile used to hold at most 4000 parcels: the rest of a crowded world was missing from the zoomed-out view)
+    const owner = await ports().createUser("lattice@demo.invalid", "lattice");
+    const n = (await pool.query(
+      `insert into public.parcels (id, owner_id, x, y, w, h, status, land_px, created_at, activated_at, updated_at, kind, tier)
+       select gen_random_uuid(), $1, gx * 384, gy * 384, 5, 5, 'active', 25, now(), now(), now(), 'land', 'paid'
+         from generate_series(0, 84) gx, generate_series(0, 64) gy limit 4300`, [owner])).rowCount;
+    expect(n).toBe(4300);
+    const spanW = rasterSpan(7);
+    const px = await sharp(await renderRasterTile(7, 0, 0)).ensureAlpha().raw().toBuffer();
+    let seen = 0;
+    for (const r of (await pool.query("select x, y from public.parcels where status = 'active'")).rows as { x: number; y: number }[]) {
+      if (px[(Math.min(255, Math.round(r.y / spanW * 256)) * 256 + Math.min(255, Math.round(r.x / spanW * 256))) * 4 + 3] === 255) seen++;
+    }
+    expect(seen, "parcels drawn on the world tile").toBe(4300);
   });
 });

@@ -4,6 +4,7 @@ import { gridAlpha } from "@/lib/map/pixelGrid";
 import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
 import { enoughLand, enoughWater } from "@/lib/grid/pricing";
 import { ASSET_SIZES, assetSizeFor, assetUrl } from "@/lib/images/sizes";
+import { OWN_PICTURE_MIN_PX, ownPictureMin } from "./ownPictures";
 import { tintPixels } from "@/lib/images/waterTint";
 import { PROJECT_BAR_FROM_PX, projectAt, projectLook, projectProgress, type MapProject } from "@/lib/map/projects";
 import { NIGHT_PALETTE as COLORS } from "@/lib/map/palette";
@@ -1319,6 +1320,25 @@ export class MapEngine {
     try { this.drawParcelsOf(s, true); } finally { ctx.restore(); }
   }
 
+  /** Sizes (on screen) of the parcels of the view that could fetch their own picture, kept from one frame to the next so that nothing is allocated per frame. */
+  private ownSizes = new Float32Array(4096);
+  /** The size from which a parcel of this view fetches its own picture (see `ownPictures`). */
+  private ownPictureMinFor(v: { x0: number; y0: number; x1: number; y1: number }, s: number, water: boolean, tx0: number, tx1: number, ty0: number, ty1: number): number {
+    const sizes = this.ownSizes;
+    let n = 0;
+    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+      const tile = this.tiles.get(`${tx},${ty}`);
+      if (!tile || tile.state !== "ready") continue;
+      for (const p of tile.parcels) {
+        if (!p.assetId || p.water !== water || p.x > v.x1 || p.y > v.y1 || p.x + p.w < v.x0 || p.y + p.h < v.y0) continue;
+        const side = Math.max(p.w, p.h) * s;
+        if (side < OWN_PICTURE_MIN_PX) continue;
+        if (n < sizes.length) sizes[n++] = side; // beyond that the view is crowded anyway: the biggest of the first ones decide
+      }
+    }
+    return ownPictureMin(sizes, n);
+  }
+
   private drawParcelsOf(s: number, water: boolean) {
     const v = this.visibleWorld(), layer = water ? "w" : "l";
     if (s < RASTER_BELOW) this.drawRasters(s, v, true, layer);
@@ -1342,6 +1362,8 @@ export class MapEngine {
         this.drawRasters(s, v, false, layer);
         ctx.restore();
       }
+      // Only the biggest parcels of a crowded view fetch their own picture (see `ownPictures`); the others are their colour, with the raster picture of their place standing in
+      const minOwn = this.ownPictureMinFor(v, s, water, tx0, tx1, ty0, ty1);
       const seen = new Set<string>();
       // A creation whose own picture has not arrived yet (a big one is a big file) is not shown as a flat block of its average
       // colour: the raster picture of that very place stands in for it until the real one is there.
@@ -1356,7 +1378,7 @@ export class MapEngine {
           const sw = p.w * s, sh = p.h * s;
           const rx = Math.round(a.x), ry = Math.round(a.y), rw = Math.round(a.x + sw) - rx, rh = Math.round(a.y + sh) - ry;
           let drawn = false;
-          if (p.assetId && sw >= 2) {
+          if (p.assetId && Math.max(sw, sh) >= minOwn) {
             // a creation can carry up to 10 × 10 dots per pixel: ask for the size this screen can show, not for all of it
             const size = assetSizeFor(Math.max(rw, rh) * this.dpr);
             let img = this.loadImage(this.images, `${p.assetId}@${size}`, assetUrl(p.assetId, Math.max(rw, rh) * this.dpr), 400);
@@ -1409,7 +1431,8 @@ export class MapEngine {
     const span = rasterSpan(z);
     if (layer === "w") this.ensureWaterCells();
     const { ctx } = this;
-    ctx.imageSmoothingEnabled = true;
+    // magnified (the finest level shown bigger than it is): crisp squares, like the creations themselves; shrunk: averaged
+    ctx.imageSmoothingEnabled = !(z === 0 && s > 1.01);
     ctx.imageSmoothingQuality = "high";
     for (let ty = Math.max(0, Math.floor(v.y0 / span)); ty <= Math.min(Math.floor(H / span), Math.floor(v.y1 / span)); ty++) {
       for (let tx = Math.max(0, Math.floor(v.x0 / span)); tx <= Math.min(Math.floor(W / span), Math.floor(v.x1 / span)); tx++) {
@@ -1471,6 +1494,7 @@ export class MapEngine {
       const tx0 = Math.max(0, Math.floor(v.x0 / TILE)), tx1 = Math.min(W / TILE - 1, Math.floor(v.x1 / TILE));
       const ty0 = Math.max(0, Math.floor(v.y0 / TILE)), ty1 = Math.min(H / TILE - 1, Math.floor(v.y1 / TILE));
       if ((tx1 - tx0 + 1) * (ty1 - ty0 + 1) <= 36) {
+        const wanted: { id: string; side: number }[] = [];
         for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
           this.ensureTile(tx, ty);
           // the pictures of the parcels the destination shows, as soon as their tile is here (at the size the destination will need)
@@ -1479,10 +1503,14 @@ export class MapEngine {
           for (const p of tile.parcels) {
             if (!p.assetId || p.x > v.x1 || p.y > v.y1 || p.x + p.w < v.x0 || p.y + p.h < v.y0) continue;
             const side = Math.max(p.w, p.h) * to.scale;
-            if (side < 2) continue;
-            this.loadImage(this.images, `${p.assetId}@${assetSizeFor(side * this.dpr)}`, assetUrl(p.assetId, side * this.dpr), 400);
+            if (side >= OWN_PICTURE_MIN_PX) wanted.push({ id: p.assetId, side });
           }
         }
+        // only the biggest ones, as when the view is drawn (see `ownPictures`)
+        const n = Math.min(wanted.length, this.ownSizes.length);
+        for (let i = 0; i < n; i++) this.ownSizes[i] = wanted[i]!.side;
+        const from = ownPictureMin(this.ownSizes, n);
+        for (const q of wanted) if (q.side >= from) this.loadImage(this.images, `${q.id}@${assetSizeFor(q.side * this.dpr)}`, assetUrl(q.id, q.side * this.dpr), 400);
       }
     }
   }

@@ -1,5 +1,5 @@
 import "server-only";
-import sharp, { type OverlayOptions } from "sharp";
+import sharp from "sharp";
 import { query } from "@/lib/db/pool";
 import { objectStore } from "@/lib/storage";
 import { tintColor, tintPixels } from "@/lib/images/waterTint";
@@ -51,7 +51,11 @@ const FLAT_UP_TO_PX = 8;
 /** Between the two (levels 1 and 2) a parcel of at most 4 px is its colour too; at level 0 (one pixel of the grid is a pixel) only the smallest ones are. */
 const flatLimit = (z: number) => (z >= FLAT_FROM_LEVEL ? FLAT_UP_TO_PX : z >= 1 ? 4 : 2);
 
-interface Row { x: number; y: number; w: number; h: number; kind: string; path: string | null; color: string | null; src_w: number | null }
+/** Of the parcels on one tile only this many (the largest) are drawn: a world tile of a crowded map holds tens of thousands, a few hundred thousand would hold the server. */
+const MAX_PARCELS_PER_TILE = 30_000;
+
+/** `has_asset`: the parcel shows a published creation (else it is the neutral block); `path`: its file, only when the parcel is big enough on this tile to show the picture. */
+interface Row { x: number; y: number; w: number; h: number; kind: string; has_asset: boolean; path: string | null; color: string | null; src_w: number | null }
 
 /**
  * Renders the 256×256 PNG for tile (z, tx, ty): the parcels of that region, downscaled by 2^z.
@@ -67,33 +71,41 @@ export async function renderRasterTile(z: number, tx: number, ty: number, kind: 
   if (x0 >= GRID_WIDTH || y0 >= GRID_HEIGHT) return EMPTY;
   const scale = 2 ** -z;
 
+  // The file of a creation is only asked for parcels big enough on this tile to show it (the others are their colour): on a crowded map that is the
+  // difference between a few hundred long paths and tens of thousands. (A little lower than the exact test below, which has the last word.)
+  const pictureFrom = Math.floor((flatLimit(z) + 0.5) * 2 ** z);
   const rows = await query<Row>(
-    `select p.x, p.y, p.w, p.h, p.kind,
-            case when p.hidden_at is null then a.storage_path end as path,
+    `select p.x, p.y, p.w, p.h, p.kind, (p.hidden_at is null and a.id is not null) as has_asset,
+            case when p.hidden_at is null and greatest(p.w, p.h) >= $6 then a.storage_path end as path,
             case when p.hidden_at is null then a.avg_color end as color,
             case when p.hidden_at is null then a.width end as src_w
        from public.parcels p left join public.parcel_assets a on a.id = p.published_asset_id
       where p.status = 'active' and p.kind = $5 and p.bbox && box(point($1::float8, $2::float8), point($3::float8, $4::float8))
-      order by p.area desc limit 4000`,
-    [x0, y0, x0 + span - 1, y0 + span - 1, kind],
+      order by p.area desc limit ${MAX_PARCELS_PER_TILE}`,
+    [x0, y0, x0 + span - 1, y0 + span - 1, kind, pictureFrom],
   );
   if (rows.length === 0) return EMPTY;
 
   // The tile's own pixels (RGBA). A parcel that is only a colour here (too small to show its picture: most of them on a crowded map) is painted straight
-  // into it, with no image made at all; only the parcels that show a picture become layers. (Parcels never overlap, so the order does not matter.)
+  // into it, with no image made at all; only the parcels that show a picture are resized and copied in. (Parcels never overlap, so the order does not matter.)
   const canvas = Buffer.alloc(RASTER_TILE * RASTER_TILE * 4);
   const paint = (l: number, t: number, w: number, h: number, c: { r: number; g: number; b: number }) => {
     const x1 = Math.min(RASTER_TILE, l + w), y1 = Math.min(RASTER_TILE, t + h);
     for (let y = Math.max(0, t); y < y1; y++) for (let x = Math.max(0, l), o = (y * RASTER_TILE + Math.max(0, l)) * 4; x < x1; x++, o += 4) { canvas[o] = c.r; canvas[o + 1] = c.g; canvas[o + 2] = c.b; canvas[o + 3] = 255; }
   };
-  const layers: OverlayOptions[] = [];
+  // A picture is resized and copied into the tile's pixels as it is (raw), never encoded and decoded again as an image of its own: that round trip
+  // was most of the cost of a tile. (Parcels never overlap, so a copy is what drawing them one over the other would give.)
+  const blit = (px: Buffer, w: number, h: number, left: number, top: number) => {
+    const x1 = Math.min(RASTER_TILE, left + w), y1 = Math.min(RASTER_TILE, top + h), xs = Math.max(0, left), ys = Math.max(0, top);
+    if (x1 <= xs || y1 <= ys) return;
+    for (let y = ys; y < y1; y++) px.copy(canvas, (y * RASTER_TILE + xs) * 4, ((y - top) * w + (xs - left)) * 4, ((y - top) * w + (x1 - left)) * 4);
+  };
   const queue = [...rows];
   const work = async () => {
     for (let r = queue.shift(); r; r = queue.shift()) {
       const left = Math.round((r.x - x0) * scale), top = Math.round((r.y - y0) * scale);
       const w = Math.max(1, Math.round(r.w * scale)), h = Math.max(1, Math.round(r.h * scale));
       if (left >= RASTER_TILE || top >= RASTER_TILE || left + w <= 0 || top + h <= 0) continue;
-      let input: Buffer | null = null;
       if (r.path && (w > flatLimit(z) || h > flatLimit(z))) {
         const bytes = await fetchFile(r.path);
         if (bytes) {
@@ -103,30 +115,21 @@ export async function renderRasterTile(z: number, tx: number, ty: number, kind: 
             tintPixels(data, 4);
             img = sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } });
           }
-          input = await img
+          const px = await img
             // crisp pixels only when the creation is magnified or kept as is; a finer (half-pixel) creation shown smaller is averaged
             .resize(w, h, { fit: "fill", kernel: z === 0 && (r.src_w ?? 0) <= w ? "nearest" : "lanczos3" })
-            .png({ compressionLevel: 1 })
+            .ensureAlpha()
+            .raw()
             .toBuffer();
+          blit(px, w, h, left, top);
+          continue;
         }
       }
-      if (!input) {
-        const c = r.kind === "water" ? hexToRgb(tintColor(r.path ? r.color : null)) : r.path ? hexToRgb(r.color) : PLACEHOLDER;
-        paint(left, top, w, h, c);
-        continue;
-      }
-      // sharp refuses overlays that exceed the canvas: crop to the tile
-      const cropL = Math.max(0, -left), cropT = Math.max(0, -top);
-      const visW = Math.min(w - cropL, RASTER_TILE - Math.max(0, left)), visH = Math.min(h - cropT, RASTER_TILE - Math.max(0, top));
-      if (visW <= 0 || visH <= 0) continue;
-      if (cropL || cropT || visW !== w || visH !== h) {
-        input = await sharp(input).extract({ left: cropL, top: cropT, width: visW, height: visH }).png({ compressionLevel: 1 }).toBuffer();
-      }
-      layers.push({ input, left: Math.max(0, left), top: Math.max(0, top) });
+      const c = r.kind === "water" ? hexToRgb(tintColor(r.has_asset ? r.color : null)) : r.has_asset ? hexToRgb(r.color) : PLACEHOLDER;
+      paint(left, top, w, h, c);
     }
   };
   await Promise.all(Array.from({ length: 12 }, work));
 
-  const base = sharp(canvas, { raw: { width: RASTER_TILE, height: RASTER_TILE, channels: 4 } });
-  return (layers.length ? base.composite(layers) : base).png({ compressionLevel: 6 }).toBuffer();
+  return sharp(canvas, { raw: { width: RASTER_TILE, height: RASTER_TILE, channels: 4 } }).png({ compressionLevel: 6 }).toBuffer();
 }
