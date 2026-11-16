@@ -8,6 +8,7 @@ import { getPricing, getPublicStats } from "@/lib/data/map";
 import { getEdition } from "@/lib/data/edition";
 import { toPublicEdition } from "@/lib/edition";
 import { latestCreations } from "@/lib/data/parcels";
+import { localizeCards } from "@/lib/data/localize";
 import { GRID_HEIGHT, GRID_WIDTH } from "@/lib/grid/constants";
 import { validateRect } from "@/lib/grid/geometry";
 import { headers } from "next/headers";
@@ -34,7 +35,7 @@ export default async function HomePage({ params, searchParams }: { params: Promi
   const sp = await searchParams;
   const currency = requestCurrency(await headers()); // euros in the euro area, dollars elsewhere
   const startBuy = sp.buy === "1";
-  const [stats, pricing, viewer, latest, edition, free] = await Promise.all([safe(getPublicStats), safe(() => getPricing(currency)), getHeaderViewer(), safe(() => latestCreations(4)), safe(getEdition), getSessionUser().then((u) => getFreeStatus(u?.id ?? null), () => getFreeStatus(null))]);
+  const [stats, pricing, viewer, latest, edition, free] = await Promise.all([safe(getPublicStats), safe(() => getPricing(currency)), getHeaderViewer(), safe(async () => localizeCards(await latestCreations(4), locale)), safe(getEdition), getSessionUser().then((u) => getFreeStatus(u?.id ?? null), () => getFreeStatus(null))]);
 
   // Deep links: ?x=&y=&z= (camera) and ?bx=&by=&bw=&bh= (resume a purchase after signing in)
   const x = num(sp.x), y = num(sp.y), z = num(sp.z);

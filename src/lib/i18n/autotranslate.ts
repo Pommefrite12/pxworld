@@ -121,7 +121,10 @@ export function ensureAutoTranslation(asset: { id: string; title: string | null;
   if (at && Date.now() - at < RETRY_AFTER_MS) return Promise.resolve(null);
 
   const job = (async () => {
-    if (await translatedToday() >= env().TRANSLATE_DAILY_LIMIT) { console.warn("[autotranslate] daily limit reached"); return null; }
+    // the ceiling counts what is written AND what was already under way when this one started (many translations start at once for a list: they would
+    // all read the same count). Taken BEFORE the read: a translation that finishes in between is counted twice, never missed.
+    const underWay = inflight.size;
+    if (await translatedToday() + underWay >= env().TRANSLATE_DAILY_LIMIT) { console.warn("[autotranslate] daily limit reached"); return null; }
     const t = await translator({ title: asset.title, description: asset.description });
     if (!t) { failed.set(key, Date.now()); return null; }
     const record: Record<string, unknown> = { _auto: { src: t.source, at: new Date().toISOString(), model: env().TRANSLATE_MODEL } };

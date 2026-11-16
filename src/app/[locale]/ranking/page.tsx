@@ -3,6 +3,7 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import { PageShell } from "@/components/layout/PageShell";
 import { Link } from "@/i18n/navigation";
 import { topCreations, topCreators } from "@/lib/data/ranking";
+import { listTitles, localizeCards } from "@/lib/data/localize";
 import { assetUrl } from "@/lib/images/sizes";
 import { RANKING_BOARDS, RANKING_PERIODS, isRankingBoard, isRankingPeriod, type RankedCreation, type RankedCreator } from "@/lib/ranking";
 
@@ -28,7 +29,10 @@ export default async function Ranking({ params, searchParams }: { params: Promis
   const board = isRankingBoard(sp.board) ? sp.board : "creations";
   const period = isRankingPeriod(sp.period) ? sp.period : "all";
   const [t, f] = await Promise.all([getTranslations("ranking"), getFormatter()]);
-  const rows = board === "creations" ? await safe<RankedCreation>(topCreations(period)) : await safe<RankedCreator>(topCreators(period));
+  // titles in the language of the page (the creators' board shows the title of each one's top creation)
+  const rows = board === "creations"
+    ? await safe<RankedCreation>(topCreations(period)).then((r) => localizeCards(r, locale).catch(() => r))
+    : await safe<RankedCreator>(topCreators(period)).then(async (r) => { const t = await listTitles(r.map((x) => x.top_asset_id), locale).catch(() => new Map<string, string>()); return r.map((x) => ({ ...x, top_title: t.get(x.top_asset_id) ?? x.top_title })); });
   const region = new Intl.DisplayNames([locale], { type: "region" });
   const tab = (active: boolean) => `btn btn-sm ${active ? "btn-ink" : "btn-ghost"}`;
   return (

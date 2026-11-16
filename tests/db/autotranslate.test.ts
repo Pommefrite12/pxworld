@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { startFakeAnthropic } from "../support/fake-anthropic.mjs";
 import { closeDb, databaseUrl, pool, resetData } from "./helpers";
 
@@ -8,6 +8,8 @@ import { closeDb, databaseUrl, pool, resetData } from "./helpers";
  */
 let ai: Awaited<ReturnType<typeof startFakeAnthropic>>;
 let getPublicParcel: typeof import("@/lib/data/parcels").getPublicParcel;
+let listTitles: typeof import("@/lib/data/localize").listTitles;
+let localizeCards: typeof import("@/lib/data/localize").localizeCards;
 let reset: typeof import("@/lib/i18n/autotranslate").__resetAutoTranslation;
 let owner: string;
 
@@ -17,10 +19,11 @@ beforeAll(async () => {
   process.env.ANTHROPIC_API_KEY = "test-key";
   process.env.ANTHROPIC_BASE_URL = `http://127.0.0.1:${ai.port}`;
   process.env.TRANSLATE_MODEL = "claude-opus-5-5";
-  process.env.TRANSLATE_DAILY_LIMIT = "3";
+  process.env.TRANSLATE_DAILY_LIMIT = "12";
   process.env.TRANSLATE_USER_CONTENT = "true";
   delete (globalThis as { __pxPool?: unknown }).__pxPool;
   ({ getPublicParcel } = await import("@/lib/data/parcels"));
+  ({ listTitles, localizeCards } = await import("@/lib/data/localize"));
   ({ __resetAutoTranslation: reset } = await import("@/lib/i18n/autotranslate"));
 });
 afterAll(async () => {
@@ -109,17 +112,57 @@ describe("automatic translation of what visitors write", () => {
     expect(ai.calls()).toHaveLength(0);
   });
 
-  it("stops at the daily limit (a ceiling on the bill) and keeps showing the originals", async () => {
-    for (let i = 0; i < 3; i++) await getPublicParcel((await parcel(`[fr] Un ${i}`, "[fr] x y z")).code, "en");
-    expect(ai.calls()).toHaveLength(3);
+  it("stops at the daily limit (a ceiling on the bill), even when many translations start at once, and keeps showing the originals", async () => {
+    const parcels: { code: string }[] = [];
+    for (let i = 0; i < 14; i++) parcels.push(await parcel(`[fr] Un ${i}`, "[fr] x y z"));
+    const views = await Promise.all(parcels.map((p) => getPublicParcel(p.code, "en")));
+    expect(ai.calls().length).toBeLessThanOrEqual(12); // never more than the ceiling, though all fourteen were asked for together
+    expect(views.filter((v) => v!.creation!.translation).length).toBe(ai.calls().length);
+    expect(views.filter((v) => !v!.creation!.translation).length).toBeGreaterThanOrEqual(2); // the others show what was written
     const late = await parcel("[fr] Trop tard", "[fr] x y z");
-    expect((await getPublicParcel(late.code, "en"))!.creation).toMatchObject({ title: "[fr] Trop tard", translation: null });
-    expect(ai.calls()).toHaveLength(3);
+    expect((await getPublicParcel(late.code, "en"))!.creation).toMatchObject({ title: "[fr] Trop tard", translation: null }); // and a later one is refused too
   });
 
   it("translates a text with no title, or no description, only for what is there", async () => {
     const { code } = await parcel(null, "[de] Nur eine Beschreibung");
     const c = (await getPublicParcel(code, "fr"))!.creation!;
     expect(c).toMatchObject({ title: null, description: "Nur eine Beschreibung (fr)", translation: { from: "de" } });
+  });
+
+  it("lists: show the title in the language of the page when there is a translation, and send the first untranslated ones for translation without waiting for them", async () => {
+    const done = await parcel("[fr] Déjà traduit", "[fr] x y z");
+    await getPublicParcel(done.code, "en"); // the first view of this one made its translations
+    const fresh = await parcel("[fr] Pas encore", "[fr] x y z");
+    ai.reset();
+    const titles = await listTitles([done.asset, fresh.asset], "en");
+    expect(titles.get(done.asset)).toBe("Déjà traduit (en)");
+    expect(titles.has(fresh.asset)).toBe(false); // a list does not wait for Claude: the original for now
+    // …but the translation of the missing one has been started, and the next view of the list has it
+    await vi.waitFor(async () => expect(await stored(fresh.asset)).not.toBeNull(), { timeout: 5000 });
+    expect((await listTitles([done.asset, fresh.asset], "en")).get(fresh.asset)).toBe("Pas encore (en)");
+    expect(ai.calls()).toHaveLength(1); // one request for the missing one, none for the one that had its translation
+    // and in French (the language the texts are in) the originals are shown: nothing to translate, nothing to ask
+    expect((await listTitles([done.asset, fresh.asset], "fr")).size).toBe(0);
+    expect(ai.calls()).toHaveLength(1);
+  });
+
+  it("lists: the rows come back with their titles replaced, the others untouched; at most 8 untranslated titles are sent per list; an illustration keeps its own translations", async () => {
+    const many: { code: string; asset: string }[] = [];
+    for (let i = 0; i < 10; i++) many.push(await parcel(`[fr] Titre ${i}`, "[fr] x y z"));
+    const illu = await parcel("Illustration", "Un dessin.", "illustration");
+    await pool.query("update public.parcel_assets set i18n = $2::jsonb where id = $1", [illu.asset, JSON.stringify({ en: { title: "Drawing", description: "A drawing." } })]);
+    ai.reset();
+    const rows = [...many.map((m, i) => ({ asset_id: m.asset, title: `[fr] Titre ${i}` })), { asset_id: illu.asset, title: "Illustration" }, { asset_id: null as string | null, title: null }];
+    const first = await localizeCards(rows, "en");
+    expect(first[10]).toMatchObject({ title: "Drawing" }); // curated, shown at once
+    expect(first[0]).toMatchObject({ title: "[fr] Titre 0" }); // not yet
+    expect(first[11]).toEqual({ asset_id: null, title: null }); // a row without an asset is left alone
+    await vi.waitFor(() => expect(ai.calls().length).toBe(8), { timeout: 8000 });
+    await new Promise((r) => setTimeout(r, 300));
+    expect(ai.calls()).toHaveLength(8); // the first eight of the list, not the other two
+    const again = await localizeCards(rows, "en");
+    expect(again.slice(0, 8).every((r, i) => r.title === `[fr] Titre ${i} (en)`.replace("[fr] ", "[fr] ").replace("[fr] Titre", "Titre"))).toBe(true);
+    expect(again[8]).toMatchObject({ title: "[fr] Titre 8" });
+    expect(again[9]).toMatchObject({ title: "[fr] Titre 9" });
   });
 });

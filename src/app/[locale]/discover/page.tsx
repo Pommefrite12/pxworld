@@ -3,7 +3,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { PageShell } from "@/components/layout/PageShell";
 import { CreationGrid } from "@/components/ui/CreationGrid";
 import { Link } from "@/i18n/navigation";
-import { largestParcels, latestCreations, mostCommented, popularCreations } from "@/lib/data/parcels";
+import { largestParcels, latestCreations, mostCommented, popularCreations, type Card } from "@/lib/data/parcels";
+import { localizeCards } from "@/lib/data/localize";
 
 export const revalidate = 60;
 
@@ -30,7 +31,8 @@ export default async function Discover({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("discover");
-  const [latest, large, popular, commented] = await Promise.all([safe(latestCreations(12)), safe(largestParcels(8)), safe(popularCreations(8)), safe(mostCommented(8))]);
+  const titled = (p: Promise<Card[]>) => safe(p).then((rows) => localizeCards(rows, locale).catch(() => rows)); // titles in the language of the page
+  const [latest, large, popular, commented] = await Promise.all([titled(latestCreations(12)), titled(largestParcels(8)), titled(popularCreations(8)), titled(mostCommented(8))]);
   return (
     <PageShell>
       <h1 className="text-4xl font-extrabold">{t("title")}</h1>

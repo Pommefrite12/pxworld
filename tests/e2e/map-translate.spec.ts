@@ -83,3 +83,52 @@ test("the card, the archive page and the share image show a visitor's text in th
     await sql(`update public.map_state set version = version + 1, updated_at = now() where id = 1`);
   }
 });
+
+test("the lists (home, Discover) show titles in the language of the page; a title that has no translation yet is translated after the response and is there on the next visit", async ({ page, request }) => {
+  const { id: owner } = (await sql<{ id: string }>(`insert into auth.users (email, raw_user_meta_data) values ('lister-de@example.test', jsonb_build_object('username', 'listenmacher')) returning id`))[0]!;
+  try {
+    const make = async (x: number, title: string) => {
+      const { id: parcel, code } = (await sql<{ id: string; code: string }>(
+        `insert into public.parcels (owner_id, x, y, w, h, status, tier, kind, land_px, activated_at) values ($1, $2, 11200, 6, 6, 'active', 'paid', 'land', 36, now()) returning id, code`, [owner, x]))[0]!;
+      const { id: asset } = (await sql<{ id: string }>(
+        `insert into public.parcel_assets (parcel_id, uploader_id, version, storage_path, content_hash, width, height, bytes, avg_color, title, description, status, reviewed_at, published_at, created_at)
+         values ($1, $2, 1, 'creations/none.png', $3, 6, 6, 100, '#3366cc', $4, '[de] Eine kurze Beschreibung', 'approved', now(), now(), now()) returning id`, [parcel, owner, `list${x}`, title]))[0]!;
+      await sql(`update public.parcels set published_asset_id = $1 where id = $2`, [asset, parcel]);
+      return code;
+    };
+    const first = await make(27970, "[de] Erste Stadt"), second = await make(27980, "[de] Zweite Stadt");
+    await sql(`update public.map_state set version = version + 1, updated_at = now() where id = 1`);
+    await request.delete(`${FAKE}/__calls`);
+    const asked = async (what: string) => ((await (await request.get(`${FAKE}/__calls`)).json()) as { user: string }[]).filter((c) => c.user.includes(what)).length;
+
+    // a visitor opens the first parcel's card: it is translated (the visitor waits for it, once). (Through the data of the card, not the map page:
+    // the map page shows the latest creations too, and would send the second one for translation as well, see below.)
+    expect((await (await request.get(`/api/parcels/${first}?lang=en`)).json()).creation.title).toBe("Erste Stadt (en)");
+    expect(await asked("Erste Stadt")).toBe(1);
+    expect(await asked("Zweite Stadt")).toBe(0);
+
+    // Discover in English: the translated title where there is one, the title as written where there is none yet — and the list did not wait for Claude
+    await page.context().clearCookies();
+    await page.goto("/discover");
+    await expect(page.getByText("Erste Stadt (en)").first()).toBeVisible();
+    await expect(page.getByText("[de] Zweite Stadt").first()).toBeVisible();
+    // …the translation of the second one is started after the response, and is there on the next visit
+    await expect.poll(() => asked("Zweite Stadt"), { timeout: 20_000 }).toBe(1);
+    await expect.poll(async () => { await page.reload(); return await page.getByText("Zweite Stadt (en)").count(); }, { timeout: 20_000 }).toBeGreaterThan(0);
+    expect(await asked("Erste Stadt")).toBe(1); // asked for once, ever
+
+    // the same lists in the other languages (both are translated for all the languages at once): the home page and Discover
+    await page.goto("/es");
+    expect(await page.content()).toContain("Zweite Stadt (es)");
+    await page.goto("/fr/discover");
+    await expect(page.getByText("Erste Stadt (fr)").first()).toBeVisible();
+    await page.goto("/zh/discover");
+    await expect(page.getByText("Zweite Stadt (zh)").first()).toBeVisible();
+    expect(await asked("Zweite Stadt")).toBe(1);
+    void second;
+  } finally {
+    await sql(`delete from public.parcels where owner_id = $1`, [owner]);
+    await sql(`delete from auth.users where id = $1`, [owner]);
+    await sql(`update public.map_state set version = version + 1, updated_at = now() where id = 1`);
+  }
+});

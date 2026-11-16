@@ -3,6 +3,7 @@ import { Home } from "@/components/home/Home";
 import { getHeaderViewer } from "@/lib/auth/session";
 import { getEdition } from "@/lib/data/edition";
 import { recentTraces, type Trace } from "@/lib/data/parcels";
+import { localizeCards } from "@/lib/data/localize";
 import { toPublicEdition } from "@/lib/edition";
 import { opensTheMap } from "@/lib/home";
 import MapPage from "./map/page";
@@ -21,7 +22,7 @@ export default async function RootPage(props: { params: Promise<{ locale: string
   const [viewer, edition, traces] = await Promise.all([
     getHeaderViewer(),
     getEdition(),
-    recentTraces(40).catch(() => [] as Trace[]),
+    recentTraces(40).then((t) => localizeCards(t, locale)).catch(() => [] as Trace[]), // titles in the language of the page
   ]);
   return <Home viewer={viewer} edition={edition ? toPublicEdition(edition) : null} traces={traces} />;
 }

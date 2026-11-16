@@ -4,6 +4,7 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import { PageShell } from "@/components/layout/PageShell";
 import { Link } from "@/i18n/navigation";
 import { getPublicProfile } from "@/lib/data/parcels";
+import { localizeCards } from "@/lib/data/localize";
 import { assetUrl } from "@/lib/images/sizes";
 import { USERNAME_RE } from "@/lib/security/text";
 
@@ -18,8 +19,9 @@ export default async function PublicProfile({ params }: { params: Promise<{ loca
   const { locale, username } = await params;
   setRequestLocale(locale);
   if (!USERNAME_RE.test(username)) notFound();
-  const p = await getPublicProfile(username);
-  if (!p) notFound();
+  const p0 = await getPublicProfile(username);
+  if (!p0) notFound();
+  const p = { ...p0, creations: await localizeCards(p0.creations, locale).catch(() => p0.creations) }; // titles in the language of the page
   const [t, f] = await Promise.all([getTranslations("profile"), getFormatter()]);
   const region = p.country ? new Intl.DisplayNames([locale], { type: "region" }).of(p.country) : null;
   return (
