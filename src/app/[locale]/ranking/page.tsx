@@ -60,8 +60,8 @@ export default async function Ranking({ params, searchParams }: { params: Promis
               <li key={r.code}>
                 <Link href={`/p/${r.code}`} className="card flex items-center gap-4 p-3 transition hover:-translate-y-0.5" data-testid="ranking-row">
                   <span className={`pixel-display w-12 shrink-0 text-center text-4xl ${rankTone(r.rank)}`} data-testid="ranking-rank">{r.rank}</span>
-                  <span className="checker grid h-16 w-16 shrink-0 place-items-center rounded-lg">
-                    <img src={assetUrl(r.asset_id, 128)} alt="" width={r.w} height={r.h} loading="lazy" className="pixelated h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
+                  <span className="checker relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg">
+                    <img src={assetUrl(r.asset_id, 128)} alt="" width={r.w} height={r.h} loading="lazy" className="pixelated absolute inset-0 h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-bold" data-testid="ranking-title">{r.title ?? "—"}</span>
@@ -75,8 +75,8 @@ export default async function Ranking({ params, searchParams }: { params: Promis
               <li key={r.username}>
                 <Link href={`/u/${r.username}`} className="card flex items-center gap-4 p-3 transition hover:-translate-y-0.5" data-testid="ranking-row">
                   <span className={`pixel-display w-12 shrink-0 text-center text-4xl ${rankTone(r.rank)}`} data-testid="ranking-rank">{r.rank}</span>
-                  <span className="checker grid h-16 w-16 shrink-0 place-items-center rounded-lg" title={r.top_title ?? undefined}>
-                    <img src={assetUrl(r.top_asset_id, 128)} alt="" width={64} height={64} loading="lazy" className="pixelated h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
+                  <span className="checker relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg" title={r.top_title ?? undefined}>
+                    <img src={assetUrl(r.top_asset_id, 128)} alt="" width={64} height={64} loading="lazy" className="pixelated absolute inset-0 h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-bold" data-testid="ranking-title">{r.username}</span>

@@ -20,8 +20,8 @@ export default async function AdminCampaigns({ params }: { params: Promise<{ loc
         <ul className="mt-6 space-y-4">
           {queue.map((c) => (
             <li key={c.id} className="card flex flex-col gap-4 p-4 sm:flex-row" data-testid="campaign-queue-item">
-              <div className="checker grid h-44 w-44 shrink-0 place-items-center rounded-xl">
-                <img src={`/api/campaigns/${c.id}/image`} alt="" width={c.width} height={c.height} className="pixelated h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
+              <div className="checker relative grid h-44 w-44 shrink-0 place-items-center overflow-hidden rounded-xl">
+                <img src={`/api/campaigns/${c.id}/image`} alt="" width={c.width} height={c.height} className="pixelated absolute inset-0 h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
               </div>
               <div className="min-w-0 flex-1 space-y-1.5">
                 <p className="font-bold">{c.title} {c.is_commercial && <span className="chip !bg-warn/15 !text-warn">{t("ad")}</span>} {c.kind === "water" && <span className="chip">{t("water")}</span>}</p>

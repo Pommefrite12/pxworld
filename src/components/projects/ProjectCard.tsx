@@ -24,8 +24,8 @@ export async function ProjectCard({ c }: { c: PublicCampaign }) {
   return (
     <li>
       <Link href={`/projects/${c.code}`} className="card group block overflow-hidden transition hover:-translate-y-0.5" data-testid="project-card">
-        <div className="checker grid aspect-square place-items-center p-2">
-          <img src={`/api/campaigns/${c.id}/image?max=512`} alt={c.title} width={c.width} height={c.height} loading="lazy" className="pixelated h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
+        <div className="checker relative aspect-square overflow-hidden">
+          <img src={`/api/campaigns/${c.id}/image?max=512`} alt={c.title} width={c.width} height={c.height} loading="lazy" className="pixelated absolute inset-2 h-[calc(100%-1rem)] w-[calc(100%-1rem)] object-contain" style={{ imageRendering: "pixelated" }} />
         </div>
         <div className="space-y-2 p-3">
           <p className="truncate text-sm font-bold" data-testid="project-title">{c.title}{c.kind === "water" && <span className="chip ml-1.5">{t("water")}</span>}</p>

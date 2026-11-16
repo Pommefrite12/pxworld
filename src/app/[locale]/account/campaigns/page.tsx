@@ -31,8 +31,8 @@ export default async function MyCampaigns({ params }: { params: Promise<{ locale
         <ul className="mt-6 space-y-3">
           {items.map((c) => (
             <li key={c.id} className="card flex flex-col gap-3 p-4 sm:flex-row" data-testid="campaign-item">
-              <div className="checker grid h-28 w-28 shrink-0 place-items-center rounded-xl">
-                <img src={`/api/campaigns/${c.id}/image`} alt="" width={c.width} height={c.height} className="h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
+              <div className="checker relative grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-xl">
+                <img src={`/api/campaigns/${c.id}/image`} alt="" width={c.width} height={c.height} className="absolute inset-0 h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
               </div>
               <div className="min-w-0 flex-1 space-y-1">
                 <p className="font-bold">{c.title} {c.kind === "water" && <span className="chip">{t("water")}</span>}</p>

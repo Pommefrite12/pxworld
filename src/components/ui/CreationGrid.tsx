@@ -14,8 +14,8 @@ export async function CreationGrid({ items, empty }: { items: Card[]; empty: str
       {items.map((c) => (
         <li key={c.code}>
           <Link href={`/p/${c.code}`} className="card group block overflow-hidden transition hover:-translate-y-0.5">
-            <div className="checker grid aspect-square place-items-center p-2">
-              <img src={assetUrl(c.asset_id, 520)} alt={c.title ?? ""} width={c.w} height={c.h} loading="lazy" className="pixelated h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
+            <div className="checker relative aspect-square overflow-hidden">
+              <img src={assetUrl(c.asset_id, 520)} alt={c.title ?? ""} width={c.w} height={c.h} loading="lazy" className="pixelated absolute inset-2 h-[calc(100%-1rem)] w-[calc(100%-1rem)] object-contain" style={{ imageRendering: "pixelated" }} />
             </div>
             <div className="p-3">
               <p className="truncate text-sm font-bold">{c.title ?? "—"}</p>

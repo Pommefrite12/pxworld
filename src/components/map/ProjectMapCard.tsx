@@ -19,8 +19,8 @@ export function ProjectMapCard({ p, onClose }: { p: MapProject; onClose: () => v
   return (
     <aside aria-label={p.title} className="card pointer-events-auto w-full max-w-sm animate-rise space-y-3 p-3.5 sm:w-80" data-testid="project-map-card">
       <div className="flex items-start gap-3">
-        <div className="checker grid h-16 w-16 shrink-0 place-items-center rounded-lg">
-          <img src={`/api/campaigns/${p.id}/image?max=128`} alt="" width={64} height={64} className="pixelated h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
+        <div className="checker relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg">
+          <img src={`/api/campaigns/${p.id}/image?max=128`} alt="" width={64} height={64} className="pixelated absolute inset-0 h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="chip">{t("status.open")}{p.water ? ` · ${t("water")}` : ""}</p>

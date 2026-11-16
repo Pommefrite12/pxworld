@@ -34,9 +34,9 @@ export default async function MyParcels({ params }: { params: Promise<{ locale: 
             const cx = p.x + p.w / 2, cy = p.y + p.h / 2, z = Math.max(1, Math.min(24, 600 / Math.max(p.w, p.h)));
             return (
               <li key={p.id} className="card flex gap-4 p-4" data-testid="my-parcel">
-                <div className="checker grid h-28 w-28 shrink-0 place-items-center rounded-xl">
+                <div className="checker relative grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-xl">
                   {p.published_asset_id
-                    ? <img src={assetUrl(p.published_asset_id, 240)} alt={p.title ?? ""} className="pixelated h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
+                    ? <img src={assetUrl(p.published_asset_id, 240)} alt={p.title ?? ""} className="pixelated absolute inset-0 h-full w-full object-contain" style={{ imageRendering: "pixelated" }} />
                     : <span className="px-2 text-center text-xs text-ink-faint">{t("noImage")}</span>}
                 </div>
                 <div className="min-w-0 flex-1">
