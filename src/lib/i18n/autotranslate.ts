@@ -124,6 +124,9 @@ export function ensureAutoTranslation(asset: { id: string; title: string | null;
     // the ceiling counts what is written AND what was already under way when this one started (many translations start at once for a list: they would
     // all read the same count). Taken BEFORE the read: a translation that finishes in between is counted twice, never missed.
     const underWay = inflight.size;
+    // somebody may have translated it since this view read the parcel (its read came before their write, its call after their end): look again, and ask for nothing
+    const current = await queryOne<{ i18n: unknown }>("select i18n from public.parcel_assets where id = $1", [key]);
+    if (current && done(current.i18n)) return current.i18n as Record<string, unknown>;
     if (await translatedToday() + underWay >= env().TRANSLATE_DAILY_LIMIT) { console.warn("[autotranslate] daily limit reached"); return null; }
     const t = await translator({ title: asset.title, description: asset.description });
     if (!t) { failed.set(key, Date.now()); return null; }
