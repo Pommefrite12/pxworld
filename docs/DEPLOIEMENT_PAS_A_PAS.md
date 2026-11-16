@@ -534,6 +534,14 @@ Le titre et la description de **chaque parcelle** (pas seulement celles d'illust
 
 **À faire valider par un juriste avant le lancement :** ce que les visiteurs écrivent est **envoyé à Anthropic** pour être traduit. La **politique de confidentialité** doit le dire (qui reçoit les données, pourquoi, où, combien de temps), et il faut vérifier les conditions d'Anthropic sur la conservation des données. Tant que vous n'avez pas de clé, rien n'est envoyé.
 
+## Étape 12 : publier autant d'empreintes gratuites que vous voulez, avec votre compte admin
+
+Un compte **admin** n'est arrêté par **aucune** des limites des empreintes gratuites : ni « une seule à la fois », ni « 3 en tout », ni l'interrupteur, ni la fenêtre de 60 jours, ni le plafond de 5 000 (vos empreintes ne comptent pas dans ce plafond : il est pour les visiteurs). Vos créations sont **publiées tout de suite** (pas de file de modération), et ne sont pas arrêtées par la limite de 12 par heure. **Il faut la migration 26** : `node scripts/migrate.mjs --env .env.production.local`.
+
+Pour en poser une : connectez-vous avec votre compte admin, ouvrez la carte, choisissez **« Laisser mon empreinte »** et sélectionnez une zone de **1 à 24 pixels** (par exemple 4 × 6) **sur la terre** et **libre** (ni sur une parcelle payée, ni sur une autre empreinte), puis dessinez et publiez comme d'habitude. Le panneau affiche « **Compte administrateur : autant d'empreintes gratuites que vous voulez…** ». Ce qui reste vrai pour tout le monde : 24 pixels au plus, sur la terre, jamais par-dessus une autre parcelle, et **l'édition doit être ouverte** (pas avant l'ouverture, pas après la clôture). Un modérateur (rôle « moderator ») n'a pas ce privilège.
+
+**Attention :** une parcelle payée qui touche l'une de vos empreintes la **recouvre**, comme pour n'importe quelle empreinte gratuite.
+
 ## Quand c'est fait
 
 - **Ne partagez pas encore l'adresse publiquement** : c'est un site de test (paiements fictifs).

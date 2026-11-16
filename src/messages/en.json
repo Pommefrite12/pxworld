@@ -432,6 +432,7 @@
     "free": {
       "title": "Free trace",
       "hint": "From 1 to {max} pixels, on land, one at a time, until {date}. If somebody buys a parcel that touches it, it is covered.",
+      "unlimited": "Administrator account: as many free traces as you want (1 to {max} pixels, on land), with no end date.",
       "price": "Free",
       "priceLabel": "Price",
       "subtitle": "Free trace · can be covered by a paid parcel",

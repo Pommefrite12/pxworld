@@ -158,13 +158,59 @@ test("the free period has an off switch in the back office, and the counter card
   expect(off.status()).toBe(200);
   const dave = await as("free-dave@example.test");
   expect((await (await place(dave, { x: 27_860, y: 11_000, w: 2, h: 2 })).json()).error).toBe("px_free_closed");
-  // and in the panel a size below the paid minimum is refused again, with its explanation, and no free sizes are offered
+  // and in the panel of a visitor a size below the paid minimum is refused again, with its explanation, and no free sizes are offered
+  await page.context().clearCookies();
+  await page.context().addCookies((await dave.storageState()).cookies);
   await page.goto("/map?bx=27870&by=11000&bw=4&bh=6");
   await expect(page.getByTestId("buy-status")).toContainText(/minimum surface is 25/i);
   await expect(page.getByTestId("buy-free")).toHaveCount(0);
   await expect(page.getByTestId("buy-continue")).toBeDisabled();
+  // an administrator is not held by the switch (migration 26): its panel still offers the free sizes
+  await page.context().clearCookies();
+  await page.context().addCookies((await admin.storageState()).cookies);
+  await page.goto("/map?bx=27870&by=11000&bw=4&bh=6");
+  await expect(page.getByTestId("buy-free-unlimited")).toBeVisible();
+  await expect(page.getByTestId("buy-continue")).toBeEnabled();
   await page.goto("/admin/settings");
   await expect(page.getByTestId("s-free-open")).not.toBeChecked();
   expect((await admin.post("/api/admin/action", { data: { action: "set_setting", key: "free_parcels_open", value: true } })).status()).toBe(200);
   expect((await place(dave, { x: 27_860, y: 11_000, w: 2, h: 2 })).status()).toBe(201);
+});
+
+test("an administrator places as many free imprints as it wants: no quota, no rate limit, published at once (and journalised); the panel says so; a visitor stays limited", async ({ page }) => {
+  const admin = await as("admin.many@example.test", "admin"), visitor = await as("free-limited@example.test");
+  const adminId = (await sql<{ id: string }>(`select id from auth.users where email = 'admin.many@example.test'`))[0]!.id;
+  try {
+    // fourteen, one beside the other: more than the three of a visitor, and than the twelve an hour of the rate limit
+    const codes: string[] = [];
+    for (let i = 0; i < 14; i++) {
+      const r = await place(admin, { x: 27_800 + i * 4, y: 11_030, w: 2, h: 2 }, `Admin free ${i}`);
+      expect(r.status(), `${i}: ${await r.text()}`).toBe(201);
+      codes.push(((await r.json()) as { code: string }).code);
+    }
+    // published at once, with no moderation step: nothing waits in the queue, each approval is journalised
+    for (const code of [codes[0]!, codes[13]!]) {
+      const info = await (await admin.get(`/api/parcels/${code}`)).json();
+      expect(info).toMatchObject({ tier: "free", creation: { title: expect.stringMatching(/^Admin free/) } });
+      expect(info.creation.assetId).toBeTruthy();
+    }
+    expect((await sql<{ n: number }>(`select count(*)::int as n from public.parcel_assets a join public.parcels p on p.id = a.parcel_id where p.owner_id = $1 and a.status = 'pending'`, [adminId]))[0]!.n).toBe(0);
+    expect((await sql<{ n: number }>(`select count(*)::int as n from public.audit_logs where actor_id = $1 and action = 'asset.approve'`, [adminId]))[0]!.n).toBe(14);
+
+    // a visitor is still limited to one at a time
+    expect((await place(visitor, { x: 27_900, y: 11_030, w: 2, h: 2 })).status()).toBe(201);
+    expect((await (await place(visitor, { x: 27_910, y: 11_030, w: 2, h: 2 })).json()).error).toBe("px_free_quota");
+
+    // the buy panel tells an administrator so, and offers the free sizes
+    await page.context().addCookies((await admin.storageState()).cookies);
+    await page.setViewportSize({ width: 1360, height: 860 });
+    await page.goto(`/map?bx=27930&by=11030&bw=3&bh=3`);
+    await expect(page.getByTestId("buy-panel")).toBeVisible();
+    await expect(page.getByTestId("buy-free-unlimited")).toContainText("Administrator account: as many free traces as you want");
+    await expect(page.getByTestId("buy-free-why")).toHaveCount(0);
+    await expect(page.getByTestId("buy-free-3x3")).toBeVisible();
+  } finally {
+    await sql(`delete from public.parcels where owner_id in (select id from auth.users where email in ('admin.many@example.test', 'free-limited@example.test'))`);
+    await sql(`update public.map_state set version = version + 1, updated_at = now() where id = 1`);
+  }
 });

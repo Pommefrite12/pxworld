@@ -214,3 +214,56 @@ describe("the free period: a switch, a window, a cap, the edition", () => {
     expect((await place(await createUser("v"), 200, 200, 3, 3)).parcel_id).toBeTruthy();
   });
 });
+
+describe("an administrator places as many free parcels as it wants (migration 26)", () => {
+  it("is held by neither the personal quota, nor the switch, nor the window, nor the cap; a visitor and a moderator still are", async () => {
+    const admin = await boss(), mod = await createUser("mod", { role: "moderator" }), visitor = await createUser("visitor");
+    // the quota: a visitor has one standing and stops; the administrator places six, one beside the other
+    await place(visitor, 200, 200, 2, 2);
+    expect(await status(visitor)).toMatchObject({ userReason: "standing", unlimited: false });
+    for (let i = 0; i < 6; i++) expect((await place(admin, 1000 + i * 10, 1000, 2, 2)).parcel_id).toBeTruthy();
+    expect(await status(admin)).toMatchObject({ unlimited: true, userReason: null, open: true, used: 6 }); // six, and still more than the three of a visitor
+    // a moderator has no such right
+    await place(mod, 300, 300, 2, 2);
+    expect(await status(mod)).toMatchObject({ userReason: "standing", unlimited: false });
+    await expectPgError(place(mod, 310, 300, 2, 2), "px_free_quota");
+    // the switch
+    await pool.query(`select public.px_set_setting($1, 'free_parcels_open', 'false'::jsonb)`, [admin]);
+    expect(await status(visitor)).toMatchObject({ open: false, reason: "off" });
+    expect(await status(admin)).toMatchObject({ open: true, reason: null });
+    expect((await place(admin, 1100, 1000, 2, 2)).parcel_id).toBeTruthy();
+    await pool.query(`select public.px_set_setting($1, 'free_parcels_open', 'true'::jsonb)`, [admin]);
+    // the window
+    await pool.query(`update public.editions set opens_at = now() - interval '61 days'`);
+    expect(await status(visitor)).toMatchObject({ open: false, reason: "ended" });
+    expect((await place(admin, 1110, 1000, 2, 2)).parcel_id).toBeTruthy();
+    // the cap (what the visitors placed: two, the administrator's own are not counted)
+    await pool.query(`update public.editions set opens_at = now() - interval '2 days'`);
+    await pool.query(`select public.px_set_setting($1, 'free_parcels_cap', '2'::jsonb)`, [admin]);
+    expect(await status(visitor)).toMatchObject({ open: false, reason: "full", placed: 2 });
+    expect((await place(admin, 1120, 1000, 2, 2)).parcel_id).toBeTruthy();
+  });
+
+  it("its free parcels do not use the cap that the visitors share", async () => {
+    const admin = await boss();
+    await pool.query(`select public.px_set_setting($1, 'free_parcels_cap', '3'::jsonb)`, [admin]);
+    for (let i = 0; i < 5; i++) await place(admin, 1000 + i * 10, 1000, 2, 2);
+    expect(await status()).toMatchObject({ open: true, reason: null, placed: 0 }); // five of the administrator's, none counted
+    const [a, b, c, d] = [await createUser("a"), await createUser("b"), await createUser("c"), await createUser("d")];
+    await place(a, 200, 200, 2, 2); await place(b, 300, 300, 2, 2); await place(c, 400, 400, 2, 2);
+    await expectPgError(place(d, 500, 500, 2, 2), "px_free_full"); // the visitors' three are what the cap is for
+    expect(await status(d)).toMatchObject({ reason: "full", placed: 3 });
+  });
+
+  it("is still held by everything else: 1 to 24 pixels, nobody's parcel, an open edition", async () => {
+    const admin = await boss(), other = await createUser("other");
+    await expectPgError(place(admin, 200, 200, 5, 5), "px_invalid_rect"); // 25 pixels is a paid parcel
+    await buy(other, 300, 300, 5, 5);
+    await expectPgError(place(admin, 302, 302, 2, 2), "px_parcel_unavailable"); // over a paid parcel
+    await place(other, 400, 400, 3, 3);
+    await expectPgError(place(admin, 401, 401, 2, 2), "px_parcel_unavailable"); // over a free one
+    await pool.query(`update public.editions set status = 'prelaunch', opens_at = null, closes_at = null, closed_at = null`);
+    await expectPgError(place(admin, 500, 500, 2, 2), "px_edition_not_open");
+    expect(await status(admin)).toMatchObject({ open: false, reason: "edition" }); // not before the opening, whoever asks
+  });
+});

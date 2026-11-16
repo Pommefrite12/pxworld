@@ -15,6 +15,8 @@ export interface FreeInfo {
   placed: number;
   used: number;
   lifetimeMax: number;
+  /** An administrator: no quota, no window, no cap (migration 26). */
+  unlimited?: boolean;
 }
 
 /** Can THIS account place a free parcel right now? */

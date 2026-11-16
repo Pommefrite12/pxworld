@@ -113,7 +113,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind
                     </button>
                   ))}
                 </div>
-                <p className="mt-1.5 text-[0.7rem] leading-snug text-ink-faint">{t("free.hint", { max: free.maxArea, date: free.endsAt ? f.dateTime(new Date(free.endsAt), { dateStyle: "medium" }) : "" })}</p>
+                <p className="mt-1.5 text-[0.7rem] leading-snug text-ink-faint" data-testid={free.unlimited ? "buy-free-unlimited" : undefined}>{free.unlimited ? t("free.unlimited", { max: free.maxArea }) : t("free.hint", { max: free.maxArea, date: free.endsAt ? f.dateTime(new Date(free.endsAt), { dateStyle: "medium" }) : "" })}</p>
               </>
             )}
           </fieldset>

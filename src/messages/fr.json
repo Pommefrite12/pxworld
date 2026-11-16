@@ -432,6 +432,7 @@
     "free": {
       "title": "Empreinte gratuite",
       "hint": "De 1 à {max} pixels, sur la terre, une seule à la fois, jusqu'au {date}. Si quelqu'un achète une parcelle qui la touche, elle est recouverte.",
+      "unlimited": "Compte administrateur\u00a0: autant d'empreintes gratuites que vous voulez (de 1 à {max} pixels, sur la terre), sans date de fin.",
       "price": "Gratuit",
       "priceLabel": "Prix",
       "subtitle": "Empreinte gratuite · peut être recouverte par une parcelle payante",
