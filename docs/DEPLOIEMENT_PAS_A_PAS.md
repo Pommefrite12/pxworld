@@ -464,6 +464,22 @@ L'outil de l'étape 9 crée un compte Supabase par parcelle (500 au plus, et len
 
 **À savoir :** leurs textes sont marqués pour que la **traduction automatique ne coûte rien** dessus. Leurs images sont partagées (peu variées : c'est voulu, ce qui compte ici est le nombre, pas l'image). Ce sont des parcelles **payées** : **aucun achat ne peut passer dessus** (contrairement aux illustrations et aux empreintes gratuites, qui sont recouvertes) ; pour acheter ou poser une empreinte, il faut viser un endroit libre.
 
+### Tout supprimer : TOUTES les parcelles du site de test (y compris les vôtres)
+
+`demo:clear` seul ne retire que les comptes de démonstration (et, avec `--illustrations`, les images d'illustration). Pour **vider entièrement** le site de test, ajoutez **`--everything`** (avec `--yes`) :
+
+```bash
+npm run demo:clear -- --env .env.production.local --i-know-this-is-a-test-site --project VOTRE_ID_PROJET --yes --everything
+```
+
+L'outil **annonce d'abord ce qu'il va retirer**, puis le fait, par morceaux de 2 000 parcelles (compter environ 2 minutes pour 30 000 parcelles ; une ligne s'affiche à chaque morceau).
+
+**Ce qui est supprimé** : toutes les parcelles, quel que soit leur propriétaire (démonstration, illustrations, **vos propres empreintes**, achats de test), avec leurs créations, leurs fichiers d'image, leurs commentaires, leurs « j'aime », les achats et paiements de test qui les ont payées, les projets de financement à plusieurs **en cours ou financés** (ils sont leur parcelle) avec leurs participations, et les comptes de démonstration.
+
+**Ce qui reste** : les comptes des vraies personnes (le vôtre compris), les réglages, l'édition (toujours ouverte), les projets déjà terminés, et l'**historique** (journal d'audit et actions de modération : la base de données refuse de les modifier). **Les compteurs publics repassent à zéro.**
+
+**Garde-fous** (les mêmes que pour la démo) : refus si vous n'avez pas écrit `--i-know-this-is-a-test-site`, `--project` et `--yes`, si une clé Stripe **réelle** est configurée, ou si la base contient **un seul** paiement fait avec de l'argent réel. **C'est définitif** : on peut re-remplir la démonstration (`--volume`, `--set heritage`), pas récupérer vos propres empreintes.
+
 ## Étape 9b : « l'édition » — les 365 jours s'ouvrent à la main (10 min)
 
 **Nouveauté (migration 19).** La date de fin n'est plus une variable de configuration : l'état du site (**pré-lancement**, **ouvert**, **clos**) est décidé par la base de données, avec sa propre horloge. Et **les 365 jours ne démarrent jamais tout seuls** : après la migration, le site est en **pré-lancement** (la carte se visite, **rien ne s'achète**) tant qu'un administrateur n'a pas cliqué sur « Ouvrir l'édition ».

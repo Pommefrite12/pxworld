@@ -171,12 +171,70 @@ export async function clearIllustrations(p: DemoPorts, opts: { emailDomain: stri
   return { parcels: gone.length, files, accounts: acc ? 1 : 0 };
 }
 
-export interface DemoStatus { users: number; parcels: number; illustrations: number; publicCounters: { soldPixels: number; parcels: number; owners: number; creations: number } }
+/** What `wipeEverything` is about to remove, counted without touching anything (the script prints it first). */
+export interface WipePreview { parcels: number; orders: number; paidOrders: number; payments: number; projects: number; contributions: number; files: number; accounts: number }
+
+export async function wipePreview(p: DemoPorts, opts: { emailDomain: string }): Promise<WipePreview> {
+  const n = async (sql: string, params: unknown[] = []) => Number(((await p.query<{ n: number }>(sql, params))[0])?.n ?? 0);
+  return {
+    parcels: await n("select count(*)::int as n from public.parcels"),
+    orders: await n("select count(*)::int as n from public.orders where parcel_id is not null"),
+    paidOrders: await n("select count(*)::int as n from public.orders where parcel_id is not null and status = 'paid'"),
+    payments: await n("select count(*)::int as n from public.payments where order_id in (select id from public.orders where parcel_id is not null)"),
+    projects: await n("select count(*)::int as n from public.campaigns where status in ('open', 'funded')"),
+    contributions: await n("select count(*)::int as n from public.contributions where campaign_id in (select id from public.campaigns where status in ('open', 'funded'))"),
+    files: await n("select count(distinct storage_path)::int as n from public.parcel_assets"),
+    accounts: await n("select count(*)::int as n from auth.users where email like $1 or email = $2", [sqlLike(opts.emailDomain), illustrationEmail(opts.emailDomain)]),
+  };
+}
+
+export interface WipeReport { demoAccounts: number; illustrations: number; parcels: number; orders: number; payments: number; projects: number; contributions: number; files: number }
+
+/**
+ * Removes EVERY parcel of a test site: the demonstration ones, the illustrations, and everybody's own (purchases and free imprints), with their
+ * creations, files, comments, likes and the purchases that bought them (their payments first, an order cannot outlive its parcel).
+ *
+ * A fundraising project that holds a zone (open) or was granted a parcel (funded) is that parcel: it goes with it, with its contributions (the database
+ * requires such a project to have its parcel, so it cannot be left behind). Projects that are over (pending, rejected, cancelled, expired) stay.
+ *
+ * Kept: every account except the demonstration ones (the people stay, only what they placed goes), the settings, the editions, and the append-only records (the audit log and the moderation actions: the
+ * database refuses to change them, and they are the history of what happened). The map version is bumped so that browsers drop their tiles.
+ * The script's guards (a test site, no real money ever) are what make this allowed: this function trusts them.
+ */
+export async function wipeEverything(p: DemoPorts, opts: { emailDomain: string }): Promise<WipeReport> {
+  // what would stop a parcel from being deleted: its purchases (RESTRICT), the payments of those first
+  const payments = (await p.query<{ id: string }>("delete from public.payments where order_id in (select id from public.orders where parcel_id is not null) returning id")).length;
+  const orders = (await p.query<{ id: string }>("delete from public.orders where parcel_id is not null returning id")).length;
+  p.log(`  ${orders} purchases and ${payments} payments removed`);
+  const contributions = (await p.query<{ id: string }>("delete from public.contributions where campaign_id in (select id from public.campaigns where status in ('open', 'funded')) returning id")).length;
+  const projects = (await p.query<{ id: string }>("delete from public.campaigns where status in ('open', 'funded') returning id")).length;
+  p.log(`  ${projects} fundraising projects and ${contributions} contributions removed`);
+  const demo = await clearDemo(p, opts);
+  p.log(`  ${demo.users} demonstration accounts, ${demo.parcels} parcels, ${demo.files} files removed`);
+  const il = await clearIllustrations(p, opts);
+  p.log(`  ${il.parcels} illustration parcels removed`);
+  // all the rest: the parcels of everybody else
+  const paths = (await p.query<{ storage_path: string }>("select distinct storage_path from public.parcel_assets")).map((r) => r.storage_path);
+  let parcels = 0;
+  for (;;) {
+    const gone = await p.query<{ id: string }>("delete from public.parcels where id in (select id from public.parcels limit 2000) returning id");
+    parcels += gone.length;
+    if (gone.length < 2000) break;
+    p.log(`  ${parcels} other parcels removed…`);
+  }
+  let files = 0;
+  for (const key of paths) { try { await p.removeObject(key); files++; } catch { p.log(`  (could not remove the file ${key})`); } }
+  await p.query("update public.map_state set version = version + 1, updated_at = now() where id = 1");
+  return { demoAccounts: demo.users, illustrations: il.parcels, parcels: demo.parcels + il.parcels + parcels, orders, payments, projects, contributions, files: demo.files + il.files + files };
+}
+
+export interface DemoStatus { users: number; parcels: number; illustrations: number; /** every parcel of the site, whoever owns it */ allParcels: number; publicCounters: { soldPixels: number; parcels: number; owners: number; creations: number } }
 
 export async function demoStatus(p: DemoPorts, opts: { emailDomain: string }): Promise<DemoStatus> {
   const [u] = await p.query<{ n: number }>("select count(*)::int as n from auth.users where email like $1", [sqlLike(opts.emailDomain)]);
   const [pc] = await p.query<{ n: number }>("select count(*)::int as n from public.parcels pc join auth.users u on u.id = pc.owner_id where u.email like $1 and pc.status = 'active'", [sqlLike(opts.emailDomain)]);
   const [s] = await p.query<{ sold_pixels: number; parcels: number; owners: number; published_creations: number }>("select * from public.px_public_stats()");
   const [il] = await p.query<{ n: number }>("select count(*)::int as n from public.parcels where tier = 'illustration' and status in ('active', 'covered')");
-  return { users: Number(u?.n ?? 0), parcels: Number(pc?.n ?? 0), illustrations: Number(il?.n ?? 0), publicCounters: { soldPixels: Number(s?.sold_pixels ?? 0), parcels: Number(s?.parcels ?? 0), owners: Number(s?.owners ?? 0), creations: Number(s?.published_creations ?? 0) } };
+  const [all] = await p.query<{ n: number }>("select count(*)::int as n from public.parcels");
+  return { users: Number(u?.n ?? 0), parcels: Number(pc?.n ?? 0), illustrations: Number(il?.n ?? 0), allParcels: Number(all?.n ?? 0), publicCounters: { soldPixels: Number(s?.sold_pixels ?? 0), parcels: Number(s?.parcels ?? 0), owners: Number(s?.owners ?? 0), creations: Number(s?.published_creations ?? 0) } };
 }

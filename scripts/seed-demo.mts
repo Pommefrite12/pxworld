@@ -12,6 +12,9 @@
 //   npm run demo:status -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id>
 //   npm run demo:clear  -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id> --yes [--illustrations]
 //     removes the demonstration accounts and their parcels; the illustration parcels stay, unless --illustrations is added
+//   npm run demo:clear  -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id> --yes --everything
+//     removes EVERY parcel of the site: the demonstration ones, the illustrations, and everybody's own (purchases, free imprints) with their creations, files,
+//     comments, likes and purchases. The accounts of real people stay, and so do the audit log and the moderation history (the database refuses to change them).
 //
 // What it makes: `demo_…` accounts (e-mail demo-001@demo.invalid…), a big parcel each on land around the big cities, a generated picture each.
 // What it does NOT make: any order, payment or moderation action (so no fake revenue, no fake audit trail). `clear` deletes all of it.
@@ -25,7 +28,7 @@ import pg from "pg";
 import { createClient } from "@supabase/supabase-js";
 import { shouldUseSsl } from "../src/lib/db/ssl";
 import { demoGuard } from "../src/lib/demo/plan";
-import { clearDemo, clearIllustrations, demoStatus, seedDemo, type DemoPorts } from "../src/lib/demo/seed";
+import { clearDemo, clearIllustrations, demoStatus, seedDemo, wipeEverything, wipePreview, type DemoPorts } from "../src/lib/demo/seed";
 import { heritagePlan } from "../src/lib/demo/heritage";
 import { seedVolume } from "../src/lib/demo/volume";
 
@@ -61,7 +64,8 @@ try {
     supabaseUrl, project: opt("project"), liveEvents: 0,
   };
   const ask = (reasons: string[]) => {
-    if (command === "clear" && !flag("yes")) reasons.push("add --yes to confirm the deletion of every demonstration account and parcel");
+    if (command === "clear" && !flag("yes")) reasons.push(flag("everything") ? "add --yes to confirm the deletion of EVERY parcel of the site, the ones of real people included" : "add --yes to confirm the deletion of every demonstration account and parcel");
+    if (command !== "clear" && flag("everything")) reasons.push("--everything only goes with clear");
     if (reasons.length) die(`Refused (nothing was touched):\n${reasons.map((w) => `  - ${w}`).join("\n")}`);
   };
   ask(demoGuard(guardInput));
@@ -146,6 +150,13 @@ try {
     console.log(`\nDone: ${r.usersCreated} accounts created (${r.usersFound} already there), ${r.parcelsCreated} parcels created (${r.parcelsSkipped} already there).`);
     if (r.failed.length) { console.log(`${r.failed.length} could not be made:\n${r.failed.map((f) => `  - ${f}`).join("\n")}`); process.exitCode = 1; }
     }
+  } else if (command === "clear" && flag("everything")) {
+    const before = await wipePreview(ports, { emailDomain });
+    console.log(`About to remove from ${target}: ${before.parcels} parcels (all of them, whoever owns them), ${before.orders} purchases (${before.paidOrders} paid, in TEST mode: no real money has ever moved here) with ${before.payments} payments, ${before.projects} fundraising projects in progress or funded (with ${before.contributions} contributions), ${before.files} picture files, ${before.accounts} demonstration accounts.`);
+    console.log("Accounts of real people, settings, editions, the audit log and the moderation history stay.\n");
+    const t0 = Date.now();
+    const r = await wipeEverything(ports, { emailDomain });
+    console.log(`\nDone in ${Math.round((Date.now() - t0) / 1000)} s: ${r.parcels} parcels, ${r.orders} purchases, ${r.payments} payments, ${r.projects} fundraising projects, ${r.contributions} contributions, ${r.files} files and ${r.demoAccounts} demonstration accounts removed.`);
   } else if (command === "clear") {
     console.log(`Removing every demonstration account from ${target}…`);
     const r = await clearDemo(ports, { emailDomain });
@@ -156,7 +167,7 @@ try {
     }
   }
   const s = await demoStatus(ports, { emailDomain });
-  console.log(`\n${target}: ${s.users} demonstration accounts, ${s.parcels} demonstration parcels, ${s.illustrations} illustration parcels (these stay when the site opens).`);
+  console.log(`\n${target}: ${s.users} demonstration accounts, ${s.parcels} demonstration parcels, ${s.illustrations} illustration parcels (these stay when the site opens), ${s.allParcels} parcels in all.`);
   console.log(`Public counters now: ${s.publicCounters.soldPixels.toLocaleString("en")} pixels sold, ${s.publicCounters.parcels} parcels, ${s.publicCounters.owners} owners, ${s.publicCounters.creations} creations.`);
   if (command === "seed") console.log("The site shows them within a minute (reload with Ctrl+Shift+R). Before a real launch: npm run demo:clear removes the demonstration accounts (the illustration parcels stay).");
 } finally {
