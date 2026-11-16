@@ -119,8 +119,12 @@ describe("automatic translation of what visitors write", () => {
     expect(ai.calls().length).toBeLessThanOrEqual(12); // never more than the ceiling, though all fourteen were asked for together
     expect(views.filter((v) => v!.creation!.translation).length).toBe(ai.calls().length);
     expect(views.filter((v) => !v!.creation!.translation).length).toBeGreaterThanOrEqual(2); // the others show what was written
+    // the count is cautious (a translation under way is counted before it is written), so a burst may use a little less than the ceiling: fill it up one by one
+    for (let n = ai.calls().length; n < 12; n++) expect((await getPublicParcel((await parcel(`[fr] Complément ${n}`, "[fr] x y z")).code, "en"))!.creation!.translation).not.toBeNull();
+    expect(ai.calls()).toHaveLength(12);
     const late = await parcel("[fr] Trop tard", "[fr] x y z");
     expect((await getPublicParcel(late.code, "en"))!.creation).toMatchObject({ title: "[fr] Trop tard", translation: null }); // and a later one is refused too
+    expect(ai.calls()).toHaveLength(12);
   });
 
   it("translates a text with no title, or no description, only for what is there", async () => {

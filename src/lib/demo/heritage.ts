@@ -73,10 +73,25 @@ export const HERITAGE: Heritage[] = [
     for (const x of [0.28, 0.72]) k.dome(x, 0.5, 0.045, C.white);
   }),
   H("machu", "Machu Picchu", "Cusco, Pérou", "PE", -13.163, -72.545, "arts", [50, 40], "Cité inca perchée dans les Andes, bâtie au XVe siècle.", (k) => {
-    day(k, 0.6).cloud(0.75, 0.15, 0.06);
-    k.mountain(0.78, 0.7, 0.3, 0.5, C.greenDark, shade(C.greenDark, 0.4)).mountain(0.15, 0.7, 0.35, 0.34, C.green, C.greenDark);
-    for (let i = 0; i < 5; i++) k.rect(0.1 + i * 0.03, 0.52 + i * 0.07, 0.7 - i * 0.07, 0.07, i % 2 ? C.greenLight : C.green).rect(0.1 + i * 0.03, 0.55 + i * 0.07, 0.7 - i * 0.07, 0.02, C.stone);
-    for (const [x, y] of [[0.3, 0.5], [0.45, 0.58], [0.58, 0.66]] as const) k.rect(x, y - 0.05, 0.07, 0.05, C.stoneLight).tri(x - 0.01, y - 0.05, x + 0.035, y - 0.1, x + 0.08, y - 0.05, C.sandDark);
+    day(k, 0.62).cloud(0.8, 0.13, 0.05);
+    // Huayna Picchu, the steep peak behind, and the green ridges
+    k.poly([[0.5, 0.74], [0.6, 0.42], [0.68, 0.18], [0.75, 0.05], [0.81, 0.14], [0.87, 0.4], [1, 0.74]], shade(C.greenDark, 0.2));
+    k.poly([[0.75, 0.05], [0.81, 0.14], [0.87, 0.4], [1, 0.74], [0.82, 0.74]], shade(C.greenDark, 0.5));
+    k.poly([[0, 0.74], [0.12, 0.52], [0.26, 0.42], [0.44, 0.54], [0.56, 0.74]], C.green);
+    k.poly([[0.26, 0.42], [0.44, 0.54], [0.56, 0.74], [0.3, 0.74]], C.greenDark);
+    k.rect(0, 0.62, 1, 0.05, [214, 232, 244]); // a veil of mist
+    // the terraces, with their stone walls
+    k.rect(0, 0.66, 1, 0.34, C.greenDark);
+    for (let i = 0; i < 6; i++) {
+      const y = 0.66 + i * 0.058, x0 = 0.14 - i * 0.025, x1 = 0.9 + i * 0.025;
+      k.rect(x0, y, x1 - x0, 0.058, i % 2 ? C.greenLight : C.green).rect(x0, y + 0.046, x1 - x0, 0.012, C.stoneLight);
+    }
+    // the stone houses with their thatched roofs
+    for (const [x, y] of [[0.3, 0.7], [0.45, 0.76], [0.6, 0.7], [0.72, 0.76]] as const) k.rect(x, y, 0.08, 0.05, C.stoneLight).rect(x + 0.03, y + 0.02, 0.02, 0.03, C.brownDark).tri(x - 0.012, y, x + 0.04, y - 0.05, x + 0.092, y, C.sandDark);
+    // a llama in front
+    const lx = 0.1, ly = 0.86;
+    k.rect(lx, ly, 0.1, 0.05, C.white).rect(lx + 0.082, ly - 0.06, 0.02, 0.08, C.white).rect(lx + 0.082, ly - 0.075, 0.045, 0.025, C.white).rect(lx + 0.088, ly - 0.095, 0.008, 0.02, C.sandLight)
+      .rect(lx + 0.01, ly + 0.05, 0.014, 0.04, C.sandLight).rect(lx + 0.07, ly + 0.05, 0.014, 0.04, C.sandLight).dot(lx + 0.118, ly - 0.068, C.ink, 1);
   }),
   H("chichen", "Chichén Itzá", "Yucatán, Mexique", "MX", 20.683, -88.568, "arts", [44, 44], "Cité maya du Yucatán, dominée par la pyramide de Kukulcán et ses quatre escaliers.", (k) => {
     day(k, 0.7).ground(0.72, C.greenDark).dome(0.1, 0.8, 0.12, C.green).dome(0.9, 0.8, 0.14, C.green);
@@ -89,11 +104,21 @@ export const HERITAGE: Heritage[] = [
     k.rect(0.12, 0.72, 0.76, 0.03, C.black);
   }),
   H("petra", "Pétra", "Pétra, Jordanie", "JO", 30.329, 35.444, "arts", [36, 44], "Cité nabatéenne taillée dans le grès rose du désert jordanien.", (k) => {
-    k.sky(C.skyTop, C.skyLow, 0, 0.2).rect(0, 0, 1, 1, C.clay);
-    k.sky(C.skyTop, C.skyLow, 0, 0.12);
-    k.rect(0, 0, 0.22, 1, shade(C.clay, 0.35)).rect(0.78, 0, 0.22, 1, shade(C.clay, 0.35));
-    k.rect(0.26, 0.2, 0.48, 0.68, tint(C.clay, 0.25)).rect(0.3, 0.26, 0.4, 0.04, C.clay).columns(0.34, 0.66, 0.34, 0.56, 4, 0.06, tint(C.clay, 0.4));
-    k.rect(0.4, 0.56, 0.2, 0.32, C.brownDark).tri(0.26, 0.2, 0.5, 0.1, 0.74, 0.2, tint(C.clay, 0.25)).disc(0.5, 0.2, 0.05, C.brownDark).ground(0.88, C.sandDark);
+    const wall: RGB = [176, 96, 70], wallLit: RGB = [206, 126, 90], face: RGB = [228, 166, 124], faceLit: RGB = [248, 208, 172];
+    k.sky(C.skyTop, C.skyLow, 0, 0.4).glow(0.5, 0.08, 0.5, C.yellow, 0.3);
+    // the canyon closes in on both sides
+    k.poly([[0, 0], [0.34, 0], [0.26, 0.3], [0.3, 0.58], [0.2, 0.9], [0.16, 1], [0, 1]], wall);
+    k.poly([[0, 0], [0.18, 0], [0.12, 0.34], [0.14, 0.6], [0.06, 1], [0, 1]], shade(wall, 0.25));
+    k.poly([[1, 0], [0.66, 0], [0.74, 0.3], [0.7, 0.58], [0.8, 0.9], [0.84, 1], [1, 1]], wallLit);
+    k.poly([[1, 0], [0.84, 0], [0.9, 0.34], [0.88, 0.6], [0.94, 1], [1, 1]], wall);
+    // the Treasury, carved in the rose rock: a lower tier with its columns and pediment, an upper round tier with its urn
+    k.rect(0.2, 0.34, 0.6, 0.58, shade(face, 0.12));
+    k.rect(0.22, 0.58, 0.56, 0.3, face).columns(0.29, 0.71, 0.6, 0.85, 4, 0.07, faceLit);
+    k.tri(0.2, 0.6, 0.5, 0.47, 0.8, 0.6, faceLit).tri(0.27, 0.6, 0.5, 0.51, 0.73, 0.6, face);
+    k.rect(0.34, 0.4, 0.32, 0.09, face).columns(0.38, 0.62, 0.4, 0.49, 3, 0.04, faceLit).dome(0.5, 0.4, 0.11, face).tri(0.43, 0.38, 0.5, 0.29, 0.57, 0.38, faceLit).dot(0.5, 0.275, C.gold, 2);
+    k.arch(0.5, 0.88, 0.13, 0.17, C.black);
+    k.rect(0.18, 0.88, 0.64, 0.025, C.sandLight).rect(0, 0.91, 1, 0.09, C.sand).rect(0, 0.95, 1, 0.05, C.sandDark);
+    k.person(0.3, 0.97, 0.12, C.red).person(0.7, 0.97, 0.1, C.blue);
   }),
   H("stonehenge", "Stonehenge", "Wiltshire, Angleterre", "GB", 51.179, -1.826, "arts", [50, 36], "Cercle de pierres dressées il y a plus de 4 000 ans, au cœur de la campagne anglaise.", (k) => {
     k.sky(C.dawnTop, C.dawnLow, 0, 0.66).sun(0.5, 0.64, 0.1, C.gold).ground(0.66, C.greenLight).ground(0.82, C.green);
@@ -102,8 +127,20 @@ export const HERITAGE: Heritage[] = [
     for (const [x, h] of [[0.42, 0.22], [0.52, 0.22]] as const) k.rect(x, 0.82 - h, 0.06, h, C.stone);
   }),
   H("montsaintmichel", "Le Mont-Saint-Michel", "Normandie, France", "FR", 48.636, -1.511, "arts", [24, 30], "Abbaye perchée sur un îlot rocheux, au milieu d'une baie aux marées spectaculaires.", (k) => {
-    k.sky(C.skyTop, C.skyLow, 0, 0.58).waves(0.78, 0.22, C.waterLight, C.white).ground(0.72, C.sand);
-    k.poly([[0.1, 0.78], [0.3, 0.46], [0.7, 0.46], [0.9, 0.78]], C.stoneDark).rect(0.3, 0.36, 0.4, 0.14, C.stone).rect(0.4, 0.24, 0.2, 0.14, C.stoneLight).tri(0.46, 0.24, 0.5, 0.0, 0.54, 0.24, C.stoneDark);
+    dusk(k, 0.66).glow(0.5, 0.6, 0.7, C.orange, 0.35);
+    k.waves(0.78, 0.22, [58, 86, 150], C.duskLow);
+    // the rock, with its two sides and a cap of grass
+    k.poly([[0.0, 0.84], [0.14, 0.66], [0.28, 0.5], [0.38, 0.4], [0.62, 0.4], [0.72, 0.5], [0.86, 0.66], [1.0, 0.84]], [134, 116, 104]);
+    k.poly([[0.5, 0.4], [0.62, 0.4], [0.72, 0.5], [0.86, 0.66], [1.0, 0.84], [0.5, 0.84]], [96, 82, 80]);
+    k.poly([[0.38, 0.4], [0.62, 0.4], [0.58, 0.44], [0.42, 0.44]], C.greenDark);
+    // the village: houses of pale stone and slate roofs, packed on the slope and held by a wall at the foot
+    const houses: [number, number, number][] = [[0.14, 0.74, 0.12], [0.3, 0.72, 0.13], [0.5, 0.74, 0.14], [0.7, 0.72, 0.13], [0.84, 0.76, 0.12], [0.22, 0.62, 0.11], [0.4, 0.6, 0.12], [0.6, 0.62, 0.12], [0.76, 0.64, 0.1], [0.32, 0.5, 0.1], [0.52, 0.5, 0.11], [0.66, 0.52, 0.09]];
+    for (const [x, y, w] of houses) k.rect(x - w / 2, y, w, 0.07, k.next() < 0.5 ? C.stoneLight : C.sand).tri(x - w / 2 - 0.01, y, x, y - 0.045, x + w / 2 + 0.01, y, C.greyDark).dot(x, y + 0.04, C.brownDark, 1);
+    k.rect(0.0, 0.82, 1, 0.035, C.stoneDark).rect(0.0, 0.82, 1, 0.01, C.stone);
+    // the abbey on top: a nave under a steep slate roof, a tower with its spire and the golden angel
+    k.rect(0.4, 0.26, 0.2, 0.15, C.stoneLight).rect(0.4, 0.26, 0.2, 0.025, C.stone).tri(0.37, 0.26, 0.5, 0.13, 0.63, 0.26, C.greyDark);
+    k.rect(0.47, 0.05, 0.06, 0.12, C.stoneLight).tri(0.45, 0.07, 0.5, -0.05, 0.55, 0.07, C.stoneDark).dot(0.5, 0.01, C.gold, 1);
+    for (const x of [0.44, 0.5, 0.56]) k.dot(x, 0.33, C.brownDark, 1);
   }),
   H("hagia", "Sainte-Sophie", "Istanbul, Turquie", "TR", 41.008, 28.98, "arts", [36, 36], "Basilique achevée en 537 : sa grande coupole a traversé quinze siècles d'histoire.", (k) => {
     dusk(k, 0.74).ground(0.8, C.stoneDark);
@@ -112,11 +149,24 @@ export const HERITAGE: Heritage[] = [
     for (const x of [0.4, 0.5, 0.6]) k.rect(x - 0.012, 0.58, 0.024, 0.08, C.gold);
   }),
   H("alhambra", "L'Alhambra", "Grenade, Espagne", "ES", 37.177, -3.588, "arts", [40, 36], "Palais-forteresse de Grenade, joyau de l'art nasride, entouré de jardins et de fontaines.", (k) => {
-    day(k, 0.6).mountain(0.5, 0.72, 0.6, 0.4, C.snow, C.stoneLight).ground(0.7, C.green);
-    k.rect(0.12, 0.4, 0.76, 0.32, C.clay).rect(0.12, 0.36, 0.76, 0.05, tint(C.clay, 0.25));
-    for (const x of [0.12, 0.3, 0.7, 0.88]) k.rect(x - 0.03, 0.28, 0.07, 0.12, tint(C.clay, 0.2));
-    for (const x of [0.3, 0.5, 0.7]) k.arch(x, 0.72, 0.1, 0.22, C.brownDark);
-    k.rect(0.2, 0.84, 0.6, 0.08, C.water).rect(0.2, 0.84, 0.6, 0.02, C.waterLight);
+    const wall: RGB = [202, 122, 86];
+    dusk(k, 0.7).glow(0.8, 0.52, 0.45, C.orange, 0.35);
+    k.mountain(0.28, 0.62, 0.4, 0.3, [196, 186, 206], [146, 136, 176], C.snow).mountain(0.78, 0.62, 0.34, 0.22, [176, 166, 196], [126, 116, 156], C.snow);
+    k.ground(0.7, C.greenDark);
+    // the red fortress: a long wall with its battlements and towers
+    k.rect(0.06, 0.5, 0.88, 0.22, wall);
+    for (let x = 0.06; x < 0.92; x += 0.045) k.rect(x, 0.47, 0.025, 0.035, wall);
+    for (const [x, top, w] of [[0.08, 0.36, 0.12], [0.34, 0.3, 0.14], [0.62, 0.22, 0.17], [0.84, 0.38, 0.1]] as const) {
+      k.rect(x, top, w, 0.72 - top, shade(wall, 0.12)).rect(x - 0.005, top - 0.03, w + 0.01, 0.035, wall);
+      for (let b = x; b < x + w - 0.02; b += 0.035) k.rect(b, top - 0.06, 0.02, 0.03, wall);
+      k.arch(x + w / 2, top + 0.14, 0.04, 0.08, C.brownDark);
+    }
+    k.tri(0.62, 0.16, 0.705, 0.08, 0.79, 0.16, C.gold).rect(0.62, 0.16, 0.17, 0.03, shade(wall, 0.3));
+    for (let i = 0; i < 5; i++) k.arch(0.16 + i * 0.17, 0.72, 0.07, 0.13, C.brownDark);
+    // cypresses and the long pool that mirrors the walls
+    k.pine(0.04, 0.9, 0.34, C.greenDark).pine(0.96, 0.9, 0.34, C.greenDark).pine(0.13, 0.9, 0.24, C.green).pine(0.87, 0.9, 0.24, C.green);
+    k.rect(0.2, 0.8, 0.6, 0.14, [70, 102, 172]).rect(0.24, 0.8, 0.52, 0.04, [150, 86, 80]).rect(0.3, 0.84, 0.4, 0.025, [120, 70, 90]).waves(0.8, 0.14, [70, 102, 172], C.duskLow);
+    k.rect(0.2, 0.8, 0.6, 0.014, C.stoneLight);
   }),
   H("sagrada", "La Sagrada Família", "Barcelone, Espagne", "ES", 41.404, 2.174, "arts", [30, 40], "Basilique de Gaudí en chantier depuis 1882, mélange de pierre, de lumière et de nature.", (k) => {
     day(k, 0.9).ground(0.9, C.greenDark);
@@ -129,9 +179,16 @@ export const HERITAGE: Heritage[] = [
     for (const x of [0.12, 0.2, 0.74, 0.84]) k.disc(x, 0.82, 0.05, C.pink);
   }),
   H("fushimi", "Les torii de Fushimi Inari", "Kyoto, Japon", "JP", 34.967, 135.773, "arts", [30, 40], "Des milliers de portiques vermillon gravissent la colline sacrée de Kyoto.", (k) => {
-    k.fill(C.greenDark);
-    for (let i = 0; i < 6; i++) { const t = i / 5, w = 0.74 - t * 0.5, y = 0.9 - t * 0.52, c = i % 2 ? C.red : shade(C.red, 0.15); k.rect(0.5 - w / 2, y - 0.1 - t * 0.04, w, 0.04, c).rect(0.5 - w / 2 - 0.03, y - 0.14 - t * 0.04, w + 0.06, 0.03, C.black).rect(0.5 - w / 2 + 0.02, y - 0.1 - t * 0.04, 0.05 - t * 0.02, 0.1 + t * 0.04, c).rect(0.5 + w / 2 - 0.07 + t * 0.02, y - 0.1 - t * 0.04, 0.05 - t * 0.02, 0.1 + t * 0.04, c); }
-    k.rect(0.42, 0.9, 0.16, 0.1, C.sandDark);
+    // a tunnel of vermilion gates running away to a point of light
+    const red: RGB = [214, 64, 40];
+    k.sky([20, 40, 28], [40, 70, 44], 0, 1).glow(0.5, 0.5, 0.45, C.yellow, 0.7);
+    k.poly([[0.5, 0.5], [0, 1], [1, 1]], [126, 86, 60]).poly([[0.5, 0.5], [0.3, 1], [0.7, 1]], [178, 120, 76]);
+    for (const w of [0.07, 0.1, 0.14, 0.2, 0.28, 0.4, 0.58, 0.86]) {
+      const h = w * 0.95, b = 0.5 + w * 0.5, top = b - h, x0 = 0.5 - w / 2, x1 = 0.5 + w / 2, p = Math.max(0.012, w * 0.09);
+      k.rect(x0, top, p, h, red).rect(x1 - p, top, p, h, red);                                   // the two pillars
+      k.rect(x0, top + h * 0.22, w, h * 0.06, red).rect(x0 - w * 0.06, top - h * 0.02, w * 1.12, h * 0.07, C.ink).rect(x0 - w * 0.04, top + h * 0.05, w * 1.08, h * 0.03, red); // the crossbeams and the black roof beam
+      k.rect(x0, b - h * 0.07, p, h * 0.07, C.ink).rect(x1 - p, b - h * 0.07, p, h * 0.07, C.ink);
+    }
   }),
   H("citeinterdite", "La Cité interdite", "Pékin, Chine", "CN", 39.916, 116.397, "arts", [44, 36], "Palais impérial de Pékin, résidence des empereurs de Chine pendant près de cinq siècles.", (k) => {
     day(k, 0.55).ground(0.8, C.stone);
@@ -155,8 +212,18 @@ export const HERITAGE: Heritage[] = [
     k.dot(0.14, 0.24, C.sandLight, 2).dot(0.22, 0.2, C.sandLight, 2).dot(0.3, 0.26, C.sandLight, 2);
   }),
   H("carnac", "Les alignements de Carnac", "Bretagne, France", "FR", 47.584, -3.078, "arts", [28, 28], "Des milliers de menhirs dressés en Bretagne il y a plus de 6 000 ans.", (k) => {
-    k.sky(C.dawnTop, C.dawnLow, 0, 0.5).ground(0.5, C.greenLight).ground(0.74, C.green);
-    for (let r = 0; r < 3; r++) for (let i = 0; i < 6; i++) { const y = 0.9 - r * 0.2, s = 1 - r * 0.2, x = 0.1 + i * 0.16; k.rect(x, y - 0.22 * s, 0.07 * s, 0.22 * s, i % 2 ? C.stoneDark : C.stone); }
+    k.sky(C.dawnTop, C.dawnLow, 0, 0.55).glow(0.5, 0.55, 0.7, C.orange, 0.45).sun(0.5, 0.5, 0.08, C.yellow);
+    k.ground(0.52, C.green).rect(0, 0.52, 1, 0.1, C.greenLight);
+    const stone = (x: number, base: number, w: number, h: number, lean: number) => {
+      k.poly([[x - w * 0.5 + 0.01, base + 0.03], [x + w * 0.55 + 0.17, base + 0.03], [x + w * 0.55 + 0.1, base + 0.005], [x - w * 0.5, base + 0.005]], [64, 112, 62]); // its long shadow
+      k.poly([[x - w / 2, base], [x - w * 0.4 + lean, base - h * 0.7], [x + lean, base - h], [x + w * 0.45 + lean * 0.6, base - h * 0.75], [x + w / 2, base]], [168, 164, 150]);
+      k.poly([[x + lean * 0.2, base], [x + lean, base - h], [x + w * 0.45 + lean * 0.6, base - h * 0.75], [x + w / 2, base]], [118, 116, 108]);
+    };
+    // rows of standing stones that run away to the horizon: smaller and higher on the screen as they go
+    for (let r = 0; r < 4; r++) {
+      const base = 0.58 + r * 0.13, size = 0.55 + r * 0.32, gap = 0.17 + r * 0.05;
+      for (let x = -0.02 + (r % 2) * 0.07; x < 1.05; x += gap) stone(x + (k.next() - 0.5) * 0.03, base, 0.075 * size, (0.15 + k.next() * 0.05) * size, (k.next() - 0.5) * 0.03);
+    }
   }),
   H("basile", "La cathédrale Saint-Basile", "Moscou, Russie", "RU", 55.752, 37.623, "arts", [30, 40], "Ses bulbes colorés ornent la place Rouge de Moscou depuis le XVIe siècle.", (k) => {
     k.sky(C.duskTop, C.duskLow, 0, 0.8).ground(0.9, C.stoneDark).rect(0.1, 0.5, 0.8, 0.4, C.redDark);
@@ -164,18 +231,51 @@ export const HERITAGE: Heritage[] = [
     for (let i = 0; i < 5; i++) k.rect(0.16 + i * 0.16, 0.64, 0.06, 0.1, C.black);
   }),
   H("liberte", "La statue de la Liberté", "New York, États-Unis", "US", 40.689, -74.044, "arts", [30, 40], "Offerte par la France aux États-Unis, elle accueille les voyageurs à New York depuis 1886.", (k) => {
-    k.sky(C.skyTop, C.skyLow, 0, 0.9).ground(0.92, C.water);
-    k.rect(0.3, 0.76, 0.4, 0.16, C.stoneDark).rect(0.36, 0.62, 0.28, 0.16, C.stone).rect(0.4, 0.34, 0.2, 0.3, C.teal).disc(0.5, 0.26, 0.09, C.teal).rect(0.64, 0.12, 0.05, 0.3, C.teal).tri(0.62, 0.12, 0.665, 0.0, 0.71, 0.12, C.gold).rect(0.32, 0.4, 0.08, 0.1, C.teal);
-    for (let i = 0; i < 5; i++) k.line(0.5, 0.2, 0.4 + i * 0.05, 0.11, 0.025, C.greenLight);
+    const robe: RGB = [92, 176, 160], robeDark: RGB = [52, 124, 116];
+    day(k, 0.8).glow(0.3, 0.12, 0.3, C.yellow, 0.4);
+    k.rect(0, 0.9, 1, 0.1, C.water).waves(0.9, 0.1, C.water, C.waterLight);
+    // the pedestal and the star-shaped fort
+    k.poly([[0.18, 0.96], [0.82, 0.96], [0.76, 0.9], [0.24, 0.9]], C.stoneDark).rect(0.3, 0.76, 0.4, 0.15, C.stone).rect(0.28, 0.74, 0.44, 0.03, C.stoneLight).rect(0.3, 0.76, 0.05, 0.15, C.stoneLight);
+    // the robe, with its folds
+    k.poly([[0.37, 0.75], [0.63, 0.75], [0.6, 0.52], [0.58, 0.4], [0.42, 0.4], [0.4, 0.52]], robe);
+    for (const x of [0.43, 0.5, 0.56]) k.line(x, 0.46, x - (x - 0.5) * 0.2, 0.75, 0.022, robeDark);
+    k.rect(0.6, 0.5, 0.1, 0.16, robe).rect(0.62, 0.52, 0.08, 0.12, robeDark).rect(0.63, 0.53, 0.06, 0.1, [124, 196, 176]); // the arm and the tablet
+    // the raised arm and the torch
+    k.line(0.43, 0.42, 0.3, 0.2, 0.07, robe).rect(0.275, 0.13, 0.04, 0.1, C.gold).tri(0.265, 0.13, 0.295, 0.02, 0.325, 0.13, C.yellow).glow(0.295, 0.1, 0.12, C.yellow, 0.6);
+    // the head with its crown of rays
+    for (let i = -3; i <= 3; i++) { const a = (i * 0.38) - Math.PI / 2; k.line(0.5 + Math.cos(a) * 0.05, 0.33 + Math.sin(a) * 0.05, 0.5 + Math.cos(a) * 0.15, 0.33 + Math.sin(a) * 0.15, 0.03, robe); }
+    k.disc(0.5, 0.34, 0.06, robe).rect(0.455, 0.325, 0.09, 0.012, robeDark);
   }),
   H("teotihuacan", "Teotihuacan", "Mexico, Mexique", "MX", 19.692, -98.844, "arts", [44, 40], "La pyramide du Soleil domine une grande cité mésoaméricaine, bâtie bien avant les Aztèques.", (k) => {
-    k.sky(C.dawnTop, C.dawnLow, 0, 0.6).ground(0.74, C.sandDark).ground(0.9, C.sand);
-    k.steps(0.62, 0.78, 0.36, 0.46, 5, C.stoneLight, C.stoneDark).steps(0.12, 0.78, 0.16, 0.16, 3, C.stone, C.stoneDark).rect(0.1, 0.74, 0.8, 0.04, C.stone);
-    k.line(0.1, 0.96, 0.9, 0.84, 0.04, C.sandDark);
+    day(k, 0.6).cloud(0.14, 0.14, 0.05).cloud(0.82, 0.22, 0.04);
+    k.poly([[0, 0.62], [0.12, 0.46], [0.3, 0.52], [0.42, 0.44], [0.58, 0.62]], [150, 140, 168]).ground(0.62, [214, 184, 120]);
+    // the avenue that runs up to the pyramid, and the little platforms along it
+    k.poly([[0.42, 0.7], [0.58, 0.7], [0.92, 1], [0.08, 1]], C.sandLight);
+    for (const x of [0.18, 0.82]) k.steps(x, 0.86, 0.1, 0.1, 3, C.sand, C.sandDark);
+    for (const x of [0.3, 0.7]) k.steps(x, 0.78, 0.06, 0.06, 2, C.sand, C.sandDark);
+    // the Pyramid of the Sun: four tiers, a wide stair up the middle, a small temple on top
+    k.steps(0.5, 0.7, 0.3, 0.42, 4, [214, 166, 112], [150, 104, 78]);
+    k.rect(0.46, 0.3, 0.08, 0.4, C.sandLight);
+    for (let y = 0.32; y < 0.7; y += 0.04) k.rect(0.46, y, 0.08, 0.008, C.sandDark);
+    k.rect(0.42, 0.25, 0.16, 0.05, C.clay).rect(0.42, 0.25, 0.16, 0.012, C.sandLight);
+    // a cactus in front
+    k.rect(0.88, 0.8, 0.03, 0.14, C.green).rect(0.84, 0.84, 0.03, 0.06, C.green).rect(0.84, 0.9, 0.06, 0.02, C.green).rect(0.91, 0.82, 0.03, 0.06, C.green);
   }),
   H("opera", "L'opéra de Sydney", "Sydney, Australie", "AU", -33.857, 151.215, "arts", [30, 30], "Ses voiles de béton, inaugurées en 1973, sont devenues l'emblème de la ville.", (k) => {
-    k.sky(C.skyTop, C.skyLow, 0, 0.6).waves(0.74, 0.26, C.water, C.waterLight).rect(0.08, 0.7, 0.84, 0.06, C.stoneLight);
-    k.poly([[0.1, 0.7], [0.3, 0.32], [0.46, 0.7]], C.white).poly([[0.34, 0.7], [0.52, 0.22], [0.68, 0.7]], C.snow).poly([[0.58, 0.7], [0.76, 0.38], [0.9, 0.7]], C.white).poly([[0.52, 0.22], [0.68, 0.7], [0.6, 0.7]], C.stoneLight);
+    day(k, 0.7).sun(0.86, 0.14, 0.07, C.yellow);
+    k.rect(0, 0.74, 1, 0.26, C.water).waves(0.74, 0.26, C.water, C.waterLight);
+    // the sails: curved shells rising to the left, a row behind a row
+    const shell = (x0: number, base: number, w: number, h: number, c: RGB) => {
+      const px = x0 + w * 0.16, pts: [number, number][] = [[x0, base], [px, base - h]];
+      for (let i = 1; i <= 10; i++) { const t = i / 10; pts.push([px + (x0 + w - px) * t, base - h + h * Math.pow(t, 1.7)]); }
+      k.poly(pts, c);
+      for (let r = 1; r <= 4; r++) k.line(px, base - h, x0 + w * (0.18 + r * 0.2), base - h * Math.pow(0.8, 1.7) * (1 - r * 0.15) * 0.4 - 0.0, 0.01, [196, 202, 216]); // the ribs of the shell
+      k.line(x0, base, px, base - h, 0.014, [150, 158, 178]);
+    };
+    shell(0.5, 0.7, 0.42, 0.34, [214, 218, 230]); shell(0.62, 0.7, 0.34, 0.2, [226, 228, 238]);
+    shell(0.06, 0.72, 0.46, 0.5, C.white); shell(0.24, 0.72, 0.36, 0.38, [238, 240, 246]); shell(0.0, 0.72, 0.2, 0.22, [226, 230, 240]);
+    // the podium it stands on
+    k.rect(0.0, 0.68, 1, 0.08, C.stoneLight).rect(0.0, 0.74, 1, 0.025, C.stone);
   }),
   H("uluru", "Uluru", "Territoire du Nord, Australie", "AU", -25.345, 131.036, "nature", [50, 32], "Immense monolithe de grès rouge, lieu sacré du peuple Anangu, au cœur du désert australien.", (k) => {
     k.sky(C.duskTop, C.duskLow, 0, 0.66).ground(0.7, C.clay);
@@ -183,17 +283,40 @@ export const HERITAGE: Heritage[] = [
     for (const x of [0.1, 0.34, 0.8]) k.tri(x, 0.98, x + 0.03, 0.82, x + 0.06, 0.98, C.greenDark);
   }),
   H("victoria", "Les chutes Victoria", "Zambèze, Zambie et Zimbabwe", "ZM", -17.925, 25.857, "nature", [44, 44], "Le Zambèze s'y jette dans une gorge, sur plus d'un kilomètre et demi de large.", (k) => {
-    day(k, 0.34).ground(0.34, C.greenDark);
-    k.rect(0, 0.34, 1, 0.1, C.green).rect(0.06, 0.4, 0.88, 0.5, C.waterLight);
-    for (let i = 0; i < 14; i++) k.rect(0.08 + i * 0.062, 0.4, 0.03, 0.4 + (i % 3) * 0.04, i % 2 ? C.white : C.waterLight);
-    k.disc(0.3, 0.92, 0.2, C.white).disc(0.62, 0.94, 0.24, tint(C.waterLight, 0.4)).rect(0, 0.88, 1, 0.12, C.waterDark).disc(0.8, 0.9, 0.14, C.white);
+    day(k, 0.32);
+    // the far lip of the falls, with its trees, and the curtain of water pouring over it
+    k.ground(0.3, C.greenDark).rect(0, 0.3, 1, 0.04, C.green);
+    for (let x = 0.02; x < 1; x += 0.07) k.disc(x, 0.29, 0.045, C.green);
+    for (let i = 0; i < 12; i++) {
+      const x = i / 12, h = 0.38 + k.next() * 0.1;
+      k.rect(x, 0.34, 1 / 12 + 0.002, h, i % 2 ? [236, 244, 252] : [196, 224, 244]);
+      if (i % 3 === 1) k.rect(x + 0.02, 0.34, 0.018, 0.34, [72, 80, 88]); // a dark rock between two sheets of water
+    }
+    // a rainbow in the spray, then the mist rising from the gorge
+    for (const [r, c] of [[0.36, C.red], [0.345, C.orange], [0.33, C.yellow], [0.315, C.green], [0.3, C.blue], [0.285, C.purple]] as const) k.ring(0.8, 0.8, r, 0.016, c);
+    k.rect(0, 0.76, 1, 0.24, [34, 74, 90]);
+    for (let i = 0; i < 26; i++) k.disc(k.next(), 0.72 + k.next() * 0.1, 0.035 + k.next() * 0.05, k.next() < 0.5 ? [240, 248, 255] : [214, 234, 248]);
+    k.scatter(60, 0, 0.54, 1, 0.26, [C.white, [216, 236, 250]]);
+    // the dark cliffs of the gorge in front
+    k.poly([[0, 0.8], [0.18, 0.84], [0.1, 1], [0, 1]], [52, 56, 62]).poly([[1, 0.82], [0.84, 0.86], [0.92, 1], [1, 1]], [52, 56, 62]);
+    k.pine(0.05, 0.9, 0.16, C.greenDark).pine(0.96, 0.9, 0.14, C.greenDark);
   }),
   H("karnak", "Les temples de Karnak", "Louxor, Égypte", "EG", 25.719, 32.657, "arts", [36, 40], "À Louxor, une forêt de colonnes et d'obélisques élevés par les pharaons pendant des siècles.", (k) => {
-    day(k, 0.7).ground(0.7, C.sand);
-    k.poly([[0.76, 0.7], [0.8, 0.12], [0.84, 0.7]], C.stone).tri(0.78, 0.14, 0.8, 0.04, 0.82, 0.14, C.gold);
-    k.rect(0.06, 0.5, 0.66, 0.06, C.stone).columns(0.12, 0.66, 0.56, 0.9, 6, 0.1, C.sandLight);
-    for (const x of [0.12, 0.3, 0.48, 0.66]) k.rect(x - 0.06, 0.5, 0.12, 0.04, C.sandDark);
-    k.ground(0.9, C.sandDark);
+    dusk(k, 0.66).glow(0.5, 0.55, 0.6, C.orange, 0.3);
+    k.ground(0.66, C.sand).rect(0, 0.78, 1, 0.22, C.sandDark);
+    // the pylon behind, and the obelisk that rises over it
+    k.poly([[0.1, 0.66], [0.16, 0.34], [0.84, 0.34], [0.9, 0.66]], [196, 152, 104]).rect(0.46, 0.34, 0.08, 0.32, [176, 132, 92]);
+    k.poly([[0.62, 0.66], [0.64, 0.14], [0.7, 0.14], [0.72, 0.66]], [220, 176, 130]).tri(0.64, 0.14, 0.67, 0.04, 0.7, 0.14, C.gold);
+    for (let y = 0.2; y < 0.6; y += 0.05) k.dot(0.67, y, [150, 100, 70], 1);
+    // the great columns of the hall, in two rows, with their flared capitals and painted bands
+    const column = (x: number, top: number, w: number, base: number) => {
+      k.rect(x - w / 2, top, w, base - top, [222, 188, 140]).rect(x - w / 2, top, w * 0.25, base - top, [244, 216, 170]).rect(x + w * 0.2, top, w * 0.3, base - top, [170, 128, 96]);
+      k.rect(x - w * 0.85, top - 0.05, w * 1.7, 0.055, [214, 176, 128]).rect(x - w * 0.7, top - 0.09, w * 1.4, 0.04, [236, 204, 156]);
+      k.checker(x - w / 2, top + 0.04, w, 0.03, C.blue, C.red);
+    };
+    for (const x of [0.2, 0.4, 0.6, 0.8]) column(x, 0.46, 0.07, 0.72);
+    for (const x of [0.06, 0.34, 0.66, 0.94]) column(x, 0.4, 0.11, 0.94);
+    k.rect(0, 0.3, 1, 0.045, [200, 160, 116]).rect(0, 0.335, 1, 0.012, C.stoneDark);
   }),
   H("tombouctou", "Tombouctou", "Mali", "ML", 16.775, -3.007, "arts", [36, 36], "Cité de terre, carrefour du commerce et du savoir, au bord du Sahara.", (k) => {
     k.sky(C.duskTop, C.duskLow, 0, 0.7).ground(0.82, C.sand);
@@ -220,8 +343,19 @@ export const HERITAGE: Heritage[] = [
     k.cloud(0.2, 0.28, 0.05).cloud(0.78, 0.18, 0.05);
   }),
   H("table", "La montagne de la Table", "Le Cap, Afrique du Sud", "ZA", -33.963, 18.403, "nature", [28, 28], "Un plateau rocheux, souvent coiffé d'une « nappe » de nuages, veille sur la ville du Cap.", (k) => {
-    day(k, 0.6).rect(0.0, 0.34, 1, 0.34, C.stoneDark).rect(0.0, 0.34, 1, 0.05, C.stone).ground(0.68, C.green).waves(0.84, 0.16, C.water, C.waterLight);
-    k.cloud(0.3, 0.3, 0.07, C.white).cloud(0.66, 0.3, 0.06, C.white);
+    day(k, 0.8).cloud(0.8, 0.12, 0.035);
+    k.waves(0.82, 0.18, C.water, C.waterLight);
+    // the flat-topped mountain, with its gullies and green skirts
+    k.poly([[0, 0.8], [0.04, 0.5], [0.1, 0.38], [0.9, 0.38], [0.96, 0.5], [1, 0.8]], [158, 140, 124]);
+    k.poly([[0.5, 0.38], [0.9, 0.38], [0.96, 0.5], [1, 0.8], [0.5, 0.8]], [124, 108, 98]);
+    for (const x of [0.2, 0.34, 0.6, 0.76]) k.line(x, 0.4, x + 0.02, 0.7, 0.025, [98, 88, 84]);
+    k.poly([[0, 0.8], [0.04, 0.62], [0.22, 0.7], [0.5, 0.72], [0.8, 0.68], [0.96, 0.62], [1, 0.8]], C.green).rect(0, 0.74, 1, 0.08, C.greenDark);
+    // the tablecloth: cloud pouring over the top and down the face
+    for (let x = 0.04; x < 1; x += 0.09) k.disc(x, 0.36, 0.055, C.white);
+    k.rect(0.02, 0.37, 0.96, 0.04, C.white);
+    for (const [x, l] of [[0.14, 0.16], [0.3, 0.1], [0.5, 0.14], [0.7, 0.1], [0.86, 0.15]] as const) k.rect(x, 0.4, 0.05, l, [236, 244, 250]);
+    // the town and the Lion's Head
+    for (let x = 0.08; x < 0.9; x += 0.07) k.rect(x, 0.78, 0.04, 0.03, C.white).rect(x + 0.01, 0.8, 0.012, 0.01, C.brownDark);
   }),
   H("bigben", "Big Ben", "Londres, Royaume-Uni", "GB", 51.501, -0.125, "arts", [30, 40], "La grande cloche de la tour du palais de Westminster, à Londres.", (k) => {
     k.sky(C.duskTop, C.duskLow, 0, 0.9).ground(0.92, C.water);
@@ -287,22 +421,46 @@ export const HERITAGE: Heritage[] = [
     k.rect(0.88, 0.2, 0.02, 0.64, C.greyDark).disc(0.89, 0.18, 0.05, C.yellow);
   }),
   H("carnaval", "Le carnaval de Rio", "Rio de Janeiro, Brésil", "BR", -22.95, -43.2, "arts", [36, 36], "Chaque année, les écoles de samba font défiler plumes, paillettes et tambours.", (k) => {
-    k.fill(C.purple);
-    for (let i = 0; i < 11; i++) { const a = Math.PI + (i / 10) * Math.PI, c = [C.yellow, C.green, C.red, C.pink, C.teal][i % 5]!; k.line(0.5, 0.62, 0.5 + Math.cos(a) * 0.42, 0.62 + Math.sin(a) * 0.5, 0.09, c); }
-    k.disc(0.5, 0.66, 0.16, C.skinDark).rect(0.42, 0.72, 0.16, 0.28, C.gold).dot(0.44, 0.64, C.black, 2).dot(0.54, 0.64, C.black, 2).rect(0.46, 0.72, 0.08, 0.02, C.red).scatter(26, 0, 0, 1, 1, [C.yellow, C.white, C.pink, C.teal]);
+    k.sky([70, 20, 110], [200, 60, 140], 0, 1);
+    for (const x of [0.15, 0.85]) k.tri(x, 0, x - 0.18, 1, x + 0.18, 1, [150, 70, 160]).glow(x, 0.05, 0.3, C.white, 0.35);
+    // the dancer: a fan of feathers behind her head, a feathered skirt, arms thrown up
+    const colours = [C.pink, C.orange, C.yellow, C.teal, C.blue, C.pink, C.orange, C.yellow, C.teal];
+    for (let i = 0; i < 9; i++) { const a = -Math.PI / 2 + (i - 4) * 0.34; k.line(0.5, 0.34, 0.5 + Math.cos(a) * 0.34, 0.34 + Math.sin(a) * 0.34, 0.06, colours[i]!); }
+    k.disc(0.5, 0.36, 0.075, C.brownDark).disc(0.5, 0.39, 0.055, C.skin).dot(0.48, 0.385, C.ink, 1).dot(0.52, 0.385, C.ink, 1).rect(0.485, 0.41, 0.03, 0.008, C.red);
+    k.line(0.46, 0.5, 0.28, 0.32, 0.045, C.skin).line(0.54, 0.5, 0.72, 0.32, 0.045, C.skin).disc(0.27, 0.31, 0.03, C.pink).disc(0.73, 0.31, 0.03, C.yellow);
+    k.rect(0.45, 0.45, 0.1, 0.14, C.skin).disc(0.47, 0.5, 0.027, C.gold).disc(0.53, 0.5, 0.027, C.gold).rect(0.43, 0.58, 0.14, 0.035, C.gold);
+    for (let i = 0; i < 7; i++) { const a = Math.PI / 2 + (i - 3) * 0.42; k.line(0.5, 0.6, 0.5 + Math.cos(a) * 0.3, 0.6 + Math.sin(a) * 0.26, 0.06, colours[i]!); }
+    k.rect(0.46, 0.8, 0.035, 0.16, C.skin).rect(0.505, 0.8, 0.035, 0.16, C.skin).rect(0.42, 0.96, 0.16, 0.04, C.gold);
+    k.scatter(40, 0, 0, 1, 1, [C.yellow, C.white, C.pink, C.teal]);
   }),
   H("estampe", "La Grande Vague", "Japon", "JP", 35.7, 139.75, "arts", [40, 32], "Une vague géante dans la tradition de l'estampe japonaise, avec le mont Fuji au loin.", (k) => {
-    k.fill(C.paper).sky(C.paper, tint(C.dawnLow, 0.3), 0, 0.5).tri(0.5, 0.56, 0.64, 0.38, 0.8, 0.56, C.navy).tri(0.6, 0.43, 0.64, 0.38, 0.68, 0.43, C.white);
-    k.rect(0, 0.56, 1, 0.44, C.navy);
-    k.poly([[0, 1], [0, 0.62], [0.1, 0.4], [0.24, 0.24], [0.4, 0.2], [0.5, 0.3], [0.42, 0.3], [0.34, 0.34], [0.36, 0.5], [0.5, 0.7], [0.6, 1]], C.blue).poly([[0.24, 0.24], [0.4, 0.2], [0.5, 0.3], [0.42, 0.3], [0.34, 0.34], [0.3, 0.28]], C.white);
-    for (let i = 0; i < 7; i++) k.dot(0.3 + i * 0.03, 0.18 + (i % 3) * 0.04, C.white, 2);
-    for (let i = 0; i < 5; i++) k.rect(0.62 + (i % 2) * 0.08, 0.74 + i * 0.05, 0.14, 0.02, C.waterLight);
+    k.fill([240, 224, 188]).rect(0, 0, 1, 0.24, [232, 208, 168]);
+    k.mountain(0.8, 0.66, 0.2, 0.26, [72, 104, 160], [48, 72, 124], C.snow);
+    k.rect(0, 0.6, 1, 0.4, [30, 60, 120]);
+    for (let y = 0.66; y < 1; y += 0.07) for (let x = (y * 100) % 0.12; x < 1; x += 0.12) k.rect(x, y, 0.07, 0.014, [96, 140, 190]);
+    // the great wave: a swell that rears up, and curls over its own hollow
+    k.poly([[0, 1], [0, 0.5], [0.1, 0.34], [0.26, 0.2], [0.44, 0.14], [0.6, 0.18], [0.72, 0.3], [0.78, 0.42], [0.7, 0.36], [0.62, 0.3], [0.54, 0.3], [0.44, 0.38], [0.4, 0.52], [0.46, 0.68], [0.64, 0.8], [0.84, 0.82], [1, 0.78], [1, 1]], [28, 64, 138]);
+    k.poly([[0.1, 0.34], [0.26, 0.2], [0.44, 0.14], [0.6, 0.18], [0.72, 0.3], [0.64, 0.26], [0.5, 0.24], [0.34, 0.28], [0.2, 0.38]], [64, 112, 186]);
+    // foam: the white claws at the crest, and the spray flung off it
+    for (const [x, y, x2, y2] of [[0.6, 0.18, 0.66, 0.26], [0.68, 0.24, 0.76, 0.34], [0.72, 0.3, 0.8, 0.42], [0.5, 0.15, 0.56, 0.24], [0.4, 0.15, 0.44, 0.22]] as const) k.line(x, y, x2, y2, 0.035, C.white);
+    k.tri(0.74, 0.36, 0.84, 0.5, 0.76, 0.44, C.white).tri(0.66, 0.3, 0.74, 0.44, 0.68, 0.36, C.white);
+    k.scatter(34, 0.5, 0.06, 0.4, 0.34, [C.white, [220, 236, 250]]);
+    k.rect(0, 0.6, 0.3, 0.01, [96, 140, 190]);
   }),
   H("holi", "Holi", "Mathura, Inde", "IN", 27.49, 77.67, "arts", [32, 32], "Fête indienne des couleurs, célébrée à l'arrivée du printemps.", (k) => {
-    k.fill(C.white);
-    for (const [x, y, r, c] of [[0.3, 0.3, 0.26, C.magenta], [0.66, 0.28, 0.24, C.yellow], [0.5, 0.56, 0.28, C.teal], [0.22, 0.72, 0.2, C.green], [0.78, 0.7, 0.22, C.orange]] as const) k.disc(x, y, r, c);
-    k.disc(0.48, 0.4, 0.16, C.pink).disc(0.4, 0.7, 0.14, C.purple).disc(0.62, 0.45, 0.12, C.blue).scatter(40, 0, 0, 1, 1, [C.magenta, C.yellow, C.teal, C.green, C.orange, C.blue]);
-    k.disc(0.5, 0.62, 0.08, C.skinDark).dot(0.47, 0.6, C.white, 1).dot(0.53, 0.6, C.white, 1);
+    day(k, 0.9);
+    // clouds of coloured powder thrown into the air
+    for (const [x, y, r, c] of [[0.2, 0.24, 0.17, C.magenta], [0.5, 0.15, 0.15, C.yellow], [0.8, 0.24, 0.17, C.blue], [0.1, 0.5, 0.1, C.orange], [0.9, 0.52, 0.1, C.green], [0.5, 0.4, 0.09, C.purple]] as const) {
+      k.glow(x, y, r * 1.8, c, 0.45).disc(x, y, r, c).scatter(26, x - r * 1.6, y - r * 1.6, r * 3.2, r * 3.2, [c, tint(c, 0.45)]);
+    }
+    // two dancers in white, their shirts splashed with colour, arms thrown up
+    for (const [x, s] of [[0.3, 0.4], [0.7, 0.4]] as const) {
+      k.line(x - 0.06, 0.66, x - 0.14, 0.46, 0.05, C.skin).line(x + 0.06, 0.66, x + 0.14, 0.46, 0.05, C.skin);
+      k.disc(x, 0.5, 0.078, C.brownDark);
+      k.rect(x - 0.08, 0.6, 0.16, 0.22, C.white).disc(x, 0.52, 0.07, C.skin).rect(x - 0.08, 0.56, 0.16, 0.035, C.brownDark).rect(x - 0.07, 0.82, 0.05, 0.12, C.blue).rect(x + 0.02, 0.82, 0.05, 0.12, C.blue);
+      k.scatter(14, x - 0.08, 0.6, 0.16, 0.22, [C.magenta, C.yellow, C.blue, C.green, C.orange]);
+    }
+    k.rect(0, 0.94, 1, 0.06, [200, 170, 140]).scatter(40, 0, 0.92, 1, 0.08, [C.magenta, C.yellow, C.blue, C.green, C.orange]);
   }),
   H("mandala", "Mandala", "Varanasi, Inde", "IN", 25.317, 82.973, "arts", [36, 36], "Motif sacré de l'hindouisme et du bouddhisme, symbole de l'univers en équilibre.", (k) => {
     k.fill(C.navy);
@@ -335,9 +493,17 @@ export const HERITAGE: Heritage[] = [
     k.line(0.36, 0.36, 0.26, 0.26, 0.03, C.clay).line(0.64, 0.36, 0.74, 0.28, 0.03, C.clay).line(0.36, 0.64, 0.26, 0.74, 0.03, C.clay).line(0.64, 0.64, 0.74, 0.74, 0.03, C.clay);
   }),
   H("maori", "Le koru maori", "Rotorua, Nouvelle-Zélande", "NZ", -38.137, 176.249, "arts", [30, 30], "Spirale de fougère qui évoque la vie, la croissance et le renouveau.", (k) => {
-    k.fill(C.black).rect(0, 0, 1, 0.08, C.teal).rect(0, 0.92, 1, 0.08, C.teal);
-    for (let t = 0; t <= 1; t += 0.012) { const a = t * Math.PI * 3.6 + 0.4, rr = 0.36 * (1 - t * 0.85); k.disc(0.5 + Math.cos(a) * rr * (a < 6 ? 1 : 1), 0.5 + Math.sin(a) * rr, 0.045 + (1 - t) * 0.04, t < 0.5 ? C.white : C.stoneLight); }
-    k.disc(0.5, 0.5, 0.05, C.teal);
+    k.fill(C.brownDark).rect(0.04, 0.04, 0.92, 0.92, [58, 38, 28]).rect(0.04, 0.04, 0.92, 0.03, C.gold).rect(0.04, 0.93, 0.92, 0.03, C.gold);
+    for (let i = 0; i < 12; i++) k.tri(0.06 + i * 0.075, 0.9, 0.0975 + i * 0.075, 0.82, 0.135 + i * 0.075, 0.9, C.clay);
+    // the koru: a fern frond uncurling, a spiral that tapers as it winds in, with its stem
+    let px = 0.5, py = 0.5;
+    for (let i = 0; i <= 150; i++) {
+      const t = i / 150, a = 0.7 + t * 3.1 * Math.PI, r = 0.36 * (1 - t * 0.92);
+      px = 0.5 + Math.cos(a) * r * 0.95; py = 0.46 + Math.sin(a) * r;
+      k.disc(px, py, 0.085 * (1 - t * 0.72) + 0.012, [238, 228, 204]);
+    }
+    k.disc(px, py, 0.035, C.teal).line(0.2, 0.78, 0.34, 0.6, 0.06, [238, 228, 204]).disc(0.2, 0.79, 0.04, [238, 228, 204]);
+    k.disc(0.5, 0.52, 0.02, C.black);
   }),
   H("totem", "Le totem", "Yukon, Canada", "CA", 60.72, -135.06, "arts", [24, 40], "Mâts sculptés des peuples du nord-ouest du Pacifique, qui racontent des familles et des histoires.", (k) => {
     day(k, 0.9).ground(0.9, C.greenDark);
@@ -353,8 +519,19 @@ export const HERITAGE: Heritage[] = [
   }),
   H("calligraphie", "La calligraphie chinoise", "Suzhou, Chine", "CN", 31.299, 120.585, "arts", [30, 30], "Le caractère « éternité » (永), dont on apprend à tracer huit traits fondamentaux.", (k) => {
     k.fill(C.paper).rect(0.04, 0.04, 0.92, 0.92, tint(C.paper, 0.35)).rect(0.04, 0.04, 0.92, 0.02, C.red).rect(0.04, 0.94, 0.92, 0.02, C.red);
-    k.disc(0.5, 0.2, 0.05, C.black).line(0.5, 0.2, 0.62, 0.24, 0.07, C.black).line(0.24, 0.34, 0.78, 0.34, 0.06, C.black).line(0.5, 0.3, 0.5, 0.74, 0.07, C.black).line(0.5, 0.74, 0.42, 0.82, 0.07, C.black).line(0.3, 0.5, 0.42, 0.6, 0.05, C.black).line(0.7, 0.5, 0.82, 0.42, 0.05, C.black).line(0.5, 0.52, 0.2, 0.84, 0.06, C.black).line(0.5, 0.52, 0.82, 0.84, 0.06, C.black);
-    k.rect(0.8, 0.76, 0.1, 0.12, C.red).dot(0.84, 0.8, C.paper, 2);
+    // the guide lines of the practice sheet
+    const guide: RGB = [236, 196, 180];
+    k.line(0.5, 0.06, 0.5, 0.94, 0.012, guide).line(0.06, 0.5, 0.94, 0.5, 0.012, guide).line(0.06, 0.06, 0.94, 0.94, 0.01, guide).line(0.94, 0.06, 0.06, 0.94, 0.01, guide);
+    // 永, "eternity", in its eight strokes: dot, horizontal-turn-hook, vertical hook, rising stroke, long and short falling strokes, press
+    const ink = C.black;
+    k.line(0.5, 0.12, 0.56, 0.21, 0.08, ink);
+    k.line(0.3, 0.3, 0.66, 0.3, 0.06, ink).line(0.66, 0.3, 0.66, 0.52, 0.06, ink).line(0.66, 0.52, 0.6, 0.47, 0.045, ink);
+    k.line(0.48, 0.3, 0.48, 0.82, 0.065, ink).line(0.48, 0.82, 0.4, 0.77, 0.045, ink);
+    k.line(0.28, 0.6, 0.4, 0.5, 0.05, ink);
+    k.line(0.46, 0.56, 0.25, 0.84, 0.065, ink).line(0.58, 0.56, 0.52, 0.69, 0.05, ink);
+    k.line(0.56, 0.58, 0.78, 0.84, 0.065, ink).line(0.7, 0.75, 0.8, 0.86, 0.085, ink);
+    k.rect(0.8, 0.76, 0.12, 0.14, C.red).rect(0.83, 0.79, 0.06, 0.02, C.paper).rect(0.83, 0.83, 0.06, 0.02, C.paper).rect(0.84, 0.79, 0.02, 0.08, C.paper);
+    k.scatter(4, 0.2, 0.1, 0.7, 0.8, [C.ink]);
   }),
   H("wayang", "Le wayang", "Yogyakarta, Indonésie", "ID", -7.797, 110.37, "arts", [36, 36], "Théâtre d'ombres javanais, où des marionnettes de cuir racontent d'anciennes épopées.", (k) => {
     k.sky(C.orange, C.yellow, 0, 1).rect(0, 0.9, 1, 0.1, C.brownDark);
@@ -368,10 +545,21 @@ export const HERITAGE: Heritage[] = [
     for (const [x, y] of [[0.5, 0.36], [0.44, 0.62], [0.64, 0.5]] as const) k.disc(x, y, 0.05, C.greenDark);
   }),
   H("sushi", "Les sushi", "Osaka, Japon", "JP", 34.69, 135.5, "food", [30, 30], "Du riz vinaigré et du poisson cru : une cuisine japonaise devenue universelle.", (k) => {
-    k.fill(C.brownDark).disc(0.5, 0.5, 0.48, C.black).disc(0.5, 0.5, 0.44, C.white);
-    k.rect(0.12, 0.28, 0.3, 0.16, C.white).rect(0.1, 0.22, 0.34, 0.1, C.orange).rect(0.5, 0.28, 0.3, 0.16, C.white).rect(0.48, 0.22, 0.34, 0.1, C.red);
-    k.disc(0.28, 0.7, 0.14, C.black).disc(0.28, 0.7, 0.09, C.white).disc(0.28, 0.7, 0.04, C.orange).disc(0.62, 0.7, 0.14, C.black).disc(0.62, 0.7, 0.09, C.white).disc(0.62, 0.7, 0.04, C.green);
-    k.line(0.1, 0.9, 0.9, 0.6, 0.025, C.brown);
+    k.fill([150, 104, 64]);
+    for (let y = 0.05; y < 1; y += 0.18) k.rect(0, y, 1, 0.012, [120, 80, 50]);
+    // the black plate, with its edge
+    k.rect(0.06, 0.16, 0.88, 0.68, [34, 30, 40]).rect(0.08, 0.18, 0.84, 0.64, [52, 46, 58]);
+    // three nigiri: rice under a slice of salmon, tuna and salmon again
+    for (const [x, c] of [[0.12, C.orange], [0.34, C.red], [0.56, C.orange]] as const) {
+      k.rect(x, 0.5, 0.18, 0.11, C.white).rect(x - 0.015, 0.4, 0.21, 0.12, c);
+      k.rect(x + 0.02, 0.4, 0.014, 0.12, tint(c, 0.6)).rect(x + 0.07, 0.4, 0.014, 0.12, tint(c, 0.6)).rect(x + 0.12, 0.4, 0.014, 0.12, tint(c, 0.6));
+    }
+    // two maki seen from above: seaweed, rice, filling
+    for (const [x, c] of [[0.3, C.orange], [0.62, C.green]] as const) k.disc(x, 0.72, 0.1, C.black).disc(x, 0.72, 0.078, C.white).disc(x, 0.72, 0.034, c);
+    // wasabi, pickled ginger, a dish of soy sauce and chopsticks
+    k.disc(0.84, 0.46, 0.04, C.greenLight).disc(0.84, 0.56, 0.035, C.pink).disc(0.78, 0.6, 0.03, tint(C.pink, 0.3));
+    k.disc(0.82, 0.28, 0.07, [18, 16, 22]).disc(0.82, 0.28, 0.05, [74, 40, 30]);
+    k.line(0.1, 0.9, 0.9, 0.78, 0.03, C.brown).line(0.1, 0.95, 0.9, 0.86, 0.03, C.brown);
   }),
   H("tajine", "Le tajine", "Marrakech, Maroc", "MA", 31.63, -8.0, "food", [30, 30], "Un plat mijoté dans sa poterie à couvercle conique, emblème de la cuisine du Maroc.", (k) => {
     k.sky(C.duskTop, C.duskLow, 0, 1).ground(0.78, C.sandDark);
@@ -600,9 +788,18 @@ export const HERITAGE: Heritage[] = [
     for (const [x, y, s] of [[0.1, 0.62, 1], [0.24, 0.7, 1.1], [0.4, 0.64, 0.9], [0.56, 0.74, 1.2], [0.72, 0.66, 1], [0.86, 0.78, 1.2], [0.34, 0.86, 1.2], [0.64, 0.9, 1.3]] as const) { k.rect(x, y, 0.08 * s, 0.05 * s, C.black).rect(x - 0.02 * s, y - 0.03 * s, 0.04 * s, 0.05 * s, C.black).rect(x + 0.01 * s, y + 0.05 * s, 0.012, 0.04 * s, C.black).rect(x + 0.06 * s, y + 0.05 * s, 0.012, 0.04 * s, C.black); }
   }),
   H("orang", "L'orang-outan", "Bornéo, Indonésie", "ID", 0.9, 114.0, "nature", [30, 36], "« Homme de la forêt » en malais, il vit dans les forêts de Bornéo et de Sumatra.", (k) => {
-    k.fill(C.greenDark).scatter(24, 0, 0, 1, 1, [C.green, C.greenLight]).line(0, 0.18, 1, 0.1, 0.07, C.brown);
-    k.disc(0.5, 0.5, 0.36, C.orange).disc(0.5, 0.56, 0.22, C.skinDark).disc(0.4, 0.5, 0.045, C.black).disc(0.6, 0.5, 0.045, C.black).dot(0.4, 0.48, C.white, 1).dot(0.6, 0.48, C.white, 1).rect(0.44, 0.66, 0.12, 0.03, C.black).disc(0.5, 0.58, 0.03, C.brown);
-    k.line(0.18, 0.2, 0.32, 0.44, 0.07, C.orange).line(0.82, 0.14, 0.7, 0.44, 0.07, C.orange);
+    k.sky([40, 96, 60], [92, 160, 80], 0, 1);
+    for (const [x, y, r, c] of [[0.1, 0.1, 0.16, C.greenDark], [0.9, 0.12, 0.18, C.greenDark], [0.5, 0.04, 0.14, C.green], [0.06, 0.8, 0.15, C.greenDark], [0.94, 0.78, 0.17, C.green], [0.3, 0.94, 0.12, C.greenDark], [0.74, 0.96, 0.14, C.greenDark]] as const) k.disc(x, y, r, c);
+    // the branch he hangs from
+    k.line(0.0, 0.16, 1, 0.08, 0.07, C.brown).line(0.0, 0.2, 1, 0.12, 0.02, C.brownDark);
+    // arms, shaggy orange fur and a dark face with wide cheek pads
+    const fur: RGB = [226, 112, 36], furDark: RGB = [172, 74, 28];
+    k.line(0.34, 0.5, 0.18, 0.14, 0.1, fur).line(0.66, 0.5, 0.84, 0.1, 0.1, fur).disc(0.17, 0.12, 0.05, furDark).disc(0.85, 0.09, 0.05, furDark);
+    k.disc(0.5, 0.7, 0.3, fur).disc(0.5, 0.5, 0.25, fur);
+    k.scatter(70, 0.22, 0.34, 0.56, 0.7, [furDark, [244, 150, 60], furDark]);
+    k.disc(0.5, 0.45, 0.14, [150, 98, 70]).disc(0.37, 0.48, 0.07, [120, 76, 56]).disc(0.63, 0.48, 0.07, [120, 76, 56]).disc(0.5, 0.5, 0.11, [170, 112, 82]);
+    k.disc(0.5, 0.3, 0.1, fur).dot(0.43, 0.44, C.black, 2).dot(0.57, 0.44, C.black, 2).dot(0.435, 0.435, C.white, 1).dot(0.575, 0.435, C.white, 1);
+    k.dot(0.47, 0.51, C.ink, 1).dot(0.53, 0.51, C.ink, 1).rect(0.45, 0.56, 0.1, 0.012, C.ink).rect(0.46, 0.6, 0.08, 0.06, furDark);
   }),
 ];
 
