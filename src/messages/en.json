@@ -248,6 +248,7 @@
       "likes": "{n, plural, =0 {No like yet} one {# like} other {# likes}}",
       "pending": "This trace will be public as soon as a moderator has validated it.",
       "hidden": "The content of this trace is currently hidden by moderation.",
+      "pendingOwn": "Waiting for moderation. Only you (and the moderation team) can see this version: it will be public as soon as a moderator has approved it.",
       "closedNote": "This edition is closed: its traces are kept as they were, and can no longer be changed.",
       "shareText": "{title}, a trace left in the collective archive of our time.",
       "descriptionFallback": "A trace left by {author} in the collective archive of our time.",

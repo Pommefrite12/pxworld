@@ -99,6 +99,19 @@ export async function getPublicParcel(code: string, lang?: string): Promise<Parc
   return toView(r, lang);
 }
 
+/**
+ * The creation of a parcel that is WAITING for moderation (its newest pending version), for the people allowed to see it before the public does: its
+ * uploader and the staff. The caller decides who they are; the image is served by `/api/assets/<id>`, which applies the same rule again.
+ */
+export async function getPendingCreation(parcelId: string): Promise<{ asset_id: string; title: string | null; description: string | null; link_url: string | null; is_commercial: boolean; category: string | null; place_label: string | null; place_country: string | null; translation: null } | null> {
+  const r = await queryOne<{ asset_id: string; title: string | null; description: string | null; link_url: string | null; is_commercial: boolean; category: string | null; place_label: string | null; place_country: string | null }>(
+    `select id as asset_id, title, description, link_url, is_commercial, category, place_label, place_country
+       from public.parcel_assets where parcel_id = $1 and status = 'pending' order by version desc limit 1`,
+    [parcelId],
+  );
+  return r ? { ...r, translation: null } : null; // what its author wrote is shown as written (a text that is not published is not translated)
+}
+
 export async function getParcelsOf(userId: string) {
   return query<{
     id: string; code: string; x: number; y: number; w: number; h: number; area: number; status: string; tier: string; covered_at: Date | null; hidden: boolean;

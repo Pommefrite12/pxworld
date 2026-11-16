@@ -7,7 +7,8 @@ import { ShareButton } from "@/components/archive/ShareButton";
 import { PageShell } from "@/components/layout/PageShell";
 import { Link } from "@/i18n/navigation";
 import { getEdition } from "@/lib/data/edition";
-import { getPublicParcel } from "@/lib/data/parcels";
+import { getPendingCreation, getPublicParcel } from "@/lib/data/parcels";
+import { getViewer } from "@/lib/auth/session";
 import { languageName } from "@/lib/i18n/languageName";
 import { siteUrl } from "@/lib/env";
 import { assetUrl } from "@/lib/images/sizes";
@@ -50,7 +51,10 @@ export default async function ArchivePage({ params }: { params: Promise<{ locale
   if (!p) notFound();
   const [t, f, edition] = await Promise.all([getTranslations("archive.page"), getFormatter(), getEdition()]);
   const te = await getTranslations("archive.editions");
-  const c = p.creation;
+  // nothing published yet: the author (and the staff) see the version that waits for moderation, marked as such; everybody else sees that it waits
+  const viewer = !p.creation && !p.hidden ? await getViewer().catch(() => null) : null;
+  const waiting = viewer && (viewer.user.id === p.owner.id || viewer.staffRole) ? await getPendingCreation(p.id).catch(() => null) : null;
+  const c = p.creation ?? waiting;
   const title = c?.title ?? t("untitled");
   const author = p.tier === "illustration" ? t("illustration") : p.owner.username;
   const shown = Math.max(1, Math.floor(512 / Math.max(p.w, p.h)));
@@ -69,6 +73,7 @@ export default async function ArchivePage({ params }: { params: Promise<{ locale
             : <>{t("by")} <Link href={`/u/${p.owner.username}`} className="font-semibold text-ink underline underline-offset-2" data-testid="archive-author">{p.owner.username}</Link></>}
           {" · "}<span data-testid="archive-date">{p.activated_at ? t("archivedOn", { date: f.dateTime(p.activated_at, { dateStyle: "long" }) }) : ""}</span>
         </p>
+        {waiting && <p className="mt-3 rounded-2xl bg-paper-2 p-4 text-sm text-ink-soft" data-testid="archive-pending-own">{t("pendingOwn")}</p>}
         {c && <ArchiveChips className="mt-3" category={c.category} placeLabel={c.place_label} placeCountry={c.place_country} />}
 
         <div className="checker mt-6 grid place-items-center rounded-2xl p-4 shadow-float" style={{ minHeight: 160 }}>

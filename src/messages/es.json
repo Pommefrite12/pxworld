@@ -248,6 +248,7 @@
       "likes": "{n, plural, =0 {Aún sin «me gusta»} one {# me gusta} other {# me gusta}}",
       "pending": "Esta huella será pública en cuanto un moderador la valide.",
       "hidden": "El contenido de esta huella está oculto por la moderación.",
+      "pendingOwn": "Pendiente de moderación. Solo tú (y el equipo de moderación) ves esta versión: será pública en cuanto un moderador la valide.",
       "closedNote": "Esta edición está cerrada: sus huellas se conservan tal como estaban y ya no se pueden modificar.",
       "shareText": "{title}, una huella dejada en el archivo colectivo de nuestro tiempo.",
       "descriptionFallback": "Una huella dejada por {author} en el archivo colectivo de nuestro tiempo.",

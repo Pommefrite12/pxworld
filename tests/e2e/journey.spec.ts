@@ -126,7 +126,10 @@ test.describe.serial("buy → pay → moderate → publish", () => {
     await page.waitForURL(/\/archive\/[0-9a-f]{10}/); // the confirmation leads to the trace's own archive page
     parcelCode = page.url().split("/").pop()!.split("?")[0]!;
     expect(parcelCode).toMatch(/^[0-9a-f]{10}$/);
-    await expect(page.getByTestId("archive-pending")).toContainText(/as soon as a moderator has validated it/i);
+    // its author sees what they sent, marked as waiting for moderation (the public sees only that it waits)
+    await expect(page.getByTestId("archive-pending-own")).toContainText(/waiting for moderation/i);
+    await expect(page.getByTestId("archive-title")).toHaveText("Hello world");
+    await expect(page.getByTestId("archive-image")).toBeVisible();
 
     // my parcels + orders
     await page.goto("/account/parcels");

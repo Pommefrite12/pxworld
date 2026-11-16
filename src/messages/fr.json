@@ -248,6 +248,7 @@
       "likes": "{n, plural, =0 {Aucun j'aime pour l'instant} one {# j'aime} other {# j'aime}}",
       "pending": "Cette empreinte sera publique dès qu'un modérateur l'aura validée.",
       "hidden": "Le contenu de cette empreinte est actuellement masqué par la modération.",
+      "pendingOwn": "En attente de modération. Vous êtes la seule personne à voir cette version (avec l'équipe de modération) : elle sera publique dès qu'un modérateur l'aura validée.",
       "closedNote": "Cette édition est close : ses empreintes sont conservées telles qu'elles étaient et ne peuvent plus être modifiées.",
       "shareText": "{title}, une empreinte laissée dans l'archive collective de notre époque.",
       "descriptionFallback": "Une empreinte laissée par {author} dans l'archive collective de notre époque.",

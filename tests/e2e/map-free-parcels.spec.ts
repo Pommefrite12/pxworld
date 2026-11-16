@@ -135,7 +135,11 @@ test("the buy panel offers a free imprint: free sizes, the price says Free, the 
   await dialog.getByTestId("co-pay").click();
   await page.waitForURL(/\/archive\/[0-9a-f]{10}/); // placed: its own archive page, waiting for moderation
   await expect(page.getByTestId("archive-free")).toBeVisible();
-  await expect(page.getByTestId("archive-pending")).toContainText(/as soon as a moderator has validated it/i);
+  // its author sees what they sent, marked as waiting for moderation
+  await expect(page.getByTestId("archive-pending-own")).toContainText(/waiting for moderation/i);
+  await expect(page.getByTestId("archive-title")).toHaveText("My first free trace");
+  await expect(page.getByTestId("archive-description")).toHaveText("A first free trace.");
+  await expect(page.getByTestId("archive-image")).toBeVisible();
 
   // the turn is used: the panel says so, and the status explains why a small size is refused
   await page.goto(`/map?bx=${SPOT.x + 10}&by=${SPOT.y}&bw=3&bh=3`);
@@ -213,6 +217,49 @@ test("an administrator places as many free imprints as it wants: no quota, no ra
     await expect(page.getByTestId("buy-free-3x3")).toBeVisible();
   } finally {
     await sql(`delete from public.parcels where owner_id in (select id from auth.users where email in ('admin.many@example.test', 'free-limited@example.test'))`);
+    await sql(`update public.map_state set version = version + 1, updated_at = now() where id = 1`);
+  }
+});
+
+test("after sending an imprint, its author sees their own preview, title and description (marked as waiting for moderation); the public sees only that it waits; the staff see it too", async ({ page, request }) => {
+  const carol = await as("free-pending@example.test"), other = await as("free-pending-other@example.test"), admin = await as("admin.pending@example.test", "admin");
+  try {
+    const r = await place(carol, { x: 27_960, y: 11_030, w: 3, h: 3 }, "Mon titre en attente");
+    expect(r.status(), await r.text()).toBe(201);
+    const { code } = (await r.json()) as { code: string };
+    const assetId = (await sql<{ id: string }>(`select a.id from public.parcel_assets a join public.parcels p on p.id = a.parcel_id where p.code = $1 and a.status = 'pending'`, [code]))[0]!.id;
+
+    // its author: the preview, the title and the description, with the mention that it waits
+    await page.context().addCookies((await carol.storageState()).cookies);
+    await page.goto(`/archive/${code}`);
+    await expect(page.getByTestId("archive-title")).toHaveText("Mon titre en attente");
+    await expect(page.getByTestId("archive-description")).toHaveText("A short description");
+    await expect(page.getByTestId("archive-pending-own")).toContainText("Waiting for moderation");
+    await expect(page.getByTestId("archive-pending")).toHaveCount(0);
+    const img = page.getByTestId("archive-image");
+    await expect(img).toBeVisible();
+    await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true); // the picture really loads (the author may fetch a waiting one)
+
+    // the public sees only that it waits: nothing of the title, the description or the picture; the picture itself is not served to it
+    const publicHtml = await (await request.get(`/archive/${code}`)).text();
+    expect(publicHtml).not.toContain("Mon titre en attente");
+    expect(publicHtml).toContain('data-testid="archive-pending"'); // (the words are in every page's messages: it is the rendered marker that counts)
+    expect(publicHtml).not.toContain('data-testid="archive-pending-own"');
+    expect((await request.get(`/api/assets/${assetId}`)).status()).toBe(404);
+    // another account is the public too
+    expect(await (await other.get(`/archive/${code}`)).text()).not.toContain("Mon titre en attente");
+    expect((await other.get(`/api/assets/${assetId}`)).status()).toBe(404);
+    // the staff see it, to moderate it
+    expect(await (await admin.get(`/archive/${code}`)).text()).toContain("Mon titre en attente");
+
+    // approved: it is public, and the mention is gone
+    expect((await admin.post("/api/admin/action", { data: { action: "review_asset", assetId, decision: "approve" } })).status()).toBe(200);
+    const after = await (await request.get(`/archive/${code}`)).text();
+    expect(after).toContain("Mon titre en attente");
+    expect(after).not.toContain('data-testid="archive-pending-own"');
+    expect(after).not.toContain('data-testid="archive-pending"');
+  } finally {
+    await sql(`delete from public.parcels where owner_id in (select id from auth.users where email in ('free-pending@example.test'))`);
     await sql(`update public.map_state set version = version + 1, updated_at = now() where id = 1`);
   }
 });
