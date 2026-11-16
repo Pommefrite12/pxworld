@@ -446,6 +446,22 @@ la base contient déjà un paiement réel ; ou l'identifiant du projet Supabase 
 > Je n'ai pu essayer la création de comptes par l'API d'administration de Supabase que sur une base locale, pas sur un vrai projet : si Supabase refuse un compte, le message est affiché tel quel (collez-le moi).
 > Si c'est l'adresse `…@demo.invalid` qui est refusée, ajoutez `--email-domain exemple.test` (même option pour `demo:clear`).
 
+## Étape 9a : tester le site avec ÉNORMÉMENT de parcelles (le mode « volume »)
+
+L'outil de l'étape 9 crée un compte Supabase par parcelle (500 au plus, et lentement). Pour voir comment le site se comporte quand le monde est **plein**, utilisez le **mode volume** : il crée **quelques dizaines de comptes seulement** (`demo-vol-001@demo.invalid`…), **un petit stock d'images** partagé par toutes les parcelles (48 fichiers au plus, et non un par parcelle) et insère les parcelles **par lots de 1 000, directement dans la base**, déjà validées et publiées. Mesuré sur une base locale : **20 000 parcelles en 15 secondes**, environ **40 Mo** de base de données (≈ 1,5 Ko par parcelle ; la formule gratuite de Supabase offre 500 Mo). Sur Supabase, comptez plus : quelques minutes pour 20 000.
+
+1. Prérequis : le `git pull` fait, `.env.production.local` recréé (étape 9, point 1), **migrations appliquées**.
+2. **Commencez petit**, puis montez :
+   ```bash
+   npm run demo:seed -- --env .env.production.local --i-know-this-is-a-test-site --project VOTRE_ID_PROJET --volume 2000
+   ```
+   Résultat attendu : `Done in … s: 2000 parcels created (0 already there), 40 accounts created, … pictures stored.`
+3. **Relancez avec un nombre plus grand** pour compléter : `--volume 10000`, puis `--volume 30000` (jusqu'à **50 000**). Ça n'ajoute que la différence, jamais de doublon. Option : `--owners 100` (nombre de comptes propriétaires, de 1 à 300, 40 par défaut).
+4. Rechargez le site (**Ctrl+Maj+R**) et regardez : la vue du monde entier à l'arrivée, un zoom sur Paris, Londres, New York ou Tokyo (c'est là que les parcelles se concentrent), la recherche, **Découvrir**, le **classement**, la page d'une parcelle, le panneau d'achat, les compteurs. Pour voir les temps de chargement de la carte, ajoutez `?perf` à l'adresse de la carte.
+5. **Pour tout retirer** : `npm run demo:clear -- --env .env.production.local --i-know-this-is-a-test-site --project VOTRE_ID_PROJET --yes` (par morceaux de 2 000 : compter quelques secondes à quelques minutes). **Les compteurs publics afficheront ces chiffres tant que les parcelles existent** (pixels acquis, parcelles, propriétaires : 40 comptes seulement) ; ces parcelles n'ont ni commande ni paiement.
+
+**À savoir :** leurs textes sont marqués pour que la **traduction automatique ne coûte rien** dessus. Leurs images sont partagées (peu variées : c'est voulu, ce qui compte ici est le nombre, pas l'image). Ce sont des parcelles **payées** : **aucun achat ne peut passer dessus** (contrairement aux illustrations et aux empreintes gratuites, qui sont recouvertes) ; pour acheter ou poser une empreinte, il faut viser un endroit libre.
+
 ## Étape 9b : « l'édition » — les 365 jours s'ouvrent à la main (10 min)
 
 **Nouveauté (migration 19).** La date de fin n'est plus une variable de configuration : l'état du site (**pré-lancement**, **ouvert**, **clos**) est décidé par la base de données, avec sa propre horloge. Et **les 365 jours ne démarrent jamais tout seuls** : après la migration, le site est en **pré-lancement** (la carte se visite, **rien ne s'achète**) tant qu'un administrateur n'a pas cliqué sur « Ouvrir l'édition ».

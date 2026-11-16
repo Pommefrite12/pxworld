@@ -38,13 +38,13 @@ const WORDS = ["lucie", "mathis", "chloe", "hugo", "emma", "louis", "jade", "noa
   "fox", "panda", "otter", "heron", "lynx", "koala", "gecko", "bison", "wolf", "crane", "orca", "yak", "moth", "newt", "seal", "swan", "ibis", "kiwi", "lark", "wren",
   "pixel", "neon", "mint", "coral", "amber", "indigo", "olive", "ruby", "onyx", "sky", "dune", "reef", "fjord", "delta", "ember", "frost", "grove", "lagoon", "mesa", "tundra"];
 
-const TITLES = ["Soleil de minuit", "Le petit renard", "Neon Harbour", "Café des arts", "Mon premier pixel", "Studio Lumière", "Vagues", "Ciel d'orage", "Pixel Phoenix", "Les toits de Lyon",
+export const TITLES = ["Soleil de minuit", "Le petit renard", "Neon Harbour", "Café des arts", "Mon premier pixel", "Studio Lumière", "Vagues", "Ciel d'orage", "Pixel Phoenix", "Les toits de Lyon",
   "Blue Hour", "Atelier 42", "Rêve éveillé", "Mosaïque", "Lanterne", "Hello World", "Jardin secret", "Cap au nord", "Retro Arcade", "Maison bleue", "Étoile filante", "Port de nuit",
   "Sunrise Club", "La grande ourse", "Fresque", "Tiny Planet", "Orange Cat", "Marché d'été", "Aurore", "Vinyle", "Green Valley", "Bonjour monde", "Totem", "Brise de mer", "Night Owl",
   "Origami", "Carnet de voyage", "Cosmos", "La Tour", "Kaléidoscope", "Retrowave", "Sieste", "Pop Corn", "Ligne claire", "Tropiques", "Bleu Klein", "Rouge Gorge", "Archipel", "Zen Garden", "Le Phare",
   "Pixel Bakery", "Matin calme", "Skyline", "Nuage rose", "Cabane", "Horizon", "Ping Pong", "Terre de feu", "Mille et un", "Papier peint"];
 
-const DESCRIPTIONS = ["Création de démonstration.", "Démo : une parcelle pour voir à quoi ressemble la carte habitée.", "Exemple de création (données de démonstration).", "Démo : un morceau de planète décoré."];
+export const DESCRIPTIONS = ["Création de démonstration.", "Démo : une parcelle pour voir à quoi ressemble la carte habitée.", "Exemple de création (données de démonstration).", "Démo : un morceau de planète décoré."];
 
 export interface DemoItem {
   index: number;

@@ -141,14 +141,21 @@ export interface ClearReport { users: number; parcels: number; files: number }
 export async function clearDemo(p: DemoPorts, opts: { emailDomain: string }): Promise<ClearReport> {
   const ids = (await p.query<{ id: string }>("select id from auth.users where email like $1", [sqlLike(opts.emailDomain)])).map((r) => r.id);
   if (!ids.length) return { users: 0, parcels: 0, files: 0 };
-  const paths = (await p.query<{ storage_path: string }>(
-    "select a.storage_path from public.parcel_assets a join public.parcels pc on pc.id = a.parcel_id where pc.owner_id = any($1::uuid[])", [ids])).map((r) => r.storage_path);
-  const gone = await p.query<{ id: string }>("delete from public.parcels where owner_id = any($1::uuid[]) returning id", [ids]);
+  // (the volume mode shares a few files between thousands of parcels: each file is removed once)
+  const paths = [...new Set((await p.query<{ storage_path: string }>(
+    "select distinct a.storage_path from public.parcel_assets a join public.parcels pc on pc.id = a.parcel_id where pc.owner_id = any($1::uuid[])", [ids])).map((r) => r.storage_path))];
+  let parcels = 0;
+  for (;;) { // in pieces: a world of tens of thousands of parcels is not deleted in one statement
+    const gone = await p.query<{ id: string }>("delete from public.parcels where id in (select id from public.parcels where owner_id = any($1::uuid[]) limit 2000) returning id", [ids]);
+    parcels += gone.length;
+    if (gone.length < 2000) break;
+    p.log(`  ${parcels} parcels removed…`);
+  }
   let files = 0;
   for (const key of paths) { try { await p.removeObject(key); files++; } catch { p.log(`  (could not remove the file ${key})`); } }
   for (const id of ids) await p.deleteUser(id);
   await p.query("update public.map_state set version = version + 1, updated_at = now() where id = 1");
-  return { users: ids.length, parcels: gone.length, files };
+  return { users: ids.length, parcels, files };
 }
 
 /** Removes the illustration parcels (covered ones too), their files and the technical account. Only when asked for: `clearDemo` leaves them. */

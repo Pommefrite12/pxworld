@@ -5,6 +5,10 @@
 //     --set heritage instead makes the 100 hand-drawn "world heritage" ILLUSTRATION parcels (historic places, cultures, food, music, science, today's world),
 //     each on its real place, 50 × 50 pixels at most. They belong to ONE technical account, are shown as "Illustration image" (no author), are covered by any
 //     purchase that touches them, and are KEPT by `clear` (they are meant to stay when the site opens). --count and --water are then ignored.
+//   npm run demo:seed   -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id> --volume 5000 [--owners 40]
+//     VOLUME mode, to see the site with a world FULL of parcels: --volume N makes sure that N parcels exist (1 to 50000; running it again with a bigger number
+//     completes it), owned by --owners accounts (40 by default), 25 to 900 pixels each, around the big cities and anywhere on land, already published.
+//     Quick (a few dozen accounts, a small stock of pictures shared by all the parcels, rows inserted by batches). `clear` removes all of it.
 //   npm run demo:status -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id>
 //   npm run demo:clear  -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id> --yes [--illustrations]
 //     removes the demonstration accounts and their parcels; the illustration parcels stay, unless --illustrations is added
@@ -23,6 +27,7 @@ import { shouldUseSsl } from "../src/lib/db/ssl";
 import { demoGuard } from "../src/lib/demo/plan";
 import { clearDemo, clearIllustrations, demoStatus, seedDemo, type DemoPorts } from "../src/lib/demo/seed";
 import { heritagePlan } from "../src/lib/demo/heritage";
+import { seedVolume } from "../src/lib/demo/volume";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -119,6 +124,19 @@ try {
       const col = await query("select 1 from information_schema.columns where table_schema = 'public' and table_name = 'parcel_assets' and column_name = 'i18n'");
       if (!col.length) die("Refused (nothing was touched): the database does not have migration 25 yet (the translations of the illustration parcels).\n  Apply it first:  node scripts/migrate.mjs --env .env.production.local");
     }
+    const volume = opt("volume");
+    if (volume !== undefined) {
+      // VOLUME mode: thousands of parcels, a few dozen accounts, a small stock of pictures, inserted by batches (see src/lib/demo/volume.ts)
+      const n = Number(volume), owners = Number(opt("owners") ?? 40);
+      if (plan || opt("count") !== undefined || opt("water") !== undefined) die("--volume cannot be combined with --set, --count or --water");
+      if (!Number.isInteger(n) || n < 1 || n > 50_000) die("--volume must be a whole number from 1 to 50000");
+      if (!Number.isInteger(owners) || owners < 1 || owners > 300) die("--owners must be a whole number from 1 to 300");
+      console.log(`Filling ${target} with ${n} parcels (${owners} accounts, a small stock of pictures, inserted by batches; about ${Math.round(n * 1.6 / 1024 * 10) / 10} MB of database)…`);
+      const t0 = Date.now();
+      const r = await seedVolume(ports, { count: n, owners, seed: Number(opt("seed") ?? 1), emailDomain });
+      console.log(`\nDone in ${Math.round((Date.now() - t0) / 1000)} s: ${r.created} parcels created (${r.existing} already there), ${r.ownersCreated} accounts created, ${r.pictures} pictures stored.${r.short ? ` ${r.short} could not be placed (no free land found).` : ""}`);
+      await query("update public.map_state set version = version + 1, updated_at = now() where id = 1");
+    } else {
     const count = plan ? plan.length : Number(opt("count") ?? 50);
     if (!Number.isInteger(count) || count < 1 || count > 500) die("--count must be a whole number from 1 to 500");
     const water = plan ? 0 : Number(opt("water") ?? 0);
@@ -127,6 +145,7 @@ try {
     const r = await seedDemo(ports, { count, water, seed: Number(opt("seed") ?? 1), emailDomain, plan });
     console.log(`\nDone: ${r.usersCreated} accounts created (${r.usersFound} already there), ${r.parcelsCreated} parcels created (${r.parcelsSkipped} already there).`);
     if (r.failed.length) { console.log(`${r.failed.length} could not be made:\n${r.failed.map((f) => `  - ${f}`).join("\n")}`); process.exitCode = 1; }
+    }
   } else if (command === "clear") {
     console.log(`Removing every demonstration account from ${target}…`);
     const r = await clearDemo(ports, { emailDomain });

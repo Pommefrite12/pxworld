@@ -48,6 +48,8 @@ async function fetchFile(path: string): Promise<Buffer | null> {
  */
 const FLAT_FROM_LEVEL = 3;
 const FLAT_UP_TO_PX = 8;
+/** Between the two (levels 1 and 2) a parcel of at most 4 px is its colour too; at level 0 (one pixel of the grid is a pixel) only the smallest ones are. */
+const flatLimit = (z: number) => (z >= FLAT_FROM_LEVEL ? FLAT_UP_TO_PX : z >= 1 ? 4 : 2);
 
 interface Row { x: number; y: number; w: number; h: number; kind: string; path: string | null; color: string | null; src_w: number | null }
 
@@ -77,6 +79,13 @@ export async function renderRasterTile(z: number, tx: number, ty: number, kind: 
   );
   if (rows.length === 0) return EMPTY;
 
+  // The tile's own pixels (RGBA). A parcel that is only a colour here (too small to show its picture: most of them on a crowded map) is painted straight
+  // into it, with no image made at all; only the parcels that show a picture become layers. (Parcels never overlap, so the order does not matter.)
+  const canvas = Buffer.alloc(RASTER_TILE * RASTER_TILE * 4);
+  const paint = (l: number, t: number, w: number, h: number, c: { r: number; g: number; b: number }) => {
+    const x1 = Math.min(RASTER_TILE, l + w), y1 = Math.min(RASTER_TILE, t + h);
+    for (let y = Math.max(0, t); y < y1; y++) for (let x = Math.max(0, l), o = (y * RASTER_TILE + Math.max(0, l)) * 4; x < x1; x++, o += 4) { canvas[o] = c.r; canvas[o + 1] = c.g; canvas[o + 2] = c.b; canvas[o + 3] = 255; }
+  };
   const layers: OverlayOptions[] = [];
   const queue = [...rows];
   const work = async () => {
@@ -85,7 +94,7 @@ export async function renderRasterTile(z: number, tx: number, ty: number, kind: 
       const w = Math.max(1, Math.round(r.w * scale)), h = Math.max(1, Math.round(r.h * scale));
       if (left >= RASTER_TILE || top >= RASTER_TILE || left + w <= 0 || top + h <= 0) continue;
       let input: Buffer | null = null;
-      if (r.path && (z >= FLAT_FROM_LEVEL ? w > FLAT_UP_TO_PX || h > FLAT_UP_TO_PX : w > 2 || h > 2)) {
+      if (r.path && (w > flatLimit(z) || h > flatLimit(z))) {
         const bytes = await fetchFile(r.path);
         if (bytes) {
           let img = sharp(bytes);
@@ -103,7 +112,8 @@ export async function renderRasterTile(z: number, tx: number, ty: number, kind: 
       }
       if (!input) {
         const c = r.kind === "water" ? hexToRgb(tintColor(r.path ? r.color : null)) : r.path ? hexToRgb(r.color) : PLACEHOLDER;
-        input = await sharp({ create: { width: w, height: h, channels: 4, background: { ...c, alpha: 1 } } }).png({ compressionLevel: 1 }).toBuffer();
+        paint(left, top, w, h, c);
+        continue;
       }
       // sharp refuses overlays that exceed the canvas: crop to the tile
       const cropL = Math.max(0, -left), cropT = Math.max(0, -top);
@@ -117,8 +127,6 @@ export async function renderRasterTile(z: number, tx: number, ty: number, kind: 
   };
   await Promise.all(Array.from({ length: 12 }, work));
 
-  return sharp({ create: { width: RASTER_TILE, height: RASTER_TILE, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
-    .composite(layers)
-    .png({ compressionLevel: 6 })
-    .toBuffer();
+  const base = sharp(canvas, { raw: { width: RASTER_TILE, height: RASTER_TILE, channels: 4 } });
+  return (layers.length ? base.composite(layers) : base).png({ compressionLevel: 6 }).toBuffer();
 }
