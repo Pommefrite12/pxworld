@@ -126,7 +126,7 @@ describe("the illustrations on the biggest capitals", () => {
 
   it("takes the pictures kept in assets/capitals, and every one of them is accepted by the upload pipeline", async () => {
     const given = await loadCapitalImages(path.resolve("assets/capitals"));
-    expect(given.size, "the supplied pictures are found").toBeGreaterThanOrEqual(5);
+    expect(given.size, "a picture was supplied for every capital: none falls back to a drawing").toBe(CAPITALS.length);
     for (const [id, r] of given) { const c = CAPITALS.find((x) => x.id === id)!; expect(r.w % c.size, id).toBe(0); expect(r.w, id).toBe(r.h); }
     const r = await seedDemo(ports(), { count: CAPITALS.length, emailDomain: DOMAIN, plan: capitalsPlan(4, given) });
     expect(r.failed).toEqual([]);

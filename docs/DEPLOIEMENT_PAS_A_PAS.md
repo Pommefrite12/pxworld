@@ -499,6 +499,7 @@ npm run demo:seed -- --env .env.production.local --i-know-this-is-a-test-site --
 - Elles sont posées **sur la capitale elle-même**, un peu décalées vers l'intérieur des terres quand la ville est sur la côte (Miami, Tokyo, Buenos Aires, Bangkok, Jakarta) : une illustration ne peut pas être surtout en mer.
 - Le texte est en français, anglais, espagnol et chinois (à faire relire par une personne qui parle ces langues).
 - `demo:clear … --illustrations` les retire (avec les 100 illustrations « patrimoine » si elles sont là) ; `--everything` retire tout.
+- **Les 15 images fournies sont générées par une IA** : avant le lancement réel, vérifiez que les **conditions d'utilisation de l'outil** autorisent un usage **commercial** et savoir si une **mention** est exigée, et notez-le dans `assets/capitals/SOURCES.md` (le statut juridique d'une image générée par IA est incertain : question pour l'avocat). Une mention visible « image générée par IA » sur la fiche de la parcelle peut s'ajouter si vous le souhaitez.
 - **Avant le lancement réel**, faites relire l'ensemble des illustrations sans auteur par votre avocat, **celle de Miami en particulier** (référence à un jeu vidéo : je n'ai utilisé que le nom « Vice City » dans le texte, aucun logo ni image officielle).
 - Pour **voir les images avant** de les poser : `NODE_OPTIONS=--conditions=react-server npx tsx scripts/preview-capitals.mts mon-dossier` écrit les images et des planches (aucune base touchée).
 
