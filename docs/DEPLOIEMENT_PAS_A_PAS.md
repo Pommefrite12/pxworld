@@ -483,6 +483,17 @@ npm run demo:seed -- --env .env.production.local --i-know-this-is-a-test-site --
 ```
 Attendu : une ligne par capitale, puis `Done: 1 accounts created …, 15 parcels created`. Relancer la commande ne double rien. Rechargez le site avec **Ctrl+Maj+R**, cherchez « Paris » dans la barre de recherche, zoomez.
 
+**Vos propres images à la place de mes dessins.** Les fichiers du dossier **`assets/capitals/`** (`paris.webp`, `delhi.webp`, `moscou.webp`… : le nom est l'identifiant de la capitale, en `.webp`, `.png` ou `.jpg`) **remplacent automatiquement** le dessin correspondant quand vous lancez l'étape 3 ; une capitale sans fichier garde son dessin. L'outil coupe l'image en carré (au centre) et la garde aussi fine que possible (jusqu'à 10 points par pixel de la grille) tout en restant sous la limite de 3 Mo. La liste des fichiers et leur provenance est dans `assets/capitals/SOURCES.md` : **notez-y d'où vient chaque image** (à montrer à l'avocat). `--images mon-dossier` choisit un autre dossier, `--images none` ne pose que les dessins.
+
+**Si vous avez déjà posé les dessins** (étape 3), il faut d'abord les retirer, puis reposer avec vos images (l'outil ne remplace pas une illustration déjà là) :
+```bash
+npm run demo:clear -- --env .env.production.local --i-know-this-is-a-test-site --project wrpemamvpcsgrapwukzj --yes --illustrations
+```
+```bash
+npm run demo:seed -- --env .env.production.local --i-know-this-is-a-test-site --project wrpemamvpcsgrapwukzj --set capitals
+```
+(`--illustrations` retire **toutes** les illustrations, ce qui est ici seulement les 15 capitales.) La ligne `Capitals: N supplied picture(s) of 15` dit combien d'images ont été trouvées.
+
 **À savoir.**
 - Comme toutes les illustrations, ces images **ne comptent dans aucun compteur** (ni pixels vendus, ni propriétaires, ni créations) et elles sont **recouvertes en entier par n'importe quel achat qui les touche** : un achat de 5 × 5 pixels au milieu de Paris fait disparaître **toute** l'image de 160 × 160. C'est la règle des illustrations (elles habillent la carte avant les vraies empreintes) ; si vous préférez que les grandes restent, dites-le-moi.
 - Elles sont posées **sur la capitale elle-même**, un peu décalées vers l'intérieur des terres quand la ville est sur la côte (Miami, Tokyo, Buenos Aires, Bangkok, Jakarta) : une illustration ne peut pas être surtout en mer.

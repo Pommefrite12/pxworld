@@ -1,7 +1,12 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { closeDb, createUser, fulfill, pool, resetData, startOrder } from "./helpers";
 import { seedDemo, type DemoPorts, type Rect } from "@/lib/demo/seed";
-import { CAPITALS, capitalsPlan } from "@/lib/demo/capitals";
+import { randomBytes } from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import sharp from "sharp";
+import { CAPITALS, capitalsPlan, loadCapitalImages } from "@/lib/demo/capitals";
 import { CAPITALS_I18N } from "@/lib/demo/capitals-i18n";
 import { lonLatToPixel } from "@/lib/grid/geometry";
 import { landPixelsIn } from "@/lib/geo/landServer";
@@ -94,4 +99,37 @@ describe("the illustrations on the biggest capitals", () => {
     expect((await pool.query("select status from public.parcels where id = $1", [paris.id])).rows[0].status, "a 5 × 5 purchase covers the whole 160 × 160 picture").toBe("covered");
     expect((await pool.query("select count(*)::int n from public.parcels where tier = 'illustration' and status = 'active'")).rows[0].n, "the others stay").toBe(CAPITALS.length - 1);
   });
+
+  it("uses the pictures that are supplied instead of the drawings: cut to a square, at the finest scale that fits the limits", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "px-capitals-"));
+    try {
+      // a wide picture (paris, 160 px): 900 × 600 gives a square of 600 → 3 dots per pixel; a noisy one (pekin, 200 px) is too heavy at its finest scale
+      await sharp({ create: { width: 900, height: 600, channels: 3, background: "#cc7744" } }).png().toFile(path.join(dir, "paris.png"));
+      const noise = randomBytes(1000 * 1000 * 3); // incompressible: a PNG of it is as big as the picture itself
+      await sharp(noise, { raw: { width: 1000, height: 1000, channels: 3 } }).png().toFile(path.join(dir, "pekin.png"));
+      const given = await loadCapitalImages(dir);
+      expect([...given.keys()].sort()).toEqual(["paris", "pekin"]);
+      expect([given.get("paris")!.w, given.get("paris")!.h], "600 / 160 → 3 dots per pixel").toEqual([480, 480]);
+      expect(given.get("pekin")!.w, "5 dots per pixel would not fit 3 MB: 4").toBe(800);
+      expect((await loadCapitalImages(path.join(dir, "nothing-here"))).size, "no folder: every capital keeps its drawing").toBe(0);
+
+      const r = await seedDemo(ports(), { count: CAPITALS.length, emailDomain: DOMAIN, plan: capitalsPlan(4, given) });
+      expect(r.failed).toEqual([]);
+      const rows = (await pool.query(`select a.title, a.width, a.height, a.bytes from public.parcels pc join public.parcel_assets a on a.id = pc.published_asset_id`)).rows;
+      const byTitle = (id: string) => rows.find((x) => x.title === CAPITALS.find((c) => c.id === id)!.title);
+      expect(byTitle("paris").width).toBe(480);
+      expect(byTitle("pekin").width).toBe(800);
+      expect(byTitle("berlin").width, "the others stay drawn, a quarter of a pixel per dot").toBe(280);
+      for (const x of rows) expect(Number(x.bytes)).toBeLessThan(3 * 1024 * 1024);
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  it("takes the pictures kept in assets/capitals, and every one of them is accepted by the upload pipeline", async () => {
+    const given = await loadCapitalImages(path.resolve("assets/capitals"));
+    expect(given.size, "the supplied pictures are found").toBeGreaterThanOrEqual(5);
+    for (const [id, r] of given) { const c = CAPITALS.find((x) => x.id === id)!; expect(r.w % c.size, id).toBe(0); expect(r.w, id).toBe(r.h); }
+    const r = await seedDemo(ports(), { count: CAPITALS.length, emailDomain: DOMAIN, plan: capitalsPlan(4, given) });
+    expect(r.failed).toEqual([]);
+    expect(r.parcelsCreated).toBe(CAPITALS.length);
+  }, 120_000);
 });

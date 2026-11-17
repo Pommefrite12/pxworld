@@ -6,7 +6,8 @@
 //     each on its real place, 50 × 50 pixels at most. They belong to ONE technical account, are shown as "Illustration image" (no author), are covered by any
 //     purchase that touches them, and are KEPT by `clear` (they are meant to stay when the site opens). --count and --water are then ignored.
 //     --set capitals instead makes the illustration parcels of the biggest capitals of the world: 15 realistic pixel-art scenes (a landmark each), 50 × 50 to 200 × 200
-//     pixels (square), on the capital itself, plus a wink at Miami. Same account, same rules (covered by any purchase that touches them, kept by `clear`). Needs migration 27.
+//     pixels (square), on the capital itself, plus a wink at Miami. The pictures supplied in assets/capitals/<id>.webp|png|jpg are used instead of the drawings
+//     (--images <folder> for another folder, --images none for the drawings only). Same account, same rules (covered by any purchase that touches them, kept by `clear`). Needs migration 27.
 //   npm run demo:seed   -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id> --volume 5000 [--owners 40]
 //     VOLUME mode, to see the site with a world FULL of parcels: --volume N makes sure that N parcels exist (1 to 50000; running it again with a bigger number
 //     completes it), owned by --owners accounts (40 by default), 25 to 900 pixels each, around the big cities and anywhere on land, already published.
@@ -32,7 +33,9 @@ import { shouldUseSsl } from "../src/lib/db/ssl";
 import { demoGuard } from "../src/lib/demo/plan";
 import { clearDemo, clearIllustrations, demoStatus, seedDemo, wipeEverything, wipePreview, type DemoPorts } from "../src/lib/demo/seed";
 import { heritagePlan } from "../src/lib/demo/heritage";
-import { capitalsPlan } from "../src/lib/demo/capitals";
+import { capitalsPlan, loadCapitalImages } from "../src/lib/demo/capitals";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { seedVolume } from "../src/lib/demo/volume";
 
 const args = process.argv.slice(2);
@@ -130,7 +133,14 @@ try {
   if (command === "seed") {
     const set = opt("set");
     if (set !== undefined && set !== "heritage" && set !== "capitals") die('--set must be "heritage" or "capitals"');
-    const plan = set === "heritage" ? heritagePlan() : set === "capitals" ? capitalsPlan() : undefined;
+    let plan;
+    if (set === "capitals") {
+      // the pictures supplied for the capitals (assets/capitals/<id>.webp|png|jpg) stand in for the drawings; --images <folder> chooses another folder, --images none draws them all
+      const given = opt("images") ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../assets/capitals");
+      const images = given === "none" ? new Map() : await loadCapitalImages(given);
+      plan = capitalsPlan(4, images);
+      console.log(`Capitals: ${images.size} supplied picture(s) of ${plan.length} (from ${given === "none" ? "none asked for" : given}); ${plan.length - images.size} drawn.`);
+    } else plan = set === "heritage" ? heritagePlan() : undefined;
     if (plan) {
       // the illustration parcels need migration 24 (the third tier): say so before anything is written, not through a constraint error
       const ok = await query("select 1 from pg_constraint where conname = 'parcels_tier_check' and pg_get_constraintdef(oid) like '%illustration%'");

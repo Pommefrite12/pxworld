@@ -4,6 +4,12 @@
  * a certain game): no logo, no character, no official picture, only a mood and two neon letters.
  * Pure data and drawing code; nothing is fetched, nothing is a photograph, no real person is shown. Used by `capitalsPlan` (`npm run demo:seed -- … --set capitals`).
  */
+import fs from "node:fs";
+import path from "node:path";
+import sharp from "sharp";
+import { CREATION_MAX_DOTS } from "@/lib/grid/constants";
+import { MAX_UPLOAD_BYTES } from "@/lib/images/validate";
+import type { Raster } from "./art";
 import type { DemoItem } from "./plan";
 import type { RGB } from "./scene";
 import { Photo } from "./photo";
@@ -179,7 +185,7 @@ export const CAPITALS: Capital[] = [
   },
   {
     id: "tokyo", title: "La tour de Tokyo et le mont Fuji", place: "Tokyo, Japon", country: "JP", lat: 35.6586, lon: 139.7454, category: "arts", size: 170,
-    text: "Au crépuscule, la tour de Tokyo s'allume au-dessus de la ville, et le mont Fuji flotte à l'horizon.",
+    text: "La tour de Tokyo domine la ville dans la lumière de l'après-midi, et le mont Fuji se dessine à l'horizon.",
     draw: (k) => {
       const hz = 0.7, hor: RGB = [255, 156, 136];
       k.sky([28, 24, 96], [120, 70, 150], 0, 0.42).sky([120, 70, 150], hor, 0.42, hz);
@@ -490,13 +496,42 @@ export const CAPITALS: Capital[] = [
   },
 ];
 
-export function capitalsPlan(res = 4): DemoItem[] {
+/** The pictures that stand in for the drawings: `<folder>/<id>.webp|png|jpg|jpeg`, one per capital (those without a file keep the drawing). */
+const IMAGE_EXT = [".webp", ".png", ".jpg", ".jpeg"];
+/** A stored creation must stay well under the upload limit (3 MB): the finest scale whose PNG fits is the one kept. */
+const MAX_PNG = Math.floor(MAX_UPLOAD_BYTES * 0.88);
+
+/**
+ * Reads the supplied pictures of the capitals: each is cut to a square from its centre and made `size × k` pixels wide, where `k` (1 to 10 dots per grid
+ * pixel) is the finest scale that the picture itself can fill, that fits the 4-million-dot cap and whose stored PNG stays under the upload limit.
+ * A folder that does not exist gives an empty map (every capital keeps its drawing).
+ */
+export async function loadCapitalImages(dir: string): Promise<Map<string, Raster>> {
+  const out = new Map<string, Raster>();
+  if (!fs.existsSync(dir)) return out;
+  for (const c of CAPITALS) {
+    const file = IMAGE_EXT.map((e) => path.join(dir, c.id + e)).find((f) => fs.existsSync(f));
+    if (!file) continue;
+    const input = fs.readFileSync(file), meta = await sharp(input).metadata();
+    const side = Math.min(meta.width ?? c.size, meta.height ?? c.size);
+    for (let k = Math.max(1, Math.min(10, Math.floor(side / c.size))); k >= 1; k--) {
+      if (c.size * k * c.size * k > CREATION_MAX_DOTS) continue;
+      const w = c.size * k;
+      const data = await sharp(input).rotate().resize(w, w, { fit: "cover", position: "centre", kernel: "lanczos3" }).flatten({ background: "#ffffff" }).removeAlpha().raw().toBuffer();
+      const png = await sharp(data, { raw: { width: w, height: w, channels: 3 } }).png({ compressionLevel: 9, adaptiveFiltering: true }).toBuffer();
+      if (png.length <= MAX_PNG || k === 1) { out.set(c.id, { w, h: w, data: new Uint8Array(data) }); break; }
+    }
+  }
+  return out;
+}
+
+export function capitalsPlan(res = 4, images?: Map<string, Raster>): DemoItem[] {
   return CAPITALS.map((e, i) => ({
     index: i, username: `demo_${e.id}`.slice(0, 24), emailLocal: `demo-c${String(i + 1).padStart(3, "0")}`,
     title: e.title, description: e.text, style: "icon" as const, kind: "land" as const, w: e.size, h: e.size,
     anchor: { name: e.place, lat: e.lat, lon: e.lon, country: e.country }, spot: { name: e.place, lat: e.lat, lon: e.lon },
     seed: 9000 + i, ageHours: 6 + ((i * 53) % 400), exact: true, illustration: true, category: e.category,
     i18n: Object.fromEntries(HERITAGE_LANGS.flatMap((l) => { const t = CAPITALS_I18N[e.id]?.[l]; return t ? [[l, { title: t[0], description: t[1] }]] : []; })),
-    render: (w: number, h: number, seed: number) => { const k = new Photo(w, seed, res); e.draw(k); return k.finishPhoto(); },
+    render: (w: number, h: number, seed: number) => { const given = images?.get(e.id); if (given) return given; const k = new Photo(w, seed, res); e.draw(k); return k.finishPhoto(); },
   }));
 }
