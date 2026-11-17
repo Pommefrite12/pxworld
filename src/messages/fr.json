@@ -1,11 +1,11 @@
 {
   "meta": {
-    "siteName": "Pixel World",
+    "siteName": "{brand}",
     "tagline": "Chaque époque laisse une empreinte. Voici la nôtre.",
-    "description": "Pixel World est une archive collective mondiale de notre époque\u00a0: une carte du monde où chacun peut laisser une empreinte — une création, un souvenir, une passion — pour les générations futures."
+    "description": "{brand} est une archive collective mondiale de notre époque\u00a0: une carte du monde où chacun peut laisser une empreinte — une création, un souvenir, une passion — pour les générations futures."
   },
   "nav": {
-    "home": "pixelworld — accueil",
+    "home": "{brand} — accueil",
     "main": "Navigation principale",
     "discover": "Découvrir",
     "leaveTrace": "Laisser mon empreinte",
@@ -111,7 +111,7 @@
     "eras": {
       "eyebrow": "De tout temps",
       "title": "L'humanité a toujours laissé une empreinte.",
-      "lead": "Chaque époque a eu sa manière de transmettre son histoire aux générations futures. Aujourd'hui, c'est au tour de Pixel World.",
+      "lead": "Chaque époque a eu sa manière de transmettre son histoire aux générations futures. Aujourd'hui, c'est au tour de {brand}.",
       "cave": {
         "when": "Il y a des dizaines de milliers d'années",
         "title": "Les peintures préhistoriques",
@@ -134,7 +134,7 @@
       },
       "pixelworld": {
         "when": "Aujourd'hui",
-        "title": "Pixel World",
+        "title": "{brand}",
         "text": "Notre archive collective où chacun laisse une empreinte de notre époque sur une carte du monde, à lire dans 100 ans.",
         "alt": "Carte du monde en pixel art, violette et bleue, où chaque empreinte sera à sa place."
       }
@@ -190,10 +190,10 @@
   },
   "about": {
     "title": "Chaque époque laisse une empreinte. Voici la nôtre.",
-    "lead": "Pixel World est une archive collective mondiale de notre époque\u00a0: une carte du monde sur laquelle chacun peut laisser une création, un souvenir, une passion, pour celles et ceux qui viendront après nous.",
+    "lead": "{brand} est une archive collective mondiale de notre époque\u00a0: une carte du monde sur laquelle chacun peut laisser une création, un souvenir, une passion, pour celles et ceux qui viendront après nous.",
     "why": {
       "title": "Pourquoi",
-      "text": "L'humanité a toujours cherché à laisser une empreinte de son passage\u00a0: peintures sur les parois des cavernes, hiéroglyphes gravés dans la pierre, manuscrits, livres, photographies. Chaque époque a eu sa manière de transmettre son histoire. La nôtre est faite de conversations qui s'effacent, de photos qui dorment dans des téléphones et de sites qui disparaissent\u00a0: peu de ce que nous vivons chaque jour est gardé sous une forme que quelqu'un pourrait lire dans cent ans. Ici, chaque empreinte est choisie, avec un titre, un auteur, une date et un lieu, et toutes ensemble elles font un fragment lisible de notre époque. Aujourd'hui, c'est au tour de Pixel World."
+      "text": "L'humanité a toujours cherché à laisser une empreinte de son passage\u00a0: peintures sur les parois des cavernes, hiéroglyphes gravés dans la pierre, manuscrits, livres, photographies. Chaque époque a eu sa manière de transmettre son histoire. La nôtre est faite de conversations qui s'effacent, de photos qui dorment dans des téléphones et de sites qui disparaissent\u00a0: peu de ce que nous vivons chaque jour est gardé sous une forme que quelqu'un pourrait lire dans cent ans. Ici, chaque empreinte est choisie, avec un titre, un auteur, une date et un lieu, et toutes ensemble elles font un fragment lisible de notre époque. Aujourd'hui, c'est au tour de {brand}."
     },
     "how": {
       "title": "Comment ça marche",
@@ -300,7 +300,7 @@
       "violence": "Violence ou contenu dangereux",
       "other": "Autre"
     },
-    "shareDescription": "Une empreinte de {area} pixels ({w}×{h}) de {owner} dans l'archive Pixel World, une archive collective de notre époque.",
+    "shareDescription": "Une empreinte de {area} pixels ({w}×{h}) de {owner} dans l'archive {brand}, une archive collective de notre époque.",
     "comment": "Commenter"
   },
   "buy": {
@@ -549,7 +549,7 @@
     "privacy": "Confidentialité",
     "credits": "Crédits",
     "contact": "Contact",
-    "virtual": "Pixel World vend un droit d'usage numérique sur un emplacement virtuel d'une carte, en contribution à une œuvre collaborative. Ce n'est ni un bien immobilier, ni un droit de propriété intellectuelle, ni la promesse que l'archive sera conservée pour toujours.",
+    "virtual": "{brand} vend un droit d'usage numérique sur un emplacement virtuel d'une carte, en contribution à une œuvre collaborative. Ce n'est ni un bien immobilier, ni un droit de propriété intellectuelle, ni la promesse que l'archive sera conservée pour toujours.",
     "projects": "Projets collectifs",
     "ranking": "Classement"
   },
@@ -759,7 +759,7 @@
     "closedTitle": "Ce lien de dessin n'est plus actif",
     "frozenTitle": "Cette édition est close : le dessin est archivé",
     "closedLead": "La personne qui l'a créé l'a peut-être coupé ou remplacé. Demandez-lui le lien actuel.",
-    "home": "Retour à Pixel World",
+    "home": "Retour à {brand}",
     "multi": "Pinceau multicolore",
     "multiHint": "Cliquez des couleurs pour les ajouter ou les retirer : le trait les parcourt dans l'ordre indiqué."
   },
@@ -847,7 +847,7 @@
     "updated": "Dernière mise à jour : {date}",
     "rules": {
       "title": "Règles de la communauté",
-      "intro": "Pixel World est une archive collective que tout le monde peut voir. Ces règles en font un lieu agréable à visiter. Elles s'appliquent à toute image, tout texte et tout lien publiés sur la carte.",
+      "intro": "{brand} est une archive collective que tout le monde peut voir. Ces règles en font un lieu agréable à visiter. Elles s'appliquent à toute image, tout texte et tout lien publiés sur la carte.",
       "sections": [
         {
           "h": "Ce que vous pouvez publier",
@@ -897,18 +897,18 @@
     },
     "terms": {
       "title": "Conditions d'utilisation",
-      "intro": "Ces conditions régissent votre usage de Pixel World et le paiement que vous faites pour laisser une empreinte sur sa carte. Il s'agit d'un texte provisoire, écrit pour le lancement\u00a0: le conseil juridique de l'exploitant doit le relire et le compléter avant le lancement public.",
+      "intro": "Ces conditions régissent votre usage de {brand} et le paiement que vous faites pour laisser une empreinte sur sa carte. Il s'agit d'un texte provisoire, écrit pour le lancement\u00a0: le conseil juridique de l'exploitant doit le relire et le compléter avant le lancement public.",
       "sections": [
         {
           "h": "Qui sommes-nous",
           "p": [
-            "Pixel World est exploité par {operatorName}, {operatorAddress}. Immatriculation : {operatorRegistration}. N° de TVA : {operatorVat}. Contact : {operatorEmail}."
+            "{brand} est exploité par {operatorName}, {operatorAddress}. Immatriculation : {operatorRegistration}. N° de TVA : {operatorVat}. Contact : {operatorEmail}."
           ]
         },
         {
           "h": "Ce que vous payez",
           "p": [
-            "Pixel World est une archive collective de notre époque. Elle est dessinée sur une grille virtuelle de 1 000 000 000 de pixels (40 000 × 25 000). Une parcelle est un rectangle d'au moins 25 pixels. Votre paiement est une contribution à cette œuvre collaborative\u00a0; en échange, vous obtenez un droit d'usage numérique de ce rectangle, selon les présentes conditions, pour y afficher une création.",
+            "{brand} est une archive collective de notre époque. Elle est dessinée sur une grille virtuelle de 1 000 000 000 de pixels (40 000 × 25 000). Une parcelle est un rectangle d'au moins 25 pixels. Votre paiement est une contribution à cette œuvre collaborative\u00a0; en échange, vous obtenez un droit d'usage numérique de ce rectangle, selon les présentes conditions, pour y afficher une création.",
             "Une parcelle est un emplacement virtuel sur une carte numérique. Ce n'est ni un bien immobilier, ni un droit géographique, territorial ou de propriété intellectuelle, et elle ne vous donne aucun droit sur les lieux représentés par la carte. Ce n'est pas non plus la promesse que l'archive sera conservée pour toujours\u00a0: voir «\u00a0Durée de conservation d'une empreinte\u00a0» plus bas.",
             "La terre et l'eau sont à vendre, en deux catégories distinctes. Une parcelle de terre couvre les pixels de terre de son rectangle : elle peut inclure un peu de mer le long d'une côte, mais au moins la moitié de ses pixels doit être de la terre (la part exacte est fixée par les administrateurs). Une parcelle d'eau couvre les pixels d'eau de son rectangle : elle peut inclure un peu de terre le long d'une côte, mais au moins la moitié de ses pixels doit être de l'eau. Vous ne payez que les pixels que votre parcelle couvre : les pixels de votre rectangle qui appartiennent à l'autre catégorie sont coupés et offerts, ou à prix réduit si un tarif réduit est en vigueur, et le récapitulatif de commande montre la répartition avant le paiement. Une parcelle de terre et une parcelle d'eau peuvent partager le même rectangle, puisqu'elles ne partagent aucun pixel. Tout ce que vous créez sur une parcelle d'eau s'affiche en trois teintes de bleu. Les compteurs de la carte comptent les pixels couverts par les parcelles, terre et eau."
           ]
@@ -945,7 +945,7 @@
         {
           "h": "Votre création",
           "p": [
-            "Vous conservez vos droits sur ce que vous publiez et vous garantissez avoir le droit de le publier. Vous accordez à Pixel World une licence mondiale, non exclusive, pour afficher, reproduire et promouvoir votre création sur le site, dans les aperçus de partage et dans les supports présentant le projet.",
+            "Vous conservez vos droits sur ce que vous publiez et vous garantissez avoir le droit de le publier. Vous accordez à {brand} une licence mondiale, non exclusive, pour afficher, reproduire et promouvoir votre création sur le site, dans les aperçus de partage et dans les supports présentant le projet.",
             "Votre création est archivée sur une page publique à elle, avec son titre, le pseudonyme de son auteur, sa catégorie, le lieu dont elle parle (si vous en avez donné un) et la date d'archivage. Le lieu est un texte que vous choisissez (et, facultativement, un pays)\u00a0: jamais des coordonnées exactes.",
             "Les créations sont publiées après modération et peuvent être refusées, masquées ou retirées si elles enfreignent les règles de la communauté ou la loi."
           ]
@@ -1026,7 +1026,7 @@
     },
     "credits": {
       "title": "Crédits et licences",
-      "intro": "Pixel World repose sur des données ouvertes et des logiciels libres. Merci à toutes celles et ceux qui les ont rendus possibles.",
+      "intro": "{brand} repose sur des données ouvertes et des logiciels libres. Merci à toutes celles et ceux qui les ont rendus possibles.",
       "sections": [
         {
           "h": "Données cartographiques",
@@ -1505,7 +1505,7 @@
   },
   "ranking": {
     "title": "Classement",
-    "lead": "Les créations et les créateurs les plus aimés de Pixel World.",
+    "lead": "Les créations et les créateurs les plus aimés de {brand}.",
     "boardLabel": "Classement des",
     "periodLabel": "Période",
     "boards": {

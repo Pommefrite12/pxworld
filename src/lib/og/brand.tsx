@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { GLOBE_ROWS } from "@/components/ui/Logo";
+import { BRAND } from "@/lib/brand";
 
 /** What the share images have in common: the night palette of the site, its pixel font, its logo. */
 export const NIGHT = "#190921", VIOLET = "#382050", VIOLET_DEEP = "#2a1640", GOLD = "#d6ab72", CYAN = "#55c7d1", IVORY = "#f1e8df";
@@ -26,7 +27,7 @@ export const Wordmark = ({ size }: { size: number }) => (
   <div style={{ display: "flex", alignItems: "center" }}>
     <img src={globe} width={size} height={size} alt="" />
     <div style={{ display: "flex", marginLeft: size * 0.3, fontSize: size * 1.15, lineHeight: 1, letterSpacing: 1 }}>
-      <span style={{ color: IVORY }}>pixel</span><span style={{ color: GOLD }}>world</span>
+      <span style={{ color: IVORY }}>{BRAND.wordmark.lead}</span><span style={{ color: GOLD }}>{BRAND.wordmark.rest}</span>
     </div>
   </div>
 );

@@ -1,4 +1,6 @@
-/** Pixel globe + wordmark ("pixel" in the pixel font, "world" in the display font). The globe is drawn on a 12×12 grid: a tiny version of the product itself. */
+import { BRAND } from "@/lib/brand";
+
+/** Pixel globe + wordmark (the first part of the name in the pixel font, the rest in the display font; the name is set in `src/lib/brand.ts`). The globe is drawn on a 12×12 grid: a tiny version of the product itself. */
 export const GLOBE_ROWS = [
   "...oooooo...",
   "..oooLLooLo.",
@@ -34,7 +36,7 @@ export function Logo({ className = "", wordClassName = "" }: { className?: strin
       <span className={`font-display text-[1.35rem] font-extrabold leading-none tracking-tight ${wordClassName}`}>
         {/* "pixel" is set in the site's pixel font (one weight, no letter-spacing: its letters sit on a pixel grid); a little larger,
             because a pixel font has a smaller x-height than the display font next to it */}
-        <span className="font-pixel text-[1.3em] font-normal tracking-normal">pixel</span><span className="text-signal">world</span>
+        <span className="font-pixel text-[1.3em] font-normal tracking-normal">{BRAND.wordmark.lead}</span><span className="text-signal">{BRAND.wordmark.rest}</span>
       </span>
     </span>
   );

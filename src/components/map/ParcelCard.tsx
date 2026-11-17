@@ -8,6 +8,7 @@ import { languageName } from "@/lib/i18n/languageName";
 import { hostOf } from "@/lib/security/url";
 import { ArchiveChips } from "@/components/archive/ArchiveChips";
 import { CommentsPanel, useComments } from "./Comments";
+import { BRAND } from "@/lib/brand";
 
 /** Integer upscale (crisp pixels) up to `box` px; downscale smoothly beyond. */
 export function fitSize(w: number, h: number, box: number) {
@@ -49,7 +50,7 @@ function ParcelCardInner({ code, onClose, signedIn, className = "" }: { code: st
   const url = typeof window === "undefined" ? "" : `${window.location.origin}${locale === "en" ? "" : `/${locale}`}/p/${code}`;
   const share = async () => {
     try {
-      if (navigator.share) await navigator.share({ title: typeof info === "object" && info?.creation?.title || "Pixel World", url });
+      if (navigator.share) await navigator.share({ title: typeof info === "object" && info?.creation?.title || BRAND.name, url });
       else { await navigator.clipboard.writeText(url); setMsg(t("copied")); }
     } catch { /* cancelled */ }
   };

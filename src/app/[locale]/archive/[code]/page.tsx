@@ -14,6 +14,7 @@ import { siteUrl } from "@/lib/env";
 import { assetUrl } from "@/lib/images/sizes";
 import { locales } from "@/i18n/routing";
 import { hostOf } from "@/lib/security/url";
+import { BRAND } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ const path = (locale: string, code: string) => `${locale === "en" ? "" : `/${loc
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; code: string }> }): Promise<Metadata> {
   const { locale, code } = await params;
   const p = await getPublicParcel(code, locale).catch(() => null);
-  if (!p) return { title: "Pixel World", robots: { index: false } };
+  if (!p) return { title: BRAND.name, robots: { index: false } };
   const t = await getTranslations({ locale, namespace: "archive.page" });
   const title = p.creation?.title ?? t("untitled");
   const author = p.tier === "illustration" ? t("illustration") : p.owner.username; // an illustration has no author

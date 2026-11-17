@@ -1,4 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { BRAND } from "../../src/lib/brand";
+
+/** How a name is written inside an HTML attribute (an apostrophe becomes `&#x27;`): the name of the site may have one. */
+const inHtml = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
 
 /**
  * The words of the site are the archive's: a trace, an edition, an author (never "claim a piece of the planet", "owners", "one planet, one billion
@@ -36,10 +40,10 @@ test.describe("vocabulary", () => {
   test("the tagline and the description of the site, in the title and the previews", async ({ request }) => {
     const html = await (await request.get("/")).text();
     expect(html).toContain("Every era leaves a trace. Here is ours.");
-    expect(html).toMatch(/<meta name="description" content="Pixel World is a worldwide collective archive of our time/);
+    expect(html).toContain(`<meta name="description" content="${inHtml(BRAND.name)} is a worldwide collective archive of our time`);
     const fr = await (await request.get("/fr")).text();
     expect(fr).toContain("Chaque époque laisse une empreinte. Voici la nôtre.");
-    expect(fr).toMatch(/<meta name="description" content="Pixel World est une archive collective mondiale de notre époque/);
+    expect(fr).toContain(`<meta name="description" content="${inHtml(BRAND.name)} est une archive collective mondiale de notre époque`);
   });
 });
 

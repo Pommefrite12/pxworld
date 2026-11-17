@@ -11,7 +11,7 @@ import { NIGHT_PALETTE as COLORS } from "@/lib/map/palette";
 import { loadGeo, loadPlaces, type Geo, type Lod, type Places } from "./geo";
 
 /**
- * Pixel World map engine — a purpose-built Canvas 2D renderer.
+ * The map engine — a purpose-built Canvas 2D renderer.
  *
  * Why not MapLibre/Leaflet/OpenSeadragon: the map is a flat 40 000 × 25 000 pixel plane (Web-Mercator, square
  * pixels), not a geodesic surface. A custom renderer gives us nearest-neighbour pixel-exact zoom of user images,

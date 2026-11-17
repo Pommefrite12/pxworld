@@ -1,0 +1,40 @@
+/**
+ * THE NAME OF THE SITE — the one place where it is written.
+ *
+ * Renaming the site = editing this file (and nothing else): the texts of the four languages (`{brand}` in `src/messages/*.json`, filled in by
+ * `src/i18n/request.ts`), the logo, the share images, the e-mails-like texts (archive manifest, Stripe descriptions, alerts, translation prompt),
+ * the page titles and the tests all read it from here. `tests/unit/brand.test.ts` fails if the name is written anywhere else in `src/`.
+ *
+ * What is NOT renamed on purpose: technical identifiers that data or deployments already depend on (database name `pixelworld`, the storage
+ * bucket `pixel-world-creations`, the salts, the archive format id `pixel-world-archive/1`, the npm package name, the migrations). Renaming those
+ * would break a running site for no visible benefit; see docs/ARCHITECTURE.md ("Renaming the site").
+ *
+ * Pure (no `server-only`, no React): the server, the client components, the scripts and the tests can all import it.
+ */
+
+/** The logo's name is set in two parts: `lead` in the site's pixel font, `rest` in the display font and the signal colour. Either can be empty. */
+export interface Wordmark {
+  lead: string;
+  rest: string;
+}
+
+export interface Brand {
+  /** How the name is written in sentences, titles, e-mails and metadata. */
+  name: string;
+  /** The name as it is drawn in the logo (case and spacing of the visual identity, not of sentences). */
+  wordmark: Wordmark;
+}
+
+export const BRAND: Brand = {
+  name: "Pixel World",
+  wordmark: { lead: "pixel", rest: "world" },
+};
+
+/** The name in capitals, for plain-text headings (the archive's README). */
+export const BRAND_UPPER = BRAND.name.toUpperCase();
+
+/** A name made safe to be read as ICU MessageFormat (apostrophes and curly braces are escaped). */
+export const icuEscape = (name: string): string => name.replace(/'/g, "''").replace(/[{}]/g, (c) => `'${c}'`);
+
+/** What `{brand}` stands for in the message files. */
+export const BRAND_ICU = icuEscape(BRAND.name);

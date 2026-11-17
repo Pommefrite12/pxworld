@@ -1,5 +1,5 @@
 /**
- * The Pixel World grid.
+ * The grid of the world.
  *
  * 40 000 × 25 000 = 1 000 000 000 virtual pixels, exactly.
  *

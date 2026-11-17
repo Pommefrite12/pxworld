@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { PageShell } from "@/components/layout/PageShell";
 import { isProduction } from "@/lib/env";
+import { BRAND } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { robots: { index: false } };
@@ -44,7 +45,7 @@ export default async function DesignPage({ params }: { params: Promise<{ locale:
   if (isProduction()) notFound();
   return (
     <PageShell width="max-w-5xl">
-      <h1 className="text-3xl font-extrabold">Système de boutons — Design UI Pixelworld</h1>
+      <h1 className="text-3xl font-extrabold">Système de boutons — Design UI {BRAND.name}</h1>
       <p className="mt-1 text-ink-soft">Boutons pixel-inspirés, modernes et premium. Page de développement : les états hover et cliqué sont forcés pour pouvoir les comparer.</p>
       <div className="mt-8 grid gap-4 pb-12">
         <Row title="CTA principal" hint="Action principale, à fort impact (ex. découverte, inscription)." render={(s) => <button className={`btn btn-primary ${s}`}>Trouvez votre place</button>} />

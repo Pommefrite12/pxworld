@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 /**
  * Alerts for a person to look at: a payment that could not be turned into a parcel, a refund that failed, a server error.
  *
@@ -39,7 +40,7 @@ export async function raiseAlert(kind: string, detail: AlertDetail = {}, opts: A
       method: "POST",
       headers: { "content-type": "application/json" },
       // `text` for Slack-style webhooks, `content` for Discord-style ones
-      body: JSON.stringify({ text: `Pixel World — ${text}`, content: `Pixel World — ${text}` }),
+      body: JSON.stringify({ text: `${BRAND.name} — ${text}`, content: `${BRAND.name} — ${text}` }),
       signal: AbortSignal.timeout(3000),
     });
     return res.ok ? "sent" : "logged";

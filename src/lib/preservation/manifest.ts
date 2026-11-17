@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { BRAND, BRAND_UPPER } from "@/lib/brand";
 
 /**
  * The pure parts of the preservation of the archive (no database, no disk): the manifest of a snapshot, its CSV, the list of checksums, the page that
  * reads the archive without our software, the plain-text copy of the terms. The export (`export.ts`) and the scripts put them to work.
  *
- * Open formats only (PNG, JSON, CSV, HTML, text), so that the archive stays readable without Pixel World.
+ * Open formats only (PNG, JSON, CSV, HTML, text), so that the archive stays readable without the site.
  */
 
 export const sha256Hex = (data: Uint8Array | string): string => createHash("sha256").update(data).digest("hex");
@@ -149,7 +150,7 @@ export function buildIndexHtml(i: IndexInput): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(i.editionName)} — Pixel World</title>
+<title>${escapeHtml(i.editionName)} — ${escapeHtml(BRAND.name)}</title>
 <style>
 body{margin:0;background:#190921;color:#f1e8df;font:16px/1.5 system-ui,sans-serif}
 header,main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem}
@@ -168,7 +169,7 @@ h2{font-size:1.05rem;margin:.6rem 0 .1rem}
 <body>
 <header>
 <h1>${escapeHtml(i.editionName)}</h1>
-<p class="sub">Pixel World — collective archive / archive collective · ${i.items.length} · snapshot${i.revision ? ` #${i.revision}` : ""} ${escapeHtml(day(i.takenAt))}</p>
+<p class="sub">${escapeHtml(BRAND.name)} — collective archive / archive collective · ${i.items.length} · snapshot${i.revision ? ` #${i.revision}` : ""} ${escapeHtml(day(i.takenAt))}</p>
 ${note}
 </header>
 <main>
@@ -202,12 +203,13 @@ export interface ReadmeInput {
 export function buildReadme(r: ReadmeInput): string {
   const snap = r.revision ? `snapshot #${r.revision} taken ${r.takenAt}` : `PREVIEW taken ${r.takenAt} (before the closing: not an archive)`;
   const snapFr = r.revision ? `cliché n°${r.revision} pris le ${r.takenAt}` : `APERÇU pris le ${r.takenAt} (avant la clôture : ce n'est pas une archive)`;
-  return `PIXEL WORLD — ${r.editionName}
-${"=".repeat(`PIXEL WORLD — ${r.editionName}`.length)}
+  const title = `${BRAND_UPPER} — ${r.editionName}`;
+  return `${title}
+${"=".repeat(title.length)}
 
 ENGLISH
 -------
-This folder is a readable copy of the "${r.editionName}" edition of Pixel World, a collective archive of our time: ${r.parcels} parcels, ${r.creations} creations
+This folder is a readable copy of the "${r.editionName}" edition of ${BRAND.name}, a collective archive of our time: ${r.parcels} parcels, ${r.creations} creations
 (${snap}; exported ${r.exportedAt}). It needs no software of ours: open index.html in any web browser.
 
   index.html        the whole archive on one page (picture, title, author, date, category, place)
@@ -229,7 +231,7 @@ This copy is a readable snapshot; what the service promises, and what it does no
 
 FRANÇAIS
 --------
-Ce dossier est une copie lisible de l'édition « ${r.editionName} » de Pixel World, une archive collective de notre époque : ${r.parcels} parcelles, ${r.creations} créations
+Ce dossier est une copie lisible de l'édition « ${r.editionName} » de ${BRAND.name}, une archive collective de notre époque : ${r.parcels} parcelles, ${r.creations} créations
 (${snapFr} ; exporté le ${r.exportedAt}). Il n'a besoin d'aucun logiciel de notre part : ouvrez index.html dans un navigateur.
 
   index.html        toute l'archive sur une page (image, titre, auteur, date, catégorie, lieu)

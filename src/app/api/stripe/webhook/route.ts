@@ -6,7 +6,7 @@ import { raiseAlert } from "@/lib/alerts";
 export const maxDuration = 30;
 
 /**
- * Stripe → Pixel World. The ONLY place where payments become parcels (together with the reconciliation job,
+ * Stripe → the site. The ONLY place where payments become parcels (together with the reconciliation job,
  * which fetches sessions from Stripe's API). The signature is verified against the RAW body.
  */
 export async function POST(req: Request) {

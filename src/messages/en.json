@@ -1,11 +1,11 @@
 {
   "meta": {
-    "siteName": "Pixel World",
+    "siteName": "{brand}",
     "tagline": "Every era leaves a trace. Here is ours.",
-    "description": "Pixel World is a worldwide collective archive of our time: a map of the world where anyone can leave a trace — a creation, a memory, a passion — for the generations to come."
+    "description": "{brand} is a worldwide collective archive of our time: a map of the world where anyone can leave a trace — a creation, a memory, a passion — for the generations to come."
   },
   "nav": {
-    "home": "pixelworld — home",
+    "home": "{brand} — home",
     "main": "Main navigation",
     "discover": "Discover",
     "leaveTrace": "Leave my trace",
@@ -111,7 +111,7 @@
     "eras": {
       "eyebrow": "Since forever",
       "title": "Humanity has always left a trace.",
-      "lead": "Every era found its own way of handing its story down to the generations to come. Today, it is Pixel World's turn.",
+      "lead": "Every era found its own way of handing its story down to the generations to come. Today, it is {brand}'s turn.",
       "cave": {
         "when": "Tens of thousands of years ago",
         "title": "Prehistoric paintings",
@@ -134,7 +134,7 @@
       },
       "pixelworld": {
         "when": "Today",
-        "title": "Pixel World",
+        "title": "{brand}",
         "text": "Our collective archive where everyone leaves a trace of our time on a map of the world, to be read in 100 years.",
         "alt": "Pixel-art map of the world in violet and blue, where every trace will sit at its place."
       }
@@ -190,10 +190,10 @@
   },
   "about": {
     "title": "Every era leaves a trace. Here is ours.",
-    "lead": "Pixel World is a worldwide collective archive of our time: a map of the world on which anyone can leave a creation, a memory, a passion, for the people who will come after us.",
+    "lead": "{brand} is a worldwide collective archive of our time: a map of the world on which anyone can leave a creation, a memory, a passion, for the people who will come after us.",
     "why": {
       "title": "Why",
-      "text": "Humanity has always looked for a way to leave a trace of its passage: paintings on cave walls, hieroglyphs carved in stone, manuscripts, books, photographs. Every era found its own way of handing its story down. Ours is made of conversations that fade, photos that sleep in phones and websites that disappear: little of what we live every day is kept in a form that someone could read in a hundred years. Here, each trace is chosen, with a title, an author, a date and a place, and together they make a readable fragment of our era. Today, it is Pixel World's turn."
+      "text": "Humanity has always looked for a way to leave a trace of its passage: paintings on cave walls, hieroglyphs carved in stone, manuscripts, books, photographs. Every era found its own way of handing its story down. Ours is made of conversations that fade, photos that sleep in phones and websites that disappear: little of what we live every day is kept in a form that someone could read in a hundred years. Here, each trace is chosen, with a title, an author, a date and a place, and together they make a readable fragment of our era. Today, it is {brand}'s turn."
     },
     "how": {
       "title": "How it works",
@@ -300,7 +300,7 @@
       "violence": "Violence or dangerous content",
       "other": "Something else"
     },
-    "shareDescription": "A trace of {area} pixels ({w}×{h}) by {owner} in the Pixel World archive, a collective archive of our time.",
+    "shareDescription": "A trace of {area} pixels ({w}×{h}) by {owner} in the {brand} archive, a collective archive of our time.",
     "comment": "Comment"
   },
   "buy": {
@@ -549,7 +549,7 @@
     "privacy": "Privacy",
     "credits": "Credits",
     "contact": "Contact",
-    "virtual": "Pixel World sells a digital right to use a virtual placement on a map, as a contribution to a collaborative work. It is not real estate, nor an intellectual property right, nor a promise that the archive will be kept for ever.",
+    "virtual": "{brand} sells a digital right to use a virtual placement on a map, as a contribution to a collaborative work. It is not real estate, nor an intellectual property right, nor a promise that the archive will be kept for ever.",
     "projects": "Group projects",
     "ranking": "Ranking"
   },
@@ -759,7 +759,7 @@
     "closedTitle": "This drawing link is no longer active",
     "frozenTitle": "This edition is closed: the drawing is archived",
     "closedLead": "Whoever created it may have switched it off or replaced it. Ask them for the current link.",
-    "home": "Back to Pixel World",
+    "home": "Back to {brand}",
     "multi": "Multicolour brush",
     "multiHint": "Click colours to add or remove them: the stroke runs through them in the order shown."
   },
@@ -847,7 +847,7 @@
     "updated": "Last updated: {date}",
     "rules": {
       "title": "Community rules",
-      "intro": "Pixel World is a collective archive that everybody can see. These rules keep it a place people enjoy visiting. They apply to every image, text and link published on the map.",
+      "intro": "{brand} is a collective archive that everybody can see. These rules keep it a place people enjoy visiting. They apply to every image, text and link published on the map.",
       "sections": [
         {
           "h": "What you can publish",
@@ -897,18 +897,18 @@
     },
     "terms": {
       "title": "Terms of service",
-      "intro": "These terms govern your use of Pixel World and the payment you make to leave a trace on its map. They are a provisional text, written for the launch: it must be reviewed and completed by the operator's legal counsel before the public launch.",
+      "intro": "These terms govern your use of {brand} and the payment you make to leave a trace on its map. They are a provisional text, written for the launch: it must be reviewed and completed by the operator's legal counsel before the public launch.",
       "sections": [
         {
           "h": "Who we are",
           "p": [
-            "Pixel World is operated by {operatorName}, {operatorAddress}. Registration: {operatorRegistration}. VAT number: {operatorVat}. Contact: {operatorEmail}."
+            "{brand} is operated by {operatorName}, {operatorAddress}. Registration: {operatorRegistration}. VAT number: {operatorVat}. Contact: {operatorEmail}."
           ]
         },
         {
           "h": "What you pay for",
           "p": [
-            "Pixel World is a collective archive of our time. It is drawn on a virtual grid of 1,000,000,000 pixels (40,000 × 25,000). A parcel is a rectangle of at least 25 pixels. Your payment is a contribution to this collaborative work; in return you get a digital right to use that rectangle, according to these terms, to display one creation on it.",
+            "{brand} is a collective archive of our time. It is drawn on a virtual grid of 1,000,000,000 pixels (40,000 × 25,000). A parcel is a rectangle of at least 25 pixels. Your payment is a contribution to this collaborative work; in return you get a digital right to use that rectangle, according to these terms, to display one creation on it.",
             "A parcel is a virtual placement on a digital map. It is not real estate, nor a geographic, territorial or intellectual property right, and it gives you no right over the places the map depicts. Nor is it a promise that the archive will be kept for ever: see “How long a trace lasts” below.",
             "Land and water are for sale, as two separate categories. A land parcel covers the land pixels of its rectangle: it may include some sea along a coast, but at least half of its pixels must be land (the exact share is set by the administrators). A water parcel covers the water pixels of its rectangle: it may include some land along a coast, but at least half of its pixels must be water. You pay for the pixels your parcel covers only: the pixels of your rectangle that belong to the other category are cut away and offered, or discounted if a reduced price is in force, and the order summary shows the split before you pay. A land parcel and a water parcel may share the same rectangle, since they never share a pixel. Whatever you create on a water parcel is shown in three tints of blue. The counters on the map count the pixels covered by parcels, land and water."
           ]
@@ -945,7 +945,7 @@
         {
           "h": "Your creation",
           "p": [
-            "You keep your rights on what you publish and you guarantee that you are allowed to publish it. You grant Pixel World a worldwide, non-exclusive licence to display, reproduce and promote your creation on the site, in share previews and in material that presents the project.",
+            "You keep your rights on what you publish and you guarantee that you are allowed to publish it. You grant {brand} a worldwide, non-exclusive licence to display, reproduce and promote your creation on the site, in share previews and in material that presents the project.",
             "Your creation is archived on a public page of its own, with its title, the username of its author, its category, the place it is about (if you gave one) and the date it was archived. The place is a text you choose (and, optionally, a country): never exact coordinates.",
             "Creations are published after moderation and may be refused, hidden or removed if they break the community rules or the law."
           ]
@@ -1026,7 +1026,7 @@
     },
     "credits": {
       "title": "Credits & licences",
-      "intro": "Pixel World stands on open data and open-source software. Thank you to everyone who made them.",
+      "intro": "{brand} stands on open data and open-source software. Thank you to everyone who made them.",
       "sections": [
         {
           "h": "Map data",
@@ -1505,7 +1505,7 @@
   },
   "ranking": {
     "title": "Ranking",
-    "lead": "The most liked creations and creators of Pixel World.",
+    "lead": "The most liked creations and creators of {brand}.",
     "boardLabel": "Ranking of",
     "periodLabel": "Period",
     "boards": {

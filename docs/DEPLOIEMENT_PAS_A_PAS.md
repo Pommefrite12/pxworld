@@ -615,6 +615,19 @@ Pour en poser une : connectez-vous avec votre compte admin, ouvrez la carte, cho
 
 **Attention :** une parcelle payée qui touche l'une de vos empreintes la **recouvre**, comme pour n'importe quelle empreinte gratuite.
 
+## Étape 13 : changer le nom du site (quand vous l'aurez choisi)
+
+Le nom n'est écrit qu'**à un seul endroit** du code : le fichier `src/lib/brand.ts`. Les textes en quatre langues, le logo, les images de partage, les titres des pages, les descriptions Stripe, l'archive exportée et les tests le lisent tous depuis ce fichier. Changer de nom, c'est donc **un seul réglage**, que je fais pour vous : dites-moi simplement le nom (et, si vous voulez, comment couper le logo en deux couleurs, par exemple « pixel » en police pixel + « world » en doré).
+
+Ce que le code ne peut pas faire à votre place, et qui reste à vous :
+
+1. le **nom de domaine** (acheter l'adresse, puis changer `NEXT_PUBLIC_SITE_URL` dans Vercel et refaire un Redeploy) ;
+2. le **nom public du compte Stripe** (Réglages de l'entreprise) ;
+3. les **modèles d'e-mails de Supabase**, si vous les avez personnalisés avec l'ancien nom ;
+4. les **vérifications de marque et de disponibilité** du nom (avocat) : je ne peux pas les faire.
+
+Ce qui ne change **pas**, volontairement : le nom technique de la base (`pixelworld`), du dossier d'images (`pixel-world-creations`) et du format d'archive. Ils ne se voient pas et les renommer casserait un site en marche.
+
 ## Quand c'est fait
 
 - **Ne partagez pas encore l'adresse publiquement** : c'est un site de test (paiements fictifs).

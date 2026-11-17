@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import pg from "pg";
+import { BRAND } from "../../src/lib/brand";
 
 /**
  * The home page (`/`): the planisphere, the sentence, three gestures, the state of the edition, and the way to the map (`/map`).
@@ -104,13 +105,13 @@ test.describe("the home page", () => {
     expect(new Set(await sample()).size, "nothing moves for a visitor who asked for less motion").toBe(1);
   });
 
-  test("the eras: five stations in the order they happened, each with its picture, and the last one is Pixel World", async ({ page }) => {
+  test("the eras: five stations in the order they happened, each with its picture, and the last one is the site itself", async ({ page }) => {
     await page.goto("/");
     const eras = page.getByTestId("era");
     await expect(eras).toHaveCount(5);
     expect(await eras.evaluateAll((els) => els.map((e) => e.getAttribute("data-era")))).toEqual(["cave", "hieroglyphs", "manuscript", "photography", "pixelworld"]);
     await expect(page.getByTestId("home-eras")).toContainText("Humanity has always left a trace.");
-    const titles = ["Prehistoric paintings", "Hieroglyphs", "Manuscripts", "Photography", "Pixel World"];
+    const titles = ["Prehistoric paintings", "Hieroglyphs", "Manuscripts", "Photography", BRAND.name];
     for (const [i, title] of titles.entries()) {
       const era = eras.nth(i);
       await era.scrollIntoViewIfNeeded();
@@ -273,7 +274,7 @@ test.describe("the home page", () => {
 
   test("the page is indexable, has a title and a description, and is in the sitemap with the map", async ({ page, request }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle(/Pixel World/);
+    await expect(page).toHaveTitle(new RegExp(BRAND.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     const html = await (await request.get("/")).text();
     expect(html).not.toMatch(/<meta name="robots" content="noindex/);
     const sitemap = await (await request.get("/sitemap.xml")).text();

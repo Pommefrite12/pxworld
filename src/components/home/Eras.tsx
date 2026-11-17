@@ -8,7 +8,7 @@ const PICTURE: Record<(typeof ERAS)[number], string> = { cave: "cave", hieroglyp
 
 /**
  * "Every era leaves a trace. Here is ours.": how people have always handed their time down — the cave wall, the stone, the manuscript, the
- * photograph — and Pixel World as the next one. Each of the first four is only a date and a title (the picture speaks); the last one has its sentence and the way in. A gold thread with a square for each era, the picture on one side and the words on the other
+ * photograph — and this site as the next one. Each of the first four is only a date and a title (the picture speaks); the last one has its sentence and the way in. A gold thread with a square for each era, the picture on one side and the words on the other
  * (the other way round on the next one); on a phone the thread runs down the left. Server markup, pictures loaded lazily; the only script is `EraItem`'s, which makes each station appear as the visitor scrolls down to it (nothing is hidden without it).
  */
 export async function Eras() {

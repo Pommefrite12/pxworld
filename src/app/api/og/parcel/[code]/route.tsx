@@ -5,6 +5,7 @@ import { queryOne } from "@/lib/db/pool";
 import { CYAN, GOLD, IVORY, NIGHT, VIOLET_DEEP, Wordmark, fitsPixelFont, pixelFont } from "@/lib/og/brand";
 import { ogLang } from "@/lib/og/lang";
 import { objectStore } from "@/lib/storage";
+import { BRAND } from "@/lib/brand";
 
 const TEXT = {
   fr: { kicker: "ARCHIVE COLLECTIVE", by: "par", illustration: "Image d'illustration", pixels: "pixels", tagline: "Dans 100 ans, que restera-t-il de nous ?", locale: "fr-FR" },
@@ -39,7 +40,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ code: string }>
       dataUrl = `data:image/png;base64,${out.toString("base64")}`;
     }
   }
-  const title = (p.creation?.title ?? "Pixel World").slice(0, 60), author = p.tier === "illustration" ? t.illustration : p.owner.username; // an illustration has no author
+  const title = (p.creation?.title ?? BRAND.name).slice(0, 60), author = p.tier === "illustration" ? t.illustration : p.owner.username; // an illustration has no author
   const shown = k2(p.w, p.h, BOX);
   const pixel = fitsPixelFont(title + author);
   const fonts = pixel ? [{ name: "Jersey", data: await pixelFont(), weight: 400 as const, style: "normal" as const }] : undefined;
@@ -52,7 +53,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ code: string }>
           {dataUrl ? (
             <img src={dataUrl} width={shown.w} height={shown.h} alt="" />
           ) : (
-            <div style={{ display: "flex", width: 300, height: 300, background: "#382050", alignItems: "center", justifyContent: "center", fontSize: 40, color: GOLD }}>Pixel World</div>
+            <div style={{ display: "flex", width: 300, height: 300, background: "#382050", alignItems: "center", justifyContent: "center", fontSize: 40, color: GOLD }}>{BRAND.name}</div>
           )}
         </div>
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", flex: 1, marginLeft: 52 }}>

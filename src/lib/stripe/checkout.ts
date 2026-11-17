@@ -3,6 +3,7 @@ import { stripeLocale } from "@/lib/stripe/locale";
 import { env, siteUrl, stripeMockEnabled } from "@/lib/env";
 import { query, queryOne } from "@/lib/db/pool";
 import { stripe } from "./client";
+import { BRAND } from "@/lib/brand";
 
 export interface OrderForCheckout {
   id: string;
@@ -41,17 +42,17 @@ export async function createCheckoutSession(order: OrderForCheckout, email: stri
           price_data: {
             currency: order.currency,
             unit_amount: order.amount_cents,
-            product_data: { name: `Pixel World — ${order.area.toLocaleString("en")} pixels`, description: desc },
+            product_data: { name: `${BRAND.name} — ${order.area.toLocaleString("en")} pixels`, description: desc },
           },
         },
       ],
       metadata: { order_id: order.id, parcel_id: order.parcel_id, user_id: order.user_id },
-      payment_intent_data: { description: `Pixel World — ${desc}`, metadata: { order_id: order.id, parcel_id: order.parcel_id } },
+      payment_intent_data: { description: `${BRAND.name} — ${desc}`, metadata: { order_id: order.id, parcel_id: order.parcel_id } },
       billing_address_collection: "required",
       tax_id_collection: { enabled: true },
       automatic_tax: { enabled: env().STRIPE_AUTOMATIC_TAX === "true" },
       ...(env().STRIPE_INVOICE_CREATION === "true"
-        ? { invoice_creation: { enabled: true, invoice_data: { description: `Pixel World — ${desc}`, metadata: { order_id: order.id } } } }
+        ? { invoice_creation: { enabled: true, invoice_data: { description: `${BRAND.name} — ${desc}`, metadata: { order_id: order.id } } } }
         : {}),
       expires_at: expiresAt,
       success_url: `${siteUrl()}/${locale}/checkout/success?order=${order.id}`,

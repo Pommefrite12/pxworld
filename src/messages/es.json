@@ -1,11 +1,11 @@
 {
   "meta": {
-    "siteName": "Pixel World",
+    "siteName": "{brand}",
     "tagline": "Cada época deja su huella. Esta es la nuestra.",
-    "description": "Pixel World es un archivo colectivo mundial de nuestro tiempo: un mapa del mundo donde cualquiera puede dejar su huella —una creación, un recuerdo, una pasión— para las generaciones futuras."
+    "description": "{brand} es un archivo colectivo mundial de nuestro tiempo: un mapa del mundo donde cualquiera puede dejar su huella —una creación, un recuerdo, una pasión— para las generaciones futuras."
   },
   "nav": {
-    "home": "pixelworld — inicio",
+    "home": "{brand} — inicio",
     "main": "Navegación principal",
     "discover": "Descubrir",
     "leaveTrace": "Dejar mi huella",
@@ -111,7 +111,7 @@
     "eras": {
       "eyebrow": "Desde siempre",
       "title": "La humanidad siempre ha dejado su huella.",
-      "lead": "Cada época encontró su propia manera de transmitir su historia a las generaciones futuras. Hoy, le toca a Pixel World.",
+      "lead": "Cada época encontró su propia manera de transmitir su historia a las generaciones futuras. Hoy, le toca a {brand}.",
       "cave": {
         "when": "Hace decenas de miles de años",
         "title": "Pinturas prehistóricas",
@@ -134,7 +134,7 @@
       },
       "pixelworld": {
         "when": "Hoy",
-        "title": "Pixel World",
+        "title": "{brand}",
         "text": "Nuestro archivo colectivo donde cada persona deja una huella de nuestro tiempo sobre un mapa del mundo, para ser leída dentro de 100 años.",
         "alt": "Mapa del mundo en pixel art, en violeta y azul, donde cada huella ocupará su lugar."
       }
@@ -190,10 +190,10 @@
   },
   "about": {
     "title": "Cada época deja su huella. Esta es la nuestra.",
-    "lead": "Pixel World es un archivo colectivo mundial de nuestro tiempo: un mapa del mundo en el que cualquiera puede dejar una creación, un recuerdo, una pasión, para quienes vendrán después de nosotros.",
+    "lead": "{brand} es un archivo colectivo mundial de nuestro tiempo: un mapa del mundo en el que cualquiera puede dejar una creación, un recuerdo, una pasión, para quienes vendrán después de nosotros.",
     "why": {
       "title": "Por qué",
-      "text": "La humanidad siempre ha buscado la manera de dejar una huella de su paso: pinturas en las paredes de las cuevas, jeroglíficos grabados en piedra, manuscritos, libros, fotografías. Cada época encontró su propia manera de transmitir su historia. La nuestra está hecha de conversaciones que se desvanecen, fotos que duermen en los móviles y sitios web que desaparecen: poco de lo que vivimos cada día se conserva de una forma que alguien pueda leer dentro de cien años. Aquí, cada huella se elige, con un título, un autor, una fecha y un lugar, y entre todas forman un fragmento legible de nuestra época. Hoy, le toca a Pixel World."
+      "text": "La humanidad siempre ha buscado la manera de dejar una huella de su paso: pinturas en las paredes de las cuevas, jeroglíficos grabados en piedra, manuscritos, libros, fotografías. Cada época encontró su propia manera de transmitir su historia. La nuestra está hecha de conversaciones que se desvanecen, fotos que duermen en los móviles y sitios web que desaparecen: poco de lo que vivimos cada día se conserva de una forma que alguien pueda leer dentro de cien años. Aquí, cada huella se elige, con un título, un autor, una fecha y un lugar, y entre todas forman un fragmento legible de nuestra época. Hoy, le toca a {brand}."
     },
     "how": {
       "title": "Cómo funciona",
@@ -300,7 +300,7 @@
       "violence": "Violencia o contenido peligroso",
       "other": "Otro motivo"
     },
-    "shareDescription": "Una huella de {area} píxeles ({w}×{h}) de {owner} en el archivo de Pixel World, un archivo colectivo de nuestro tiempo.",
+    "shareDescription": "Una huella de {area} píxeles ({w}×{h}) de {owner} en el archivo de {brand}, un archivo colectivo de nuestro tiempo.",
     "comment": "Comentar"
   },
   "buy": {
@@ -549,7 +549,7 @@
     "privacy": "Privacidad",
     "credits": "Créditos",
     "contact": "Contacto",
-    "virtual": "Pixel World vende un derecho digital de uso de un emplazamiento virtual en un mapa, como contribución a una obra colaborativa. No es un bien inmueble, ni un derecho de propiedad intelectual, ni una promesa de que el archivo se conserve para siempre.",
+    "virtual": "{brand} vende un derecho digital de uso de un emplazamiento virtual en un mapa, como contribución a una obra colaborativa. No es un bien inmueble, ni un derecho de propiedad intelectual, ni una promesa de que el archivo se conserve para siempre.",
     "projects": "Proyectos colectivos",
     "ranking": "Clasificación"
   },
@@ -759,7 +759,7 @@
     "closedTitle": "Este enlace de dibujo ya no está activo",
     "frozenTitle": "Esta edición está cerrada: el dibujo está archivado",
     "closedLead": "Quien lo creó puede haberlo desactivado o sustituido. Pídele el enlace actual.",
-    "home": "Volver a Pixel World",
+    "home": "Volver a {brand}",
     "multi": "Pincel multicolor",
     "multiHint": "Haz clic en los colores para añadirlos o quitarlos: el trazo los recorre en el orden mostrado."
   },
@@ -959,7 +959,7 @@
   },
   "ranking": {
     "title": "Clasificación",
-    "lead": "Las creaciones y los creadores más apreciados de Pixel World.",
+    "lead": "Las creaciones y los creadores más apreciados de {brand}.",
     "boardLabel": "Clasificación de",
     "periodLabel": "Periodo",
     "boards": {

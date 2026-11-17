@@ -6,6 +6,7 @@ import { query, queryOne } from "@/lib/db/pool";
 import { raiseAlert } from "@/lib/alerts";
 import { invalidatePublicStats } from "@/lib/data/map";
 import { stripe } from "./client";
+import { BRAND } from "@/lib/brand";
 
 /**
  * Contributions to a group project ("Fund it together"). Each one is a payment of its own, in the project's currency; the amount was
@@ -31,7 +32,7 @@ export async function createContributionSession(k: ContributionForCheckout, emai
   }
   const nowS = Math.floor(Date.now() / 1000);
   const expiresAt = Math.max(nowS + 30 * 60 + 15, Math.floor(k.expires_at.getTime() / 1000) - 90);
-  const desc = `Pixel World — group project “${k.title}”`;
+  const desc = `${BRAND.name} — group project “${k.title}”`;
   const session = await stripe().checkout.sessions.create(
     {
       mode: "payment",

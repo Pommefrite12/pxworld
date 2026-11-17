@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { BRAND } from "../../src/lib/brand";
 
 /** Spanish and Simplified Chinese beside English and French: the switcher, the pages, the map, the legal pages (English, with a mention). */
 test("the language menu offers four languages, and choosing one moves to its address", async ({ page }) => {
@@ -18,7 +19,7 @@ test("the home page in Spanish and in Chinese", async ({ page }) => {
   await expect(page.getByTestId("home-title")).toContainText("Cada época deja su huella.");
   await expect(page.getByTestId("home-leave-trace")).toHaveText("Dejar mi huella");
   await expect(page.getByTestId("home-explore")).toHaveText("Explorar los archivos");
-  expect(await page.title()).toContain("Pixel World");
+  expect(await page.title()).toContain(BRAND.name);
 
   await page.goto("/zh");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh");
