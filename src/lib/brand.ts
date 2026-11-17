@@ -12,22 +12,23 @@
  * Pure (no `server-only`, no React): the server, the client components, the scripts and the tests can all import it.
  */
 
-/** The logo's name is set in two parts: `lead` in the site's pixel font, `rest` in the display font and the signal colour. Either can be empty. */
-export interface Wordmark {
-  lead: string;
-  rest: string;
+/** One piece of the logo's name: set in the site's pixel font if `pixel` (in the text colour), otherwise in the display font and the signal (gold) colour. */
+export interface WordmarkPart {
+  text: string;
+  pixel?: boolean;
 }
 
 export interface Brand {
   /** How the name is written in sentences, titles, e-mails and metadata. */
   name: string;
-  /** The name as it is drawn in the logo (case and spacing of the visual identity, not of sentences). */
-  wordmark: Wordmark;
+  /** The name as it is drawn in the logo, piece by piece, left to right (case and spacing of the visual identity, not of sentences). */
+  wordmark: WordmarkPart[];
 }
 
+/** "Hieropix": hiéro(glyphes), writing carved to last, + pix(el). Chosen by the owner (variant A of the logo board: "hiero" in gold, "pix" in the pixel font). No accent in the name, so that it is the same in a web address and in English. */
 export const BRAND: Brand = {
-  name: "Pixel World",
-  wordmark: { lead: "pixel", rest: "world" },
+  name: "Hieropix",
+  wordmark: [{ text: "hiero" }, { text: "pix", pixel: true }],
 };
 
 /** The name in capitals, for plain-text headings (the archive's README). */
@@ -36,8 +37,8 @@ export const BRAND_UPPER = BRAND.name.toUpperCase();
 /** A name made safe to be read as ICU MessageFormat (apostrophes and curly braces are escaped). */
 export const icuEscape = (name: string): string => name.replace(/'/g, "''").replace(/[{}]/g, (c) => `'${c}'`);
 
-/** The name as the logo draws it (`pixel` + `world` → "pixelworld"). The accessible name of the logo link must contain exactly this visible text (WCAG 2.5.3, "label in name"): `nav.home` uses `{brandLogo}`. */
-export const BRAND_LOGO_TEXT = BRAND.wordmark.lead + BRAND.wordmark.rest;
+/** The name as the logo draws it (`hiero` + `pix` → "hieropix"). The accessible name of the logo link must contain exactly this visible text (WCAG 2.5.3, "label in name"): `nav.home` uses `{brandLogo}`. */
+export const BRAND_LOGO_TEXT = BRAND.wordmark.map((p) => p.text).join("");
 
 /** What `{brand}` and `{brandLogo}` stand for in the message files. */
 export const BRAND_ICU = icuEscape(BRAND.name);

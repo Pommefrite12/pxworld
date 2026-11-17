@@ -27,7 +27,7 @@ export const Wordmark = ({ size }: { size: number }) => (
   <div style={{ display: "flex", alignItems: "center" }}>
     <img src={globe} width={size} height={size} alt="" />
     <div style={{ display: "flex", marginLeft: size * 0.3, fontSize: size * 1.15, lineHeight: 1, letterSpacing: 1 }}>
-      <span style={{ color: IVORY }}>{BRAND.wordmark.lead}</span><span style={{ color: GOLD }}>{BRAND.wordmark.rest}</span>
+      {BRAND.wordmark.map((p, i) => <span key={i} style={{ color: p.pixel ? IVORY : GOLD }}>{p.text}</span>)}
     </div>
   </div>
 );

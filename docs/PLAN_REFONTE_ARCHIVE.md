@@ -1,5 +1,7 @@
 # Plan de refonte — « Pixel World, l'archive collective de notre époque »
 
+> *Note de novembre 2026 : le site s'appelle désormais **Hieropix**. Ce plan date d'avant le changement de nom et garde l'ancien nom, « Pixel World ».*
+
 *Demande du propriétaire : transformer Pixel World en archive collective pour les générations futures (« Dans 100 ans, que restera-t-il de nous ? »), supprimer entièrement le thème apocalyptique du Protocole ZÉRO, garder tous les mécanismes existants, prix du pixel à 0,25 €, nouvelle direction artistique violet nuit / or / cyan.*
 
 **Statut : PLAN SEULEMENT.** Aucune ligne de code n'a été modifiée. Ce document est l'audit (phase A) et la proposition (phase B). La maquette de l'accueil (phase C) et le développement (phase D) ne commencent qu'après l'accord du propriétaire.

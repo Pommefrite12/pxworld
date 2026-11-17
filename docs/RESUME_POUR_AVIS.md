@@ -1,10 +1,10 @@
-# Pixel World — résumé à coller à une autre IA pour avoir son avis
+# Hieropix — résumé à coller à une autre IA pour avoir son avis
 
 > Texte autonome (ne contient aucun secret). À coller tel quel, suivi de vos questions, ou des questions proposées en fin de texte.
 
 ## Le produit
 
-**Pixel World** est une carte du monde collaborative (« Une planète. Un milliard de pixels. Votre empreinte. »). La carte est une grille de
+**Hieropix** est une carte du monde collaborative (« Une planète. Un milliard de pixels. Votre empreinte. »). La carte est une grille de
 **40 000 × 25 000 = 1 milliard de pixels**, dont environ **308 millions sont de la terre** : seule la terre est à vendre, la mer ne s'achète pas.
 Un visiteur achète une **parcelle rectangulaire** (de 25 pixels minimum, 5 × 5), y dépose **sa création** (une image, ou un dessin fait dans
 l'éditeur intégré : pinceau jusqu'au dixième de pixel, texte, couleurs multiples) et obtient une page permanente partageable. Les pixels

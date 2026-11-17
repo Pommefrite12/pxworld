@@ -1,5 +1,5 @@
 {
-  "name": "Pixel World (Node 22 + PostgreSQL 16)",
+  "name": "Hieropix (Node 22 + PostgreSQL 16)",
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
@@ -19,7 +19,7 @@
 
   "forwardPorts": [3000],
   "portsAttributes": {
-    "3000": { "label": "Pixel World", "onAutoForward": "notify" }
+    "3000": { "label": "Hieropix", "onAutoForward": "notify" }
   },
 
   "customizations": {

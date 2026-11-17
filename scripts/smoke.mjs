@@ -1,9 +1,13 @@
 #!/usr/bin/env node
-// Smoke test of a RUNNING Pixel World site — a production build locally (`npm run build && npm start`) or a deployment.
+// Smoke test of a RUNNING site — a production build locally (`npm run build && npm start`) or a deployment.
 //   node scripts/smoke.mjs http://localhost:3000
 // Looks at what only a production build shows: every page and map endpoint answers, the security headers are there, the
 // share images render (their font file made it into the build), development-only doors are shut, nothing leaks.
 // It never writes anything and never signs in. Exit code 1 if anything fails.
+import { readFileSync } from "node:fs";
+// The name of the site is written once, in src/lib/brand.ts (read here as text: this script is plain JavaScript).
+const SITE_NAME = readFileSync(new URL("../src/lib/brand.ts", import.meta.url), "utf8").match(/\bname:\s*"([^"]+)"/)?.[1] ?? "";
+const inHtml = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
 const base = (process.argv[2] ?? "http://localhost:3000").replace(/\/$/, "");
 const results = [];
 const check = (name, ok, detail = "") => { results.push({ name, ok }); console.log(`${ok ? "  ok " : "FAIL "} ${name}${detail ? ` — ${detail}` : ""}`); };
@@ -12,12 +16,12 @@ const text = (x) => x.body.toString("utf8");
 
 console.log(`Smoke test of ${base}\n`);
 
-// First of all: is this address even the Pixel World site? (Another site, a typo or a deployment that failed answers differently.)
+// First of all: is this address even our site? (Another site, a typo or a deployment that failed answers differently.)
 const probe = await get("/api/stats").catch((e) => ({ status: 0, type: "", body: Buffer.from(String(e?.message ?? e)) }));
 let isOurs = false;
 try { isOurs = Number.isFinite(JSON.parse(text(probe)).totalPixels); } catch { /* not JSON: not our site */ }
 if (!isOurs) {
-  console.log(`STOP: ${base} does not answer like the Pixel World site (/api/stats gave ${probe.status || "no answer"}${probe.body.length ? `: "${text(probe).slice(0, 60).replace(/\s+/g, " ")}"` : ""}).`);
+  console.log(`STOP: ${base} does not answer like the ${SITE_NAME} site (/api/stats gave ${probe.status || "no answer"}${probe.body.length ? `: "${text(probe).slice(0, 60).replace(/\s+/g, " ")}"` : ""}).`);
   console.log("  - Is it the exact address Vercel shows for your project? (Project → Overview → Visit, then copy the address from the browser.)");
   console.log("  - A name like pixelworld-test.vercel.app may belong to somebody else: Vercel then adds letters to yours.");
   console.log("  - Open <address>/api/stats in a browser: it must show figures such as {\"totalPixels\":308046591,…}.");
@@ -32,7 +36,7 @@ for (const path of ["/", "/fr", "/map", "/discover", "/fr/discover", "/rules", "
   check(`page ${path}`, x.status === 200 && x.type.includes("text/html") && text(x).includes("<main"), `${x.status}`);
 }
 const home = text(await get("/"));
-check("home page: title and share image announced", /<title>[^<]*Pixel World/.test(home) && home.includes("/api/og/home?lang=en"));
+check("home page: title and share image announced", (home.match(/<title>([^<]*)<\/title>/)?.[1] ?? "").includes(inHtml(SITE_NAME)) && home.includes("/api/og/home?lang=en"));
 check("home page: nothing of development left (no dev sign-in, no mock payment)", !/dev-login|STRIPE_MOCK|DEV_AUTH/.test(home));
 check("home page: the archive's home (the sentence and the two ways in)", home.includes('data-testid="home-title"') && home.includes('data-testid="home-leave-trace"') && home.includes('data-testid="home-explore"'));
 

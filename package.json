@@ -2,7 +2,7 @@
   "name": "pixel-world",
   "version": "0.1.0",
   "private": true,
-  "description": "Pixel World — one planet, one billion pixels, your mark.",
+  "description": "Hieropix — one planet, one billion pixels, your mark.",
   "engines": {
     "node": ">=20.9.0"
   },

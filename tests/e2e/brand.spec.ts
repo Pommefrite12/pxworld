@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-/** The brand: the site icons are the logo's globe, and "pixel" in the logo is set in the site's pixel font. */
+import { BRAND } from "../../src/lib/brand";
+
+/** The brand: the site icons are the logo's globe, and the pixel piece of the name in the logo is set in the site's pixel font. */
 test("the site icons are the logo's globe: linked from every page, and served", async ({ page, request }) => {
   for (const path of ["/", "/fr"]) {
     await page.goto(path);
@@ -29,13 +31,14 @@ test("the site icons are the logo's globe: linked from every page, and served", 
   expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([180, 180]);
 });
 
-test('"pixel" in the logo is written in the pixel font, "world" in the display font', async ({ page }) => {
+test("in the logo, the pixel piece of the name is written in the pixel font, the other pieces in the display font", async ({ page }) => {
   await page.goto("/");
   const logo = page.locator("header a[aria-label]").first();
-  const font = (word: string) => logo.getByText(word, { exact: true }).evaluate((e) => getComputedStyle(e).fontFamily);
-  expect(await font("pixel")).toContain("Jersey 10");
-  expect(await font("world")).toContain("Bricolage");
-  // one weight only (no faux bold on a pixel font)
-  expect(await logo.getByText("pixel", { exact: true }).evaluate((e) => getComputedStyle(e).fontWeight)).toBe("400");
+  for (const part of BRAND.wordmark) {
+    const piece = logo.getByText(part.text, { exact: true });
+    expect(await piece.evaluate((e) => getComputedStyle(e).fontFamily), part.text).toContain(part.pixel ? "Jersey 10" : "Bricolage");
+    // the pixel font has one weight only (no faux bold)
+    if (part.pixel) expect(await piece.evaluate((e) => getComputedStyle(e).fontWeight)).toBe("400");
+  }
   await expect(logo).toHaveAccessibleName(/.+/);
 });

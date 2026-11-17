@@ -23,7 +23,7 @@ describe("the name of the site", () => {
   it("is set in src/lib/brand.ts and is not empty", () => {
     expect(BRAND.name.trim().length).toBeGreaterThan(0);
     expect(BRAND_UPPER).toBe(BRAND.name.toUpperCase());
-    expect(BRAND.wordmark.lead + BRAND.wordmark.rest).not.toBe("");
+    expect(BRAND_LOGO_TEXT).not.toBe("");
   });
 
   it("is written nowhere else in src/ (code, styles, message files): everything reads it from the brand file", () => {

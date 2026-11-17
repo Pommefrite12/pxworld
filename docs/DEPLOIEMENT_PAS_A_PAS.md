@@ -46,7 +46,7 @@ range **les images**. À la fin de cette étape, vous aurez noté **7 informatio
 
 1. Ouvrez **https://supabase.com**.
 2. En haut à droite, cliquez sur **Sign in** puis sur **Continue with GitHub**. GitHub vous demande d'autoriser Supabase : cliquez sur **Authorize supabase**.
-3. Si Supabase vous demande de créer une **organisation** : **Name** = `Pixel World`, **Type** = `Personal`, **Plan** = `Free`, puis **Create organization**.
+3. Si Supabase vous demande de créer une **organisation** : **Name** = `Hieropix`, **Type** = `Personal`, **Plan** = `Free`, puis **Create organization**.
 4. Cliquez sur le bouton vert **New project**.
 5. Remplissez le formulaire :
    - **Organization** : celle que vous venez de créer (déjà sélectionnée).
@@ -198,7 +198,7 @@ Stripe encaisse les paiements. **En mode test, personne ne paie rien** : on util
 ### 2C. Donner un nom au compte (évite une erreur au premier paiement)
 
 1. Cliquez sur la **roue dentée « Settings »** en haut à droite (ou utilisez la barre de recherche en haut et tapez `Business details`).
-2. Cherchez **Business details** (ou **Public details** / **Public business name**) et, si le nom est vide, écrivez **`Pixel World`**. Cliquez sur **Save**.
+2. Cherchez **Business details** (ou **Public details** / **Public business name**) et, si le nom est vide, écrivez **`Hieropix`**. Cliquez sur **Save**.
 
 ### 2D. Noter la clé secrète de test
 
@@ -615,9 +615,11 @@ Pour en poser une : connectez-vous avec votre compte admin, ouvrez la carte, cho
 
 **Attention :** une parcelle payée qui touche l'une de vos empreintes la **recouvre**, comme pour n'importe quelle empreinte gratuite.
 
-## Étape 13 : changer le nom du site (quand vous l'aurez choisi)
+## Étape 13 : le nom du site, **Hieropix**, et ce qui reste à faire de votre côté
 
-Le nom n'est écrit qu'**à un seul endroit** du code : le fichier `src/lib/brand.ts`. Les textes en quatre langues, le logo, les images de partage, les titres des pages, les descriptions Stripe, l'archive exportée et les tests le lisent tous depuis ce fichier. Changer de nom, c'est donc **un seul réglage**, que je fais pour vous : dites-moi simplement le nom (et, si vous voulez, comment couper le logo en deux couleurs, par exemple « pixel » en police pixel + « world » en doré).
+Le site s'appelle **Hieropix** (« hiéro » comme hiéroglyphes, « pix » comme pixel). Le nom n'est écrit qu'**à un seul endroit** du code : le fichier `src/lib/brand.ts`. Les textes en quatre langues, le logo, les images de partage, les titres des pages, les descriptions Stripe, l'archive exportée et les tests le lisent tous depuis ce fichier. Si un jour vous voulez en changer, c'est donc **un seul réglage**, que je fais pour vous : dites-moi simplement le nouveau nom et comment couper le logo en deux couleurs.
+
+**Déjà changé pour vous :** tout ce qui est dans le code et les documents. **Pas encore changé :** les noms que vous avez créés chez Supabase, Vercel et GitHub quand vous avez suivi ce guide (le nom de l'organisation Supabase, le nom du projet Vercel, l'adresse `….vercel.app`). Ils ne se voient pas des visiteurs ; vous pouvez les laisser tels quels pour l'instant.
 
 Ce que le code ne peut pas faire à votre place, et qui reste à vous :
 
@@ -644,7 +646,7 @@ Ce qui ne change **pas**, volontairement : le nom technique de la base (`pixelwo
 | Le build Vercel échoue | copiez les dernières lignes du journal et envoyez-les-moi |
 | Le build Vercel échoue avec « Invalid environment configuration … Invalid URL → at NEXT_PUBLIC_SUPABASE_URL » (ou `NEXT_PUBLIC_SITE_URL`) | la valeur n'est pas une adresse valide : il faut **seulement** `https://xxxx.supabase.co` (sans `NEXT_PUBLIC_SUPABASE_URL=` devant, sans guillemets, sans espace). Corrigez-la (Settings → Environment Variables → ⋯ → Edit), puis **Redeploy** |
 | La page affiche une erreur « Invalid environment configuration » | une variable est mal écrite (guillemets, espace, `/` final) |
-| Le contrôle `smoke.mjs` affiche `STOP: … does not answer like the Pixel World site`, ou des 404 partout | ce n'est pas votre site : mauvaise adresse (voir 3E point 4), ou déploiement pas en production |
+| Le contrôle `smoke.mjs` affiche `STOP: … does not answer like the Hieropix site`, ou des 404 partout | ce n'est pas votre site : mauvaise adresse (voir 3E point 4), ou déploiement pas en production |
 | L'inscription échoue, et dans les outils du navigateur (F12 → Réseau → `signup` → Réponse) on lit **`Invalid API key`** | la clé publique `NEXT_PUBLIC_SUPABASE_ANON_KEY` est fausse ou **tronquée** (la zone de la fenêtre « Connect » est coupée à droite : utilisez le bouton **Copy** de **Project Settings → API Keys**). Recréez la variable en type **Config**, puis **Redeploy** |
 | Impossible de se connecter / le lien de l'e-mail mène à une erreur | étape 4 : l'adresse de redirection manque ou ne correspond pas |
 | Le paiement réussit mais la commande reste « en attente » | étape 6 : webhook absent, mauvais événements, ou `STRIPE_WEBHOOK_SECRET` faux (puis **Redeploy**) |
