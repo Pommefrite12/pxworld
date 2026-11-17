@@ -5,7 +5,7 @@
     "description": "{brand} 是记录我们这个时代的全球集体档案：在一幅世界地图上，任何人都可以留下自己的印记——一件作品、一段回忆、一份热爱——献给后世。"
   },
   "nav": {
-    "home": "{brand} — 首页",
+    "home": "{brandLogo} — 首页",
     "main": "主导航",
     "discover": "发现",
     "leaveTrace": "留下我的印记",

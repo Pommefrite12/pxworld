@@ -36,5 +36,9 @@ export const BRAND_UPPER = BRAND.name.toUpperCase();
 /** A name made safe to be read as ICU MessageFormat (apostrophes and curly braces are escaped). */
 export const icuEscape = (name: string): string => name.replace(/'/g, "''").replace(/[{}]/g, (c) => `'${c}'`);
 
-/** What `{brand}` stands for in the message files. */
+/** The name as the logo draws it (`pixel` + `world` → "pixelworld"). The accessible name of the logo link must contain exactly this visible text (WCAG 2.5.3, "label in name"): `nav.home` uses `{brandLogo}`. */
+export const BRAND_LOGO_TEXT = BRAND.wordmark.lead + BRAND.wordmark.rest;
+
+/** What `{brand}` and `{brandLogo}` stand for in the message files. */
 export const BRAND_ICU = icuEscape(BRAND.name);
+export const BRAND_LOGO_ICU = icuEscape(BRAND_LOGO_TEXT);

@@ -1,6 +1,6 @@
 import { hasLocale } from "next-intl";
 import { getRequestConfig } from "next-intl/server";
-import { BRAND_ICU } from "@/lib/brand";
+import { BRAND_ICU, BRAND_LOGO_ICU } from "@/lib/brand";
 import { routing } from "./routing";
 
 type Messages = Record<string, unknown>;
@@ -12,11 +12,15 @@ export function withFallback(fallback: Messages, own: Messages): Messages {
   return out;
 }
 
-/** Every `{brand}` of the message files becomes the name of the site (see `src/lib/brand.ts`). Done once per language, before the ICU parsing, so a name can sit next to an apostrophe (`l'{brand}`) like any other word. Lists of texts (the legal pages) are walked too. */
-export function withBrand<T>(value: T, brand = BRAND_ICU): T {
-  if (typeof value === "string") return value.replaceAll("{brand}", brand) as T;
-  if (Array.isArray(value)) return value.map((v) => withBrand(v, brand)) as T;
-  if (isObject(value)) return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, withBrand(v, brand)])) as T;
+/** What the placeholders of the message files stand for: `{brand}` is the name in sentences, `{brandLogo}` the text of the logo (see `src/lib/brand.ts`). */
+export interface BrandNames { brand: string; brandLogo: string }
+const NAMES: BrandNames = { brand: BRAND_ICU, brandLogo: BRAND_LOGO_ICU };
+
+/** Every `{brand}` and `{brandLogo}` of the message files becomes the name of the site. Done once per language, before the ICU parsing, so a name can sit next to an apostrophe (`l'{brand}`) like any other word. Lists of texts (the legal pages) are walked too. */
+export function withBrand<T>(value: T, names: BrandNames = NAMES): T {
+  if (typeof value === "string") return value.replaceAll("{brand}", names.brand).replaceAll("{brandLogo}", names.brandLogo) as T;
+  if (Array.isArray(value)) return value.map((v) => withBrand(v, names)) as T;
+  if (isObject(value)) return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, withBrand(v, names)])) as T;
   return value;
 }
 

@@ -5,7 +5,7 @@
     "description": "{brand} is a worldwide collective archive of our time: a map of the world where anyone can leave a trace — a creation, a memory, a passion — for the generations to come."
   },
   "nav": {
-    "home": "{brand} — home",
+    "home": "{brandLogo} — home",
     "main": "Main navigation",
     "discover": "Discover",
     "leaveTrace": "Leave my trace",

@@ -5,7 +5,7 @@
     "description": "{brand} est une archive collective mondiale de notre époque\u00a0: une carte du monde où chacun peut laisser une empreinte — une création, un souvenir, une passion — pour les générations futures."
   },
   "nav": {
-    "home": "{brand} — accueil",
+    "home": "{brandLogo} — accueil",
     "main": "Navigation principale",
     "discover": "Découvrir",
     "leaveTrace": "Laisser mon empreinte",
