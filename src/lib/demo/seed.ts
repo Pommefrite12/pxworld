@@ -135,12 +135,40 @@ export async function seedDemo(p: DemoPorts, opts: SeedOptions): Promise<SeedRep
   return report;
 }
 
-export interface ClearReport { users: number; parcels: number; files: number }
+export interface ClearReport { users: number; parcels: number; files: number; /** accounts that could not be removed, each with why (the tables that still hold rows of it) */ failed: string[] }
+
+/**
+ * What still holds rows of an account, among the tables whose link to it forbids deleting it (RESTRICT / NO ACTION): read from the database's own catalogue,
+ * so it also finds what this code does not know about. Never throws: it only explains a refusal.
+ */
+export async function accountBlockers(p: DemoPorts, id: string): Promise<string[]> {
+  try {
+    const fks = await p.query<{ tbl: string; col: string }>(
+      `select c.conrelid::regclass::text as tbl, a.attname as col
+         from pg_constraint c join pg_attribute a on a.attrelid = c.conrelid and a.attnum = any(c.conkey)
+        where c.contype = 'f' and c.confdeltype in ('a', 'r') and c.confrelid in ('auth.users'::regclass, 'public.profiles'::regclass)`);
+    const out: string[] = [];
+    for (const f of fks) {
+      const [r] = await p.query<{ n: number }>(`select count(*)::int as n from ${f.tbl} where "${f.col.replace(/"/g, '""')}" = $1`, [id]);
+      if (Number(r?.n ?? 0) > 0) out.push(`${f.tbl}.${f.col} (${r!.n} row${Number(r!.n) > 1 ? "s" : ""})`);
+    }
+    return out;
+  } catch { return []; }
+}
+
+/** Removes an account; when the database refuses, says what holds it instead of stopping the job (the parcels are already gone: what is left is harmless accounts). */
+async function removeAccount(p: DemoPorts, id: string, failed: string[]): Promise<boolean> {
+  try { await p.deleteUser(id); return true; } catch (e) {
+    const holds = await accountBlockers(p, id);
+    failed.push(`${id}: ${(e as Error).message}${holds.length ? ` — still held by ${holds.join(", ")}` : " — no table found that holds it (look at the Supabase Auth logs)"}`);
+    return false;
+  }
+}
 
 /** Deletes every demonstration account, with its parcels, creations and files. Never touches anything else. */
 export async function clearDemo(p: DemoPorts, opts: { emailDomain: string }): Promise<ClearReport> {
   const ids = (await p.query<{ id: string }>("select id from auth.users where email like $1", [sqlLike(opts.emailDomain)])).map((r) => r.id);
-  if (!ids.length) return { users: 0, parcels: 0, files: 0 };
+  if (!ids.length) return { users: 0, parcels: 0, files: 0, failed: [] };
   // (the volume mode shares a few files between thousands of parcels: each file is removed once)
   const paths = [...new Set((await p.query<{ storage_path: string }>(
     "select distinct a.storage_path from public.parcel_assets a join public.parcels pc on pc.id = a.parcel_id where pc.owner_id = any($1::uuid[])", [ids])).map((r) => r.storage_path))];
@@ -153,22 +181,25 @@ export async function clearDemo(p: DemoPorts, opts: { emailDomain: string }): Pr
   }
   let files = 0;
   for (const key of paths) { try { await p.removeObject(key); files++; } catch { p.log(`  (could not remove the file ${key})`); } }
-  for (const id of ids) await p.deleteUser(id);
+  const failed: string[] = [];
+  let users = 0;
+  for (const id of ids) if (await removeAccount(p, id, failed)) users++;
   await p.query("update public.map_state set version = version + 1, updated_at = now() where id = 1");
-  return { users: ids.length, parcels, files };
+  return { users, parcels, files, failed };
 }
 
 /** Removes the illustration parcels (covered ones too), their files and the technical account. Only when asked for: `clearDemo` leaves them. */
-export async function clearIllustrations(p: DemoPorts, opts: { emailDomain: string }): Promise<{ parcels: number; files: number; accounts: number }> {
+export async function clearIllustrations(p: DemoPorts, opts: { emailDomain: string }): Promise<{ parcels: number; files: number; accounts: number; failed: string[] }> {
   const paths = (await p.query<{ storage_path: string }>(
     "select a.storage_path from public.parcel_assets a join public.parcels pc on pc.id = a.parcel_id where pc.tier = 'illustration'")).map((r) => r.storage_path);
   const gone = await p.query<{ id: string }>("delete from public.parcels where tier = 'illustration' returning id");
   let files = 0;
   for (const key of paths) { try { await p.removeObject(key); files++; } catch { p.log(`  (could not remove the file ${key})`); } }
   const [acc] = await p.query<{ id: string }>("select id from auth.users where email = $1", [illustrationEmail(opts.emailDomain)]);
-  if (acc) await p.deleteUser(acc.id);
+  const failed: string[] = [];
+  const removed = acc ? await removeAccount(p, acc.id, failed) : false;
   await p.query("update public.map_state set version = version + 1, updated_at = now() where id = 1");
-  return { parcels: gone.length, files, accounts: acc ? 1 : 0 };
+  return { parcels: gone.length, files, accounts: removed ? 1 : 0, failed };
 }
 
 /** What `wipeEverything` is about to remove, counted without touching anything (the script prints it first). */
@@ -188,7 +219,7 @@ export async function wipePreview(p: DemoPorts, opts: { emailDomain: string }): 
   };
 }
 
-export interface WipeReport { demoAccounts: number; illustrations: number; parcels: number; orders: number; payments: number; projects: number; contributions: number; files: number }
+export interface WipeReport { demoAccounts: number; illustrations: number; parcels: number; orders: number; payments: number; projects: number; contributions: number; files: number; /** accounts the database would not let go (the parcels are gone all the same) */ failed: string[] }
 
 /**
  * Removes EVERY parcel of a test site: the demonstration ones, the illustrations, and everybody's own (purchases and free imprints), with their
@@ -225,7 +256,7 @@ export async function wipeEverything(p: DemoPorts, opts: { emailDomain: string }
   let files = 0;
   for (const key of paths) { try { await p.removeObject(key); files++; } catch { p.log(`  (could not remove the file ${key})`); } }
   await p.query("update public.map_state set version = version + 1, updated_at = now() where id = 1");
-  return { demoAccounts: demo.users, illustrations: il.parcels, parcels: demo.parcels + il.parcels + parcels, orders, payments, projects, contributions, files: demo.files + il.files + files };
+  return { demoAccounts: demo.users + il.accounts, illustrations: il.parcels, parcels: demo.parcels + il.parcels + parcels, orders, payments, projects, contributions, files: demo.files + il.files + files, failed: [...demo.failed, ...il.failed] };
 }
 
 export interface DemoStatus { users: number; parcels: number; illustrations: number; /** every parcel of the site, whoever owns it */ allParcels: number; publicCounters: { soldPixels: number; parcels: number; owners: number; creations: number } }

@@ -36,6 +36,14 @@ const args = process.argv.slice(2);
 const command = args[0];
 const flag = (name: string) => args.includes(`--${name}`);
 const opt = (name: string) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : undefined; };
+/** Accounts the database would not let go: said plainly, and the exit code says it too (the parcels are gone all the same). */
+const reportFailures = (failed: string[]) => {
+  if (!failed.length) return;
+  console.log(`\n${failed.length} account(s) could not be removed (their parcels are gone; the accounts are harmless, and running the command again retries them):`);
+  for (const f of failed.slice(0, 20)) console.log(`  - ${f}`);
+  if (failed.length > 20) console.log(`  … and ${failed.length - 20} more`);
+  process.exitCode = 1;
+};
 const die = (message: string, code = 1): never => { console.error(message); process.exit(code); };
 
 if (!["seed", "clear", "status"].includes(command ?? "")) die("Usage: seed | clear | status  (see the top of scripts/seed-demo.mts)", 2);
@@ -157,13 +165,16 @@ try {
     const t0 = Date.now();
     const r = await wipeEverything(ports, { emailDomain });
     console.log(`\nDone in ${Math.round((Date.now() - t0) / 1000)} s: ${r.parcels} parcels, ${r.orders} purchases, ${r.payments} payments, ${r.projects} fundraising projects, ${r.contributions} contributions, ${r.files} files and ${r.demoAccounts} demonstration accounts removed.`);
+    reportFailures(r.failed);
   } else if (command === "clear") {
     console.log(`Removing every demonstration account from ${target}…`);
     const r = await clearDemo(ports, { emailDomain });
     console.log(`Done: ${r.users} accounts, ${r.parcels} parcels and ${r.files} files removed.`);
+    reportFailures(r.failed);
     if (flag("illustrations")) {
       const i = await clearIllustrations(ports, { emailDomain });
       console.log(`Illustrations: ${i.parcels} parcels, ${i.files} files and ${i.accounts} technical account removed.`);
+      reportFailures(i.failed);
     }
   }
   const s = await demoStatus(ports, { emailDomain });

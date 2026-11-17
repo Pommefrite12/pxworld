@@ -99,10 +99,32 @@ describe("the tool that removes everything from a test site", () => {
 
   it("does nothing, and says so, on a site that is already empty (and can be run twice)", async () => {
     const empty = await wipeEverything(ports(), { emailDomain: DOMAIN });
-    expect(empty).toEqual({ demoAccounts: 0, illustrations: 0, parcels: 0, orders: 0, payments: 0, projects: 0, contributions: 0, files: 0 });
+    expect(empty).toEqual({ demoAccounts: 0, illustrations: 0, parcels: 0, orders: 0, payments: 0, projects: 0, contributions: 0, files: 0, failed: [] });
     await aSiteWithEverything();
     await wipeEverything(ports(), { emailDomain: DOMAIN });
-    expect(await wipeEverything(ports(), { emailDomain: DOMAIN })).toEqual({ demoAccounts: 0, illustrations: 0, parcels: 0, orders: 0, payments: 0, projects: 0, contributions: 0, files: 0 });
+    expect(await wipeEverything(ports(), { emailDomain: DOMAIN })).toEqual({ demoAccounts: 0, illustrations: 0, parcels: 0, orders: 0, payments: 0, projects: 0, contributions: 0, files: 0, failed: [] });
+  });
+
+  it("when the database will not let an account go, it goes on, says which account and what still holds it, and the parcels are gone all the same", async () => {
+    await aSiteWithEverything();
+    const stuck = (await pool.query("select id from auth.users where email = 'demo-vol-001@demo.invalid'")).rows[0].id as string;
+    const other = (await pool.query("select id from auth.users where email = 'demo-vol-002@demo.invalid'")).rows[0].id as string;
+    // a project created by that account, still pending: it holds no zone (so the wipe leaves it) but it ties the account (campaigns.creator_id is RESTRICT)
+    await pool.query(
+      `select * from public.px_create_campaign($1, 3000, 3000, 100, 100, null, 'eur', 'land', 14, 'campaigns/s.png', 'def456', 100, 100, 1234, '#112233', 'Stuck', 'A project', null, false)`, [stuck]);
+
+    const r = await wipeEverything(ports(), { emailDomain: DOMAIN });
+    expect(await count("select count(*)::int n from public.parcels"), "every parcel is gone").toBe(0);
+    expect(r.failed, "one account is left").toHaveLength(1);
+    expect(r.failed[0]).toContain(stuck);
+    expect(r.failed[0], "and the tool says what holds it").toMatch(/campaigns\.creator_id \(1 row\)/);
+    expect(await count(`select count(*)::int n from auth.users where id = '${stuck}'`)).toBe(1);
+    expect(await count(`select count(*)::int n from auth.users where id = '${other}'`), "the others went").toBe(0);
+    expect(r.demoAccounts, "the ones that went are counted").toBeGreaterThanOrEqual(4);
+
+    // running it again retries: still held, still said
+    const again = await wipeEverything(ports(), { emailDomain: DOMAIN });
+    expect(again.failed).toHaveLength(1);
   });
 
   it("leaves the projects that are over, the editions and the settings alone", async () => {

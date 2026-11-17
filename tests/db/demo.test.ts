@@ -116,7 +116,7 @@ describe("demonstration data for a test site", () => {
     const before = Number((await pool.query("select version from public.map_state where id = 1")).rows[0].version);
 
     const gone = await clearDemo(ports(), { emailDomain: DOMAIN });
-    expect(gone).toEqual({ users: 15, parcels: 15, files: 15 });
+    expect(gone).toEqual({ users: 15, parcels: 15, files: 15, failed: [] });
     expect(files.size).toBe(0);
     expect(Number((await pool.query("select count(*) from auth.users where email like '%@demo.invalid'")).rows[0].count)).toBe(0);
     expect(Number((await pool.query("select count(*) from public.parcel_assets")).rows[0].count)).toBe(0);
@@ -125,6 +125,6 @@ describe("demonstration data for a test site", () => {
     expect(Number((await pool.query("select count(*) from auth.users where email = 'real@example.test'")).rows[0].count)).toBe(1);
     expect(Number((await pool.query("select version from public.map_state where id = 1")).rows[0].version)).toBeGreaterThan(before); // the map's tiles are refreshed
 
-    expect(await clearDemo(ports(), { emailDomain: DOMAIN })).toEqual({ users: 0, parcels: 0, files: 0 }); // and again: nothing to do
+    expect(await clearDemo(ports(), { emailDomain: DOMAIN })).toEqual({ users: 0, parcels: 0, files: 0, failed: [] }); // and again: nothing to do
   });
 });
