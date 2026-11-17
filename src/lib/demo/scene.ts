@@ -44,8 +44,8 @@ export class Canvas {
   readonly s: number;
   /** Internal dots in one design pixel (a "pixel" of the size arguments of `dot`, `checker`…). */
   readonly px: number;
-  private readonly d: Uint8ClampedArray;
-  private readonly g: ReturnType<typeof rng>;
+  protected readonly d: Uint8ClampedArray;
+  protected readonly g: ReturnType<typeof rng>;
   /** How much a fill is lit from above (0 = flat). */
   grad = 0.16;
 
@@ -60,8 +60,8 @@ export class Canvas {
     this.fill(bg);
   }
 
-  private put(x: number, y: number, c: RGB) { if (x < 0 || y < 0 || x >= this.w || y >= this.h) return; const i = (y * this.w + x) * 3; this.d[i] = c[0]; this.d[i + 1] = c[1]; this.d[i + 2] = c[2]; }
-  private blend(x: number, y: number, c: RGB, a: number) { if (x < 0 || y < 0 || x >= this.w || y >= this.h || a <= 0) return; const i = (y * this.w + x) * 3; const d = this.d; d[i] = d[i]! + (c[0] - d[i]!) * a; d[i + 1] = d[i + 1]! + (c[1] - d[i + 1]!) * a; d[i + 2] = d[i + 2]! + (c[2] - d[i + 2]!) * a; }
+  protected put(x: number, y: number, c: RGB) { if (x < 0 || y < 0 || x >= this.w || y >= this.h) return; const i = (y * this.w + x) * 3; this.d[i] = c[0]; this.d[i + 1] = c[1]; this.d[i + 2] = c[2]; }
+  protected blend(x: number, y: number, c: RGB, a: number) { if (x < 0 || y < 0 || x >= this.w || y >= this.h || a <= 0) return; const i = (y * this.w + x) * 3; const d = this.d; d[i] = d[i]! + (c[0] - d[i]!) * a; d[i + 1] = d[i + 1]! + (c[1] - d[i + 1]!) * a; d[i + 2] = d[i + 2]! + (c[2] - d[i + 2]!) * a; }
   /** A colour lit by its place in the shape: `t` from 0 (top) to 1 (bottom). */
   private lit(c: RGB, t: number, side = 0): RGB {
     if (this.block > 1) { t = Math.round(t * 3) / 3; side = Math.round(side * 2) / 2; } // pixel art: three flat steps, not a gradient

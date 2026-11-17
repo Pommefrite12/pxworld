@@ -5,6 +5,8 @@
 //     --set heritage instead makes the 100 hand-drawn "world heritage" ILLUSTRATION parcels (historic places, cultures, food, music, science, today's world),
 //     each on its real place, 50 × 50 pixels at most. They belong to ONE technical account, are shown as "Illustration image" (no author), are covered by any
 //     purchase that touches them, and are KEPT by `clear` (they are meant to stay when the site opens). --count and --water are then ignored.
+//     --set capitals instead makes the illustration parcels of the biggest capitals of the world: 15 realistic pixel-art scenes (a landmark each), 50 × 50 to 200 × 200
+//     pixels (square), on the capital itself, plus a wink at Miami. Same account, same rules (covered by any purchase that touches them, kept by `clear`). Needs migration 27.
 //   npm run demo:seed   -- --env .env.production.local --i-know-this-is-a-test-site --project <supabase project id> --volume 5000 [--owners 40]
 //     VOLUME mode, to see the site with a world FULL of parcels: --volume N makes sure that N parcels exist (1 to 50000; running it again with a bigger number
 //     completes it), owned by --owners accounts (40 by default), 25 to 900 pixels each, around the big cities and anywhere on land, already published.
@@ -30,6 +32,7 @@ import { shouldUseSsl } from "../src/lib/db/ssl";
 import { demoGuard } from "../src/lib/demo/plan";
 import { clearDemo, clearIllustrations, demoStatus, seedDemo, wipeEverything, wipePreview, type DemoPorts } from "../src/lib/demo/seed";
 import { heritagePlan } from "../src/lib/demo/heritage";
+import { capitalsPlan } from "../src/lib/demo/capitals";
 import { seedVolume } from "../src/lib/demo/volume";
 
 const args = process.argv.slice(2);
@@ -126,8 +129,8 @@ try {
   }
   if (command === "seed") {
     const set = opt("set");
-    if (set !== undefined && set !== "heritage") die('--set must be "heritage"');
-    const plan = set === "heritage" ? heritagePlan() : undefined;
+    if (set !== undefined && set !== "heritage" && set !== "capitals") die('--set must be "heritage" or "capitals"');
+    const plan = set === "heritage" ? heritagePlan() : set === "capitals" ? capitalsPlan() : undefined;
     if (plan) {
       // the illustration parcels need migration 24 (the third tier): say so before anything is written, not through a constraint error
       const ok = await query("select 1 from pg_constraint where conname = 'parcels_tier_check' and pg_get_constraintdef(oid) like '%illustration%'");
@@ -135,6 +138,11 @@ try {
       // ... and the translations of their title and sentence need migration 25
       const col = await query("select 1 from information_schema.columns where table_schema = 'public' and table_name = 'parcel_assets' and column_name = 'i18n'");
       if (!col.length) die("Refused (nothing was touched): the database does not have migration 25 yet (the translations of the illustration parcels).\n  Apply it first:  node scripts/migrate.mjs --env .env.production.local");
+      // ... and the big ones (up to 200 × 200) need migration 27
+      if (set === "capitals") {
+        const big = await query("select 1 from pg_constraint where conname = 'parcels_min_area' and pg_get_constraintdef(oid) like '%40000%'");
+        if (!big.length) die("Refused (nothing was touched): the database does not have migration 27 yet (illustrations up to 200 × 200 pixels).\n  Apply it first:  node scripts/migrate.mjs --env .env.production.local");
+      }
     }
     const volume = opt("volume");
     if (volume !== undefined) {

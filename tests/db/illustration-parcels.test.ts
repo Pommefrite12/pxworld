@@ -25,12 +25,13 @@ async function buy(user: string, x: number, y: number, w = 5, h = 5) {
 }
 
 describe("illustration parcels", () => {
-  it("are 25 to 2 500 pixels (up to 50 × 50) and on land: the table says so", async () => {
+  it("are 25 to 40 000 pixels (up to 200 × 200, migration 27) and on land: the table says so", async () => {
     const owner = await createUser("system");
-    expect(await illustration(owner, 1000, 1000, 50, 50)).toBeTruthy(); // the biggest
-    expect(await illustration(owner, 1100, 1000, 5, 5)).toBeTruthy(); // the smallest
-    await expectPgError(illustration(owner, 1200, 1000, 51, 50), "parcels_min_area");
-    await expectPgError(illustration(owner, 1300, 1000, 4, 4), "parcels_min_area");
+    expect(await illustration(owner, 1000, 1000, 200, 200)).toBeTruthy(); // the biggest
+    expect(await illustration(owner, 1300, 1000, 5, 5)).toBeTruthy(); // the smallest
+    expect(await illustration(owner, 1400, 1000, 50, 50)).toBeTruthy(); // the old limit is still fine
+    await expectPgError(illustration(owner, 1600, 1000, 201, 200), "parcels_min_area");
+    await expectPgError(illustration(owner, 2000, 1000, 4, 4), "parcels_min_area");
     await expectPgError(illustration(owner, 1400, 1000, 30, 30, "water"), "parcels_free_is_land");
     // the free ones keep their own limit
     await expectPgError(pool.query(`insert into public.parcels (owner_id, x, y, w, h, status, tier) values ($1, 900, 900, 30, 30, 'active', 'free')`, [owner]), "parcels_min_area");

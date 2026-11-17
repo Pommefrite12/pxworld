@@ -464,6 +464,33 @@ L'outil de l'étape 9 crée un compte Supabase par parcelle (500 au plus, et len
 
 **À savoir :** leurs textes sont marqués pour que la **traduction automatique ne coûte rien** dessus. Leurs images sont partagées (peu variées : c'est voulu, ce qui compte ici est le nombre, pas l'image). Ce sont des parcelles **payées** : **aucun achat ne peut passer dessus** (contrairement aux illustrations et aux empreintes gratuites, qui sont recouvertes) ; pour acheter ou poser une empreinte, il faut viser un endroit libre.
 
+### Les illustrations des grandes capitales (15 scènes « réalistes pixélisées »)
+
+Quinze **illustrations carrées de 50 × 50 à 200 × 200 pixels**, posées **sur les grandes capitales** (Paris, Londres, Tokyo, Pékin, New Delhi, Le Caire, Moscou, Mexico, Buenos Aires, Séoul, Bangkok, Jakarta, Washington, Berlin), plus **un clin d'œil à Miami** : un coucher de soleil néon sur Ocean Drive, avec un grand « VI » lumineux (pour ceux qui attendent *Vice City*). Ce sont des scènes **dessinées par code**, avec de la lumière, de la profondeur, des nuages et des textures, mais faites de petits pixels nets (un quart de pixel de la grille), comme le reste du site. Ce ne sont **pas des photographies**. Il n'y a ni logo, ni personnage, ni visuel officiel dans celle de Miami (une ambiance et deux lettres).
+
+1. Récupérez le code :
+```bash
+git pull
+```
+2. **Mettez la base à jour** (migration 27 : une illustration pouvait faire 50 × 50 au plus, elle peut maintenant faire 200 × 200) :
+```bash
+node scripts/migrate.mjs --env .env.production.local
+```
+Attendu : `applying …_larger_illustrations.sql … ok` (et, si ce n'est pas déjà fait, les migrations 25 et 26 avant). Sans cette étape, l'étape suivante **refuse** de commencer et le dit (rien n'est touché).
+3. **Posez les illustrations** (remplacez l'identifiant si besoin) :
+```bash
+npm run demo:seed -- --env .env.production.local --i-know-this-is-a-test-site --project wrpemamvpcsgrapwukzj --set capitals
+```
+Attendu : une ligne par capitale, puis `Done: 1 accounts created …, 15 parcels created`. Relancer la commande ne double rien. Rechargez le site avec **Ctrl+Maj+R**, cherchez « Paris » dans la barre de recherche, zoomez.
+
+**À savoir.**
+- Comme toutes les illustrations, ces images **ne comptent dans aucun compteur** (ni pixels vendus, ni propriétaires, ni créations) et elles sont **recouvertes en entier par n'importe quel achat qui les touche** : un achat de 5 × 5 pixels au milieu de Paris fait disparaître **toute** l'image de 160 × 160. C'est la règle des illustrations (elles habillent la carte avant les vraies empreintes) ; si vous préférez que les grandes restent, dites-le-moi.
+- Elles sont posées **sur la capitale elle-même**, un peu décalées vers l'intérieur des terres quand la ville est sur la côte (Miami, Tokyo, Buenos Aires, Bangkok, Jakarta) : une illustration ne peut pas être surtout en mer.
+- Le texte est en français, anglais, espagnol et chinois (à faire relire par une personne qui parle ces langues).
+- `demo:clear … --illustrations` les retire (avec les 100 illustrations « patrimoine » si elles sont là) ; `--everything` retire tout.
+- **Avant le lancement réel**, faites relire l'ensemble des illustrations sans auteur par votre avocat, **celle de Miami en particulier** (référence à un jeu vidéo : je n'ai utilisé que le nom « Vice City » dans le texte, aucun logo ni image officielle).
+- Pour **voir les images avant** de les poser : `NODE_OPTIONS=--conditions=react-server npx tsx scripts/preview-capitals.mts mon-dossier` écrit les images et des planches (aucune base touchée).
+
 ### Tout supprimer : TOUTES les parcelles du site de test (y compris les vôtres)
 
 `demo:clear` seul ne retire que les comptes de démonstration (et, avec `--illustrations`, les images d'illustration). Pour **vider entièrement** le site de test, ajoutez **`--everything`** (avec `--yes`) :
