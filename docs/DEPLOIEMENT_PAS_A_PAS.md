@@ -625,7 +625,7 @@ Le site s'appelle **Hieropix** (« hiéro » comme hiéroglyphes, « pix » comm
 
 Ce que le code ne peut pas faire à votre place, et qui reste à vous :
 
-1. le **nom de domaine** (acheter l'adresse, puis changer `NEXT_PUBLIC_SITE_URL` dans Vercel et refaire un Redeploy) ;
+1. le **nom de domaine** (acheter l'adresse, puis l'étape 16 ci-dessous : Vercel, DNS, `NEXT_PUBLIC_SITE_URL`, Supabase, Stripe) ;
 2. le **nom public du compte Stripe** (Réglages de l'entreprise) ;
 3. les **modèles d'e-mails de Supabase**, si vous les avez personnalisés avec l'ancien nom ;
 4. les **vérifications de marque et de disponibilité** du nom (avocat) : je ne peux pas les faire.
@@ -664,6 +664,46 @@ node scripts/migrate.mjs --env .env.production.local
 Attendu : `applying …_free_parcels_on_water.sql … ok`. On peut relancer la commande sans risque.
 
 Les règles sont celles d'une parcelle d'eau payée : au moins **la moitié** des pixels doit être de l'eau (réglage `min_water_percent`), le quota est **commun** à la terre et à l'eau (une seule empreinte à la fois, trois au total), et c'est **un achat d'eau** qui recouvre une empreinte d'eau (un achat de terre ne recouvre que les empreintes de terre, car terre et eau n'ont jamais un pixel en commun). Sur la carte : choisissez **Eau**, puis une taille de 1 à 24 pixels : le panneau affiche **Gratuit**.
+
+## Étape 16 : brancher le nom de domaine (30 min, puis l'attente des DNS)
+
+À faire **dans cet ordre** : si on change l'adresse du site avant que Supabase et Stripe la connaissent, la connexion et les paiements de test échouent le temps de la bascule. L'ancienne adresse `….vercel.app` **continue de marcher** pendant toute la bascule : on ne la retire qu'à la fin.
+
+**A. L'achat (vous)**
+1. Achetez le nom chez un bureau d'enregistrement (registrar) de votre choix. N'achetez **aucune option** : la confidentialité des coordonnées (WHOIS) est généralement incluse, le reste ne sert à rien ici. Activez le **renouvellement automatique** (un nom oublié se perd) et la **double authentification** du compte (celui qui prend le compte prend le site).
+2. Ne m'envoyez **jamais** le mot de passe de ce compte. Je n'ai besoin que du nom (par exemple `exemple.com`).
+
+**B. Vercel (vous)**
+1. Projet → **Settings → Domains → Add** → tapez le nom (sans `https://`).
+2. Vercel propose d'ajouter aussi la version `www` : acceptez, et choisissez **une seule adresse officielle** (je conseille celle **sans** `www`) vers laquelle l'autre redirige.
+3. Vercel affiche alors **exactement les enregistrements DNS à créer** (type, nom, valeur). Recopiez ce qu'il affiche, sans vous fier à une valeur lue ailleurs : elle peut changer.
+
+**C. Le bureau d'enregistrement (vous)**
+1. Ouvrez la **zone DNS** du nom et créez les enregistrements que Vercel vient d'afficher. Supprimez ceux qui entrent en conflit (une ancienne page de « parking » du registrar).
+2. Attendez : de quelques minutes à quelques heures. Vercel passe de « Invalid Configuration » à **« Valid Configuration »** et prépare le **certificat HTTPS** tout seul.
+
+**D. Vercel : la variable (vous)**
+1. Settings → **Environment Variables** → `NEXT_PUBLIC_SITE_URL` → `https://exemple.com` (**sans** `/` final, sans guillemets) → enregistrez → **Redeploy**.
+
+**E. Supabase (vous)**
+1. **Authentication → URL Configuration** : **Site URL** = `https://exemple.com`. Dans **Redirect URLs**, **ajoutez** `https://exemple.com/**` (gardez l'ancienne adresse jusqu'à la fin de l'étape G).
+
+**F. Stripe (vous, mode test)**
+1. **Developers → Webhooks → Add endpoint** : `https://exemple.com/api/stripe/webhook`, mêmes événements que l'ancien. Copiez son **Signing secret** (`whsec_…`) dans Vercel (`STRIPE_WEBHOOK_SECRET`), puis **Redeploy**. Ne le collez jamais dans le chat.
+2. Quand un paiement de test passe, **supprimez l'ancien endpoint**.
+
+**G. Vérifier (vous, puis moi)**
+```bash
+node scripts/smoke.mjs https://exemple.com
+```
+Puis : créer un compte (ou se connecter), puis un achat de test jusqu'au bout, et l'ouverture d'une page de partage. Dites-moi ce que vous voyez ; je lis avec vous les erreurs éventuelles.
+
+**À savoir.**
+- Les personnes déjà connectées devront **se reconnecter** : le navigateur ne partage pas la session entre deux adresses.
+- Le site vérifie que les requêtes viennent bien de **sa propre adresse** (`NEXT_PUBLIC_SITE_URL`) : si elle est fausse, tout bouton qui enregistre quelque chose répond « 403 bad_origin ». C'est le premier endroit à regarder si rien ne s'enregistre après la bascule.
+- `robots.txt` et le plan du site se calent tout seuls sur la nouvelle adresse.
+- **E-mails.** Le service d'e-mails intégré de Supabase est fait pour les essais (envois très limités par heure) : pour un vrai lancement, il faudra configurer un **service d'envoi à part** avec les enregistrements SPF et DKIM de votre domaine, pour que les e-mails de confirmation (nécessaires aux empreintes gratuites) arrivent et ne finissent pas en courrier indésirable. C'est une étape à part, qu'on fera **après** celle-ci.
+- **Google (connexion)** : rien à changer si vous utilisez le bouton Google, car l'adresse de retour reste celle de Supabase.
 
 ## Quand c'est fait
 
