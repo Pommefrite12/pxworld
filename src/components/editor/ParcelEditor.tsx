@@ -6,11 +6,16 @@ import { clampLevel, fitScale, formatLevel, levelsFor } from "@/lib/editor/zoom"
 import { creationScale } from "@/lib/grid/constants";
 import { PALETTE, mixColor, strokeRun } from "@/lib/editor/colors";
 import { Palette, Swatches } from "./Palette";
+import type { EditorSnapshot } from "@/lib/editor/drafts";
 
 export interface ParcelEditorHandle {
   /** Final raster at the editor's full precision (w·k × h·k, every pixel = k × k dots) — what the server stores, after canonical re-encoding. */
   exportPng(): Promise<Blob>;
   hasContent(): boolean;
+  /** Everything needed to take the work up again later, layer by layer (see `lib/editor/drafts`). */
+  snapshot(): Promise<EditorSnapshot>;
+  /** Puts a saved work in place of the one in progress (it must have been drawn at the same precision, i.e. for a parcel of the same size). */
+  restore(s: EditorSnapshot): Promise<void>;
 }
 
 interface Props {
@@ -20,12 +25,18 @@ interface Props {
   /** Existing creation to start from (editing an owned parcel). */
   initialImageUrl?: string | null;
   onChange?: (hasContent: boolean) => void;
+  /** Called whenever the work changes (a stroke, a fill, the text, the photo, the background…): lets the caller know there is something not saved yet. Keep it stable (`useCallback`). */
+  onEdit?: () => void;
 }
 
 type Tool = "move" | "pencil" | "eraser" | "fill" | "text" | "hand";
 type Fit = "cover" | "contain" | "stretch";
 
 const MAX_FILE = 10 * 1024 * 1024;
+/** The grid is not drawn when its squares are smaller than this on the screen (it would be a grey veil, not a grid): zoom in to see it. */
+const MIN_GRID_CELL_PX = 6;
+const GRID_DARK = "rgba(25,9,33,0.42)", GRID_LIGHT = "rgba(255,255,255,0.5)";
+const gridLine = (dir: "right" | "bottom", c: string) => `linear-gradient(to ${dir}, ${c} 0, ${c} 1px, transparent 1px)`;
 /** Brush thickness in PIXELS, among the sizes that are a whole number of dots at this precision (0.1 px is one dot when k = 10). */
 const BRUSH_PX = [0.1, 0.2, 0.5, 1, 2, 3, 5, 8];
 const brushesFor = (k: number) => BRUSH_PX.filter((b) => Math.abs(b * k - Math.round(b * k)) < 1e-9 && b * k >= 1);
@@ -35,12 +46,13 @@ const MAX_PNG_BYTES = 2.8 * 1024 * 1024;
 const UNDO_BUDGET_BYTES = 96 * 1024 * 1024;
 const toBlob = (c: HTMLCanvasElement) => new Promise<Blob>((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error("export failed"))), "image/png"));
 
-interface Photo { bitmap: ImageBitmap; fit: Fit; zoom: number; ox: number; oy: number; smooth: boolean }
+/** `source` is the file as it was sent in: a saved project keeps it, to be able to move and zoom the photo again. */
+interface Photo { bitmap: ImageBitmap; source: Blob; fit: Fit; zoom: number; ox: number; oy: number; smooth: boolean }
 interface TextLayer { value: string; size: number; color: string; x: number; y: number; bold: boolean }
 
 const hexToRgba = (hex: string): [number, number, number, number] => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16), 255];
 
-export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function ParcelEditor({ w: pw, h: ph, initialImageUrl, onChange }, ref) {
+export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function ParcelEditor({ w: pw, h: ph, initialImageUrl, onChange, onEdit }, ref) {
   const t = useTranslations("editor");
   const f = useFormatter();
   const S = creationScale(pw, ph); // dots per pixel side
@@ -64,12 +76,17 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
   const [multi, setMulti] = useState(false);
   const [mix, setMix] = useState<string[]>([PALETTE[2]!]);
   const [brush, setBrush] = useState(1); // px (1 px is a whole number of dots at every precision)
+  // grid: squares the size of the brush; while it is on, the brush paints whole squares of it
+  const [grid, setGrid] = useState(false);
   const [bg, setBg] = useState("#ffffff"); // always an opaque colour: a creation has no transparent pixel
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [text, setText] = useState<TextLayer | null>(null);
   const [painted, setPainted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [undoCount, setUndoCount] = useState(0);
+  // a counter of the changes made to the drawing, for `onEdit` (the undo counter above also serves as a redraw tick, and can stay where it was after a change)
+  const [rev, setRev] = useState(0);
+  const bump = () => setRev((n) => n + 1);
   const drag = useRef<{ kind: "paint" | "photo" | "text" | "pan"; lx: number; ly: number; sx: number; sy: number; base: { ox: number; oy: number }; /** dots painted so far in this stroke (decides the colour of a multicolour one) */ n?: number } | null>(null);
 
   const hasContent = Boolean(photo || painted || text?.value);
@@ -112,6 +129,9 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
     if (ctx) compose(ctx);
   }, [compose, painted, undoCount]);
 
+  // the caller wants to know when the work changes (to tell what is not saved yet)
+  useEffect(() => { onEdit?.(); }, [onEdit, rev, bg, photo, text]);
+
   // Start from an existing creation when editing.
   useEffect(() => {
     if (!initialImageUrl) return;
@@ -128,6 +148,29 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
 
   useImperativeHandle(ref, () => ({
     hasContent: () => hasContent,
+    snapshot: async () => ({
+      dots: S,
+      bg,
+      paint: painted && paint.current ? await toBlob(paint.current) : null,
+      text: text ? { ...text } : null,
+      photo: photo ? { source: photo.source, fit: photo.fit, zoom: photo.zoom, ox: photo.ox, oy: photo.oy, smooth: photo.smooth } : null,
+    }),
+    restore: async (saved) => {
+      if (saved.dots !== S) throw new Error("draft_precision");
+      const pc = ensurePaint().getContext("2d")!;
+      pc.clearRect(0, 0, w, h);
+      if (saved.paint) {
+        const bmp = await createImageBitmap(saved.paint);
+        pc.imageSmoothingEnabled = false;
+        pc.drawImage(bmp, 0, 0, w, h);
+        bmp.close();
+      }
+      const bitmap = saved.photo ? await createImageBitmap(saved.photo.source, { imageOrientation: "from-image" }) : null;
+      undo.current = []; // what was done before is not undone: the saved work is the starting point
+      setPhoto(saved.photo && bitmap ? { ...saved.photo, bitmap } : null);
+      setText(saved.text); setBg(saved.bg); setPainted(Boolean(saved.paint)); setError(null);
+      setUndoCount((n) => n + 1); bump();
+    },
     exportPng: async () => {
       const c = document.createElement("canvas"); c.width = w; c.height = h;
       compose(c.getContext("2d")!);
@@ -142,9 +185,10 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
       }
       return blob;
     },
-  }), [compose, hasContent, w, h, pw, ph, S]);
+  }), [compose, hasContent, w, h, pw, ph, S, bg, text, photo, painted, ensurePaint]);
 
   const pushUndo = () => {
+    bump(); // every change of the drawing starts here (a stroke, a fill, clearing)
     const p = ensurePaint();
     undo.current.push(p.getContext("2d")!.getImageData(0, 0, w, h));
     const keep = Math.max(3, Math.min(30, Math.floor(UNDO_BUDGET_BYTES / (w * h * 4)))); // every snapshot is a full copy of the canvas
@@ -154,6 +198,7 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
   const doUndo = () => {
     const snap = undo.current.pop();
     if (!snap) return;
+    bump();
     ensurePaint().getContext("2d")!.putImageData(snap, 0, 0);
     setUndoCount(undo.current.length);
     setPainted(undo.current.length > 0 || false);
@@ -165,14 +210,19 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
   };
 
   const brushDots = Math.max(1, Math.round(brush * S));
+  const cellPx = brushDots * dotPx; // one square of the grid, on the screen
+  const gridShown = grid && cellPx >= MIN_GRID_CELL_PX;
   /** Colour of the n-th dot of a stroke: the colour, or the next one of the mix every brush width. */
   const colourAt = (n: number) => (multi ? mixColor(mix, n, strokeRun(brushDots, S)) : color);
   const stamp = (x: number, y: number, colour: string) => {
     const ctx = ensurePaint().getContext("2d")!;
     const size = brushDots; // dots
     const o = Math.floor(size / 2);
-    if (tool === "eraser") ctx.clearRect(x - o, y - o, size, size);
-    else { ctx.fillStyle = colour; ctx.fillRect(x - o, y - o, size, size); }
+    // with the grid on, the brush paints the whole square under the pointer (the squares start at the top left corner of the canvas);
+    // otherwise it is centred on the pointer
+    const gx = grid ? Math.floor(x / size) * size : x - o, gy = grid ? Math.floor(y / size) * size : y - o;
+    if (tool === "eraser") ctx.clearRect(gx, gy, size, size);
+    else { ctx.fillStyle = colour; ctx.fillRect(gx, gy, size, size); }
   };
   /** Bresenham: no gaps in fast strokes. The start point was painted already; every further dot counts towards the colour. */
   const line = (x0: number, y0: number, x1: number, y1: number, d: { n?: number }) => {
@@ -247,7 +297,7 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
     if (file.size > MAX_FILE) { setError(t("errors.size")); return; }
     try {
       const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-      setPhoto({ bitmap, fit: "cover", zoom: 1, ox: 0, oy: 0, smooth: bitmap.width * bitmap.height > w * h * 1.5 });
+      setPhoto({ bitmap, source: file, fit: "cover", zoom: 1, ox: 0, oy: 0, smooth: bitmap.width * bitmap.height > w * h * 1.5 });
       setTool("move");
     } catch { setError(t("errors.read")); }
   };
@@ -303,16 +353,23 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
     { id: "hand", label: t("tools.hand"), icon: "✋" },
   ];
 
+  // one column that can shrink on a phone: a plain `grid` sizes its column by its content, and the drawing then made the whole editor wider than the screen
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div ref={outer}>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div ref={outer} className="min-w-0">
         <div ref={holder} className="mx-auto max-h-[70vh] overflow-auto rounded-xl bg-white shadow-[0_0_0_1.5px_var(--color-line)]" style={{ maxWidth: w * dotPx }} data-testid="editor-holder">
-          <canvas
-            ref={view} width={w} height={h} aria-label={t("canvasLabel", { w: pw, h: ph })}
-            className="pixelated block touch-none"
-            style={{ width: w * dotPx, height: h * dotPx, imageRendering: dotPx < 1 ? "auto" : "pixelated", cursor: tool === "hand" || tool === "text" ? "grab" : tool === "move" ? "move" : "crosshair" }}
-            onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
-          />
+          <div className="relative" style={{ width: w * dotPx, height: h * dotPx }}>
+            <canvas
+              ref={view} width={w} height={h} aria-label={t("canvasLabel", { w: pw, h: ph })}
+              className="pixelated block touch-none"
+              style={{ width: w * dotPx, height: h * dotPx, imageRendering: dotPx < 1 ? "auto" : "pixelated", cursor: tool === "hand" || tool === "text" ? "grab" : tool === "move" ? "move" : "crosshair" }}
+              onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
+            />
+            {gridShown && (
+              <div aria-hidden="true" data-testid="editor-grid" className="pointer-events-none absolute inset-0"
+                style={{ backgroundImage: [gridLine("right", GRID_DARK), gridLine("bottom", GRID_DARK), gridLine("right", GRID_LIGHT), gridLine("bottom", GRID_LIGHT)].join(","), backgroundSize: `${cellPx}px ${cellPx}px`, backgroundPosition: "0 0, 0 0, 1px 1px, 1px 1px" }} />
+            )}
+          </div>
         </div>
         <div className="mt-2 flex items-center justify-center gap-2">
           <button type="button" className="btn btn-ghost btn-icon btn-sm" aria-label={t("zoomOut")} disabled={zi <= 0} onClick={() => zoomTo(levels[zi - 1]!)}>−</button>
@@ -362,6 +419,13 @@ export const ParcelEditor = forwardRef<ParcelEditorHandle, Props>(function Parce
               {brushes.map((b) => <option key={b} value={b}>{f.number(b)} px</option>)}
             </select>
           </Palette>
+          <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm">
+            <input type="checkbox" className="mt-1" checked={grid} onChange={(e) => setGrid(e.target.checked)} data-testid="editor-grid-toggle" />
+            <span>
+              {t("grid.label")}
+              <span className="block text-xs text-ink-faint" data-testid="editor-grid-hint">{grid && !gridShown ? t("grid.tooSmall") : t("grid.hint", { size: f.number(brush) })}</span>
+            </span>
+          </label>
         </section>
 
         <section aria-label={t("text.label")}>

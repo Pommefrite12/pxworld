@@ -353,6 +353,29 @@
     "toReview": "Review",
     "backToEditor": "Back to the editor",
     "discardConfirm": "Discard your design?",
+    "draft": {
+      "save": "Save my project",
+      "saving": "Saving…",
+      "saved": "Project saved",
+      "savedNote": "Kept in this browser for 24 hours, until {until}.",
+      "hint": "Saved in this browser only, for 24 hours.",
+      "error": "Could not save in this browser (private browsing, or no room left).",
+      "unsupported": "This browser cannot keep a project.",
+      "bannerTitle": "A saved project is waiting",
+      "bannerText": "A {size} px project, saved on {saved}. It is kept until {until}.",
+      "resume": "Resume it",
+      "discard": "Delete it",
+      "resumed": "Your project is back.",
+      "corrupt": "This saved project could not be opened; it was deleted.",
+      "closeTitle": "Save your project before leaving?",
+      "closeText": "What you drew is not saved yet.",
+      "closeSave": "Save and close",
+      "closeDiscard": "Close without saving",
+      "closeKeep": "Keep drawing",
+      "panelTitle": "Saved project",
+      "panelText": "{size} px, kept until {until}.",
+      "panelResume": "Go back to it"
+    },
     "finalRender": "Final render, pixel for pixel",
     "moderationNote": "Your trace is published, on a page of its own, once it passes moderation. We cannot promise that every image is accepted; if it is refused you can submit another one for the same parcel. When the edition closes, traces are frozen: they stay readable but can no longer be changed.",
     "fields": {
@@ -481,6 +504,11 @@
   "editor": {
     "canvasLabel": "Parcel editor, {w} by {h} pixels",
     "image": "Image",
+    "grid": {
+      "label": "Grid",
+      "hint": "Squares the size of the brush ({size} px). The brush paints whole squares.",
+      "tooSmall": "The squares are too small to be drawn at this zoom: zoom in to see the grid. The brush still paints whole squares."
+    },
     "upload": "Upload an image",
     "uploadHint": "PNG, JPEG or WebP, up to 10 MB. It is resized to your parcel.",
     "fit": {
@@ -1013,7 +1041,8 @@
         {
           "h": "Cookies",
           "p": [
-            "We only use cookies that are strictly necessary: the session cookie that keeps you signed in and your language choice. We do not use advertising or tracking cookies."
+            "We only use cookies that are strictly necessary: the session cookie that keeps you signed in and your language choice. We do not use advertising or tracking cookies.",
+            "The drawing tool can keep a project you chose to save, for 24 hours at most, in the storage of your own browser (IndexedDB), on your device. It is never sent to us. It is deleted after 24 hours, or when you delete it or have used it for a parcel."
           ]
         },
         {

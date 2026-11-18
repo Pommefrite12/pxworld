@@ -20,6 +20,7 @@ import type { PublicEdition } from "@/lib/edition";
 import { EditionClock } from "./EditionClock";
 import { isFreeSelection, type FreeInfo } from "@/lib/free";
 import { SearchBox, type SearchTarget } from "./SearchBox";
+import { draftStore, draftsSupported, expiresAt, type Draft } from "@/lib/editor/drafts";
 
 export interface MapShellProps {
   stats: PublicStats | null;
@@ -122,6 +123,15 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, ed
     // Without a preset the view does not move: the planisphere stays whole (the camera never moves by itself). Zoomed out, the first click
     // of the buy mode zooms towards the place clicked (see MapEngine.click), the next one puts the parcel.
   }, [size, applySelection]);
+
+  // the project saved in the editor of this browser (24 hours): offered again in the buy panel; expired ones of the browser are cleared on the way
+  const [savedDraft, setSavedDraft] = useState<Draft | null>(null);
+  const owner = viewer?.username ?? null;
+  const refreshSaved = useCallback(() => {
+    const found = owner && draftsSupported() ? draftStore.purge().then(() => draftStore.load(owner)) : Promise.resolve(null);
+    found.then(setSavedDraft).catch(() => setSavedDraft(null));
+  }, [owner]);
+  useEffect(() => { if (!dialog) refreshSaved(); }, [dialog, refreshSaved]); // at the start, and each time the editor closes (a project may have been saved, or deleted)
 
   const stopBuy = useCallback(() => {
     const e = engine();
@@ -250,6 +260,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, ed
             pricing={pricing} locale={locale} size={size} onSize={changeSize} selection={selection}
             state={selState} kind={kind} onKind={(k) => { setServerFree(null); setKind(k); }} landPixels={selLand} serverFree={serverFree} signedIn={Boolean(viewer)} onContinue={() => continueBuy(false)} onCollective={() => continueBuy(true)} onClose={stopBuy}
             free={free} freeSel={freeSel} covers={covers} farView={cam.scale < BUY_PLACE_FROM}
+            savedProject={savedDraft ? { rect: savedDraft.rect, until: expiresAt(savedDraft) } : null} onResumeProject={() => { if (savedDraft) startBuy(savedDraft.rect); }}
           />
         )}
 
@@ -285,7 +296,7 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, ed
 
       {dialog && selection && (
         <CheckoutDialog
-          rect={selection} kind={kind} pricing={pricing} landPixels={selLand} mode={freeSel ? "free" : collective ? "collective" : "buy"}
+          rect={selection} kind={kind} pricing={pricing} landPixels={selLand} mode={freeSel ? "free" : collective ? "collective" : "buy"} draftOwner={owner}
           onClose={() => { engine()?.setPreviewImage(null); setDialog(false); }}
           onSent={() => { engine()?.setPreviewImage(null); stopBuy(); }}
           onPreviewOnMap={(img) => { const e = engine(); e?.setPreviewImage(img); if (img && e) e.fitRect(selection, { padding: 110, maxScale: 14 }); }}

@@ -353,6 +353,29 @@
     "toReview": "Revisar",
     "backToEditor": "Volver al editor",
     "discardConfirm": "¿Descartar tu diseño?",
+    "draft": {
+      "save": "Guardar mi proyecto",
+      "saving": "Guardando…",
+      "saved": "Proyecto guardado",
+      "savedNote": "Se conserva en este navegador durante 24 horas, hasta {until}.",
+      "hint": "Se guarda solo en este navegador, durante 24 horas.",
+      "error": "No se pudo guardar en este navegador (navegación privada o sin espacio).",
+      "unsupported": "Este navegador no puede guardar un proyecto.",
+      "bannerTitle": "Te espera un proyecto guardado",
+      "bannerText": "Un proyecto de {size} px, guardado el {saved}. Se conserva hasta {until}.",
+      "resume": "Retomarlo",
+      "discard": "Eliminarlo",
+      "resumed": "Tu proyecto ha vuelto.",
+      "corrupt": "No se pudo abrir este proyecto guardado; se ha eliminado.",
+      "closeTitle": "¿Guardar tu proyecto antes de salir?",
+      "closeText": "Lo que has dibujado aún no está guardado.",
+      "closeSave": "Guardar y cerrar",
+      "closeDiscard": "Cerrar sin guardar",
+      "closeKeep": "Seguir dibujando",
+      "panelTitle": "Proyecto guardado",
+      "panelText": "{size} px, se conserva hasta {until}.",
+      "panelResume": "Volver a él"
+    },
     "finalRender": "Resultado final, píxel por píxel",
     "moderationNote": "Tu huella se publica, en una página propia, cuando supera la moderación. No podemos prometer que se acepten todas las imágenes; si se rechaza, puedes enviar otra para la misma parcela. Cuando la edición se cierra, las huellas se congelan: siguen siendo legibles pero ya no se pueden modificar.",
     "fields": {
@@ -481,6 +504,11 @@
   "editor": {
     "canvasLabel": "Editor de parcela, {w} por {h} píxeles",
     "image": "Imagen",
+    "grid": {
+      "label": "Cuadrícula",
+      "hint": "Cuadrados del tamaño del pincel ({size} px). El pincel pinta cuadrados enteros.",
+      "tooSmall": "Los cuadrados son demasiado pequeños para dibujarse con este zoom: acércate para ver la cuadrícula. El pincel sigue pintando cuadrados enteros."
+    },
     "upload": "Subir una imagen",
     "uploadHint": "PNG, JPEG o WebP, hasta 10 MB. Se ajusta al tamaño de tu parcela.",
     "fit": {

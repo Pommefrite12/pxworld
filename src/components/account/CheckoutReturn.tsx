@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { draftStore } from "@/lib/editor/drafts";
 
 type State = "waiting" | "paid" | "failed" | "slow";
 
@@ -10,7 +11,7 @@ type State = "waiting" | "paid" | "failed" | "slow";
  * The browser's return from Stripe is NOT proof of payment. This page only polls our own order status,
  * which changes when the verified webhook (or the server-side reconciliation) has run.
  */
-export function CheckoutSuccess({ orderId }: { orderId: string }) {
+export function CheckoutSuccess({ orderId, owner = null }: { orderId: string; owner?: string | null }) {
   const t = useTranslations("checkout");
   const [state, setState] = useState<State>("waiting");
   const [code, setCode] = useState<string | null>(null);
@@ -22,14 +23,18 @@ export function CheckoutSuccess({ orderId }: { orderId: string }) {
       tries.current++;
       const r = await fetch(`/api/orders/${orderId}${tries.current >= 3 ? "?reconcile=1" : ""}`).then((x) => (x.ok ? x.json() : null)).catch(() => null);
       if (!alive) return;
-      if (r?.status === "paid") { setCode(r.parcelCode); setState("paid"); return; }
+      if (r?.status === "paid") {
+        setCode(r.parcelCode); setState("paid");
+        if (owner) void draftStore.remove(owner).catch(() => undefined); // the project saved in the editor has gone where it was going: nothing left to resume
+        return;
+      }
       if (r && ["failed", "expired", "canceled", "refund_required", "refunded"].includes(r.status)) { setState("failed"); return; }
       if (tries.current > 25) { setState("slow"); return; }
       setTimeout(poll, 1500);
     };
     void poll();
     return () => { alive = false; };
-  }, [orderId]);
+  }, [orderId, owner]);
 
   return (
     <div className="card mx-auto max-w-xl p-8 text-center" aria-live="polite" data-testid="checkout-result" data-state={state}>

@@ -118,4 +118,37 @@ test.describe("group projects on a phone", () => {
     expect(box.y + box.height, "the button is on the first screen").toBeLessThan(vh);
     expect(box.width).toBeGreaterThan(200);
   });
+
+  test("the drawing tool fits the phone: no sideways scrolling, the drawing and every button within the screen, and a project can be saved with a tap", async ({ browser, playwright }) => {
+    const ctx = await browser.newContext({ ...playwright.devices["Pixel 7"] });
+    expect((await ctx.request.post("/api/dev/login", { data: { email: "phone-draw@example.test" } })).ok()).toBeTruthy();
+    const page = await ctx.newPage();
+    await page.goto("/map?bx=27400&by=11000&bw=20&bh=20");
+    await expect(page.getByTestId("buy-status")).toContainText(/free/i, { timeout: 15_000 });
+    await page.getByTestId("buy-continue").click();
+    const dialog = page.getByRole("dialog");
+    const canvas = dialog.locator("canvas").first();
+    await expect(canvas).toBeVisible();
+    const vw = page.viewportSize()!.width;
+    const inside = async (what: string, l: import("@playwright/test").Locator) => {
+      const b = (await l.boundingBox())!;
+      expect(b.x, `${what}: not cut on the left`).toBeGreaterThanOrEqual(-1);
+      expect(b.x + b.width, `${what}: not cut on the right`).toBeLessThanOrEqual(vw + 1);
+    };
+    await expect.poll(() => dialog.evaluate((d) => d.scrollWidth - d.clientWidth), { message: "the dialog does not scroll sideways" }).toBeLessThanOrEqual(0);
+    await inside("the drawing", canvas);
+    await inside("the upload button", dialog.locator("label:has(input[type=file])"));
+    await inside("the grid option", dialog.getByTestId("editor-grid-toggle"));
+    await inside("the save button", dialog.getByTestId("draft-save"));
+    await inside("the Undo / Clear row", dialog.getByRole("button", { name: "Clear all" }));
+    // a tap draws, the grid can be turned on, the project can be saved
+    await dialog.getByTestId("editor-grid-toggle").check();
+    const box = (await canvas.boundingBox())!;
+    await page.touchscreen.tap(box.x + box.width * 0.4, box.y + box.height * 0.4);
+    await expect(dialog.getByTestId("draft-save")).toBeEnabled();
+    await dialog.getByTestId("draft-save").tap();
+    await expect(dialog.getByTestId("draft-status")).toBeVisible();
+    await inside("the status line", dialog.getByTestId("draft-status"));
+    await ctx.close();
+  });
 });

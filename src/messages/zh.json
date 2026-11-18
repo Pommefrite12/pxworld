@@ -353,6 +353,29 @@
     "toReview": "确认",
     "backToEditor": "返回编辑器",
     "discardConfirm": "放弃你的设计吗？",
+    "draft": {
+      "save": "保存我的项目",
+      "saving": "正在保存…",
+      "saved": "项目已保存",
+      "savedNote": "已保存在此浏览器中 24 小时，截止 {until}。",
+      "hint": "仅保存在此浏览器中，保留 24 小时。",
+      "error": "无法保存到此浏览器（隐私浏览模式，或空间不足）。",
+      "unsupported": "此浏览器无法保存项目。",
+      "bannerTitle": "有一个已保存的项目在等你",
+      "bannerText": "一个 {size} 像素的项目，保存于 {saved}。保留至 {until}。",
+      "resume": "继续编辑",
+      "discard": "删除",
+      "resumed": "你的项目已恢复。",
+      "corrupt": "无法打开这个已保存的项目，已将其删除。",
+      "closeTitle": "离开前要保存你的项目吗？",
+      "closeText": "你画的内容还没有保存。",
+      "closeSave": "保存并关闭",
+      "closeDiscard": "不保存直接关闭",
+      "closeKeep": "继续绘制",
+      "panelTitle": "已保存的项目",
+      "panelText": "{size} 像素，保留至 {until}。",
+      "panelResume": "回到项目"
+    },
     "finalRender": "最终效果，逐像素呈现",
     "moderationNote": "你的印记通过审核后，会发布在它自己的页面上。我们不能保证每张图片都会被接受；如果被拒绝，你可以为同一地块提交另一张。本期结束后，印记将被冻结：仍可阅读，但不能再修改。",
     "fields": {
@@ -481,6 +504,11 @@
   "editor": {
     "canvasLabel": "地块编辑器，{w} × {h} 像素",
     "image": "图片",
+    "grid": {
+      "label": "网格",
+      "hint": "网格大小与画笔相同（{size} 像素）。画笔会填满整个格子。",
+      "tooSmall": "当前缩放下格子太小，无法显示：放大即可看到网格。画笔仍会填满整个格子。"
+    },
     "upload": "上传图片",
     "uploadHint": "PNG、JPEG 或 WebP，最大 10 MB。会按你的地块大小调整。",
     "fit": {

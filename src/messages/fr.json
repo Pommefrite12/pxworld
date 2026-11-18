@@ -353,6 +353,29 @@
     "toReview": "Vérifier",
     "backToEditor": "Retour à l'éditeur",
     "discardConfirm": "Abandonner votre création ?",
+    "draft": {
+      "save": "Enregistrer mon projet",
+      "saving": "Enregistrement…",
+      "saved": "Projet enregistré",
+      "savedNote": "Conservé dans ce navigateur pendant 24 heures, jusqu'à {until}.",
+      "hint": "Enregistré dans ce navigateur seulement, pendant 24 heures.",
+      "error": "Impossible d'enregistrer dans ce navigateur (navigation privée, ou plus de place).",
+      "unsupported": "Ce navigateur ne peut pas garder un projet.",
+      "bannerTitle": "Un projet enregistré vous attend",
+      "bannerText": "Un projet de {size} px, enregistré le {saved}. Il est conservé jusqu'à {until}.",
+      "resume": "Le reprendre",
+      "discard": "Le supprimer",
+      "resumed": "Votre projet est de retour.",
+      "corrupt": "Ce projet enregistré n'a pas pu être ouvert\u00a0; il a été supprimé.",
+      "closeTitle": "Enregistrer votre projet avant de partir\u00a0?",
+      "closeText": "Ce que vous avez dessiné n'est pas encore enregistré.",
+      "closeSave": "Enregistrer et fermer",
+      "closeDiscard": "Fermer sans enregistrer",
+      "closeKeep": "Continuer à dessiner",
+      "panelTitle": "Projet enregistré",
+      "panelText": "{size} px, conservé jusqu'à {until}.",
+      "panelResume": "Y revenir"
+    },
     "finalRender": "Rendu final, pixel pour pixel",
     "moderationNote": "Votre empreinte est publiée, sur une page à elle, une fois validée par la modération. Nous ne pouvons pas promettre que toutes les images soient acceptées\u00a0; si la vôtre est refusée, vous pouvez en proposer une autre pour la même parcelle. À la clôture de l'édition, les empreintes sont figées\u00a0: elles restent lisibles mais ne peuvent plus être modifiées.",
     "fields": {
@@ -481,6 +504,11 @@
   "editor": {
     "canvasLabel": "Éditeur de parcelle, {w} sur {h} pixels",
     "image": "Image",
+    "grid": {
+      "label": "Grille",
+      "hint": "Cases de la taille du pinceau ({size} px). Le pinceau remplit des cases entières.",
+      "tooSmall": "Les cases sont trop petites pour être dessinées à ce zoom\u00a0: zoomez pour voir la grille. Le pinceau remplit toujours des cases entières."
+    },
     "upload": "Importer une image",
     "uploadHint": "PNG, JPEG ou WebP, jusqu'à 10 Mo. Elle est adaptée à votre parcelle.",
     "fit": {
@@ -1013,7 +1041,8 @@
         {
           "h": "Cookies",
           "p": [
-            "Nous n'utilisons que des cookies strictement nécessaires : le cookie de session qui vous garde connecté et votre choix de langue. Nous n'utilisons aucun cookie publicitaire ou de suivi."
+            "Nous n'utilisons que des cookies strictement nécessaires : le cookie de session qui vous garde connecté et votre choix de langue. Nous n'utilisons aucun cookie publicitaire ou de suivi.",
+            "L'outil de dessin peut garder un projet que vous avez choisi d'enregistrer, 24 heures au maximum, dans l'espace de stockage de votre propre navigateur (IndexedDB), sur votre appareil. Il ne nous est jamais envoyé. Il est supprimé au bout de 24 heures, ou lorsque vous le supprimez ou que vous l'avez utilisé pour une parcelle."
           ]
         },
         {

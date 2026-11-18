@@ -12,6 +12,7 @@ import { DESCRIPTION_MAX, DESCRIPTION_MIN, TITLE_MAX, TITLE_MIN, isValidDescript
 import { CAMPAIGN_DAYS, DEFAULT_CAMPAIGN_DAYS, type CampaignDays } from "@/lib/campaign";
 import type { Pricing } from "./BuyPanel";
 import { ArchiveFields, EMPTY_ARCHIVE, type ArchiveValue } from "@/components/archive/ArchiveFields";
+import { draftStore, draftsSupported, expiresAt, type Draft } from "@/lib/editor/drafts";
 
 interface Props {
   rect: Rect;
@@ -33,9 +34,13 @@ interface Props {
   mode?: "buy" | "collective" | "free";
   /** The project was sent: the page leaves the buying mode. */
   onSent?: () => void;
+  /** Who the saved project belongs to (the user name): a project saved in the editor is kept in this browser, for this account, for 24 hours. Null: no saving. */
+  draftOwner?: string | null;
 }
 
-export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPreviewOnMap, onUnavailable, mode = "buy", onSent }: Props) {
+type DraftFieldsLike = { title: string; description: string; link: string; commercial: boolean; archive: ArchiveValue; days: number };
+
+export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPreviewOnMap, onUnavailable, mode = "buy", onSent, draftOwner = null }: Props) {
   const t = useTranslations("buy");
   const locale = useLocale();
   const f = useFormatter();
@@ -60,6 +65,74 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
   const water = kind === "water";
   const q = quote(rect, pricing.unitPriceCents, { landPixels: landPixels ?? (water ? 0 : null), kind, seaPercent: pricing.seaPercent, waterPercent: pricing.waterPercent, landCutPercent: pricing.landCutPercent, currency: pricing.currency });
   const onChange = useCallback((v: boolean) => setHas(v), []);
+
+  /* ---------- the saved project (kept in this browser for 24 hours) ---------- */
+  const canSave = Boolean(draftOwner) && draftsSupported();
+  const [pending, setPending] = useState<Draft | null>(null); // a saved project of this parcel's size, offered
+  const [saved, setSaved] = useState<Draft | null>(null); // the one just saved
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [closing, setClosing] = useState(false);
+  // what changed since the last save: the editor tells when the drawing changes, the fields are compared
+  const version = useRef(0);
+  const [edits, setEdits] = useState(0), [cleanEdits, setCleanEdits] = useState(0);
+  const baselineNext = useRef(false); // set just before a saved project is put back: the editor's report of that very change is the new "saved" state
+  const onEdit = useCallback(() => {
+    version.current += 1;
+    setEdits(version.current);
+    if (baselineNext.current) { baselineNext.current = false; setCleanEdits(version.current); }
+  }, []);
+  const keyOf = (v: DraftFieldsLike) => JSON.stringify([v.title, v.description, v.link, v.commercial, v.archive, v.days]);
+  const fieldsKey = keyOf({ title, description, link, commercial, archive, days });
+  const [cleanKey, setCleanKey] = useState(fieldsKey);
+  const dirty = has && (edits !== cleanEdits || fieldsKey !== cleanKey);
+  const when = (ts: number) => f.dateTime(ts, { weekday: "short", hour: "numeric", minute: "2-digit" });
+
+  useEffect(() => {
+    if (!canSave) return;
+    let alive = true;
+    draftStore.load(draftOwner!).then((d) => { if (alive && d && d.rect.w === rect.w && d.rect.h === rect.h) setPending(d); }).catch(() => undefined);
+    return () => { alive = false; };
+  }, [canSave, draftOwner, rect.w, rect.h]);
+
+  const save = async (): Promise<boolean> => {
+    if (!canSave || !editor.current || !has) return false;
+    setSaveState("saving");
+    const v = version.current, key = fieldsKey;
+    try {
+      const draft: Draft = { v: 1, savedAt: Date.now(), rect: { x: rect.x, y: rect.y, w: rect.w, h: rect.h }, fields: { title, description, link, commercial, archive, days }, editor: await editor.current.snapshot() };
+      await draftStore.save(draftOwner!, draft);
+      setSaved(draft); setCleanEdits(v); setCleanKey(key); setSaveState("saved");
+      return true;
+    } catch { setSaveState("error"); return false; }
+  };
+  const resume = async () => {
+    const d = pending;
+    if (!d || !editor.current) return;
+    if (has && !confirm(t("discardConfirm"))) return;
+    try {
+      baselineNext.current = true;
+      await editor.current.restore(d.editor);
+      const restoredDays = (CAMPAIGN_DAYS as readonly number[]).includes(d.fields.days) ? (d.fields.days as CampaignDays) : days;
+      setTitle(d.fields.title); setDescription(d.fields.description); setLink(d.fields.link); setCommercial(d.fields.commercial); setArchive(d.fields.archive); setDays(restoredDays);
+      setPending(null); setSaved(d); setSaveState("saved"); setStep("design");
+      setCleanKey(keyOf({ ...d.fields, days: restoredDays })); // (the drawing's own baseline is taken when the editor reports the change: see `onEdit`)
+    } catch { // a project that cannot be opened is no use: it is deleted
+      baselineNext.current = false;
+      await draftStore.remove(draftOwner!).catch(() => undefined);
+      setPending(null); setSaveState("idle"); setError(t("draft.corrupt"));
+    }
+  };
+  const discardSaved = async () => { await draftStore.remove(draftOwner!).catch(() => undefined); setPending(null); setSaved(null); setSaveState("idle"); };
+  /** The project went where it was going (sent, or placed): nothing left to resume. */
+  const forget = async () => { if (canSave) await draftStore.remove(draftOwner!).catch(() => undefined); };
+
+  /** The × button and the Escape key: with something not saved yet, the visitor is asked (and can save it for 24 hours). */
+  const requestClose = () => {
+    if (sent) { onSent?.(); return; }
+    if (!has) { onClose(); return; }
+    if (canSave) { if (dirty) setClosing(true); else onClose(); return; }
+    if (confirm(t("discardConfirm"))) onClose();
+  };
 
   useEffect(() => {
     const d = dlg.current;
@@ -94,8 +167,8 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
       if (free) { fd.delete("kind"); fd.delete("currency"); }
       const r = await fetch(free ? "/api/free-parcel" : collective ? "/api/campaigns" : "/api/checkout", { method: "POST", body: fd });
       const j = await r.json().catch(() => ({}));
-      if (collective && r.ok && j.code) { setSent({ days }); setBusy(false); return; } // sent to moderation: nothing to pay
-      if (free && r.ok && j.code) { window.location.assign(`${locale === "en" ? "" : `/${locale}`}/archive/${j.code}`); return; } // placed: its own archive page
+      if (collective && r.ok && j.code) { await forget(); setSent({ days }); setBusy(false); return; } // sent to moderation: nothing to pay
+      if (free && r.ok && j.code) { await forget(); window.location.assign(`${locale === "en" ? "" : `/${locale}`}/archive/${j.code}`); return; } // placed: its own archive page
       if (!collective && !free && r.ok && j.url) { window.location.assign(j.url); return; }
       const code = String(j.error ?? (r.status === 401 ? "unauthenticated" : "internal_error"));
       if (code === "px_parcel_unavailable") onUnavailable();
@@ -108,7 +181,7 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
 
   return (
     <>
-      <dialog ref={dlg} onCancel={(e) => { if (sent) { e.preventDefault(); onSent?.(); } else if (has && !confirm(t("discardConfirm"))) e.preventDefault(); else onClose(); }} aria-labelledby="co-title"
+      <dialog ref={dlg} onCancel={(e) => { e.preventDefault(); requestClose(); }} aria-labelledby="co-title"
         className="m-0 h-dvh max-h-none w-screen max-w-none overflow-y-auto bg-paper p-0 text-ink backdrop:bg-ink/50 md:m-auto md:h-auto md:max-h-[94dvh] md:w-[min(64rem,96vw)] md:rounded-[var(--radius-card)] md:shadow-[var(--shadow-float)]">
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-paper/95 px-5 py-3 backdrop-blur">
           <div>
@@ -119,16 +192,46 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
             <ol className="hidden items-center gap-1 text-xs font-semibold text-ink-faint sm:flex" aria-label={t("steps")}>
               <li className={step === "design" ? "text-ink" : ""}>1 · {t("stepDesign")}</li><li aria-hidden>→</li><li className={step === "review" ? "text-ink" : ""}>2 · {collective ? t("collective.stepSend") : t("stepPay")}</li>
             </ol>
-            <button className="btn btn-ghost btn-icon btn-sm text-lg" aria-label={t("close")} onClick={() => { if (sent) onSent?.(); else if (!has || confirm(t("discardConfirm"))) onClose(); }}>×</button>
+            {canSave && !sent && (
+              <button className="btn btn-ghost btn-sm" onClick={() => void save()} disabled={!has || saveState === "saving"} title={t("draft.hint")} data-testid="draft-save">
+                {saveState === "saving" ? t("draft.saving") : saveState === "saved" && !dirty ? `✓ ${t("draft.saved")}` : t("draft.save")}
+              </button>
+            )}
+            <button className="btn btn-ghost btn-icon btn-sm text-lg" aria-label={t("close")} onClick={requestClose}>×</button>
           </div>
         </div>
 
+        {closing && (
+          <div role="alertdialog" aria-labelledby="co-close-title" className="mx-5 mt-4 rounded-xl border border-line bg-paper-2 p-4" data-testid="co-close-prompt">
+            <p id="co-close-title" className="font-extrabold">{t("draft.closeTitle")}</p>
+            <p className="mt-1 text-sm text-ink-soft">{t("draft.closeText")} {t("draft.hint")}</p>
+            {saveState === "error" && <p role="alert" className="mt-2 text-sm font-semibold text-danger">{t("draft.error")}</p>}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button className="btn btn-primary btn-sm" onClick={async () => { if (await save()) onClose(); }} data-testid="co-close-save">{t("draft.closeSave")}</button>
+              <button className="btn btn-ghost btn-sm" onClick={onClose} data-testid="co-close-discard">{t("draft.closeDiscard")}</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setClosing(false)} data-testid="co-close-keep">{t("draft.closeKeep")}</button>
+            </div>
+          </div>
+        )}
+
         <div className="p-5">
+          {pending && !sent && (
+            <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-paper-2 px-3 py-2.5" role="region" aria-label={t("draft.bannerTitle")} data-testid="co-draft-banner">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-extrabold">{t("draft.bannerTitle")}</p>
+                <p className="text-xs text-ink-soft">{t("draft.bannerText", { size: `${pending.rect.w}×${pending.rect.h}`, saved: when(pending.savedAt), until: when(expiresAt(pending)) })}</p>
+              </div>
+              <button className="btn btn-primary btn-sm" onClick={() => void resume()} data-testid="co-draft-resume">{t("draft.resume")}</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => void discardSaved()} data-testid="co-draft-discard">{t("draft.discard")}</button>
+            </div>
+          )}
+          {saveState === "saved" && !dirty && saved && !sent && <p role="status" className="mb-3 text-xs font-semibold text-(--color-mint-ink)" data-testid="draft-status">✓ {t("draft.saved")} · {t("draft.savedNote", { until: when(expiresAt(saved)) })}</p>}
+          {saveState === "error" && !closing && <p role="alert" className="mb-3 text-xs font-semibold text-danger" data-testid="draft-error">{t("draft.error")}</p>}
           <div hidden={step !== "design"}>
             {collective && <p className="mb-3 rounded-xl bg-paper-2 px-3 py-2 text-sm text-ink-soft" data-testid="co-collective-note">{t("collective.designNote", { goal: formatMoney(q.totalCents, locale, pricing.currency) })}</p>}
             {free && <p className="mb-3 rounded-xl bg-paper-2 px-3 py-2 text-sm text-ink-soft" data-testid="co-free-note">{t("free.designNote")}</p>}
             {water && <p className="mb-3 rounded-xl bg-sky px-3 py-2 text-sm font-semibold text-cobalt" data-testid="co-water-note">{t("kind.waterHint")}</p>}
-            <ParcelEditor ref={editor} w={rect.w} h={rect.h} onChange={onChange} />
+            <ParcelEditor ref={editor} w={rect.w} h={rect.h} onChange={onChange} onEdit={onEdit} />
             <div className="mt-6 flex flex-wrap items-center justify-end gap-2 border-t border-line pt-4">
               <p className="mr-auto text-xs text-ink-soft">{has ? t("designReady") : t("designEmpty")}</p>
               <button className="btn btn-ghost" onClick={previewOnMap} disabled={!has}>{t("previewOnMap")}</button>

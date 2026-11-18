@@ -37,11 +37,14 @@ interface Props {
   covers: number;
   /** The map is seen whole (zoomed out): a first tap zooms towards the place, the next one puts the parcel. */
   farView: boolean;
+  /** A project saved in the editor of this browser (24 hours): its parcel and when it stops being kept. The button goes back to where it was made. */
+  savedProject?: { rect: Rect; until: number } | null;
+  onResumeProject?: () => void;
 }
 
 const num = (v: string) => (v === "" ? 0 : Math.max(0, Math.min(99999, Math.floor(Number(v)) || 0)));
 
-export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind, onKind, landPixels, serverFree, signedIn, onContinue, onCollective, onClose, free, freeSel, covers, farView }: Props) {
+export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind, onKind, landPixels, serverFree, signedIn, onContinue, onCollective, onClose, free, freeSel, covers, farView, savedProject = null, onResumeProject }: Props) {
   const t = useTranslations("buy");
   const f = useFormatter();
   const [fine, setFine] = useState(false); // mobile: position fine-tuning is folded away to keep the map visible
@@ -87,6 +90,13 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind
       </div>
 
       <div className={`mt-3 min-h-0 flex-1 overflow-y-auto pr-0.5 ${compact ? "max-md:hidden" : ""}`}>
+        {savedProject && onResumeProject && (
+          <div className="mb-3 rounded-xl bg-paper-2 p-3" data-testid="buy-saved">
+            <p className="text-sm font-extrabold">{t("draft.panelTitle")}</p>
+            <p className="mt-0.5 text-xs text-ink-soft">{t("draft.panelText", { size: `${savedProject.rect.w}×${savedProject.rect.h}`, until: f.dateTime(savedProject.until, { weekday: "short", hour: "numeric", minute: "2-digit" }) })}</p>
+            <button className="btn btn-secondary btn-sm mt-2 w-full" onClick={onResumeProject} data-testid="buy-saved-resume">{t("draft.panelResume")}</button>
+          </div>
+        )}
         <fieldset data-testid="buy-kind">
           <legend className="label">{t("kind.label")}</legend>
           <div className="grid grid-cols-2 gap-1.5">
