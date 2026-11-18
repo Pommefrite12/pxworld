@@ -107,11 +107,11 @@ describe("the illustrations on the biggest capitals", () => {
       await sharp({ create: { width: 900, height: 600, channels: 3, background: "#cc7744" } }).png().toFile(path.join(dir, "paris.png"));
       const noise = randomBytes(1000 * 1000 * 3); // incompressible: a PNG of it is as big as the picture itself
       await sharp(noise, { raw: { width: 1000, height: 1000, channels: 3 } }).png().toFile(path.join(dir, "pekin.png"));
-      const given = await loadCapitalImages(dir);
+      const given = await loadCapitalImages(dir, { pixelate: 0 }); // (untouched: the scale logic below; pixelated pictures are tested further down)
       expect([...given.keys()].sort()).toEqual(["paris", "pekin"]);
       expect([given.get("paris")!.w, given.get("paris")!.h], "600 / 160 → 3 dots per pixel").toEqual([480, 480]);
       expect(given.get("pekin")!.w, "5 dots per pixel would not fit 3 MB: 4").toBe(800);
-      expect((await loadCapitalImages(path.join(dir, "nothing-here"))).size, "no folder: every capital keeps its drawing").toBe(0);
+      expect((await loadCapitalImages(path.join(dir, "nothing-here"), { pixelate: 0 })).size, "no folder: every capital keeps its drawing").toBe(0);
 
       const r = await seedDemo(ports(), { count: CAPITALS.length, emailDomain: DOMAIN, plan: capitalsPlan(4, given) });
       expect(r.failed).toEqual([]);
@@ -124,10 +124,37 @@ describe("the illustrations on the biggest capitals", () => {
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   });
 
+  it("pixelated (the default): flat blocks of a whole number of dots, a palette of 64 colours, and the picture asked 1.5 times coarser is coarser than the one asked 1 time", async () => {
+    // a picture with fine detail: stripes 3 dots wide, in a hundred shades
+    const w = 600, raw = Buffer.alloc(w * w * 3);
+    for (let y = 0; y < w; y++) for (let x = 0; x < w; x++) { const o = (y * w + x) * 3, s = (Math.floor(x / 3) * 7 + Math.floor(y / 3) * 13) % 100; raw[o] = 100 + s; raw[o + 1] = 60 + s; raw[o + 2] = 200 - s; }
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "px-capitals-pix-"));
+    try {
+      await sharp(raw, { raw: { width: w, height: w, channels: 3 } }).png().toFile(path.join(dir, "paris.png")); // paris: a 160 px parcel
+      const fine = (await loadCapitalImages(dir, { pixelate: 1 })).get("paris")!, coarse = (await loadCapitalImages(dir, { pixelate: 1.5 })).get("paris")!;
+      const blockWidth = (r: { w: number; data: Uint8Array }) => { let run = 1, best = Infinity; for (let x = 1; x <= r.w; x++) { const same = x < r.w && r.data[x * 3] === r.data[(x - 1) * 3] && r.data[x * 3 + 1] === r.data[(x - 1) * 3 + 1]; if (same) run++; else { best = Math.min(best, run); run = 1; } } return best; };
+      for (const r of [fine, coarse]) {
+        expect(r.w % 160).toBe(0);
+        const colours = new Set<number>(); for (let o = 0; o < r.data.length; o += 3) colours.add((r.data[o]! << 16) | (r.data[o + 1]! << 8) | r.data[o + 2]!);
+        expect(colours.size).toBeLessThanOrEqual(64);
+      }
+      // the same pixels of the grid, a coarser art: fewer, bigger flat blocks (measured as the shortest run of one colour along a row)
+      expect(coarse.w / blockWidth(coarse), "blocks across: fewer").toBeLessThan(fine.w / blockWidth(fine));
+      expect(blockWidth(fine), "blocks are whole dots").toBeGreaterThanOrEqual(1);
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  });
+
   it("takes the pictures kept in assets/capitals, and every one of them is accepted by the upload pipeline", async () => {
-    const given = await loadCapitalImages(path.resolve("assets/capitals"));
+    const given = await loadCapitalImages(path.resolve("assets/capitals")); // pixelated ×1.5, the default
     expect(given.size, "a picture was supplied for every capital: none falls back to a drawing").toBe(CAPITALS.length);
-    for (const [id, r] of given) { const c = CAPITALS.find((x) => x.id === id)!; expect(r.w % c.size, id).toBe(0); expect(r.w, id).toBe(r.h); }
+    for (const [id, r] of given) {
+      const c = CAPITALS.find((x) => x.id === id)!;
+      expect(r.w % c.size, id).toBe(0);
+      expect(r.w, id).toBe(r.h);
+      const colours = new Set<number>();
+      for (let o = 0; o < r.data.length; o += 3) colours.add((r.data[o]! << 16) | (r.data[o + 1]! << 8) | r.data[o + 2]!);
+      expect(colours.size, `${id}: pixel art has a palette, not a photograph's colours`).toBeLessThanOrEqual(64);
+    }
     const r = await seedDemo(ports(), { count: CAPITALS.length, emailDomain: DOMAIN, plan: capitalsPlan(4, given) });
     expect(r.failed).toEqual([]);
     expect(r.parcelsCreated).toBe(CAPITALS.length);

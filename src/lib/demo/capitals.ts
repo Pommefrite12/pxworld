@@ -13,6 +13,7 @@ import type { Raster } from "./art";
 import type { DemoItem } from "./plan";
 import type { RGB } from "./scene";
 import { Photo } from "./photo";
+import { alignedBlocks, blockColours, blocksAcross, enlarge, toPalette } from "./pixelate";
 import { CAPITALS_I18N } from "./capitals-i18n";
 import { HERITAGE_LANGS } from "./heritage-i18n";
 
@@ -502,11 +503,30 @@ const IMAGE_EXT = [".webp", ".png", ".jpg", ".jpeg"];
 const MAX_PNG = Math.floor(MAX_UPLOAD_BYTES * 0.88);
 
 /**
- * Reads the supplied pictures of the capitals: each is cut to a square from its centre and made `size × k` pixels wide, where `k` (1 to 10 dots per grid
- * pixel) is the finest scale that the picture itself can fill, that fits the 4-million-dot cap and whose stored PNG stays under the upload limit.
+ * How many pixels across the art of each supplied picture has (the pictures are 1 254 dots wide; their art pixels are 3 to 12 of those dots wide, and
+ * soft at the edges, so this is an eyeballed estimate, not a measure). `blocksAcross` divides it by the factor asked for.
+ */
+const ART_COLUMNS: Record<string, number> = {
+  paris: 200, miami: 209, londres: 157, tokyo: 209, pekin: 250, delhi: 114, lecaire: 105, moscou: 209,
+  mexico: 360, buenosaires: 209, seoul: 209, bangkok: 250, jakarta: 180, washington: 313, berlin: 360,
+};
+/** How much coarser than their own pixels the supplied pictures are made (the owner's choice of November 2026: "×1,5"). 0 leaves the pictures as they are. */
+export const CAPITALS_PIXELATE = 1.5;
+
+export interface CapitalImageOptions {
+  /** Make the art pixels this many times bigger (1 = snap to the picture's own grid, 1.5 = a little coarser, 2 = coarser still); 0 = untouched. */
+  pixelate?: number;
+}
+
+/**
+ * Reads the supplied pictures of the capitals. Each is cut to a square from its centre. Untouched (`pixelate: 0`) it is made `size × k` pixels wide, where `k`
+ * (1 to 10 dots per grid pixel) is the finest scale that the picture itself can fill, that fits the 4-million-dot cap and whose stored PNG stays under the
+ * upload limit. Pixelated (the default, see `lib/demo/pixelate.ts`) it is brought to a palette of 64 colours and cut into blocks, each block a flat square of
+ * a WHOLE number of dots, and stored at the smallest `k` that allows it (flat blocks need no more dots).
  * A folder that does not exist gives an empty map (every capital keeps its drawing).
  */
-export async function loadCapitalImages(dir: string): Promise<Map<string, Raster>> {
+export async function loadCapitalImages(dir: string, options: CapitalImageOptions = {}): Promise<Map<string, Raster>> {
+  const factor = options.pixelate ?? CAPITALS_PIXELATE;
   const out = new Map<string, Raster>();
   if (!fs.existsSync(dir)) return out;
   for (const c of CAPITALS) {
@@ -514,6 +534,19 @@ export async function loadCapitalImages(dir: string): Promise<Map<string, Raster
     if (!file) continue;
     const input = fs.readFileSync(file), meta = await sharp(input).metadata();
     const side = Math.min(meta.width ?? c.size, meta.height ?? c.size);
+    if (factor > 0) {
+      // the picture at its own size, cut square; then palette, blocks, and up to a whole number of dots per block
+      const data = await sharp(input).rotate().resize(side, side, { fit: "cover", position: "centre", kernel: "lanczos3" }).flatten({ background: "#ffffff" }).removeAlpha().raw().toBuffer();
+      const target = blocksAcross(ART_COLUMNS[c.id] ?? 200, factor);
+      const fit = alignedBlocks(c.size, target);
+      const cols = fit?.cols ?? target;
+      let k = fit?.k ?? Math.max(1, Math.min(10, Math.floor(side / c.size)));
+      while (k > 1 && c.size * k * c.size * k > CREATION_MAX_DOTS) k--;
+      const w = c.size * k;
+      const painted = await toPalette({ w: side, h: side, data: new Uint8Array(data) });
+      out.set(c.id, enlarge(blockColours(painted, cols), w, w));
+      continue;
+    }
     for (let k = Math.max(1, Math.min(10, Math.floor(side / c.size))); k >= 1; k--) {
       if (c.size * k * c.size * k > CREATION_MAX_DOTS) continue;
       const w = c.size * k;
