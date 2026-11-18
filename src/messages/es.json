@@ -455,8 +455,8 @@
     "seaDiscount": "{sea} px de tu parcela son mar, a un {pct} % del precio de un píxel de tierra; {land} px son tierra.",
     "free": {
       "title": "Huella gratuita",
-      "hint": "De 1 a {max} píxeles, en tierra, de una en una, hasta el {date}. Si alguien compra una parcela que la toca, queda cubierta.",
-      "unlimited": "Cuenta de administrador: tantas huellas gratuitas como quieras (de 1 a {max} píxeles, en tierra), sin fecha de fin.",
+      "hint": "De 1 a {max} píxeles, en tierra o en el agua, de una en una, hasta el {date}. Si alguien compra una parcela que la toca, queda cubierta.",
+      "unlimited": "Cuenta de administrador: tantas huellas gratuitas como quieras (de 1 a {max} píxeles, en tierra o en el agua), sin fecha de fin.",
       "price": "Gratis",
       "priceLabel": "Precio",
       "subtitle": "Huella gratuita · puede quedar cubierta por una parcela de pago",

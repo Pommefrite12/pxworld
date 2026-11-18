@@ -45,7 +45,6 @@ describe("placing a free parcel", () => {
     // the table itself says it too (no application code involved)
     await expectPgError(pool.query(`insert into public.parcels (owner_id, x, y, w, h, status, tier) values ($1, 900, 900, 5, 5, 'active', 'free')`, [u]), "parcels_min_area");
     await expectPgError(pool.query(`insert into public.parcels (owner_id, x, y, w, h, status, tier) values ($1, 900, 900, 4, 4, 'active', 'paid')`, [u]), "parcels_min_area");
-    await expectPgError(pool.query(`insert into public.parcels (owner_id, x, y, w, h, status, tier, kind, land_px) values ($1, 900, 900, 3, 3, 'active', 'free', 'water', 0)`, [u]), "parcels_free_is_land");
   });
 
   it("is on land: at least the same share of land as a paid land parcel (half, by default)", async () => {
@@ -265,5 +264,105 @@ describe("an administrator places as many free parcels as it wants (migration 26
     await pool.query(`update public.editions set status = 'prelaunch', opens_at = null, closes_at = null, closed_at = null`);
     await expectPgError(place(admin, 500, 500, 2, 2), "px_edition_not_open");
     expect(await status(admin)).toMatchObject({ open: false, reason: "edition" }); // not before the opening, whoever asks
+  });
+});
+
+describe("free parcels on the water (migration 30)", () => {
+  /** A free parcel on the sea: `land` is the number of LAND pixels of the rectangle (counted by the application server), a water parcel owns the others. */
+  const placeSea = (user: string, x: number, y: number, w: number, h: number, land: number | null = 0) =>
+    pool.query(`select * from public.px_place_free_parcel($1, $2, $3, $4, $5, $6, 'water')`, [user, x, y, w, h, land]).then((r) => r.rows[0] as { parcel_id: string; code: string });
+  /** A paid water parcel (no land pixel in it), bought and paid. */
+  async function buySea(user: string, x: number, y: number, w = 5, h = 5) {
+    const o = await startOrder(user, { x, y, w, h }, 0, "water");
+    expect(await fulfill(o.order_id)).toBe("fulfilled");
+    return o.parcel_id as string;
+  }
+
+  it("is placed like a land one: for nothing, active at once, a water parcel that owns the water pixels; counted as free, not as sold nor as paid water", async () => {
+    const u = await createUser("sea-gift");
+    const p = await placeSea(u, 200, 200, 4, 6, 0); // 24 pixels of sea: the biggest
+    expect(p.code).toMatch(/^[0-9a-f]{10}$/);
+    expect(await row(p.parcel_id)).toMatchObject({ tier: "free", status: "active", kind: "water", w: 4, h: 6, area: 24, land_px: 0, owned_px: 24, owner_id: u, covered_at: null });
+    expect((await pool.query(`select count(*)::int as n from public.orders`)).rows[0].n).toBe(0);
+    expect(await stats()).toMatchObject({ sold_pixels: "0", parcels: "0", owners: "0", water_parcels: "0", water_pixels: "0", free_parcels: "1", free_pixels: "24" });
+    expect((await pool.query(`select metadata from public.audit_logs where action = 'free_parcel.place'`)).rows[0].metadata).toMatchObject({ kind: "water", area: 24 });
+    // a coastal one owns only its water pixels
+    const q = await placeSea(await createUser("coast"), 400, 400, 4, 6, 6); // 6 land pixels of 24: 18 of sea
+    expect(await row(q.parcel_id)).toMatchObject({ kind: "water", land_px: 6, owned_px: 18 });
+    expect(await stats()).toMatchObject({ free_parcels: "2", free_pixels: "42" });
+  });
+
+  it("needs the same share of water as a paid water parcel (half, by default), and a land one still needs its land", async () => {
+    const u = await createUser("share");
+    await expectPgError(placeSea(u, 200, 200, 4, 6, 13), "px_not_on_water"); // 11 water pixels of 24
+    await expectPgError(placeSea(u, 200, 200, 4, 6, 24), "px_not_on_water"); // no water at all
+    await expectPgError(placeSea(u, 200, 200, 4, 6, null), "px_not_on_water"); // unknown = all land, as for a purchase
+    await expectPgError(place(u, 200, 200, 4, 6, 11), "px_not_on_land"); // a land parcel is not on land by being on a coast
+    await expectPgError(pool.query(`select * from public.px_place_free_parcel($1, 200, 200, 4, 6, 0, 'sea')`, [u]), "px_invalid_rect"); // no other kind
+    await expectPgError(pool.query(`select * from public.px_place_free_parcel($1, 200, 200, 4, 6, 0, null)`, [u]), "px_invalid_rect");
+    expect((await placeSea(u, 200, 200, 4, 6, 12)).parcel_id).toBeTruthy(); // half
+  });
+
+  it("is limited by the same quota as a land one: one standing at a time, whatever the kind, and three placements in all", async () => {
+    const u = await createUser("quota-sea");
+    const first = await placeSea(u, 200, 200, 2, 2);
+    await expectPgError(place(u, 300, 300, 2, 2), "px_free_quota"); // a land one while a water one stands
+    await expectPgError(placeSea(u, 300, 300, 2, 2), "px_free_quota");
+    expect(await status(u)).toMatchObject({ userReason: "standing", used: 1 });
+    // covered by a paid water parcel: the turn is used, the next one (land this time) is possible
+    await buySea(await createUser("whale"), 199, 199);
+    expect(await row(first.parcel_id)).toMatchObject({ status: "covered" });
+    expect(await status(u)).toMatchObject({ userReason: null, used: 1 });
+    expect((await place(u, 300, 300, 2, 2)).parcel_id).toBeTruthy();
+  });
+
+  it("never overlaps another free parcel of the SAME kind; a land one and a water one may share a rectangle (they never share a pixel)", async () => {
+    const [a, b, c] = [await createUser("a"), await createUser("b"), await createUser("c")];
+    await placeSea(a, 500, 500, 3, 3);
+    await expectPgError(placeSea(b, 502, 502, 3, 3), "px_parcel_unavailable"); // over a free water one
+    expect((await placeSea(b, 503, 500, 3, 3)).parcel_id).toBeTruthy(); // touching only
+    expect((await place(c, 500, 500, 3, 3)).parcel_id).toBeTruthy(); // the land parcel of the same rectangle
+    // the table says it too, per kind, with no application code
+    await expectPgError(pool.query(`insert into public.parcels (owner_id, x, y, w, h, status, tier, kind, land_px) values ($1, 501, 501, 2, 2, 'active', 'free', 'water', 0)`, [a]), "parcels_no_overlap_free_water");
+    await expectPgError(pool.query(`insert into public.parcels (owner_id, x, y, w, h, status, tier, kind) values ($1, 501, 501, 2, 2, 'active', 'free', 'land')`, [a]), "parcels_no_overlap_free_land");
+  });
+
+  it("is where no PAID or held parcel of its kind is: a paid water parcel (active or being paid) blocks it, a paid land parcel does not", async () => {
+    const [a, b, c, d] = [await createUser("a"), await createUser("b"), await createUser("c"), await createUser("d")];
+    await buy(a, 300, 300, 5, 5); // a paid LAND parcel
+    expect((await placeSea(b, 301, 301, 2, 2)).parcel_id).toBeTruthy(); // does not own the same pixels
+    await buySea(c, 400, 400);
+    await expectPgError(placeSea(d, 401, 401, 2, 2), "px_parcel_unavailable"); // a paid water parcel
+    await startOrder(await createUser("e"), { x: 600, y: 600, w: 5, h: 5 }, 0, "water"); // held: waiting for the payment
+    await expectPgError(placeSea(await createUser("f"), 601, 601, 2, 2), "px_parcel_unavailable");
+  });
+
+  it("a paid WATER parcel covers the free water parcels it touches and none on land; a paid LAND parcel covers the free land ones and none on water", async () => {
+    const [a, b, c, d] = [await createUser("a"), await createUser("b"), await createUser("c"), await createUser("d")];
+    // the same coastal rectangle holds a free water parcel and a free land parcel
+    const sea1 = await placeSea(a, 100, 100, 2, 2), land1 = await place(b, 100, 100, 2, 2);
+    const paidSea = await buySea(await createUser("sea"), 99, 99);
+    expect(await row(sea1.parcel_id)).toMatchObject({ status: "covered", covered_by: paidSea });
+    expect(await row(land1.parcel_id)).toMatchObject({ status: "active", covered_at: null });
+    // and the other way round
+    const sea2 = await placeSea(c, 200, 200, 2, 2), land2 = await place(d, 200, 200, 2, 2);
+    const paidLand = await buy(await createUser("ground"), 199, 199);
+    expect(await row(land2.parcel_id)).toMatchObject({ status: "covered", covered_by: paidLand });
+    expect(await row(sea2.parcel_id)).toMatchObject({ status: "active", covered_at: null });
+    // what stands is still counted: only the two that nobody covered
+    expect(await stats()).toMatchObject({ free_parcels: "2", free_pixels: "8" });
+  });
+
+  it("leaves the queue of moderation when it is covered (its creation will never be shown)", async () => {
+    const u = await createUser("queue");
+    const p = await placeSea(u, 700, 700, 2, 2);
+    await pool.query(`select * from public.px_add_asset($1, $2, 'creations/w.png', 'abcdef', 2, 2, 10, '#112233', 'Tiny sea', null, null, false)`, [u, p.parcel_id]);
+    await buySea(await createUser("whale"), 699, 699);
+    expect((await pool.query(`select status from public.parcel_assets where parcel_id = $1`, [p.parcel_id])).rows[0].status).toBe("superseded");
+  });
+
+  it("is never an illustration: those stay on land", async () => {
+    const u = await createUser("pic");
+    await expectPgError(pool.query(`insert into public.parcels (owner_id, x, y, w, h, status, tier, kind, land_px) values ($1, 900, 900, 5, 5, 'active', 'illustration', 'water', 0)`, [u]), "parcels_illustration_is_land");
   });
 });

@@ -164,7 +164,7 @@ export function CheckoutDialog({ rect, kind, pricing, landPixels, onClose, onPre
       fd.set("image", new File([blob], "creation.png", { type: "image/png" }));
       fd.set("title", title); fd.set("description", description); fd.set("link", link); fd.set("commercial", String(commercial)); fd.set("category", archive.category); fd.set("placeLabel", archive.placeLabel); fd.set("placeCountry", archive.placeCountry); fd.set("locale", locale); fd.set("currency", pricing.currency);
       if (collective) fd.set("days", String(days));
-      if (free) { fd.delete("kind"); fd.delete("currency"); }
+      if (free) fd.delete("currency"); // a free imprint is placed on land or on the sea (`kind` is sent), and nothing is paid
       const r = await fetch(free ? "/api/free-parcel" : collective ? "/api/campaigns" : "/api/checkout", { method: "POST", body: fd });
       const j = await r.json().catch(() => ({}));
       if (collective && r.ok && j.code) { await forget(); setSent({ days }); setBusy(false); return; } // sent to moderation: nothing to pay

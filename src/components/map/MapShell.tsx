@@ -62,8 +62,8 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, ed
   const [projectCode, setProjectCode] = useState<string | null>(null);
   const project = projectCode ? projects.find((p) => p.code === projectCode) ?? null : null;
   const engine = () => mapRef.current?.engine ?? null;
-  // a FREE imprint: land only, from 1 pixel up to the biggest free size, while it is open for this account
-  const freeSel = isFreeSelection(free, selection ? { w: selection.w, h: selection.h } : size, kind);
+  // a FREE imprint: land or water, from 1 pixel up to the biggest free size, while it is open for this account
+  const freeSel = isFreeSelection(free, selection ? { w: selection.w, h: selection.h } : size);
   useEffect(() => { if (engineReady) engine()?.setFreeMode(mode === "buy" && freeSel); }, [engineReady, mode, freeSel]);
 
   /* ---------- live stats (real numbers, refreshed; a purchase bumps mapVersion and the map reloads its tiles) ---------- */

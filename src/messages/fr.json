@@ -455,8 +455,8 @@
     "seaDiscount": "{sea} px de votre parcelle sont en mer, facturés {pct} % d'un pixel de terre ; {land} px sont de la terre.",
     "free": {
       "title": "Empreinte gratuite",
-      "hint": "De 1 à {max} pixels, sur la terre, une seule à la fois, jusqu'au {date}. Si quelqu'un achète une parcelle qui la touche, elle est recouverte.",
-      "unlimited": "Compte administrateur\u00a0: autant d'empreintes gratuites que vous voulez (de 1 à {max} pixels, sur la terre), sans date de fin.",
+      "hint": "De 1 à {max} pixels, sur la terre ou sur l'eau, une seule à la fois, jusqu'au {date}. Si quelqu'un achète une parcelle qui la touche, elle est recouverte.",
+      "unlimited": "Compte administrateur\u00a0: autant d'empreintes gratuites que vous voulez (de 1 à {max} pixels, sur la terre ou sur l'eau), sans date de fin.",
       "price": "Gratuit",
       "priceLabel": "Prix",
       "subtitle": "Empreinte gratuite · peut être recouverte par une parcelle payante",
@@ -960,7 +960,7 @@
         {
           "h": "Empreintes gratuites",
           "p": [
-            "Pendant les premiers jours d'une édition, chaque compte dont l'adresse e-mail est confirmée peut poser gratuitement une empreinte de 1 à 24 pixels sur la terre (une à la fois, trois au total). Elle est publiée après modération, comme toute création.",
+            "Pendant les premiers jours d'une édition, chaque compte dont l'adresse e-mail est confirmée peut poser gratuitement une empreinte de 1 à 24 pixels sur la terre ou sur l'eau (une à la fois, trois au total). Elle est publiée après modération, comme toute création.",
             "Une empreinte gratuite est précaire\u00a0: une parcelle payante dont le rectangle la touche la recouvre entièrement, sans compensation. Une empreinte recouverte n'est plus sur la carte\u00a0; elle reste consultable, avec la mention de son recouvrement, dans l'historique de l'archive. Les empreintes gratuites ne sont pas comptées dans les pixels vendus. [À faire relire par un juriste\u00a0: la nature de ce droit précaire et révocable, l'information donnée avant la pose, la durée de la période gratuite et son plafond, et l'absence de toute contrepartie.]"
           ]
         },

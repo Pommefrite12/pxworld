@@ -116,7 +116,7 @@ export function BuyPanel({ pricing, locale, size, onSize, selection, state, kind
               <>
                 <div className="grid grid-cols-3 gap-1.5">
                   {freePresets(free.maxArea).map((p) => (
-                    <button key={`free-${p.w}x${p.h}`} aria-pressed={freeSel && size.w === p.w && size.h === p.h} onClick={() => { if (kind === "water") onKind("land"); onSize(p.w, p.h); }}
+                    <button key={`free-${p.w}x${p.h}`} aria-pressed={freeSel && size.w === p.w && size.h === p.h} onClick={() => onSize(p.w, p.h)}
                       className="btn btn-secondary !min-h-14 !flex-col !gap-0 !px-1 text-center" data-testid={`buy-free-${p.w}x${p.h}`}>
                       <span className="pixel-num block whitespace-nowrap text-[0.8rem] leading-none">{p.w}×{p.h}</span>
                       <span className="mt-1 block text-[0.65rem] font-semibold text-mint">{t("free.price")}</span>

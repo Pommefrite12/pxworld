@@ -455,8 +455,8 @@
     "seaDiscount": "{sea} px of your parcel are sea, charged {pct}% of a land pixel; {land} px are land.",
     "free": {
       "title": "Free trace",
-      "hint": "From 1 to {max} pixels, on land, one at a time, until {date}. If somebody buys a parcel that touches it, it is covered.",
-      "unlimited": "Administrator account: as many free traces as you want (1 to {max} pixels, on land), with no end date.",
+      "hint": "From 1 to {max} pixels, on land or on water, one at a time, until {date}. If somebody buys a parcel that touches it, it is covered.",
+      "unlimited": "Administrator account: as many free traces as you want (1 to {max} pixels, on land or on water), with no end date.",
       "price": "Free",
       "priceLabel": "Price",
       "subtitle": "Free trace · can be covered by a paid parcel",
@@ -960,7 +960,7 @@
         {
           "h": "Free traces",
           "p": [
-            "During the first days of an edition, every account whose e-mail address is confirmed can place, for nothing, one trace of 1 to 24 pixels on land (one at a time, three in all). It is published after moderation, like any creation.",
+            "During the first days of an edition, every account whose e-mail address is confirmed can place, for nothing, one trace of 1 to 24 pixels on land or on water (one at a time, three in all). It is published after moderation, like any creation.",
             "A free trace is precarious: a paid parcel whose rectangle touches it covers it entirely, without compensation. A covered trace is no longer on the map; it stays readable, with the mention that it was covered, in the history of the archive. Free traces are not counted in the pixels sold. [To be reviewed by a lawyer: the nature of this precarious and revocable right, the information given before it is placed, the length of the free period and its cap, and the absence of any consideration.]"
           ]
         },

@@ -613,7 +613,7 @@ Le titre et la description de **chaque parcelle** (pas seulement celles d'illust
 
 Un compte **admin** n'est arrêté par **aucune** des limites des empreintes gratuites : ni « une seule à la fois », ni « 3 en tout », ni l'interrupteur, ni la fenêtre de 60 jours, ni le plafond de 5 000 (vos empreintes ne comptent pas dans ce plafond : il est pour les visiteurs). Vous n'êtes pas non plus arrêté par la limite de 12 par heure. **Vos créations passent par la modération comme celles des autres** (pratique pour la tester) : elles attendent dans la file, et vous les approuvez vous-même dans **/admin/moderation**. **Il faut la migration 26** : `node scripts/migrate.mjs --env .env.production.local`.
 
-Pour en poser une : connectez-vous avec votre compte admin, ouvrez la carte, choisissez **« Laisser mon empreinte »** et sélectionnez une zone de **1 à 24 pixels** (par exemple 4 × 6) **sur la terre** et **libre** (ni sur une parcelle payée, ni sur une autre empreinte), puis dessinez et publiez comme d'habitude. La création attend alors la modération : ouvrez **/admin/moderation** et **approuvez-la** (c'est aussi l'occasion d'essayer le refus). Le panneau affiche « **Compte administrateur : autant d'empreintes gratuites que vous voulez…** ». Ce qui reste vrai pour tout le monde : 24 pixels au plus, sur la terre, jamais par-dessus une autre parcelle, et **l'édition doit être ouverte** (pas avant l'ouverture, pas après la clôture). Un modérateur (rôle « moderator ») n'a pas ce privilège.
+Pour en poser une : connectez-vous avec votre compte admin, ouvrez la carte, choisissez **« Laisser mon empreinte »** et sélectionnez une zone de **1 à 24 pixels** (par exemple 4 × 6) **sur la terre ou sur l'eau** et **libre** (ni sur une parcelle payée, ni sur une autre empreinte), puis dessinez et publiez comme d'habitude. La création attend alors la modération : ouvrez **/admin/moderation** et **approuvez-la** (c'est aussi l'occasion d'essayer le refus). Le panneau affiche « **Compte administrateur : autant d'empreintes gratuites que vous voulez…** ». Ce qui reste vrai pour tout le monde : 24 pixels au plus, sur la terre ou sur l'eau, jamais par-dessus une autre parcelle, et **l'édition doit être ouverte** (pas avant l'ouverture, pas après la clôture). Un modérateur (rôle « moderator ») n'a pas ce privilège.
 
 **Attention :** une parcelle payée qui touche l'une de vos empreintes la **recouvre**, comme pour n'importe quelle empreinte gratuite.
 
@@ -648,6 +648,22 @@ git pull
 node scripts/migrate.mjs --env .env.production.local
 ```
 Attendu : `applying …_foreign_key_indexes.sql … ok` puis `applying …_close_forgotten_grant.sql … ok`. On peut relancer la commande sans risque : ce qui est déjà appliqué est sauté.
+
+## Étape 15 : empreintes gratuites aussi sur l'eau (migration 30, 1 min)
+
+Les **empreintes gratuites** (1 à 24 pixels) peuvent maintenant être posées **sur la terre ou sur la mer**. Il n'y a qu'**une migration**, sans effet sur les données existantes (les empreintes déjà posées sont sur la terre et le restent).
+
+1. Dans l'onglet **bash** :
+```bash
+git pull
+```
+2. Puis :
+```bash
+node scripts/migrate.mjs --env .env.production.local
+```
+Attendu : `applying …_free_parcels_on_water.sql … ok`. On peut relancer la commande sans risque.
+
+Les règles sont celles d'une parcelle d'eau payée : au moins **la moitié** des pixels doit être de l'eau (réglage `min_water_percent`), le quota est **commun** à la terre et à l'eau (une seule empreinte à la fois, trois au total), et c'est **un achat d'eau** qui recouvre une empreinte d'eau (un achat de terre ne recouvre que les empreintes de terre, car terre et eau n'ont jamais un pixel en commun). Sur la carte : choisissez **Eau**, puis une taille de 1 à 24 pixels : le panneau affiche **Gratuit**.
 
 ## Quand c'est fait
 

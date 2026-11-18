@@ -6,15 +6,15 @@ import { HttpError, json } from "@/lib/http/errors";
 import { intParam, assertSameOrigin, route } from "@/lib/http/route";
 import { LIMITS, enforceRateLimit } from "@/lib/rate-limit";
 import { landPixelsIn } from "@/lib/geo/landServer";
-import { enoughForKind } from "@/lib/grid/pricing";
+import { enoughForKind, isParcelKind } from "@/lib/grid/pricing";
 import { parseCreationMeta, readCreationImage, storeCreation } from "@/lib/creations";
 import { requestCurrency } from "@/lib/currency-server";
 
 export const maxDuration = 30;
 
 /**
- * Places a FREE parcel (1 to 24 pixels, land, no payment): the pixels are the account's at once and their creation waits for moderation like
- * any other. A paid parcel that touches it covers it, whole (migration 23). Everything is decided by PostgreSQL (`px_place_free_parcel`: the
+ * Places a FREE parcel (1 to 24 pixels, on land or on the sea, no payment): the pixels are the account's at once and their creation waits for
+ * moderation like any other. A paid parcel that touches it covers it, whole (migration 23). Everything is decided by PostgreSQL (`px_place_free_parcel`: the
  * window, the cap, the quota, the overlaps, the land share); this route checks the account, the image and the land count, and gives the pixels
  * back if the creation cannot be stored. An administrator (`admin_roles`) has no quota, no window, no cap and no rate limit (migration 26); its
  * creation goes through moderation like anybody's (it can approve it by hand in the back office).
@@ -32,6 +32,9 @@ export const POST = route(async (req) => {
   const rect = { x: intParam(String(form.get("x")), 0, 1e9), y: intParam(String(form.get("y")), 0, 1e9), w: intParam(String(form.get("w")), 1, 1e9), h: intParam(String(form.get("h")), 1, 1e9) };
   if (rect.x === null || rect.y === null || rect.w === null || rect.h === null) throw new HttpError(400, "px_invalid_rect");
   const r = { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+  const kindField = form.get("kind"); // 'land' (the default: what every earlier client meant) or 'water'
+  if (kindField !== null && kindField !== "" && !isParcelKind(kindField)) throw new HttpError(400, "px_invalid_rect");
+  const kind = kindField === "water" ? "water" : "land";
 
   // the same answers as the database, given before anything is read or stored (the database decides again, atomically)
   const free = await getFreeStatus(viewer.user.id);
@@ -42,12 +45,12 @@ export const POST = route(async (req) => {
   if (r.w * r.h > free.maxArea) throw new HttpError(400, "px_invalid_rect");
   const pricing = await getPricing(requestCurrency(req.headers));
   const landPx = await landPixelsIn(r); // counted HERE, from the server's own map data, as for a purchase
-  if (!enoughForKind("land", landPx, r.w * r.h, pricing)) throw new HttpError(422, "px_not_on_land");
+  if (!enoughForKind(kind, landPx, r.w * r.h, pricing)) throw new HttpError(422, kind === "water" ? "px_not_on_water" : "px_not_on_land");
 
   const meta = parseCreationMeta(form);
   const img = await readCreationImage(form, r); // fail fast, before any pixel is taken
 
-  const [placed] = await query<{ parcel_id: string; code: string }>("select parcel_id, code from public.px_place_free_parcel($1, $2, $3, $4, $5, $6)", [viewer.user.id, r.x, r.y, r.w, r.h, landPx]);
+  const [placed] = await query<{ parcel_id: string; code: string }>("select parcel_id, code from public.px_place_free_parcel($1, $2, $3, $4, $5, $6, $7)", [viewer.user.id, r.x, r.y, r.w, r.h, landPx, kind]);
   if (!placed) throw new HttpError(500, "free_parcel_not_created");
   try {
     await storeCreation(viewer.user.id, placed.parcel_id, img, meta);

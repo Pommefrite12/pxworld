@@ -32,7 +32,7 @@ describe("illustration parcels", () => {
     expect(await illustration(owner, 1400, 1000, 50, 50)).toBeTruthy(); // the old limit is still fine
     await expectPgError(illustration(owner, 1600, 1000, 201, 200), "parcels_min_area");
     await expectPgError(illustration(owner, 2000, 1000, 4, 4), "parcels_min_area");
-    await expectPgError(illustration(owner, 1400, 1000, 30, 30, "water"), "parcels_free_is_land");
+    await expectPgError(illustration(owner, 1400, 1000, 30, 30, "water"), "parcels_illustration_is_land");
     // the free ones keep their own limit
     await expectPgError(pool.query(`insert into public.parcels (owner_id, x, y, w, h, status, tier) values ($1, 900, 900, 30, 30, 'active', 'free')`, [owner]), "parcels_min_area");
   });

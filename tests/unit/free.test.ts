@@ -13,15 +13,14 @@ describe("free imprints, as the interface decides", () => {
     expect(freeAvailable(undefined)).toBe(false);
   });
 
-  it("a selection is a free one when it is land, from 1 pixel to the biggest free size, and free is available", () => {
-    expect(isFreeSelection(info(), { w: 1, h: 1 }, "land")).toBe(true);
-    expect(isFreeSelection(info(), { w: 4, h: 6 }, "land")).toBe(true); // 24
-    expect(isFreeSelection(info(), { w: 5, h: 5 }, "land")).toBe(false); // 25: the smallest paid parcel
-    expect(isFreeSelection(info(), { w: 0, h: 4 }, "land")).toBe(false);
-    expect(isFreeSelection(info(), { w: 3, h: 3 }, "water")).toBe(false); // land only
-    expect(isFreeSelection(info({ userReason: "standing" }), { w: 3, h: 3 }, "land")).toBe(false);
-    expect(isFreeSelection(info({ maxArea: 9 }), { w: 4, h: 3 }, "land")).toBe(false); // the biggest size is a setting
-    expect(isFreeSelection(null, { w: 3, h: 3 }, "land")).toBe(false);
+  it("a selection is a free one from 1 pixel to the biggest free size, on land or on water, when free is available", () => {
+    expect(isFreeSelection(info(), { w: 1, h: 1 })).toBe(true);
+    expect(isFreeSelection(info(), { w: 4, h: 6 })).toBe(true); // 24
+    expect(isFreeSelection(info(), { w: 5, h: 5 })).toBe(false); // 25: the smallest paid parcel
+    expect(isFreeSelection(info(), { w: 0, h: 4 })).toBe(false);
+    expect(isFreeSelection(info({ userReason: "standing" }), { w: 3, h: 3 })).toBe(false);
+    expect(isFreeSelection(info({ maxArea: 9 }), { w: 4, h: 3 })).toBe(false); // the biggest size is a setting
+    expect(isFreeSelection(null, { w: 3, h: 3 })).toBe(false);
   });
 
   it("offers only sizes that fit the biggest free size, and never one as big as a paid parcel", () => {

@@ -435,7 +435,7 @@ export class MapEngine {
   setLandRule(minLandPercent: number) { this.minLandPercent = minLandPercent; this.updateSelectionState(); this.invalidate(); }
   /** At least this share of a water parcel's pixels must be water (the land cut away is free or discounted): the admin's setting. */
   setWaterRule(minWaterPercent: number) { this.minWaterPercent = minWaterPercent; this.updateSelectionState(); this.invalidate(); }
-  /** Placing a free parcel (land only, nothing may be under it) or not (free parcels under a purchase are covered, not blocking). */
+  /** Placing a free parcel (land or water: nothing of that kind may be under it) or not (free parcels under a purchase are covered, not blocking). */
   setFreeMode(on: boolean) {
     if (on === this.freeMode) return;
     this.freeMode = on;
@@ -465,7 +465,7 @@ export class MapEngine {
       else {
         const land = this.geo?.landIn(r);
         if (land && !land.pending) landPx = land.land;
-        const hits = this.parcelsIn(r, this.freeMode ? false : this.buyKind === "water");
+        const hits = this.parcelsIn(r, this.buyKind === "water"); // the parcels of the kind being placed (land and water never share a pixel)
         // a free parcel never blocks a purchase (the paid parcel covers it); while placing a free one, everything blocks
         const blocking = hits === null ? null : this.freeMode ? hits : hits.filter((p) => !p.free);
         covers = hits === null || this.freeMode ? 0 : hits.length - (blocking?.length ?? 0);

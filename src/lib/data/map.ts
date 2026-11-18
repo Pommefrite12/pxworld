@@ -32,7 +32,7 @@ export async function getTile(tx: number, ty: number): Promise<TileParcel[]> {
     [x0, y0, x0 + TILE_SIZE - 1, y0 + TILE_SIZE - 1],
   );
   return rows.map((r) => (r.kind === "water"
-    ? [r.code, r.x, r.y, r.w, r.h, r.asset_id, tintColor(r.color), 1, 0]
+    ? [r.code, r.x, r.y, r.w, r.h, r.asset_id, tintColor(r.color), 1, r.free ? 1 : 0]
     : [r.code, r.x, r.y, r.w, r.h, r.asset_id, r.color, 0, r.free ? 1 : 0]));
 }
 
@@ -144,9 +144,9 @@ export async function getPricing(currency?: SaleCurrency): Promise<Pricing> {
   };
 }
 
-/** Is the area free for a FREE parcel? Nothing may be there, free or paid, active or held (an order being paid, a collecting project). */
-export async function isAreaFreeOfAll(x: number, y: number, w: number, h: number): Promise<boolean> {
-  const r = await queryOne<{ f: boolean }>("select public.px_is_area_free_of_all($1, $2, $3, $4) as f", [x, y, w, h]);
+/** Is the area free for a FREE parcel of this kind? Nothing of that kind may be there, free or paid, active or held (an order being paid, a collecting project). */
+export async function isAreaFreeOfAll(x: number, y: number, w: number, h: number, kind: ParcelKind = "land"): Promise<boolean> {
+  const r = await queryOne<{ f: boolean }>("select public.px_is_area_free_of_all($1, $2, $3, $4, $5) as f", [x, y, w, h, kind]);
   return r?.f === true;
 }
 
