@@ -25,7 +25,7 @@ export async function Eras() {
             return (
               <EraItem key={k} era={k}>
                 <figure className={`era-pic px-card ${last ? "px-card-gold" : ""} p-2`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- a picture of the story, in two sizes */}
+                  {/* a plain <img> on purpose: a picture of the story, in two sizes */}
                   <img src={`/eras/${pic}-720.webp`} srcSet={`/eras/${pic}-720.webp 720w, /eras/${pic}-1200.webp 1200w`} sizes="(min-width: 768px) 540px, calc(100vw - 4.5rem)" width={1200} height={900} alt={t(`eras.${k}.alt`)} loading="lazy" decoding="async" className="block h-auto w-full" />
                 </figure>
                 <div className="era-text">

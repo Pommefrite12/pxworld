@@ -85,7 +85,7 @@ export async function Home({ viewer, edition, traces }: { viewer: HeaderViewer |
                   <li key={x.code}>
                     <Link href={`/archive/${x.code}`} className="px-card block p-3.5 pb-4" data-testid="home-trace" data-code={x.code}>
                       <span className="checker block bg-paper p-2.5 shadow-[inset_0_0_0_2px_var(--color-line)]">
-                        {/* eslint-disable-next-line @next/next/no-img-element -- a pixel creation, drawn crisp */}
+                        {/* a plain <img> on purpose: a pixel creation, drawn crisp */}
                         <img src={assetUrl(x.asset_id, 512)} alt="" className="mx-auto block aspect-[1/0.62] w-full object-contain [image-rendering:pixelated]" loading="lazy" />
                       </span>
                       <span className="mt-3 block font-display text-[1.1rem] font-bold leading-tight">{x.title ?? ta("untitled")}</span>

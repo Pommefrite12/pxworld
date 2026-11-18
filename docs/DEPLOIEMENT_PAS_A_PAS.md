@@ -630,6 +630,23 @@ Ce que le code ne peut pas faire à votre place, et qui reste à vous :
 
 Ce qui ne change **pas**, volontairement : le nom technique de la base (`pixelworld`), du dossier d'images (`pixel-world-creations`) et du format d'archive. Ils ne se voient pas et les renommer casserait un site en marche.
 
+## Étape 14 : mettre la base à jour après la revue du code (migrations 28 et 29, 2 min)
+
+La revue de novembre 2026 (voir `docs/REVUE_DU_CODE.md`) a ajouté **deux petites migrations**, sans aucun changement de données et sans interruption du site :
+
+- **28 : des index** sur neuf liens de la base qui n'en avaient pas. Effacer 20 000 parcelles passe de **53 s à 2 s**, et les paiements gagnent aussi un peu ;
+- **29 : un droit retiré** à une fonction interne que la base laissait ouverte par oubli (elle ne pouvait rien faire de dangereux, mais la règle est « fermé sauf exception »).
+
+1. Dans l'onglet **bash** :
+```bash
+git pull
+```
+2. Puis :
+```bash
+node scripts/migrate.mjs --env .env.production.local
+```
+Attendu : `applying …_foreign_key_indexes.sql … ok` puis `applying …_close_forgotten_grant.sql … ok`. On peut relancer la commande sans risque : ce qui est déjà appliqué est sauté.
+
 ## Quand c'est fait
 
 - **Ne partagez pas encore l'adresse publiquement** : c'est un site de test (paiements fictifs).

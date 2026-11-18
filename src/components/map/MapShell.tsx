@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { SiteHeader, type HeaderViewer } from "@/components/layout/SiteHeader";
 import { BuyPanel, type ServerFree } from "@/components/buy/BuyPanel";
 import type { ParcelKind, Pricing } from "@/lib/grid/pricing";
@@ -41,7 +41,6 @@ export function MapShell({ stats: initialStats, latest = [], pricing, viewer, ed
   const t = useTranslations("map");
   const tc = useTranslations("common");
   const locale = useLocale();
-  const router = useRouter();
   const mapRef = useRef<MapViewHandle>(null);
   const [engineReady, setEngineReady] = useState(false);
   const [stats, setStats] = useState(initialStats);

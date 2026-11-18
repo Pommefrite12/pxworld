@@ -1,7 +1,7 @@
 import { GRID_HEIGHT as H, GRID_WIDTH as W } from "@/lib/grid/constants";
 import { countryNamer, nameLang } from "./countryName";
 import { gridAlpha } from "@/lib/map/pixelGrid";
-import { centeredRect, clampToGrid, intersects, pixelToLonLat, type Rect } from "@/lib/grid/geometry";
+import { centeredRect, clampToGrid, intersects, type Rect } from "@/lib/grid/geometry";
 import { enoughLand, enoughWater } from "@/lib/grid/pricing";
 import { ASSET_SIZES, assetSizeFor, assetUrl } from "@/lib/images/sizes";
 import { OWN_PICTURE_MIN_PX, ownPictureMin } from "./ownPictures";

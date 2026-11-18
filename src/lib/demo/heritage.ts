@@ -31,7 +31,6 @@ const H = (id: string, title: string, place: string, country: string, lat: numbe
 
 const day = (k: Canvas, to = 0.7) => k.sky(C.skyTop, C.skyLow, 0, to);
 const dusk = (k: Canvas, to = 0.7) => k.sky(C.duskTop, C.duskLow, 0, to);
-const night = (k: Canvas, to = 0.8) => k.sky(C.nightTop, C.nightLow, 0, to).stars(14);
 const shade = (c: RGB, t: number): RGB => [Math.round(c[0] * (1 - t)), Math.round(c[1] * (1 - t)), Math.round(c[2] * (1 - t))];
 const tint = (c: RGB, t: number): RGB => [Math.round(c[0] + (255 - c[0]) * t), Math.round(c[1] + (255 - c[1]) * t), Math.round(c[2] + (255 - c[2]) * t)];
 
@@ -454,7 +453,7 @@ export const HERITAGE: Heritage[] = [
       k.glow(x, y, r * 1.8, c, 0.45).disc(x, y, r, c).scatter(26, x - r * 1.6, y - r * 1.6, r * 3.2, r * 3.2, [c, tint(c, 0.45)]);
     }
     // two dancers in white, their shirts splashed with colour, arms thrown up
-    for (const [x, s] of [[0.3, 0.4], [0.7, 0.4]] as const) {
+    for (const [x] of [[0.3, 0.4], [0.7, 0.4]] as const) {
       k.line(x - 0.06, 0.66, x - 0.14, 0.46, 0.05, C.skin).line(x + 0.06, 0.66, x + 0.14, 0.46, 0.05, C.skin);
       k.disc(x, 0.5, 0.078, C.brownDark);
       k.rect(x - 0.08, 0.6, 0.16, 0.22, C.white).disc(x, 0.52, 0.07, C.skin).rect(x - 0.08, 0.56, 0.16, 0.035, C.brownDark).rect(x - 0.07, 0.82, 0.05, 0.12, C.blue).rect(x + 0.02, 0.82, 0.05, 0.12, C.blue);

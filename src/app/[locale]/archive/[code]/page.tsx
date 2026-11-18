@@ -79,7 +79,7 @@ export default async function ArchivePage({ params }: { params: Promise<{ locale
 
         <div className="checker mt-6 grid place-items-center rounded-2xl p-4 shadow-float" style={{ minHeight: 160 }}>
           {c ? (
-            // eslint-disable-next-line @next/next/no-img-element -- a pixel creation, drawn crisp at an integer scale
+            // a plain <img> on purpose: a pixel creation, drawn crisp at an integer scale
             <img src={assetUrl(c.asset_id, 1024)} alt={t("imageAlt", { title })} className="max-w-full" style={{ imageRendering: "pixelated", ...size }} data-testid="archive-image" />
           ) : (
             <p className="max-w-md px-4 py-10 text-center text-ink-soft" data-testid="archive-pending">{p.hidden ? t("hidden") : t("pending")}</p>

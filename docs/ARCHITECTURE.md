@@ -323,6 +323,12 @@ The site is called **Hieropix** (hiéro(glyphes) + pix(el); chosen by the owner 
 * **Left unchanged on purpose** (data or deployments already depend on them; renaming them would break a running site for nothing visible): the database name `pixelworld` (the old name of the site), the storage bucket `pixel-world-creations`, the salts, the archive format id `pixel-world-archive/1`, the npm package name, the migrations, the `era` key `pixelworld` of the home page.
 * **Renaming = edit `src/lib/brand.ts`, run `npm test` and `npm run test:e2e`, push.** What the code cannot do: the docs and the README (text), the domain (`NEXT_PUBLIC_SITE_URL`), the Stripe account's public name, the e-mail templates of Supabase if they were customised, the trademark and domain checks (owner and lawyer).
 
+## 5c. Rules the database checks about itself (code review of November 2026)
+
+Two tests (`tests/db/`) read the database's own catalog and fail when a rule is forgotten, so that nobody has to remember it:
+* **Every foreign key has an index** (`foreign-key-indexes.test.ts`). Without one, each delete of a referenced row reads the whole referencing table: measured on 20 000 parcels, `demo:clear --everything` took 53 s, then 2 s with the nine indexes of migration 28 (they also serve the `where order_id = …` lookups of every payment event). A new foreign key must come with its index in the same migration.
+* **No `px_*` function is open to `public`, `anon` or `authenticated`** (`function-grants.test.ts`), except `px_is_staff`, which the row-level security policies call. On Supabase, anything of the `public` schema they may execute can be called by anybody holding the public key. Migration 2 closes the functions that existed then; a later function must close itself (migration 29 closed the one that was forgotten).
+
 ## 6. Public statistics
 
 `px_public_stats()` computes sold pixels, parcels, owners and published creations from real rows (reservations are *not*

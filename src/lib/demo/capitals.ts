@@ -532,6 +532,6 @@ export function capitalsPlan(res = 4, images?: Map<string, Raster>): DemoItem[] 
     anchor: { name: e.place, lat: e.lat, lon: e.lon, country: e.country }, spot: { name: e.place, lat: e.lat, lon: e.lon },
     seed: 9000 + i, ageHours: 6 + ((i * 53) % 400), exact: true, illustration: true, category: e.category,
     i18n: Object.fromEntries(HERITAGE_LANGS.flatMap((l) => { const t = CAPITALS_I18N[e.id]?.[l]; return t ? [[l, { title: t[0], description: t[1] }]] : []; })),
-    render: (w: number, h: number, seed: number) => { const given = images?.get(e.id); if (given) return given; const k = new Photo(w, seed, res); e.draw(k); return k.finishPhoto(); },
+    render: (w: number, _h: number, seed: number) => { const given = images?.get(e.id); if (given) return given; const k = new Photo(w, seed, res); e.draw(k); return k.finishPhoto(); },
   }));
 }

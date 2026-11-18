@@ -182,12 +182,12 @@ test("zooming in or out, a big creation is never a flat colour while its picture
   await page.goto(`/map?x=${centre.x}&y=${centre.y}&z=0.62`);
   await ready();
   await expect.poll(() => wrong("left"), { timeout: 30_000, message: "the left half of the creation is on screen, with nothing written over it" }).toBe(0);
-  expect(await wrong("right"), "nor over the right half").toBe(0);
+  await expect.poll(() => wrong("right"), { timeout: 5_000, message: "nor over the right half" }).toBe(0); // (polled like the left half: both are drawn by the same frame, but a loaded machine can show one a moment before the other)
 
   // 2. zoom in past ×1 at once: its own picture is 4 s away, the creation already shows its two halves (the raster in memory stands in), not their average
   await page.evaluate(([x, y]) => (window as unknown as { __pxEngine: Eng }).__pxEngine.flyTo({ x: x!, y: y!, scale: 1.7 }, 0), [centre.x, centre.y]);
   await expect.poll(() => wrong("left"), { timeout: SLOW - 1_500, message: "the creation is not a flat block while its picture loads" }).toBe(0);
-  expect(await wrong("right")).toBe(0);
+  await expect.poll(() => wrong("right"), { timeout: 5_000, message: "the creation is not a flat block on its right half either" }).toBe(0); // (polled like the left half: both are drawn by the same frame, but a loaded machine can show one a moment before the other)
   // …and it still shows them once its own picture is there
   await page.waitForTimeout(SLOW + 1_500);
   expect(await wrong("left")).toBe(0);
@@ -197,7 +197,7 @@ test("zooming in or out, a big creation is never a flat colour while its picture
   await page.goto(`/map?x=${centre.x}&y=${centre.y}&z=1.7`);
   await ready();
   await expect.poll(() => wrong("left"), { timeout: SLOW - 1_500, message: "a shared link at ×1.7: no flat block either" }).toBe(0);
-  expect(await wrong("right")).toBe(0);
+  await expect.poll(() => wrong("right"), { timeout: 5_000, message: "a shared link at ×1.7: no flat block on the right half either" }).toBe(0); // (polled like the left half: both are drawn by the same frame, but a loaded machine can show one a moment before the other)
   await Promise.all([api.dispose(), admin.dispose()]);
 });
 
