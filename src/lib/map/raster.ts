@@ -43,6 +43,25 @@ async function fetchFile(path: string): Promise<Buffer | null> {
 }
 
 /**
+ * The pictures AS THEY ARE COPIED INTO A TILE (resized, raw RGBA), kept for the next tile that needs the same picture at the same size.
+ * Why: every purchase or approval bumps the map version, which changes the address of EVERY tile (the CDN starts again from nothing), but the
+ * pictures themselves do not change (a stored file's name carries its hash): rendering a tile again then costs a copy instead of decoding and
+ * resizing each picture again — which is most of the cost of a crowded tile (measured on 50 000 parcels: a tile of the world at level 0 took 150 to
+ * 400 ms, and a view of a city asks for two dozen of them at once). The same picture is also needed by up to four tiles when its parcel is big.
+ * The key holds everything that decides the pixels (file, size, tint, kernel), so there is nothing to invalidate; the memory is capped like the files'.
+ */
+const PIXELS_CACHE_BYTES = 64 * 1024 * 1024;
+const pixels = new Map<string, Buffer>();
+let pixelBytes = 0;
+const pixelsKey = (path: string, w: number, h: number, water: boolean, nearest: boolean) => `${path}|${w}x${h}|${water ? "w" : "l"}${nearest ? "n" : "s"}`;
+function rememberPixels(key: string, px: Buffer) {
+  if (px.length > PIXELS_CACHE_BYTES / 16) return; // a very big parcel is not worth the room it takes
+  pixels.set(key, px);
+  pixelBytes += px.length;
+  for (const [k, v] of pixels) { if (pixelBytes <= PIXELS_CACHE_BYTES) break; pixels.delete(k); pixelBytes -= v.length; } // the oldest first
+}
+
+/**
  * From this level on (a pixel of the grid is 1/8 of a pixel or less), a parcel of at most 8 px on the tile is its average colour:
  * nobody can tell the picture apart at that size, and not fetching it is what makes the world view appear at once.
  */
@@ -107,6 +126,11 @@ export async function renderRasterTile(z: number, tx: number, ty: number, kind: 
       const w = Math.max(1, Math.round(r.w * scale)), h = Math.max(1, Math.round(r.h * scale));
       if (left >= RASTER_TILE || top >= RASTER_TILE || left + w <= 0 || top + h <= 0) continue;
       if (r.path && (w > flatLimit(z) || h > flatLimit(z))) {
+        // crisp pixels only when the creation is magnified or kept as is; a finer (half-pixel) creation shown smaller is averaged
+        const nearest = z === 0 && (r.src_w ?? 0) <= w;
+        const key = pixelsKey(r.path, w, h, r.kind === "water", nearest);
+        const again = pixels.get(key);
+        if (again) { pixels.delete(key); pixels.set(key, again); blit(again, w, h, left, top); continue; } // most recently used last
         const bytes = await fetchFile(r.path);
         if (bytes) {
           let img = sharp(bytes);
@@ -116,11 +140,11 @@ export async function renderRasterTile(z: number, tx: number, ty: number, kind: 
             img = sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } });
           }
           const px = await img
-            // crisp pixels only when the creation is magnified or kept as is; a finer (half-pixel) creation shown smaller is averaged
-            .resize(w, h, { fit: "fill", kernel: z === 0 && (r.src_w ?? 0) <= w ? "nearest" : "lanczos3" })
+            .resize(w, h, { fit: "fill", kernel: nearest ? "nearest" : "lanczos3" })
             .ensureAlpha()
             .raw()
             .toBuffer();
+          rememberPixels(key, px);
           blit(px, w, h, left, top);
           continue;
         }

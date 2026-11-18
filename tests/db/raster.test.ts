@@ -132,6 +132,18 @@ describe("raster tiles (zoomed-out view)", () => {
     fs.rmSync(path.join(dir, `creations/${p.parcel_id}/test.png`)); // gone from storage…
     expect(await pixel(await renderRasterTile(1, 1, 1), 2, 8)).toEqual([255, 0, 0, 255]); // …yet the next tile (another zoom level) still has it
   });
+  it("a tile drawn again (the map version changed, so did its address) is byte for byte the same, from the pictures already resized in memory", async () => {
+    const land = await publishedParcel({ x: 512, y: 512, w: 64, h: 64 });
+    const water = await publishedParcel({ x: 520, y: 600, w: 40, h: 40 }, true, true);
+    const first = { land: await renderRasterTile(2, 0, 0), water: await renderRasterTile(2, 0, 0, "water"), far: await renderRasterTile(1, 1, 1) };
+    // the files are gone: whatever the second render draws, it did not read them again, nor decode and resize them again
+    fs.rmSync(path.join(dir, `creations/${land.parcel_id}/test.png`));
+    fs.rmSync(path.join(dir, `creations/${water.parcel_id}/test.png`));
+    expect((await renderRasterTile(2, 0, 0)).equals(first.land)).toBe(true);
+    expect((await renderRasterTile(2, 0, 0, "water")).equals(first.water)).toBe(true);
+    expect((await renderRasterTile(1, 1, 1)).equals(first.far)).toBe(true);
+    expect(await pixel(first.land, 512 / 4 + 2, 512 / 4 + 8)).toEqual([255, 0, 0, 255]); // (and it was the picture, not a flat colour)
+  });
   it("tiny parcels are never invisible: they render as one coloured pixel", async () => {
     await publishedParcel({ x: 100, y: 100, w: 10, h: 10 });
     const png = await renderRasterTile(6, 0, 0); // 1 px = 64 virtual px
