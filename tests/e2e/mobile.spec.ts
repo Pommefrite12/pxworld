@@ -123,7 +123,7 @@ test.describe("group projects on a phone", () => {
     const ctx = await browser.newContext({ ...playwright.devices["Pixel 7"] });
     expect((await ctx.request.post("/api/dev/login", { data: { email: "phone-draw@example.test" } })).ok()).toBeTruthy();
     const page = await ctx.newPage();
-    await page.goto("/map?bx=27400&by=11000&bw=20&bh=20");
+    await page.goto("/map?bx=26750&by=11000&bw=20&bh=20");
     await expect(page.getByTestId("buy-status")).toContainText(/free/i, { timeout: 15_000 });
     await page.getByTestId("buy-continue").click();
     const dialog = page.getByRole("dialog");

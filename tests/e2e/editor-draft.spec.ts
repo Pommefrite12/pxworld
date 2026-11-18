@@ -173,7 +173,7 @@ test.describe("saving a project", () => {
   });
 
   test("closing with something not saved offers to save it; once saved, closing asks nothing; the buy panel takes the visitor back to it", async ({ browser }) => {
-    const { ctx, page, open, dialog, canvas } = await openEditor(browser, "closer@example.test", 27000, 11000);
+    const { ctx, page, open, dialog, canvas } = await openEditor(browser, "closer@example.test", 26700, 11000);
     const close = (d: Locator) => d.getByRole("button", { name: "Close", exact: true });
 
     // nothing drawn: it closes at once
